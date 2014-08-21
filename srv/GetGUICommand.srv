@@ -1,0 +1,6 @@
+---
+string command_id
+duration age
+string command
+string[] param_names
+string[] param_values

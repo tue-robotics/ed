@@ -1,0 +1,2 @@
+- indent error in config gives yaml error
+- 3 to real is parsed as 0.03

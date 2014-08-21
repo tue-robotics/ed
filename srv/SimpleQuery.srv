@@ -1,0 +1,10 @@
+# Set any of these fields
+string id
+string type
+
+# Geometric query IN MAP FRAME
+geometry_msgs/Point center_point
+float32 radius
+---
+EntityInfo[] entities
+
