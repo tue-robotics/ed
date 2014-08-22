@@ -41,7 +41,7 @@
   <run_depend>tue_filesystem</run_depend>
   <run_depend>tue_serialization</run_depend>
   <run_depend>vocabulary_tree</run_depend>
-  <run_depend>message_runtim</run_depend>
+  <run_depend>message_runtime</run_depend>
   <run_depend>rospack</run_depend>
 
 </package>
