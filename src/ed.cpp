@@ -312,17 +312,17 @@ int main(int argc, char** argv)
         if (trigger_config.triggers() && config.sync())
             ed_wm->configure(config, true);
 
-//        std::cout << "CycleTime: " << r.cycleTime() << " seconds. - " << ed_wm->size() << " entities in world model." << std::endl;
+////        std::cout << "CycleTime: " << r.cycleTime() << " seconds. - " << ed_wm->size() << " entities in world model." << std::endl;
 
         if (trigger_ed.triggers())
             ed_wm->update();
 //        ed.storeEntityMeasurements("/tmp/ed_measurements");
 
-        if (trigger_tf.triggers())
-            publishTFs(tf_broadcaster);
+//        if (trigger_tf.triggers())
+//            publishTFs(tf_broadcaster);
 
-        if (trigger_gui.triggers())
-            ed_wm->updateGUI();
+//        if (trigger_gui.triggers())
+//            ed_wm->updateGUI();
 
         if (trigger_plugins.triggers())
             ed_wm->stepPlugins();

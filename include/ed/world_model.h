@@ -13,19 +13,28 @@ class WorldModel
 
 public:
 
-    typedef std::map<UUID, EntityConstPtr>::iterator entity_iterator;
+    typedef std::map<UUID, EntityConstPtr>::iterator iterator;
 
-    typedef std::map<UUID, EntityConstPtr>::const_iterator entity_const_iterator;
+    typedef std::map<UUID, EntityConstPtr>::const_iterator const_iterator;
 
-    entity_iterator begin() { return entities_.begin(); }
+    iterator begin() { return entities_.begin(); }
 
-    entity_const_iterator begin() const { return entities_.begin(); }
+    const_iterator begin() const { return entities_.begin(); }
 
-    entity_iterator end() { return entities_.end(); }
+    iterator end() { return entities_.end(); }
 
-    entity_const_iterator end() const { return entities_.end(); }
+    const_iterator end() const { return entities_.end(); }
 
     void setEntities(const std::map<UUID, EntityConstPtr>& entities) { entities_ = entities; }
+
+    EntityConstPtr getEntity(const ed::UUID& id) const
+    {
+        std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = entities_.find(id);
+        if (it == entities_.end())
+            return EntityConstPtr();
+        else
+            return it->second;
+    }
 
 private:
 
