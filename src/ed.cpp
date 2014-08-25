@@ -301,6 +301,7 @@ int main(int argc, char** argv)
     ed::EventClock trigger_ed(10);
     ed::EventClock trigger_gui(100);
     ed::EventClock trigger_tf(10);
+    ed::EventClock trigger_plugins(1000);
 
     ros::Rate r(100);
     while(ros::ok()) {
@@ -322,6 +323,9 @@ int main(int argc, char** argv)
 
         if (trigger_gui.triggers())
             ed_wm->updateGUI();
+
+        if (trigger_plugins.triggers())
+            ed_wm->stepPlugins();
 
 //        cv::Mat visualization = visualize();
 //        if (visualization.data)

@@ -31,7 +31,13 @@ perception:
     modules:
 #    -  lib: libsize_matcher.so
 #    -  lib: libodu_finder.so
-    -  lib: libhuman_contour_matcher.so
+#    -  lib: libhuman_contour_matcher.so
+
+plugins:
+- name: hello_world
+  lib: libed_hello_world_plugin.so
+  parameters:
+      text: "Hello world!"
 
 gui:
     enabled: 1

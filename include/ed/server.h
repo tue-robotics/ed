@@ -45,6 +45,8 @@ public:
 
     void addPluginPath(const std::string& path) { plugin_paths_.push_back(path); }
 
+    void stepPlugins();
+
 private:
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;
@@ -57,8 +59,6 @@ private:
     std::vector<std::string> plugin_paths_;
     std::vector<PluginContainerPtr> plugin_containers_;
     std::vector<class_loader::ClassLoader*> plugin_loaders_;
-
-    void stepPlugins();
 
     //! Profiling
     tue::ProfilePublisher pub_profile_;

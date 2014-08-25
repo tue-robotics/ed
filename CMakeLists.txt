@@ -193,6 +193,10 @@ add_library(map_publisher
 )
 target_link_libraries(map_publisher ed_core)
 
+add_library(ed_hello_world_plugin
+    plugins/hello_world_plugin.cpp
+)
+
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
 # ------------------------------------------------------------------------------------------------

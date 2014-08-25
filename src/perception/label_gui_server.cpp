@@ -161,8 +161,6 @@ GUIServer::~GUIServer()
 
 void GUIServer::configure(tue::Configuration config, bool reconfigure)
 {
-    std::cout << config << std::endl;
-
     std::string srv_get_measurements, srv_set_label, srv_raise_event, srv_get_command, map_image_topic;
 
     config.value("srv_get_measurements", srv_get_measurements);
