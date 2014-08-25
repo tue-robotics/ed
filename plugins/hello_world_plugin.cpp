@@ -1,5 +1,7 @@
 #include "hello_world_plugin.h"
 
+#include <iostream>
+
 // ----------------------------------------------------------------------------------------------------
 
 HelloWorld::HelloWorld()
