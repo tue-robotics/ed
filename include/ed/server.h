@@ -43,6 +43,8 @@ public:
 
     const std::map<UUID, EntityConstPtr>& entities() const { return entities_; }
 
+    void addPluginPath(const std::string& path) { plugin_paths_.push_back(path); }
+
 private:
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;
@@ -52,7 +54,11 @@ private:
     Perception perception_;
 
     //! Plugins
+    std::vector<std::string> plugin_paths_;
     std::vector<PluginContainerPtr> plugin_containers_;
+    std::vector<class_loader::ClassLoader*> plugin_loaders_;
+
+    void stepPlugins();
 
     //! Profiling
     tue::ProfilePublisher pub_profile_;

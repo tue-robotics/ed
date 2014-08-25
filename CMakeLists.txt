@@ -21,6 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+find_package(OpenCV REQUIRED)
+
 # Generate messages in the 'msg' folder
 add_message_files(
    FILES
@@ -196,15 +198,15 @@ target_link_libraries(map_publisher ed_core)
 # ------------------------------------------------------------------------------------------------
 
 add_executable(view-measurement tools/view_measurement.cpp)
-target_link_libraries(view-measurement ed_core ed_io)
+target_link_libraries(view-measurement ed_core ed_io ${OpenCV_LIBRARIES})
 add_dependencies(view-measurement ${PROJECT_NAME}_gencpp)
 
 add_executable(test-perception tools/test_perception.cpp)
-target_link_libraries(test-perception ed_core ed_perception ed_io)
+target_link_libraries(test-perception ed_core ed_perception ed_io ${OpenCV_LIBRARIES})
 add_dependencies(test-perception ${PROJECT_NAME}_gencpp)
 
 add_executable(create-rgbd-measurement tools/create_rgbd_measurement.cpp)
-target_link_libraries(create-rgbd-measurement ed_core ed_io)
+target_link_libraries(create-rgbd-measurement ed_core ed_io ${OpenCV_LIBRARIES})
 add_dependencies(create-rgbd-measurement ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
@@ -212,19 +214,19 @@ add_dependencies(create-rgbd-measurement ${PROJECT_NAME}_gencpp)
 # ------------------------------------------------------------------------------------------------
 
 add_executable(test_mask test/test_mask.cpp)
-target_link_libraries(test_mask ed_core)
+target_link_libraries(test_mask ed_core ${OpenCV_LIBRARIES})
 add_dependencies(test_mask ${PROJECT_NAME}_gencpp)
 
 add_executable(test_sampling test/test_sampling.cpp)
-target_link_libraries(test_sampling ed_core ed_visualization)
+target_link_libraries(test_sampling ed_core ed_visualization ${OpenCV_LIBRARIES})
 add_dependencies(test_sampling ${PROJECT_NAME}_gencpp)
 
 add_executable(test_human_classifier test/test_human_classifier.cpp)
-target_link_libraries(test_human_classifier human_contour_matcher)
+target_link_libraries(test_human_classifier human_contour_matcher ${OpenCV_LIBRARIES})
 add_dependencies(test_human_classifier ${PROJECT_NAME}_gencpp)
 
 add_executable(test_label_gui_server test/test_label_gui_server.cpp)
-target_link_libraries(test_label_gui_server ed_core ed_gui)
+target_link_libraries(test_label_gui_server ed_core ed_gui ${OpenCV_LIBRARIES})
 add_dependencies(test_label_gui_server ${PROJECT_NAME}_gencpp)
 
 add_executable(test_service_speed test/test_service_speed.cpp)
@@ -232,6 +234,6 @@ target_link_libraries(test_service_speed ed_core)
 add_dependencies(test_service_speed ${PROJECT_NAME}_gencpp)
 
 add_executable(show_gui test/show_gui.cpp)
-target_link_libraries(show_gui ed_core)
+target_link_libraries(show_gui ed_core ${OpenCV_LIBRARIES})
 add_dependencies(show_gui ${PROJECT_NAME}_gencpp)
 

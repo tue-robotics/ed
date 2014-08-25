@@ -220,13 +220,41 @@ cv::Mat visualize()
 
 // ----------------------------------------------------------------------------------------------------
 
+bool getEnvironmentVariable(const std::string& var, std::string& value)
+{
+     const char * val = ::getenv(var.c_str());
+     if ( val == 0 )
+         return false;
+
+     value = val;
+     return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 int main(int argc, char** argv)
 {
+
     ros::init(argc, argv, "ed");
 
     ed_wm = new ed::Server();
 
     // - - - - - - - - - - - - - - - configure - - - - - - - - - - - - - - -
+
+    // Get plugin paths
+    std::string ed_plugin_path;
+    if (getEnvironmentVariable("ED_PLUGIN_PATH", ed_plugin_path))
+    {
+        std::stringstream ss(ed_plugin_path);
+        std::string item;
+        while (std::getline(ss, item, ':'))
+            ed_wm->addPluginPath(item);
+    }
+    else
+    {
+        std::cout << "Error: Environment variable ED_PLUGIN_PATH not set." << std::endl;
+        return 1;
+    }
 
     // Get the ED directory
     std::string ed_dir = ros::package::getPath("ed");

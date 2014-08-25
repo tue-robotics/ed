@@ -15,6 +15,12 @@
 
 #include <tue/profiling/scoped_timer.h>
 
+#include <tue/filesystem/path.h>
+
+#include "ed/plugin.h"
+#include "ed/plugin_container.h"
+#include "ed/world_model.h"
+
 namespace ed
 {
 
@@ -77,45 +83,68 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         config.endArray();
     }
 
-//    if (config.readArray("plugins"))
-//    {
-//        // Get the ED directory
-//        std::string ed_dir = ros::package::getPath("ed");
-//        std::string lib_dir = ed_dir + "/lib/";
+    if (config.readArray("plugins"))
+    {
+        while(config.nextArrayItem())
+        {
+            std::string name;
+            if (!config.value("name", name))
+                continue;
 
-//        while(config.nextArrayItem())
-//        {
-//            std::string name;
-//            if (!config.value("name", name))
-//                continue;
+            std::string lib;
+            if (!config.value("lib", lib))
+                continue;
 
-//            std::string lib;
-//            if (!config.value("lib", lib))
-//                continue;
+            bool plugin_loaded = false;
 
-//            std::string lib_file = lib_dir + lib;
+            for(std::vector<std::string>::const_iterator it = plugin_paths_.begin(); it != plugin_paths_.end(); ++it)
+            {
+                std::string lib_file = *it + "/" + lib;
+                if (tue::filesystem::Path(lib_file).exists())
+                {
+                    // Load the library
+                    class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(lib_file);
+                    plugin_loaders_.push_back(class_loader);
 
-//            // Load the library
-//            class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(lib_file);
-//            perception_loaders_.push_back(class_loader);
+                    // Create plugin
+                    class_loader->loadLibrary();
+                    std::vector<std::string> classes = class_loader->getAvailableClasses<ed::Plugin>();
 
-//            // Create perception module
-//            PerceptionModulePtr perception_module = ed::loadPerceptionModule(class_loader);
+                    if (classes.empty())
+                    {
+                        std::cout << "Error: could not find any plugins in '" << class_loader->getLibraryPath() << "'." << std::endl;
+                    } else if (classes.size() > 1)
+                    {
+                        std::cout << "Error: multiple plugins registered in '" << class_loader->getLibraryPath() << "'." << std::endl;
+                    } else
+                    {
+                        PluginPtr plugin = class_loader->createInstance<Plugin>(classes.front());
+                        if (plugin)
+                        {
+                            // Configure the module if there is a 'parameters' group in the config
+                            if (config.readGroup("parameters"))
+                            {
+                                plugin->configure(config.limitScope());
+                                config.endGroup();
+                            }
 
-//            if (perception_module)
-//            {
-//                // Configure the module if there is a 'parameters' group in the config
-//                if (config.readGroup("parameters"))
-//                {
-//                    perception_module->configure(config.limitScope());
-//                    config.endGroup();
-//                }
+                            PluginContainerPtr container(new PluginContainer());
+                            container->setPlugin(plugin, lib);
+                            plugin_containers_.push_back(container);
 
-//                // Add the perception module to the aggregator
-//                perception_aggregator->addPerceptionModule(perception_module);
-//            }
-//        }
-//    }
+                            plugin_loaded = true;
+                        }
+                    }
+                }
+            }  // end iterate plugin paths
+
+            if (!plugin_loaded)
+            {
+                std::cout << "Error: plugin '" << lib << "' could not be loaded." << std::endl;
+            }
+
+        } // end iterate plugins
+    }
 
     // Configure GUI
     if (config.readGroup("gui"))
@@ -173,6 +202,62 @@ void Server::reset()
 
 // ----------------------------------------------------------------------------------------------------
 
+void Server::stepPlugins()
+{
+//    bool world_updated = false;
+
+    std::vector<PluginContainerPtr> finished_plugins;
+
+    // collect all generated hypotheses
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it) {
+        PluginContainerPtr c = *it;
+
+        if (c->stepFinished()) {
+//            UpdateRequestConstPtr update = c->getAndClearUpdateRequest();
+
+//            if (update) {
+//                world_.update(*update);
+//                world_updated = true;
+//            }
+
+            finished_plugins.push_back(c);
+        }
+    }
+
+//    if (!world_copy_ || world_updated) {
+//        //        world_copy_ = WorldModelPtr(new WorldModel(world_));
+//        Query query;
+//        query.get_shapes = true;
+//        query.get_transforms = true;
+//        query.min_time = 0;
+
+//        std::stringstream stream;
+//        OArchive m(stream, SerializerNew::VERSION);
+//        vwm::SerializerNew::serialize(world_, m, query);
+
+//        IArchive m_out(stream);
+//        std::stringstream error;
+//        WorldModelPtr world_copy_temp;
+//        SerializerNew::deserialize(m_out, world_copy_temp, error);
+
+//        boost::lock_guard<boost::mutex> lg(mutex_world_copy_);
+//        world_copy_ = world_copy_temp;
+//    }
+
+    if (!finished_plugins.empty())
+    {
+        WorldModelPtr world_model(new WorldModel());
+        world_model->setEntities(entities_);
+
+        for(std::vector<PluginContainerPtr>::iterator it = finished_plugins.begin(); it != finished_plugins.end(); ++it) {
+            PluginContainerPtr c = *it;
+            c->threadedStep(world_model);
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void Server::updateGUI()
 {
     // GUI update
@@ -219,6 +304,8 @@ void Server::update()
         tue::ScopedTimer t(profiler_, "map publisher");
         map_pub_.publishMap(entities_);
     }
+
+    stepPlugins();
 
     pub_profile_.publish();
 }

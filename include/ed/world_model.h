@@ -25,6 +25,8 @@ public:
 
     entity_const_iterator end() const { return entities_.end(); }
 
+    void setEntities(const std::map<UUID, EntityConstPtr>& entities) { entities_ = entities; }
+
 private:
 
     std::map<UUID, EntityConstPtr> entities_;
