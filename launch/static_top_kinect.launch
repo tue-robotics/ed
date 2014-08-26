@@ -6,7 +6,7 @@
 <include file="$(find amigo_launch_files)/launch/sensors/top_kinect.launch"/>
 
 <!-- RGBD SERVER -->
-<node name="rgbd" pkg="rgbd" type="server" output="screen">
+<node name="rgbd" pkg="rgbd" type="rgbd_server" output="screen">
     <remap from="rgb_image" to="/amigo/top_kinect/rgb/image_color" />
     <remap from="depth_image" to="/amigo/top_kinect/depth_registered/image" />
     <remap from="cam_info" to="/amigo/top_kinect/rgb/camera_info" />
