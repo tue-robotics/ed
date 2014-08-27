@@ -10,6 +10,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/common/transforms.h>
+#include <pcl/common/common.h>
 
 #include <opencv2/highgui/highgui.hpp>
 

@@ -4,6 +4,7 @@
 #include <rgbd/types.h>
 #include <geolib/datatypes.h>
 #include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 #include <opencv/cv.h>
 

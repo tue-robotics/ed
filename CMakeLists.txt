@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
 #  libsiftfast
   rgbd
-  pcl
+  pcl_conversions
   roscpp
   roslib
   std_srvs
@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 
 # Generate messages in the 'msg' folder
@@ -58,6 +59,7 @@ catkin_package()
 
 include_directories(
     include
+    ${PCL_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
 )
 
@@ -78,7 +80,7 @@ add_library(ed_core
     src/helpers/clipper/clipper.cpp
     ${HEADER_FILES}
 )
-target_link_libraries(ed_core ${catkin_LIBRARIES})
+target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(ed_core ${PROJECT_NAME}_gencpp)
 
 add_library(ed_perception

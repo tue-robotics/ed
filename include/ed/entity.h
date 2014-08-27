@@ -4,6 +4,7 @@
 #include "ed/types.h"
 
 #include <boost/circular_buffer.hpp>
+#include <ros/ros.h>
 
 namespace ed
 {

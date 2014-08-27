@@ -4,6 +4,7 @@
 #include <pcl/point_types.h>
 #include <rgbd/types.h>
 #include <geolib/datatypes.h>
+#include <pcl/pcl_base.h>
 
 namespace ed
 {
