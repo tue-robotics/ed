@@ -51,7 +51,12 @@ generate_messages(
 ###################################
 ## catkin specific configuration ##
 ###################################
-catkin_package()
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ed_core ed_io
+    CATKIN_DEPENDS tue_config tue_serialization
+#  DEPENDS system_lib
+)
 
 ###########
 ## Build ##
@@ -100,6 +105,7 @@ add_library(ed_io
     src/io/transport/probe.cpp
     src/io/transport/probe_ros.cpp
 )
+target_link_libraries(ed_io ed_core)
 add_dependencies(ed_io ${PROJECT_NAME}_gencpp)
 
 add_library(ed_association
