@@ -183,7 +183,7 @@ void calculatePointCloudNormals(RGBDData& output, int k_search)
 
     output.point_cloud_with_normals = pcl::PointCloud<pcl::PointNormal>::Ptr(new pcl::PointCloud<pcl::PointNormal>);
 
-    if (output.point_cloud->points.size() == 0)
+    if (output.point_cloud->points.size() < 3)
         return;
 
     pcl::NormalEstimation<pcl::PointXYZ, pcl::PointNormal> norm_est;
@@ -309,7 +309,7 @@ pcl::PointCloud<pcl::PointNormal>::ConstPtr pclToNpcl(const pcl::PointCloud<pcl:
 {
     pcl::PointCloud<pcl::PointNormal>::Ptr npcl(new pcl::PointCloud<pcl::PointNormal>);
 
-    if (pcl->points.size() == 0) {
+    if (pcl->points.size() < 3) {
         return npcl;
     }
 
