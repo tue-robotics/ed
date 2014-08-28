@@ -97,6 +97,8 @@ add_library(ed_io
     src/serialization/serialization.cpp
     src/io/filesystem/read.cpp
     src/io/filesystem/write.cpp
+    src/io/transport/probe.cpp
+    src/io/transport/probe_ros.cpp
 )
 add_dependencies(ed_io ${PROJECT_NAME}_gencpp)
 
