@@ -6,6 +6,8 @@
 
 #include <tue/config/configuration.h>
 
+#include <ros/service_client.h>
+
 namespace ed
 {
 
@@ -22,8 +24,16 @@ public:
 
     void configure(tue::Configuration config);
 
-    void process(const tue::serialization::OutputArchive& req,
+    bool process(std::stringstream& req,
                  tue::serialization::InputArchive& res);
+
+    const std::string& probeName() const { return probe_name_; }
+
+private:
+
+    std::string probe_name_;
+
+    ros::ServiceClient srv_probe_;
 
 };
 
