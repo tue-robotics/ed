@@ -98,8 +98,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
             if (!config.value("lib", lib))
                 continue;
 
-            bool plugin_loaded = false;
-
             std::string lib_file;
             for(std::vector<std::string>::const_iterator it = plugin_paths_.begin(); it != plugin_paths_.end(); ++it)
             {
@@ -113,38 +111,20 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
             if (!lib_file.empty())
             {
-                // Load the library
-                class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(lib_file);
-                plugin_loaders_.push_back(class_loader);
-
-                // Create plugin
-                class_loader->loadLibrary();
-                std::vector<std::string> classes = class_loader->getAvailableClasses<ed::Plugin>();
-
-                if (classes.empty())
+                std::string error;
+                PluginPtr plugin = loadPlugin(name, lib_file, error);
+                if (plugin)
                 {
-                    config.addError("Could not find any plugins in '" + class_loader->getLibraryPath() + "'." );
-                } else if (classes.size() > 1)
-                {
-                    config.addError("Multiple plugins registered in '" + class_loader->getLibraryPath() + "'.");
-                } else
-                {
-                    PluginPtr plugin = class_loader->createInstance<Plugin>(classes.front());
-                    if (plugin)
+                    // Configure the module if there is a 'parameters' group in the config
+                    if (config.readGroup("parameters"))
                     {
-                        // Configure the module if there is a 'parameters' group in the config
-                        if (config.readGroup("parameters"))
-                        {
-                            plugin->configure(config.limitScope());
-                            config.endGroup();
-                        }
-
-                        PluginContainerPtr container(new PluginContainer());
-                        container->setPlugin(plugin, name);
-                        plugin_containers_.push_back(container);
-
-                        plugin_loaded = true;
+                        plugin->configure(config.limitScope());
+                        config.endGroup();
                     }
+                }
+                else
+                {
+                    config.addError(error);
                 }
             }
             else
@@ -212,6 +192,44 @@ void Server::reset()
 }
 
 // ----------------------------------------------------------------------------------------------------
+
+PluginPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, std::string& error)
+{
+    if (!tue::filesystem::Path(lib_file).exists())
+    {
+        error += "Could not find '" + lib_file + "'.";
+        return PluginPtr();
+    }
+
+    PluginPtr plugin;
+
+    // Load the library
+    class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(lib_file);
+    plugin_loaders_.push_back(class_loader);
+
+    // Create plugin
+    class_loader->loadLibrary();
+    std::vector<std::string> classes = class_loader->getAvailableClasses<ed::Plugin>();
+
+    if (classes.empty())
+    {
+        error += "Could not find any plugins in '" + class_loader->getLibraryPath() + "'.";
+    } else if (classes.size() > 1)
+    {
+        error += "Multiple plugins registered in '" + class_loader->getLibraryPath() + "'.";
+    } else
+    {
+        plugin = class_loader->createInstance<Plugin>(classes.front());
+        if (plugin)
+        {
+            PluginContainerPtr container(new PluginContainer());
+            container->setPlugin(plugin, plugin_name);
+            plugin_containers_.push_back(container);
+        }
+    }
+
+    return plugin;
+}
 
 void Server::stepPlugins()
 {

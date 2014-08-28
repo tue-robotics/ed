@@ -17,8 +17,10 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <ed/event_clock.h>
-
 #include <std_srvs/Empty.h>
+
+// Plugin loading
+#include <ed/LoadPlugin.h>
 
 ed::Server* ed_wm;
 
@@ -128,6 +130,17 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
     }
 
     return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response& res)
+{
+    std::string error;
+    if (!ed_wm->loadPlugin(req.plugin_name, req.library_path, error))
+    {
+        res.error_msg = error;
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -288,6 +301,11 @@ int main(int argc, char** argv)
             ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
                 "/ed/reset", srvReset, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_reset = nh.advertiseService(opt_reset);
+
+    ros::AdvertiseServiceOptions opt_load_plugin =
+            ros::AdvertiseServiceOptions::create<ed::LoadPlugin>(
+                "/ed/load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_load_plugin = nh.advertiseService(opt_load_plugin);
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

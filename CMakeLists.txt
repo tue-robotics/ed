@@ -39,6 +39,7 @@ add_service_files(
    SetClick.srv
    SetLabel.srv
    SimpleQuery.srv
+   LoadPlugin.srv
 )
 
 # Generate added messages and services with any dependencies listed here
@@ -104,6 +105,7 @@ add_library(ed_io
     src/io/filesystem/write.cpp
     src/io/transport/probe.cpp
     src/io/transport/probe_ros.cpp
+    src/io/transport/probe_client.cpp
 )
 target_link_libraries(ed_io ed_core)
 add_dependencies(ed_io ${PROJECT_NAME}_gencpp)

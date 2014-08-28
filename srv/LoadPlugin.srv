@@ -1,0 +1,5 @@
+string plugin_name
+string library_path
+---
+string error_msg
+
