@@ -25,6 +25,7 @@ void PluginContainer::setPlugin(PluginPtr plugin, const std::string& name)
 {
     plugin_ = plugin;
     name_ = name;
+    plugin_->name_ = name;
 }
 
 // --------------------------------------------------------------------------------

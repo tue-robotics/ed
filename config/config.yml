@@ -33,19 +33,19 @@ perception:
 #    -  lib: libodu_finder.so
 #    -  lib: libhuman_contour_matcher.so
 
-plugins:
-- name: hello_world
-  lib: libed_hello_world_plugin.so
-  parameters:
-      text: "Hello world! 1"
-- name: hello_world2
-  lib: libed_hello_world_plugin.so
-  parameters:
-      text: "Hello world! 2"
-- name: hello_world3
-  lib: libed_hello_world_plugin.so
-  parameters:
-      text: "Hello world! 3"
+#plugins:
+#- name: hello_world
+#  lib: libed_hello_world_plugin.so
+#  parameters:
+#      text: "Hello world! 1"
+#- name: hello_world2
+#  lib: libed_hello_world_plugin.so
+#  parameters:
+#      text: "Hello world! 2"
+#- name: hello_world3
+#  lib: libed_hello_world_plugin.so
+#  parameters:
+#      text: "Hello world! 3"
 
 gui:
     enabled: 1

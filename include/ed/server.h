@@ -85,6 +85,7 @@ private:
     //! Merge the entities!
     void mergeEntities(double not_updated_time, double overlap_fraction);
 
+    std::string getFullLibraryPath(const std::string& lib);
 };
 
 }

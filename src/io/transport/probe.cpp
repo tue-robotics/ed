@@ -12,6 +12,7 @@ namespace ed
 
 Probe::Probe()
 {
+    std::cout << "Probe::Probe" << std::endl;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -24,6 +25,8 @@ Probe::~Probe()
 
 void Probe::initialize()
 {
+    std::cout << "Probe::initialize" << std::endl;
+
     ros::NodeHandle nh;
 
     ros::AdvertiseServiceOptions opt_srv =
@@ -49,9 +52,13 @@ void Probe::process(const WorldModel& world, UpdateRequest& req)
 bool Probe::srvCallback(const tue_serialization::BinaryService::Request& ros_req,
                         tue_serialization::BinaryService::Response& ros_res)
 {
-    std::stringstream ss_req;
-    tue::serialization::InputArchive req(ss_req);
+    std::cout << "Probe::srvCallback" << std::endl;
+
+    std::stringstream ss_req;    
     tue::serialization::convert(ros_req.bin.data, ss_req);
+    tue::serialization::InputArchive req(ss_req);
+
+    std::cout << "FOOO: " << ros_req.bin.data.size() << " --- " << ss_req.str().size() << std::endl;
 
     std::stringstream ss_res;
     tue::serialization::OutputArchive res(ss_res, 0);
@@ -59,6 +66,10 @@ bool Probe::srvCallback(const tue_serialization::BinaryService::Request& ros_req
     this->process(*world_, *update_req_, req, res);
 
     tue::serialization::convert(ss_res, ros_res.bin.data);
+
+    std::cout << "Probe::srvCallback - done" << std::endl;
+
+    return true;
 }
 
 }

@@ -20,6 +20,7 @@
 #include <std_srvs/Empty.h>
 
 // Plugin loading
+#include <ed/plugin.h>
 #include <ed/LoadPlugin.h>
 
 ed::Server* ed_wm;
@@ -137,10 +138,17 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response& res)
 {
     std::string error;
-    if (!ed_wm->loadPlugin(req.plugin_name, req.library_path, error))
+    ed::PluginPtr plugin = ed_wm->loadPlugin(req.plugin_name, req.library_path, error);
+    if (!plugin)
     {
         res.error_msg = error;
     }
+    else
+    {
+        plugin->initialize();
+    }
+
+    return true;
 }
 
 // ----------------------------------------------------------------------------------------------------

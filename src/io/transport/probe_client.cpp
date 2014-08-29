@@ -13,7 +13,7 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-ProbeClient::ProbeClient()
+ProbeClient::ProbeClient() : nh_(0)
 {
 }
 
@@ -21,6 +21,7 @@ ProbeClient::ProbeClient()
 
 ProbeClient::~ProbeClient()
 {
+    delete nh_;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -33,8 +34,8 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
         ros::init(remapping_args, "ed_probe_client_" + probe_name);
     }
 
-    ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<ed::LoadPlugin>("/ed/load_plugin");
+    nh_ = new ros::NodeHandle();
+    ros::ServiceClient client = nh_->serviceClient<ed::LoadPlugin>("/ed/load_plugin");
     client.waitForExistence();
 
     ed::LoadPlugin srv;
@@ -60,7 +61,8 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     {
         // Initialize connection with the probe
         probe_name_ = probe_name;
-        srv_probe_ = n.serviceClient<tue_serialization::BinaryService>("/ed/probe/" + probe_name_);
+        srv_probe_ = nh_->serviceClient<tue_serialization::BinaryService>("/ed/probe/" + probe_name_);
+        srv_probe_.waitForExistence();
     }
 }
 
@@ -73,24 +75,40 @@ void ProbeClient::configure(tue::Configuration config)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool ProbeClient::process(std::stringstream& req,
-                          tue::serialization::InputArchive& res)
+bool ProbeClient::process(tue::serialization::Archive& req, tue::serialization::Archive& res)
 {
+    std::cout << "ProbeClient::process" << std::endl;
+
     if (!srv_probe_.exists())
+    {
+        std::cout << "Service does not exist" << std::endl;
         return false;
+    }
 
     tue_serialization::BinaryService srv;
     tue::serialization::convert(req, srv.request.bin.data);
 
+    std::cout << "BLAA: " << req.stream().str().size() << " - " << srv.request.bin.data.size() << std::endl;
+
+    std::cout << srv_probe_.getService() << std::endl;
+
     if (srv_probe_.call(srv))
     {
-        std::stringstream ss_res;
-        tue::serialization::InputArchive res(ss_res);
-        tue::serialization::convert(srv.response.bin.data, ss_res);
+        std::cout << "Response: " << srv.response.bin.data.size() << std::endl;
+
+//        std::stringstream ss_res;
+//        tue::serialization::InputArchive res(ss_res);
+        tue::serialization::convert(srv.response.bin.data, res);
+//        int version;
+//        res >> version;
+
+        std::cout << "ProbeClient::process: " << res.stream().str().size() << std::endl;
+
         return true;
     }
     else
     {
+        std::cout << "Service call failed" << std::endl;
         return false;
     }
 }

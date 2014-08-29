@@ -38,6 +38,22 @@ Server::~Server()
 
 // ----------------------------------------------------------------------------------------------------
 
+std::string Server::getFullLibraryPath(const std::string& lib)
+{
+    for(std::vector<std::string>::const_iterator it = plugin_paths_.begin(); it != plugin_paths_.end(); ++it)
+    {
+        std::string lib_file_test = *it + "/" + lib;
+        if (tue::filesystem::Path(lib_file_test).exists())
+        {
+            return lib_file_test;
+        }
+    }
+
+    return "";
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void Server::configure(tue::Configuration& config, bool reconfigure)
 {
     // For now, do not reconfigure perception
@@ -98,40 +114,23 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
             if (!config.value("lib", lib))
                 continue;
 
-            std::string lib_file;
-            for(std::vector<std::string>::const_iterator it = plugin_paths_.begin(); it != plugin_paths_.end(); ++it)
+            std::string error;
+            PluginPtr plugin = loadPlugin(name, lib, error);
+            if (plugin)
             {
-                std::string lib_file_test = *it + "/" + lib;
-                if (tue::filesystem::Path(lib_file_test).exists())
+                // Configure the module if there is a 'parameters' group in the config
+                if (config.readGroup("parameters"))
                 {
-                    lib_file = lib_file_test;
-                    break;
+                    plugin->configure(config.limitScope());
+                    config.endGroup();
                 }
-            }
 
-            if (!lib_file.empty())
-            {
-                std::string error;
-                PluginPtr plugin = loadPlugin(name, lib_file, error);
-                if (plugin)
-                {
-                    // Configure the module if there is a 'parameters' group in the config
-                    if (config.readGroup("parameters"))
-                    {
-                        plugin->configure(config.limitScope());
-                        config.endGroup();
-                    }
-                }
-                else
-                {
-                    config.addError(error);
-                }
+                plugin->initialize();
             }
             else
             {
-                config.addError("Library '" + lib + "' could not be found.");
+                config.addError(error);
             }
-
         } // end iterate plugins
 
         config.endArray();
@@ -195,16 +194,33 @@ void Server::reset()
 
 PluginPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, std::string& error)
 {
-    if (!tue::filesystem::Path(lib_file).exists())
+    if (lib_file.empty())
     {
-        error += "Could not find '" + lib_file + "'.";
+        error += "Empty library file given.";
+        return PluginPtr();
+    }
+
+    std::string full_lib_file = lib_file;
+    if (lib_file[0] != '/')
+    {
+        // library file is relative
+        full_lib_file = getFullLibraryPath(lib_file);
+        if (full_lib_file.empty())
+        {
+            error += "Could not find '" + lib_file + "'.";
+        }
+    }
+
+    if (!tue::filesystem::Path(full_lib_file).exists())
+    {
+        error += "Could not find '" + full_lib_file + "'.";
         return PluginPtr();
     }
 
     PluginPtr plugin;
 
     // Load the library
-    class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(lib_file);
+    class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(full_lib_file);
     plugin_loaders_.push_back(class_loader);
 
     // Create plugin

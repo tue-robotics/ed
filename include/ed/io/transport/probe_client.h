@@ -1,8 +1,7 @@
 #ifndef ED_PROBE_CLIENT_H_
 #define ED_PROBE_CLIENT_H_
 
-#include <tue/serialization/input_archive.h>
-#include <tue/serialization/output_archive.h>
+#include <tue/serialization/archive.h>
 
 #include <tue/config/configuration.h>
 
@@ -24,12 +23,13 @@ public:
 
     void configure(tue::Configuration config);
 
-    bool process(std::stringstream& req,
-                 tue::serialization::InputArchive& res);
+    bool process(tue::serialization::Archive& req, tue::serialization::Archive& res);
 
     const std::string& probeName() const { return probe_name_; }
 
 private:
+
+    ros::NodeHandle* nh_;
 
     std::string probe_name_;
 

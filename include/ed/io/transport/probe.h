@@ -38,7 +38,7 @@ public:
 
     virtual void process(const WorldModel& world,
                          UpdateRequest& update,
-                         const tue::serialization::InputArchive& req,
+                         tue::serialization::InputArchive& req,
                          tue::serialization::OutputArchive& res) {}
 
 private:

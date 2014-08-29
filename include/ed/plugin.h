@@ -14,6 +14,8 @@ struct UpdateRequest;
 class Plugin
 {
 
+    friend class PluginContainer;
+
 public:
 
     virtual void configure(tue::Configuration config) {}
