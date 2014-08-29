@@ -77,8 +77,6 @@ void ProbeClient::configure(tue::Configuration config)
 
 bool ProbeClient::process(tue::serialization::Archive& req, tue::serialization::Archive& res)
 {
-    std::cout << "ProbeClient::process" << std::endl;
-
     if (!srv_probe_.exists())
     {
         std::cout << "Service does not exist" << std::endl;
@@ -88,22 +86,9 @@ bool ProbeClient::process(tue::serialization::Archive& req, tue::serialization::
     tue_serialization::BinaryService srv;
     tue::serialization::convert(req, srv.request.bin.data);
 
-    std::cout << "BLAA: " << req.stream().str().size() << " - " << srv.request.bin.data.size() << std::endl;
-
-    std::cout << srv_probe_.getService() << std::endl;
-
     if (srv_probe_.call(srv))
     {
-        std::cout << "Response: " << srv.response.bin.data.size() << std::endl;
-
-//        std::stringstream ss_res;
-//        tue::serialization::InputArchive res(ss_res);
         tue::serialization::convert(srv.response.bin.data, res);
-//        int version;
-//        res >> version;
-
-        std::cout << "ProbeClient::process: " << res.stream().str().size() << std::endl;
-
         return true;
     }
     else
