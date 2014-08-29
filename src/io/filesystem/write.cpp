@@ -23,7 +23,7 @@ bool write(const std::string& filename, const Measurement& msr)
         f_out.open(filename_image.c_str(), std::ifstream::binary);
         if (f_out.is_open())
         {
-            tue::serialization::OutputArchive a_out(f_out, 0);
+            tue::serialization::OutputArchive a_out(f_out);
             rgbd::serialize(*msr.image(), a_out);
         }
         else
@@ -39,7 +39,7 @@ bool write(const std::string& filename, const Measurement& msr)
         f_out.open(filename_mask.c_str(), std::ifstream::binary);
         if (f_out.is_open())
         {
-            tue::serialization::OutputArchive a_out(f_out, 0);
+            tue::serialization::OutputArchive a_out(f_out);
             ed::serialize(msr.imageMask(), a_out);
         }
         else

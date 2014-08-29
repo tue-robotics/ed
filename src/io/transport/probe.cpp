@@ -56,7 +56,7 @@ bool Probe::srvCallback(const tue_serialization::BinaryService::Request& ros_req
     tue::serialization::InputArchive req(ss_req);
 
     std::stringstream ss_res;
-    tue::serialization::OutputArchive res(ss_res, 0);
+    tue::serialization::OutputArchive res(ss_res);
 
     this->process(*world_, *update_req_, req, res);
 
