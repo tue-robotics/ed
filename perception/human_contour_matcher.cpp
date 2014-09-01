@@ -27,7 +27,8 @@
 
     Example:
 
-        rosrun ed test-perception `rospack find ed`/lib/libhuman_contour_matcher.so `rospack find ed_data_storage`/rgbd_measurements
+        rosbuild:   rosrun ed test-perception `rospack find ed`/lib/libhuman_contour_matcher.so `rospack find ed_data_storage`/rgbd_measurements
+        catkin:     rosrun ed test-perception ~/ros/groovy/catkin_ws/devel/lib/libhuman_contour_matcher.so `rospack find ed_data_storage`/rgbd_measurements
 
     And press space to go to the next measurements.
 
