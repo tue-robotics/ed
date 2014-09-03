@@ -33,11 +33,18 @@ perception:
 #    -  lib: libodu_finder.so
 #    -  lib: libhuman_contour_matcher.so
 
-#plugins:
-#- name: hello_world
-#  lib: libed_hello_world_plugin.so
-#  parameters:
-#      text: "Hello world! 1"
+plugins:
+- name: occupancy_grid_publisher
+  lib: libed_occupancy_grid_publisher_plugin.so
+  parameters:
+      frequency: 10
+      size_x: 20.0
+      size_y: 20.8
+      resolution: 0.05
+      origin_x: -6.5
+      origin_y: -6.5
+      topic: /ed_map
+      frame_id: /map
 #- name: hello_world2
 #  lib: libed_hello_world_plugin.so
 #  parameters:
@@ -62,12 +69,3 @@ gui:
     cam_y: 4.4
     cam_z: 10.0
 
-map_publisher:
-    frequency: 10
-    size_x: 20.0
-    size_y: 20.8
-    resolution: 0.05
-    origin_x: -6.5
-    origin_y: -6.5
-    topic: /ed_map
-    frame_id: /map

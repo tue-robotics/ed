@@ -1,25 +1,17 @@
-#include "ed/plugins/map_publisher.h"
+#include "occupancy_grid_publisher_plugin.h"
 
-#include <ros/node_handle.h>
+//#include <ros/node_handle.h>
 #include <nav_msgs/OccupancyGrid.h>
 
 #include <geolib/ros/msg_conversions.h>
 #include <geolib/Shape.h>
 
-#include "ed/entity.h"
-
-namespace ed
-{
+#include <ed/world_model.h>
+#include <ed/entity.h>
 
 // ----------------------------------------------------------------------------------------------------
 
-MapPublisher::MapPublisher()
-{
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void MapPublisher::configure(tue::Configuration config)
+void OccupancyGridPublisherPlugin::configure(tue::Configuration config)
 {
     config.value("frequency", frequency_);
 
@@ -32,49 +24,52 @@ void MapPublisher::configure(tue::Configuration config)
     config.value("origin_y", origin_.y);
     origin_.z = 0;
 
+    std::string old_topic = topic_;
     config.value("topic", topic_);
     config.value("frame_id", frame_id_);
 
     width_ = size_x_ / res_;
     height_ = size_y_ / res_;
 
+    //! Re-initialize if topic has changed
+    if (old_topic != "" && topic_ != old_topic)
+    {
+        initialize();
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void OccupancyGridPublisherPlugin::initialize()
+{
     //! Initialize occupancy map publisher
     ros::NodeHandle nh;
     map_pub_ = nh.advertise<nav_msgs::OccupancyGrid>(topic_, 0, false);
 
-    std::cout << "Map publisher: \n" <<
-                 "- frequency: " << frequency_ << "\n" <<
-                 "- size_x: " << size_x_ << "\n" <<
-                 "- size_y: " << size_y_ << "\n" <<
-                 "- resolution: " << res_ << "\n" <<
-                 "- topic: " << topic_ << "\n" <<
-                 "- frame_id: " << frame_id_ << std::endl;
+//    std::cout << "Map publisher: \n" <<
+//                 "- frequency: " << frequency_ << "\n" <<
+//                 "- size_x: " << size_x_ << "\n" <<
+//                 "- size_y: " << size_y_ << "\n" <<
+//                 "- resolution: " << res_ << "\n" <<
+//                 "- topic: " << topic_ << "\n" <<
+//                 "- frame_id: " << frame_id_ << std::endl;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-MapPublisher::~MapPublisher()
-{
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void MapPublisher::publishMap(const std::map<UUID, EntityConstPtr>& entities)
+void OccupancyGridPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {
     cv::Mat map = cv::Mat::zeros(height_, width_, CV_8U);
 
-    for(std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it) {
-
-        updateMap(it->second, map);
-
-    }
+    for(std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = world.begin(); it != world.end(); ++it)
+         updateMap(it->second, map);
 
     publishMapMsg(map);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void MapPublisher::publishMapMsg(const cv::Mat& map)
+void OccupancyGridPublisherPlugin::publishMapMsg(const cv::Mat& map)
 {
     nav_msgs::OccupancyGrid map_msg;
     geo::convert(origin_, map_msg.info.origin.position);
@@ -105,7 +100,7 @@ void MapPublisher::publishMapMsg(const cv::Mat& map)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool MapPublisher::worldToMap(double wx, double wy, int& mx, int& my) const
+bool OccupancyGridPublisherPlugin::worldToMap(double wx, double wy, int& mx, int& my) const
 {
     if (wx < origin_.x || wy < origin_.y)
         return false;
@@ -121,15 +116,7 @@ bool MapPublisher::worldToMap(double wx, double wy, int& mx, int& my) const
 
 // ----------------------------------------------------------------------------------------------------
 
-void MapPublisher::mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const
-{
-    wx = origin_.x + (mx + 0.5) * res_;
-    wy = origin_.y + (my + 0.5) * res_;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void MapPublisher::updateMap(const EntityConstPtr& e, cv::Mat& map)
+void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Mat& map)
 {
     geo::ShapeConstPtr shape = e->shape();
     if (shape)  // Do shape
@@ -181,4 +168,15 @@ void MapPublisher::updateMap(const EntityConstPtr& e, cv::Mat& map)
 
 // ----------------------------------------------------------------------------------------------------
 
+void OccupancyGridPublisherPlugin::mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const
+{
+    wx = origin_.x + (mx + 0.5) * res_;
+    wy = origin_.y + (my + 0.5) * res_;
 }
+
+// ----------------------------------------------------------------------------------------------------
+
+ED_REGISTER_PLUGIN(OccupancyGridPublisherPlugin)
+
+
+

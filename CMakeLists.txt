@@ -193,18 +193,14 @@ add_executable(ed_server
     src/server.cpp
     src/plugin_container.cpp
 )
-target_link_libraries(ed_server ed_core ed_perception ed_association ed_segmentation ed_io ed_kinect ed_gui ed_visualization map_publisher)
+target_link_libraries(ed_server ed_core ed_perception ed_association ed_segmentation ed_io ed_kinect ed_gui ed_visualization)
 add_dependencies(ed_server ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
 # ------------------------------------------------------------------------------------------------
 
-add_library(map_publisher
-    src/plugins/map_publisher.cpp
-)
-target_link_libraries(map_publisher ed_core)
-
+add_library(ed_occupancy_grid_publisher_plugin plugins/occupancy_grid_publisher_plugin.cpp)
 add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
 add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
 add_library(ed_gui_plugin plugins/gui_plugin.cpp)

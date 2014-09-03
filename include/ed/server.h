@@ -15,8 +15,6 @@
 #include <tue/profiling/profiler.h>
 #include <tue/profiling/ros/profile_publisher.h>
 
-#include <ed/plugins/map_publisher.h>
-
 namespace ed
 {
 
@@ -69,9 +67,6 @@ private:
     //! GUI
     bool gui_enabled_;
     GUIServer gui_server_;
-
-    //! Map publisher
-    MapPublisher map_pub_;
 
     //! Visualization
     ros::Publisher vis_pub_;

@@ -148,13 +148,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
     config.value("visualize", visualize_);
 
-    // Configure Map publisher
-    if (config.readGroup("map_publisher"))
-    {
-        map_pub_.configure(config);
-        config.endGroup();
-    }
-
     // Initialize profiler
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
@@ -342,12 +335,6 @@ void Server::update()
     {
         tue::ScopedTimer t(profiler_, "merge entities");
         mergeEntities(5.0, 0.5);
-    }
-
-    // Publish the Map
-    {
-        tue::ScopedTimer t(profiler_, "map publisher");
-        map_pub_.publishMap(entities_);
     }
 
     pub_profile_.publish();
