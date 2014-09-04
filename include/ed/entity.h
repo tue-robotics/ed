@@ -33,6 +33,8 @@ public:
     inline geo::ShapeConstPtr shape() const { return shape_; }
     void setShape(geo::ShapePtr shape);
 
+    inline int shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
+
     inline const ConvexHull2D& convexHull() const { return convex_hull_; }
     void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
 
@@ -55,6 +57,7 @@ private:
     unsigned int measurements_seq_;
 
     geo::ShapePtr shape_;
+    int shape_revision_;
     ConvexHull2D convex_hull_;
 
     geo::Pose3D pose_;

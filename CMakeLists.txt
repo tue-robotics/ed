@@ -134,11 +134,6 @@ add_library(ed_visualization
 )
 add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
 
-add_library(ed_gui
-    src/perception/label_gui_server.cpp
-)
-add_dependencies(ed_gui ${PROJECT_NAME}_gencpp)
-
 # ------------------------------------------------------------------------------------------------
 #                                          PERCEPTION MODULES
 # ------------------------------------------------------------------------------------------------
@@ -193,7 +188,7 @@ add_executable(ed_server
     src/server.cpp
     src/plugin_container.cpp
 )
-target_link_libraries(ed_server ed_core ed_perception ed_association ed_segmentation ed_io ed_kinect ed_gui ed_visualization)
+target_link_libraries(ed_server ed_core ed_perception ed_association ed_segmentation ed_io ed_kinect ed_visualization)
 add_dependencies(ed_server ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
@@ -237,10 +232,6 @@ add_dependencies(test_sampling ${PROJECT_NAME}_gencpp)
 add_executable(test_human_classifier test/test_human_classifier.cpp)
 target_link_libraries(test_human_classifier human_contour_matcher ${OpenCV_LIBRARIES})
 add_dependencies(test_human_classifier ${PROJECT_NAME}_gencpp)
-
-add_executable(test_label_gui_server test/test_label_gui_server.cpp)
-target_link_libraries(test_label_gui_server ed_core ed_gui ${OpenCV_LIBRARIES})
-add_dependencies(test_label_gui_server ${PROJECT_NAME}_gencpp)
 
 add_executable(test_service_speed test/test_service_speed.cpp)
 target_link_libraries(test_service_speed ed_core)

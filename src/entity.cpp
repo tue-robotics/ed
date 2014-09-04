@@ -12,6 +12,7 @@ namespace ed
 Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size, double creation_time) :
     id_(id),
     type_(type),
+    shape_revision_(0),
     measurements_(measurement_buffer_size),
     measurements_seq_(0),
     creation_time_(creation_time)
@@ -27,7 +28,11 @@ Entity::~Entity()
 
 void Entity::setShape(geo::ShapePtr shape)
 {
-    shape_ = shape;
+    if (shape_ != shape)
+    {
+        ++shape_revision_;
+        shape_ = shape;
+    }
 }
 
 void Entity::addMeasurement(MeasurementConstPtr measurement)

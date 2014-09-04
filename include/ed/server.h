@@ -8,8 +8,6 @@
 
 #include "ed/perception.h"
 
-#include "ed/perception/label_gui_server.h"
-
 #include <tue/config/configuration.h>
 
 #include <tue/profiling/profiler.h>
@@ -32,8 +30,6 @@ public:
     void reset();
 
     void update();
-
-    void updateGUI();
 
     void storeEntityMeasurements(const std::string& path) const;
 
@@ -63,10 +59,6 @@ private:
     //! Profiling
     tue::ProfilePublisher pub_profile_;
     tue::Profiler profiler_;
-
-    //! GUI
-    bool gui_enabled_;
-    GUIServer gui_server_;
 
     //! Visualization
     ros::Publisher vis_pub_;

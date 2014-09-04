@@ -136,16 +136,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         config.endArray();
     }
 
-    // Configure GUI
-    if (config.readGroup("gui"))
-    {
-        if (config.value("enabled", gui_enabled_) && gui_enabled_)
-        {
-            gui_server_.configure(config.limitScope(), reconfigure);
-        }
-        config.endGroup();
-    }
-
     config.value("visualize", visualize_);
 
     // Initialize profiler
@@ -295,16 +285,6 @@ void Server::stepPlugins()
 }
 
 // ----------------------------------------------------------------------------------------------------
-
-void Server::updateGUI()
-{
-    // GUI update
-    if (gui_enabled_)
-    {
-        tue::ScopedTimer t(profiler_, "gui server");
-        gui_server_.update(entities_);
-    }
-}
 
 void Server::update()
 {
