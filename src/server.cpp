@@ -336,8 +336,8 @@ void Server::initializeFloor()
 void Server::initializeWalls()
 {
     ed::models::Loader l;
-    geo::ShapePtr shape = l.loadShape("rwc2014.walls");
-    EntityPtr e(new Entity("rwc2014.walls","rwc2014.walls",0));
+    geo::ShapePtr shape = l.loadShape("robotics_testlab_B.walls");
+    EntityPtr e(new Entity("robotics_testlab_B.walls","robotics_testlab_B.walls",0));
 
     if (shape)
     {
