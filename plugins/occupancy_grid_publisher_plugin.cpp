@@ -88,7 +88,7 @@ void OccupancyGridPublisherPlugin::publishMapMsg(const cv::Mat& map)
             if (c > 0)
                 map_msg.data[i] = c;
             else
-                map_msg.data[i] = 0;
+                map_msg.data[i] = -1;
             ++i;
         }
     }
