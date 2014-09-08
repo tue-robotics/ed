@@ -142,8 +142,12 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
 
-    // Initialize walls and flore
-    initializeWallsAndFloor();
+    std::string world_name;
+    if (config.value("world_name", world_name_))
+        initializeWallsAndFloor();
+    else
+        std::cout << "No world specified in parameter file, cannot initialize walls and floor" << std::endl;
+
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -163,7 +167,6 @@ void Server::reset()
 {
     entities_.clear();
 
-    // Initialize walls and floor
     initializeWallsAndFloor();
 }
 
@@ -319,13 +322,16 @@ void Server::update()
 void Server::initializeWallsAndFloor()
 {
     ed::models::Loader l;
-    geo::ShapePtr shape = l.loadShape("robotics_testlab_B.walls");
-    EntityPtr e(new Entity("robotics_testlab_B.walls","robotics_testlab_B.walls",0));
+    geo::Pose3D pose;
+    std::string name = world_name_ + ".walls";
+    geo::ShapePtr shape = l.loadShape(name);
 
     if (shape)
     {
+        EntityPtr e(new Entity(name, "walls", 0));
         e->setShape(shape);
-        e->setPose(geo::Pose3D::identity());
+        pose.setRPY(0,0,0);
+        e->setPose(pose);
         entities_[e->id()] = e;
     }
     else
@@ -335,7 +341,7 @@ void Server::initializeWallsAndFloor()
 
     double size = 1e6;
     shape = geo::ShapePtr(new geo::Box(geo::Vector3(-size, -size, 0.0), geo::Vector3(size, size, 0.1)));
-    e = EntityPtr(new Entity("floor","floor",0));
+    EntityPtr e(new Entity("floor","floor",0));
     e->setShape(shape);
     e->setPose(geo::Pose3D::identity());
     entities_[e->id()] = e;

@@ -44,6 +44,9 @@ public:
     void stepPlugins();
 
 private:
+    //! World name
+    std::string world_name_;
+
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;
     tf::TransformListener tf_listener_;

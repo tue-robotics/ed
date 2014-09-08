@@ -25,6 +25,7 @@ sensors:
         visualize: 1
 
 visualize: 1
+world_name: robotics_testlab_B
 
 perception:
     fit_shapes: 1
