@@ -1,3 +1,3 @@
 ed : Environment Descriptor
 ==
-![GitHub Logo](/logo.jpg)
+<img src="./logo.jpg" width="100px"/>
