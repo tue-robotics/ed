@@ -141,18 +141,15 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     // Initialize profiler
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
+
+    // Initialize walls and flore
+    initializeWallsAndFloor();
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void Server::initialize()
 {
-    // Initialize floor
-    initializeFloor();
-
-    // Initialize walls
-    initializeWalls();
-
     // Initialize visualization
     if (visualize_) {
         ros::NodeHandle nh;
@@ -166,11 +163,8 @@ void Server::reset()
 {
     entities_.clear();
 
-    // Initialize floor
-    initializeFloor();
-
-    // Initialize walls
-    initializeWalls();
+    // Initialize walls and floor
+    initializeWallsAndFloor();
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -322,18 +316,7 @@ void Server::update()
 
 // ----------------------------------------------------------------------------------------------------
 
-void Server::initializeFloor()
-{
-    geo::ShapePtr shape(new geo::Box(geo::Vector3(-20, -20, -0.01), geo::Vector3(20, 20, 0)));
-    EntityPtr e(new Entity("floor","floor",0));
-    e->setShape(shape);
-    e->setPose(geo::Pose3D::identity());
-    entities_[e->id()] = e;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void Server::initializeWalls()
+void Server::initializeWallsAndFloor()
 {
     ed::models::Loader l;
     geo::ShapePtr shape = l.loadShape("robotics_testlab_B.walls");
@@ -350,23 +333,12 @@ void Server::initializeWalls()
         std::cout << "Could not initialize walls ..." << std::endl;
     }
 
-    // Other objects
-    {
-        geo::ShapePtr shape = l.loadShape("rwc2014.kitchen_table");
-        if (shape)
-        {
-            EntityPtr e(new Entity("kitchen_table", "rwc2014.kitchen_table", 0));
-            e->setShape(shape);
-            e->setPose(geo::Pose3D(3, 5.0, 0, 0, 0, 0));
-            entities_[e->id()] = e;
-
-            std::cout << "LOADED " << shape->getMesh().getTriangleIs().size() << " triangles" << std::endl;
-        }
-        else
-        {
-            std::cout << "Could not initialize kitchen_table" << std::endl;
-        }
-    }
+    double size = 1e6;
+    shape = geo::ShapePtr(new geo::Box(geo::Vector3(-size, -size, 0.0), geo::Vector3(size, size, 0.1)));
+    e = EntityPtr(new Entity("floor","floor",0));
+    e->setShape(shape);
+    e->setPose(geo::Pose3D::identity());
+    entities_[e->id()] = e;
 }
 
 // ----------------------------------------------------------------------------------------------------
