@@ -40,6 +40,9 @@ add_service_files(
    SetLabel.srv
    SimpleQuery.srv
    LoadPlugin.srv
+
+   # For builder plugin
+   SetEntity.srv
 )
 
 # Generate added messages and services with any dependencies listed here
@@ -80,6 +83,7 @@ file(GLOB_RECURSE HEADER_FILES include/*.h)
 add_library(ed_core
     src/entity.cpp
     src/measurement.cpp
+    src/update_request.cpp
 
     # DDP is used by measurement.cpp, so put here
     src/helpers/depth_data_processing.cpp
@@ -200,6 +204,8 @@ add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
 add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
 add_library(ed_gui_plugin plugins/gui_plugin.cpp)
 add_dependencies(ed_gui_plugin ${PROJECT_NAME}_gencpp)
+
+add_library(ed_builder_plugin plugins/builder_plugin.cpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
