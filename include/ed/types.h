@@ -29,7 +29,7 @@ class WorldModel;
 typedef boost::shared_ptr<WorldModel> WorldModelPtr;
 typedef boost::shared_ptr<const WorldModel> WorldModelConstPtr;
 
-struct UpdateRequest;
+class UpdateRequest;
 typedef boost::shared_ptr<UpdateRequest> UpdateRequestPtr;
 typedef boost::shared_ptr<const UpdateRequest> UpdateRequestConstPtr;
 

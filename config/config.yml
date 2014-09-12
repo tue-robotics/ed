@@ -35,6 +35,8 @@ perception:
 #    -  lib: libhuman_contour_matcher.so
 
 plugins:
+- name: builder
+  lib: libed_builder_plugin.so
 - name: occupancy_grid_publisher
   lib: libed_occupancy_grid_publisher_plugin.so
   parameters:
@@ -46,6 +48,10 @@ plugins:
       origin_y: -6.5
       topic: /ed_map
       frame_id: /map
+#- name: tf_publisher
+#  lib: libed_tf_publisher_plugin.so
+#  parameters:
+#      root_frame_id: /map
 #- name: hello_world2
 #  lib: libed_hello_world_plugin.so
 #  parameters:

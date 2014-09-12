@@ -31,6 +31,8 @@ public:
 
     void update();
 
+    void update(const UpdateRequest& update_req);
+
     void storeEntityMeasurements(const std::string& path) const;
 
     int size() const { return entities_.size(); }

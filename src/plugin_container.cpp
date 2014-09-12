@@ -40,6 +40,9 @@ void PluginContainer::setPlugin(PluginPtr plugin, const std::string& name)
 
 void PluginContainer::step()
 {
+    // Clear update request
+    update_request_ = UpdateRequest();
+
     plugin_->process(*world_, update_request_);
     step_finished_ = true;
 }

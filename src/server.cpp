@@ -238,6 +238,9 @@ void Server::stepPlugins()
         PluginContainerPtr c = *it;
 
         if (c->stepFinished()) {
+            const UpdateRequest& update_req = c->updateRequest();
+            update(update_req);
+
 //            UpdateRequestConstPtr update = c->getAndClearUpdateRequest();
 
 //            if (update) {
@@ -315,6 +318,23 @@ void Server::update()
     }
 
     pub_profile_.publish();
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void Server::update(const UpdateRequest& update_req)
+{
+    // Update entities
+    for(std::map<UUID, EntityConstPtr>::const_iterator it = update_req.entities.begin(); it != update_req.entities.end(); ++it)
+    {
+        entities_[it->first] = it->second;
+    }
+
+    // Remove entities
+    for(std::set<UUID>::const_iterator it = update_req.removed_entities.begin(); it != update_req.removed_entities.end(); ++it)
+    {
+        entities_.erase(*it);
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------

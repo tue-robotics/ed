@@ -34,6 +34,8 @@ public:
 
     const std::string& name() const { return name_; }
 
+    const UpdateRequest& updateRequest() const { return update_request_; }
+
 protected:
 
     PluginPtr plugin_;
