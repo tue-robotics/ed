@@ -198,7 +198,7 @@ add_dependencies(ed_server ${PROJECT_NAME}_gencpp)
 # ------------------------------------------------------------------------------------------------
 
 add_library(ed_occupancy_grid_publisher_plugin plugins/occupancy_grid_publisher_plugin.cpp)
-add_dependencies(ed_occupancy_grid_publisher ${PROJECT_NAME}_gencpp)
+add_dependencies(ed_occupancy_grid_publisher_plugin ${PROJECT_NAME}_gencpp)
 
 add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
 
