@@ -212,6 +212,7 @@ add_library(ed_gui_plugin plugins/gui_plugin.cpp)
 add_dependencies(ed_gui_plugin ${PROJECT_NAME}_gencpp)
 
 add_library(ed_builder_plugin plugins/builder_plugin.cpp)
+add_dependencies(ed_builder_plugin ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
