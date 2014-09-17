@@ -8,7 +8,7 @@ namespace ed
 // --------------------------------------------------------------------------------
 
 PluginContainer::PluginContainer()
-    : cycle_duration_(0.1), step_finished_(true)
+    : cycle_duration_(0.1), step_finished_(true), t_last_update_(0)
 {
     timer_.start();
 }
