@@ -31,7 +31,7 @@ public:
     void addMeasurement(MeasurementConstPtr measurement);
 
     inline geo::ShapeConstPtr shape() const { return shape_; }
-    void setShape(geo::ShapePtr shape);
+    void setShape(const geo::ShapeConstPtr& shape);
 
     inline int shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
 
@@ -56,7 +56,7 @@ private:
     MeasurementConstPtr best_measurement_;
     unsigned int measurements_seq_;
 
-    geo::ShapePtr shape_;
+    geo::ShapeConstPtr shape_;
     int shape_revision_;
     ConvexHull2D convex_hull_;
 

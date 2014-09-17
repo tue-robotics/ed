@@ -26,7 +26,7 @@ Entity::~Entity()
 //    std::cout << "Removing entity with ID: " << id_ << std::endl;
 }
 
-void Entity::setShape(geo::ShapePtr shape)
+void Entity::setShape(const geo::ShapeConstPtr& shape)
 {
     if (shape_ != shape)
     {
