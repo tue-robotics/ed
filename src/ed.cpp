@@ -277,17 +277,26 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    // Get the ED directory
-    std::string ed_dir = ros::package::getPath("ed");
-
-    // Load the YAML config file
     tue::Configuration config;
-    config.loadFromYAMLFile(ed_dir + "/config/config.yml");
+
+    // Check if a config file was provided. If so, load it. If not, load a default config.
+    if (argc >= 2)
+    {
+        std::string yaml_filename = argv[1];
+        config.loadFromYAMLFile(yaml_filename);
+    }
+    else
+    {
+        // Get the ED directory
+        std::string ed_dir = ros::package::getPath("ed");
+
+        // Load the YAML config file
+        config.loadFromYAMLFile(ed_dir + "/config/config.yml");
+    }
 
     // Configure ED
     ed_wm->configure(config);
 
-    //! TODO: This does not work yet! (broken yaml file fails somewhere else but we do not receive an error here)
     if (config.hasError())
     {
         std::cout << std::endl << "Error during configuration:" << std::endl << std::endl << config.error() << std::endl;
@@ -331,7 +340,6 @@ int main(int argc, char** argv)
 
     ros::Rate r(100);
     while(ros::ok()) {
-
         cb_queue.callAvailable();
 
         // Check if configuration has changed. If so, call reconfigure
