@@ -41,11 +41,11 @@ plugins:
   lib: libed_occupancy_grid_publisher_plugin.so
   parameters:
       frequency: 10
-      size_x: 20.0
-      size_y: 20.8
+      size_x: 50.0
+      size_y: 50.0
       resolution: 0.05
-      origin_x: -6.5
-      origin_y: -6.5
+      origin_x: -16.5
+      origin_y: -16.5
       topic: /ed_map
       frame_id: /map
 #- name: tf_publisher
