@@ -43,8 +43,6 @@ private:
     std::string topic_;
 
     geo::Vector3 origin_;
-
-    double size_x_, size_y_;
     int width_, height_;
 
     double res_;

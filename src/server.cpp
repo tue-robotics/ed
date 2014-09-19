@@ -359,8 +359,8 @@ void Server::initializeWallsAndFloor()
         std::cout << "Could not initialize walls ..." << std::endl;
     }
 
-    double size = 1e6;
-    shape = geo::ShapePtr(new geo::Box(geo::Vector3(-size, -size, 0.0), geo::Vector3(size, size, 0.1)));
+    double size = 50;
+    shape = geo::ShapePtr(new geo::Box(geo::Vector3(-size, -size, 0.0), geo::Vector3(size, size, 0.001)));
     EntityPtr e(new Entity("floor","floor",0));
     e->setShape(shape);
     e->setPose(geo::Pose3D::identity());
