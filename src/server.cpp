@@ -8,7 +8,7 @@
 
 #include <geolib/Box.h>
 
-#include <ed/models/loader.h>
+#include <ed/models/models.h>
 
 // Storing measurements to disk
 #include "ed/io/filesystem/write.h"
@@ -144,9 +144,9 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
     std::string world_name;
     if (config.value("world_name", world_name_))
-        initializeWallsAndFloor();
+        initializeWorld();
     else
-        std::cout << "No world specified in parameter file, cannot initialize walls and floor" << std::endl;
+        std::cout << "No world specified in parameter file, cannot initialize world" << std::endl;
 
 }
 
@@ -167,7 +167,7 @@ void Server::reset()
 {
     entities_.clear();
 
-    initializeWallsAndFloor();
+    initializeWorld();
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -339,32 +339,20 @@ void Server::update(const UpdateRequest& update_req)
 
 // ----------------------------------------------------------------------------------------------------
 
-void Server::initializeWallsAndFloor()
+void Server::initializeWorld()
 {
-    ed::models::Loader l;
-    geo::Pose3D pose;
-    std::string name = world_name_ + ".walls";
-    geo::ShapePtr shape = l.loadShape(name);
+    models::NewEntityPtr e = ed::models::load(world_name_);
 
-    if (shape)
+    std::vector<EntityPtr> entities;
+    if (ed::models::convertNewEntityToEntities(e, entities))
     {
-        EntityPtr e(new Entity(name, "walls", 0));
-        e->setShape(shape);
-        pose.setRPY(0,0,0);
-        e->setPose(pose);
-        entities_[e->id()] = e;
+        for (std::vector<EntityPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+            entities_[(*it)->id()] = *it;
     }
     else
     {
-        std::cout << "Could not initialize walls ..." << std::endl;
+        std::cout << "initializeWorld() : Failed to convert new type to old type" << std::endl;
     }
-
-    double size = 50;
-    shape = geo::ShapePtr(new geo::Box(geo::Vector3(-size, -size, 0.0), geo::Vector3(size, size, 0.001)));
-    EntityPtr e(new Entity("floor","floor",0));
-    e->setShape(shape);
-    e->setPose(geo::Pose3D::identity());
-    entities_[e->id()] = e;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -395,6 +383,10 @@ void Server::mergeEntities(double not_updated_time, double overlap_fraction)
     for (std::map<UUID, EntityConstPtr>::const_iterator it = entities_.begin(); it != entities_.end(); ++it)
     {
         const EntityConstPtr& e = it->second;
+
+        if (!e->lastMeasurement())
+            continue;
+
         if (e->shape() || std::find(merge_target_ids.begin(), merge_target_ids.end(), e->id()) != merge_target_ids.end() )
             continue;
 
@@ -408,12 +400,12 @@ void Server::mergeEntities(double not_updated_time, double overlap_fraction)
                     continue;
 
                 const EntityConstPtr& e_target = e_it->second;
+                MeasurementConstPtr last_m = e_target->lastMeasurement();
 
-                // Skip entities with shape
-                if (e_target->shape())
+                if (!last_m)
                     continue;
 
-                if (ros::Time::now().toSec() - e_target->lastMeasurement()->timestamp() < not_updated_time)
+                if (ros::Time::now().toSec() - last_m->timestamp() < not_updated_time)
                     continue;
 
                 double overlap_factor;

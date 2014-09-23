@@ -71,7 +71,7 @@ private:
 
     //! Entities
     std::map<UUID, EntityConstPtr> entities_;
-    void initializeWallsAndFloor();
+    void initializeWorld();
 
     //! Merge the entities!
     void mergeEntities(double not_updated_time, double overlap_fraction);

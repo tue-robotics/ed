@@ -6,8 +6,17 @@
 #include <boost/circular_buffer.hpp>
 #include <ros/ros.h>
 
+#include <ed/models/entity.h>
+
 namespace ed
 {
+
+namespace models
+{
+
+bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& entities, NewEntityPtr new_parent = NewEntityPtr());
+
+}
 
 class Entity
 {
@@ -41,6 +50,9 @@ public:
     inline const geo::Pose3D& pose() const { return pose_; }
     inline void setPose(const geo::Pose3D& pose) { pose_ = pose; }
 
+    inline void setConfig(const tue::Configuration& config) { config_ = config; }
+    inline tue::Configuration getConfig() const { return config_.limitScope(); }
+
     //! For debugging purposes
 //    bool in_frustrum;
 //    bool object_in_front;
@@ -66,6 +78,8 @@ private:
     void updateConvexHull();
 
     double creation_time_;
+
+    tue::Configuration config_;
 
 };
 

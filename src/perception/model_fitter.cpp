@@ -1,6 +1,6 @@
 #include "ed/perception/model_fitter.h"
 
-#include <ed/models/loader.h>
+#include <ed/models/models.h>
 #include <ed/measurement.h>
 #include <ed/entity.h>
 

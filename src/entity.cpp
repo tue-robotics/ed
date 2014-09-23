@@ -9,6 +9,32 @@
 namespace ed
 {
 
+namespace models
+{
+
+bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& entities, NewEntityPtr new_parent)
+{
+    EntityPtr e = EntityPtr(new Entity(new_e->id, new_e->type));
+    if (new_parent)
+        e->setPose(new_parent->pose * new_e->pose);
+    else
+        e->setPose(new_e->pose);
+
+    e->setShape(new_e->shape);
+    e->setConfig(new_e->config);
+
+    entities.push_back(e);
+
+    for (std::vector<ed::models::NewEntityPtr>::const_iterator it = new_e->children.begin(); it != new_e->children.end(); ++it)
+    {
+        convertNewEntityToEntities(*it, entities, new_e);
+    }
+
+    return true;
+}
+
+}
+
 Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size, double creation_time) :
     id_(id),
     type_(type),
@@ -98,6 +124,7 @@ MeasurementConstPtr Entity::lastMeasurement() const
 {
     if (measurements_.empty())
         return MeasurementConstPtr();
+
     return measurements_.front();
 }
 

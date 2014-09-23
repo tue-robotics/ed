@@ -2,7 +2,7 @@
 #include "ed/entity.h"
 #include "ed/measurement.h"
 
-#include "ed/models/loader.h"
+#include "ed/models/models.h"
 
 #include "ed/perception/aggregator.h"
 
@@ -27,19 +27,19 @@ EntityPtr updateEntityType(const EntityConstPtr& e, const std::string& type, boo
 
     if (fit_shape)
     {
-        // Lookup the object shape in the object db
-        ed::models::Loader loader;
-        geo::ShapePtr shape = loader.loadShape(type);
+//        // Lookup the object shape in the object db
+//        ed::models::Loader loader;
+//        geo::ShapePtr shape = loader.loadShape(type);
 
-        if (shape) {
-            geo::Pose3D fitted_pose;
-            if (ed::model_fitter::fit(*e, shape, fitted_pose))
-            {
-                // Set shape and pose
-                e_updated->setShape(shape);
-                e_updated->setPose(fitted_pose);
-            }
-        }
+//        if (shape) {
+//            geo::Pose3D fitted_pose;
+//            if (ed::model_fitter::fit(*e, shape, fitted_pose))
+//            {
+//                // Set shape and pose
+//                e_updated->setShape(shape);
+//                e_updated->setPose(fitted_pose);
+//            }
+//        }
     }
 
     return e_updated;
