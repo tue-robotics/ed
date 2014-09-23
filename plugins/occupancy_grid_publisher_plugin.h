@@ -13,7 +13,7 @@ class OccupancyGridPublisherPlugin : public ed::Plugin
 
 public:
 
-    OccupancyGridPublisherPlugin() {}
+    OccupancyGridPublisherPlugin() : specifier_("") {}
 
     virtual ~OccupancyGridPublisherPlugin() {}
 
@@ -41,6 +41,7 @@ private:
 
     std::string frame_id_;
     std::string topic_;
+    std::string specifier_;
 
     geo::Vector3 origin_;
     int width_, height_;

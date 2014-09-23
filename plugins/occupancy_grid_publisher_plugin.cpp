@@ -21,6 +21,8 @@ void OccupancyGridPublisherPlugin::configure(tue::Configuration config)
     config.value("topic", topic_);
     config.value("frame_id", frame_id_);
 
+    config.value("specifier", specifier_, tue::OPTIONAL);
+
     //! Re-initialize if topic has changed
     if (old_topic != "" && topic_ != old_topic)
     {
@@ -38,20 +40,26 @@ void OccupancyGridPublisherPlugin::initialize()
 
 //    std::cout << "Map publisher: \n" <<
 //                 "- frequency: " << frequency_ << "\n" <<
-//                 "- size_x: " << size_x_ << "\n" <<
-//                 "- size_y: " << size_y_ << "\n" <<
 //                 "- resolution: " << res_ << "\n" <<
 //                 "- topic: " << topic_ << "\n" <<
 //                 "- frame_id: " << frame_id_ << std::endl;
 }
 
-bool getOriginWidthAndHeight(const ed::WorldModel& world, const double& res, geo::Vector3& origin, int& width, int& height)
+bool getOriginWidthAndHeight(const ed::WorldModel& world, const std::string& specifier, const double& res, geo::Vector3& origin, int& width, int& height)
 {
     geo::Vector3 min(1e6,1e6,0);
     geo::Vector3 max(-1e6,-1e6,0);
     for(std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = world.begin(); it != world.end(); ++it)
     {
         ed::EntityConstPtr e = it->second;
+
+        if (specifier != "")
+        {
+            double val;
+            if (!e->getConfig().value(specifier, val, tue::OPTIONAL) || !val)
+                continue;
+        }
+
         geo::ShapeConstPtr shape = e->shape();
         if (shape)  // Do shape
         {
@@ -130,8 +138,8 @@ bool getOriginWidthAndHeight(const ed::WorldModel& world, const double& res, geo
 // ----------------------------------------------------------------------------------------------------
 
 void OccupancyGridPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
-{    
-    if (getOriginWidthAndHeight(world, res_, origin_, width_, height_))
+{        
+    if (getOriginWidthAndHeight(world, specifier_, res_, origin_, width_, height_))
     {
         cv::Mat map = cv::Mat::zeros(height_, width_, CV_8U);
 
@@ -193,6 +201,13 @@ bool OccupancyGridPublisherPlugin::worldToMap(double wx, double wy, int& mx, int
 
 void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Mat& map)
 {
+    if (specifier_ != "")
+    {
+        double val;
+        if (!e->getConfig().value(specifier_, val, tue::OPTIONAL) || !val)
+            return;
+    }
+
     geo::ShapeConstPtr shape = e->shape();
     if (shape)  // Do shape
     {
