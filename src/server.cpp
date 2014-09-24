@@ -326,7 +326,7 @@ void Server::update(const UpdateRequest& update_req)
 
 void Server::initializeWorld()
 {
-    models::NewEntityPtr e = ed::models::load(world_name_);
+    models::NewEntityPtr e = ed::models::create(world_name_);
 
     std::vector<EntityPtr> entities;
     if (ed::models::convertNewEntityToEntities(e, entities))
