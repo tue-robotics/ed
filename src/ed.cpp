@@ -146,6 +146,13 @@ bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response&
     }
     else
     {
+        if (!req.configuration.empty())
+        {
+            // TODO: proper configuration
+            double freq = atof(req.configuration.c_str());
+            container->setLoopFrequency(freq);
+        }
+
         container->plugin()->initialize();
         container->runThreaded();
     }

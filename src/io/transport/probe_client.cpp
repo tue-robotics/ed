@@ -42,6 +42,11 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     srv.request.plugin_name = probe_name;
     srv.request.library_path = lib;
 
+    double freq = 1000; // default
+    std::stringstream config;
+    config << freq;
+    srv.request.configuration = config.str();
+
     std::string error;
 
     if (client.call(srv))
