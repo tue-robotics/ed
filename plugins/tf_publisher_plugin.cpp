@@ -42,16 +42,7 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
 
         geo::Pose3D pose_MAP;
 
-        if (!e->shape())
-        {
-            // determine pose based on convex hull
-            pose_MAP.t = e->convexHull().center_point;
-            pose_MAP.R = geo::Matrix3::identity();
-        }
-        else
-        {
-            pose_MAP = e->pose();
-        }
+        pose_MAP = e->pose();
 
         tf::StampedTransform t;
         geo::convert(pose_MAP, t);
