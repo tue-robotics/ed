@@ -114,18 +114,24 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
             if (!config.value("lib", lib))
                 continue;
 
+            double freq = 10; // default
+
             std::string error;
-            PluginPtr plugin = loadPlugin(name, lib, error);
-            if (plugin)
+            PluginContainerPtr container = loadPlugin(name, lib, error);
+            if (container)
             {
                 // Configure the module if there is a 'parameters' group in the config
                 if (config.readGroup("parameters"))
                 {
-                    plugin->configure(config.limitScope());
+                    config.value("frequency", freq, tue::OPTIONAL);
+
+                    container->plugin()->configure(config.limitScope());
                     config.endGroup();
                 }
 
-                plugin->initialize();
+                container->plugin()->initialize();
+                container->setLoopFrequency(freq);
+                container->runThreaded();
             }
             else
             {
@@ -172,12 +178,12 @@ void Server::reset()
 
 // ----------------------------------------------------------------------------------------------------
 
-PluginPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, std::string& error)
+PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, std::string& error)
 {
     if (lib_file.empty())
     {
         error += "Empty library file given.";
-        return PluginPtr();
+        return PluginContainerPtr();
     }
 
     std::string full_lib_file = lib_file;
@@ -194,10 +200,10 @@ PluginPtr Server::loadPlugin(const std::string& plugin_name, const std::string& 
     if (!tue::filesystem::Path(full_lib_file).exists())
     {
         error += "Could not find '" + full_lib_file + "'.";
-        return PluginPtr();
+        return PluginContainerPtr();
     }
 
-    PluginPtr plugin;
+    PluginContainerPtr container;
 
     // Load the library
     class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(full_lib_file);
@@ -215,72 +221,51 @@ PluginPtr Server::loadPlugin(const std::string& plugin_name, const std::string& 
         error += "Multiple plugins registered in '" + class_loader->getLibraryPath() + "'.";
     } else
     {
-        plugin = class_loader->createInstance<Plugin>(classes.front());
+        PluginPtr plugin = class_loader->createInstance<Plugin>(classes.front());
         if (plugin)
         {
-            PluginContainerPtr container(new PluginContainer());
+            container = PluginContainerPtr(new PluginContainer());
             container->setPlugin(plugin, plugin_name);
             plugin_containers_.push_back(container);
         }
     }
 
-    return plugin;
+    return container;
 }
 
+// ----------------------------------------------------------------------------------------------------
+
 void Server::stepPlugins()
-{
-//    bool world_updated = false;
-
-    std::vector<PluginContainerPtr> finished_plugins;
-
-    // collect all generated hypotheses
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it) {
+{   
+    // collect all update requests
+    std::vector<PluginContainerPtr> plugins_with_requests;
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
         PluginContainerPtr c = *it;
 
-        if (c->stepFinished()) {
-            const UpdateRequest& update_req = c->updateRequest();
-            update(update_req);
-
-//            UpdateRequestConstPtr update = c->getAndClearUpdateRequest();
-
-//            if (update) {
-//                world_.update(*update);
-//                world_updated = true;
-//            }
-
-            finished_plugins.push_back(c);
+        if (c->updateRequest())
+        {
+            update(*c->updateRequest());
+            plugins_with_requests.push_back(c);
         }
     }
 
-//    if (!world_copy_ || world_updated) {
-//        //        world_copy_ = WorldModelPtr(new WorldModel(world_));
-//        Query query;
-//        query.get_shapes = true;
-//        query.get_transforms = true;
-//        query.min_time = 0;
+    // Create world model copy (shallow)
+    WorldModelPtr world_model(new WorldModel());
+    world_model->setEntities(entities_);
 
-//        std::stringstream stream;
-//        OArchive m(stream, SerializerNew::VERSION);
-//        vwm::SerializerNew::serialize(world_, m, query);
-
-//        IArchive m_out(stream);
-//        std::stringstream error;
-//        WorldModelPtr world_copy_temp;
-//        SerializerNew::deserialize(m_out, world_copy_temp, error);
-
-//        boost::lock_guard<boost::mutex> lg(mutex_world_copy_);
-//        world_copy_ = world_copy_temp;
-//    }
-
-    if (!finished_plugins.empty())
+    // Set the new (updated) world
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        WorldModelPtr world_model(new WorldModel());
-        world_model->setEntities(entities_);
+        PluginContainerPtr c = *it;
+        c->setWorld(world_model);
+    }
 
-        for(std::vector<PluginContainerPtr>::iterator it = finished_plugins.begin(); it != finished_plugins.end(); ++it) {
-            PluginContainerPtr c = *it;
-            c->threadedStep(world_model);
-        }
+    // Clear the requests of all plugins that had requests (which flags them to continue processing)
+    for(std::vector<PluginContainerPtr>::iterator it = plugins_with_requests.begin(); it != plugins_with_requests.end(); ++it)
+    {
+        PluginContainerPtr c = *it;
+        c->clearUpdateRequest();
     }
 }
 

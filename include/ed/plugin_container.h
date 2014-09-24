@@ -28,13 +28,23 @@ public:
 
     void threadedStep(const WorldModelConstPtr& world);
 
+    void runThreaded();
+
+    void run();
+
     bool stepFinished() const { return step_finished_; }
 
     void stop();
 
     const std::string& name() const { return name_; }
 
-    const UpdateRequest& updateRequest() const { return update_request_; }
+    UpdateRequestConstPtr updateRequest() const { return update_request_; }
+
+    void clearUpdateRequest() { update_request_.reset(); }
+
+    void setWorld(const WorldModelConstPtr& world) { world_new_ = world; }
+
+    void setLoopFrequency(double freq) { loop_frequency_ = freq; }
 
 protected:
 
@@ -42,10 +52,14 @@ protected:
 
     std::string name_;
 
+    bool stop_;
+
     // 1.0 / cycle frequency
     double cycle_duration_;
 
-    UpdateRequest update_request_;
+    double loop_frequency_;
+
+    UpdateRequestPtr update_request_;
 
     boost::shared_ptr<boost::thread> thread_;
 
@@ -55,7 +69,9 @@ protected:
 
     double t_last_update_;
 
-    WorldModelConstPtr world_;
+    WorldModelConstPtr world_new_;
+
+    WorldModelConstPtr world_current_;
 
     void step();
 

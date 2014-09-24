@@ -19,6 +19,8 @@ public:
 
     std::set<UUID> removed_entities;
 
+    bool empty() { return entities.empty() && removed_entities.empty(); }
+
 };
 
 }

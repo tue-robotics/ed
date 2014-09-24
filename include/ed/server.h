@@ -41,7 +41,7 @@ public:
 
     void addPluginPath(const std::string& path) { plugin_paths_.push_back(path); }
 
-    PluginPtr loadPlugin(const std::string& plugin_name, const std::string& lib_path, std::string& error);
+    PluginContainerPtr loadPlugin(const std::string& plugin_name, const std::string& lib_path, std::string& error);
 
     void stepPlugins();
 

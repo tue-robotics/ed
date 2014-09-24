@@ -21,6 +21,7 @@
 
 // Plugin loading
 #include <ed/plugin.h>
+#include <ed/plugin_container.h>
 #include <ed/LoadPlugin.h>
 
 ed::Server* ed_wm;
@@ -138,14 +139,15 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response& res)
 {
     std::string error;
-    ed::PluginPtr plugin = ed_wm->loadPlugin(req.plugin_name, req.library_path, error);
-    if (!plugin)
+    ed::PluginContainerPtr container = ed_wm->loadPlugin(req.plugin_name, req.library_path, error);
+    if (!container)
     {
         res.error_msg = error;
     }
     else
     {
-        plugin->initialize();
+        container->plugin()->initialize();
+        container->runThreaded();
     }
 
     return true;
@@ -338,7 +340,7 @@ int main(int argc, char** argv)
     ed::EventClock trigger_tf(10);
     ed::EventClock trigger_plugins(1000);
 
-    ros::Rate r(100);
+    ros::Rate r(1000);
     while(ros::ok()) {
         cb_queue.callAvailable();
 
