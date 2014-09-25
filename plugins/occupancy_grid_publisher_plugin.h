@@ -25,13 +25,31 @@ public:
 
 private:
 
-    void publishMapMsg (const cv::Mat& map);
+    bool getMapData(const ed::WorldModel& world, std::vector<ed::EntityConstPtr>& entities_to_be_projected);
 
     void updateMap(const ed::EntityConstPtr& e, cv::Mat& map);
 
-    bool worldToMap (double wx, double wy, int& mx, int& my) const;
+    void publishMapMsg (const cv::Mat& map);
 
-    void mapToWorld (unsigned int mx, unsigned int my, double& wx, double& wy) const;
+    bool worldToMap (double wx, double wy, int& mx, int& my) const
+    {
+        if (wx < origin_.x || wy < origin_.y)
+            return false;
+
+        mx = (wx - origin_.x) / res_ ;
+        my = (wy - origin_.y) / res_ ;
+
+        if (mx < width_ && my < height_)
+            return true;
+
+        return false;
+    }
+
+    void mapToWorld (unsigned int mx, unsigned int my, double& wx, double& wy) const
+    {
+        wx = origin_.x + (mx + 0.5) * res_;
+        wy = origin_.y + (my + 0.5) * res_;
+    }
 
     ros::Publisher map_pub_;
 
