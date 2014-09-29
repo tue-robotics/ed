@@ -41,7 +41,8 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
     shape_revision_(0),
     measurements_(measurement_buffer_size),
     measurements_seq_(0),
-    creation_time_(creation_time)
+    creation_time_(creation_time),
+    pose_(geo::Pose3D::identity())
 {
     convex_hull_.center_point = geo::Vector3(0,0,0);
     std::cout << "Created entity with ID: " << id_ << std::endl;
