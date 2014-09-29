@@ -36,6 +36,8 @@ public:
             return it->second;
     }
 
+    size_t numEntities() const { return entities_.size(); }
+
 private:
 
     std::map<UUID, EntityConstPtr> entities_;
