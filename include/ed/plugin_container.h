@@ -26,23 +26,29 @@ public:
 
     PluginPtr plugin() const { return plugin_; }
 
-    void threadedStep(const WorldModelConstPtr& world);
-
     void runThreaded();
-
-    void run();
-
-    bool stepFinished() const { return step_finished_; }
 
     void stop();
 
     const std::string& name() const { return name_; }
 
-    UpdateRequestConstPtr updateRequest() const { return update_request_; }
+    UpdateRequestConstPtr updateRequest() const
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_update_request_);
+        return update_request_;
+    }
 
-    void clearUpdateRequest() { update_request_.reset(); }
+    void clearUpdateRequest()
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_update_request_);
+        update_request_.reset();
+    }
 
-    void setWorld(const WorldModelConstPtr& world) { world_new_ = world; }
+    void setWorld(const WorldModelConstPtr& world)
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        world_new_ = world;
+    }
 
     void setLoopFrequency(double freq) { loop_frequency_ = freq; }
 
@@ -59,6 +65,8 @@ protected:
 
     double loop_frequency_;
 
+    mutable boost::mutex mutex_update_request_;
+
     UpdateRequestPtr update_request_;
 
     boost::shared_ptr<boost::thread> thread_;
@@ -69,11 +77,15 @@ protected:
 
     double t_last_update_;
 
+    mutable boost::mutex mutex_world_;
+
     WorldModelConstPtr world_new_;
 
     WorldModelConstPtr world_current_;
 
     void step();
+
+    void run();
 
 };
 

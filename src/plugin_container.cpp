@@ -64,15 +64,21 @@ void PluginContainer::step()
 {
     // If we still have an update_request, it means the request is not yet handled,
     // so we have to skip this cycle (and wait until the world model has handled it)
-    if (update_request_)
-        return;
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_update_request_);
+        if (update_request_)
+            return;
+    }
 
     // Check if there is a new world. If so replace the current one with the new one
-    if (world_new_)
     {
-        // TODO: add mutex
-        world_current_ = world_new_;
-        world_new_.reset();
+        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        if (world_new_)
+        {
+            // TODO: add mutex
+            world_current_ = world_new_;
+            world_new_.reset();
+        }
     }
 
     if (world_current_)
@@ -85,23 +91,6 @@ void PluginContainer::step()
         if (!update_request->empty())
             update_request_ = update_request;
     }
-}
-
-// --------------------------------------------------------------------------------
-
-void PluginContainer::threadedStep(const WorldModelConstPtr& world)
-{
-    double time = timer_.getElapsedTimeInSec();
-    double secs_since_last_update = time - t_last_update_;
-    if (secs_since_last_update < cycle_duration_)
-        return;
-
-    step_finished_ = false;
-
-    t_last_update_ = time;
-
-    world_new_ = world;
-    thread_ = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&PluginContainer::step, this)));
 }
 
 // --------------------------------------------------------------------------------
