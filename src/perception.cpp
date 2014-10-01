@@ -53,32 +53,6 @@ EntityPtr updateEntityType(const EntityConstPtr& e, tue::Configuration perceptio
     return e_updated;
 }
 
-//// ----------------------------------------------------------------------------------------------------
-
-//std::string getBestLabel(const PerceptionResult& result)
-//{
-//    double score_threshold = 0.5; // TODO: get rid of hard-coded value
-
-//    double max_score = 0;
-//    const Percept* best_p = 0;
-
-//    const std::map<std::string, Percept>& percepts = result.percepts();
-//    for(std::map<std::string, Percept>::const_iterator it = percepts.begin(); it != percepts.end(); ++it)
-//    {
-//        const Percept& p = it->second;
-//        if (p.score > max_score && p.score > score_threshold)
-//        {
-//            max_score = p.score;
-//            best_p = &p;
-//        }
-//    }
-
-//    if (!best_p)
-//        return "";
-
-//    return best_p->label;
-//}
-
 // ----------------------------------------------------------------------------------------------------
 
 Perception::Perception()
@@ -159,8 +133,6 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
     if (perception_modules_.empty())
         return;
 
-//    int num_visualization_images = 0;
-
     for(std::map<UUID, EntityConstPtr>::iterator it = entities.begin(); it != entities.end(); ++it)
     {
         const UUID& id = it->first;
@@ -186,10 +158,6 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
         if (it_worker == workers_.end())
         {
             // No worker active for this entity, so create one
-
-            // get the measurements from the entity
-//            std::vector<MeasurementConstPtr> measurements;
-//            e->measurements(measurements);
 
             // create worker and add measurements
             PerceptionWorker* worker = new PerceptionWorker();
@@ -223,25 +191,8 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
             // Check if it just finished processing
             else if (worker->isDone())
             {
-                // Check if the worker has found something useful
-//                std::string label = getBestLabel(worker->getResult());
-//                if (!label.empty())
-//                {
-                    // If so, assign the found label to the entity
-                     it->second = updateEntityType(e, worker->getResult(), fit_shape_);
-//                }
-
-//                // Get visualizations of perception module, and show if there are any
-//                const std::map<std::string, cv::Mat>& vis_images = worker->getResult().visualizationImages();
-//                if (!vis_images.empty())
-//                {
-//                    for(std::map<std::string, cv::Mat>::const_iterator it = vis_images.begin(); it != vis_images.end(); ++it)
-//                    {
-//                        cv::imshow(e->getID() + " " + it->first, it->second);
-//                        ++num_visualization_images;
-////                        cv::imshow("Test", it->second);
-//                    }
-//                }
+                // Update the entity with the results from the worker
+                it->second = updateEntityType(e, worker->getResult(), fit_shape_);
 
                 // Set worker to idle. This way, the result is not checked again on the next iteration
                 worker->setIdle();
@@ -251,9 +202,6 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
         }
 
     }
-
-//    if (num_visualization_images > 0)
-//        cv::waitKey(3);
 }
 
 // ----------------------------------------------------------------------------------------------------

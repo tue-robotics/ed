@@ -32,7 +32,7 @@ private:
 
     std::map<UUID, PerceptionWorker*> workers_;
 
-    std::map<ed::UUID, std::string> previous_entity_types_;
+//    std::map<ed::UUID, std::string> previous_entity_types_;
 
 };
 
