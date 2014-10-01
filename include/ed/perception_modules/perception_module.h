@@ -12,48 +12,48 @@
 namespace ed
 {
 
-struct Percept
-{
-    Percept() {}
+//struct Percept
+//{
+//    Percept() {}
 
-    Percept(const std::string& label_, double prob, const geo::Pose3D& pose_)
-        : label(label_), score(prob), pose(pose_) {}
+//    Percept(const std::string& label_, double prob, const geo::Pose3D& pose_)
+//        : label(label_), score(prob), pose(pose_) {}
 
-    std::string label;
-    double score;
-    geo::Pose3D pose;
+//    std::string label;
+//    double score;
+//    geo::Pose3D pose;
 
-};
+//};
 
-class PerceptionResult
-{
+//class PerceptionResult
+//{
 
-public:
+//public:
 
-//    PerceptionResult() : ok(false) {}
+////    PerceptionResult() : ok(false) {}
 
-    void addInfo(const std::string& label, double prob, const geo::Pose3D& pose = geo::Pose3D::identity())
-    {
-        percepts_[label] = Percept(label, prob, pose);
-    }
+//    void addInfo(const std::string& label, double prob, const geo::Pose3D& pose = geo::Pose3D::identity())
+//    {
+//        percepts_[label] = Percept(label, prob, pose);
+//    }
 
-    const std::map<std::string, Percept>& percepts() const { return percepts_; }
+//    const std::map<std::string, Percept>& percepts() const { return percepts_; }
 
-    void setVisualization(const std::string& name, const cv::Mat& visualization_image)
-    {
-        visualization_images_[name] = visualization_image;
-    }
+//    void setVisualization(const std::string& name, const cv::Mat& visualization_image)
+//    {
+//        visualization_images_[name] = visualization_image;
+//    }
 
-    const std::map<std::string, cv::Mat>& visualizationImages() const { return visualization_images_; }
+//    const std::map<std::string, cv::Mat>& visualizationImages() const { return visualization_images_; }
 
-private:
+//private:
 
-    std::map<std::string, Percept> percepts_;
+//    std::map<std::string, Percept> percepts_;
 
-    // For visualization / debugging purpose
-    std::map<std::string, cv::Mat> visualization_images_;
+//    // For visualization / debugging purpose
+//    std::map<std::string, cv::Mat> visualization_images_;
 
-};
+//};
 
 class PerceptionModule
 {
@@ -70,9 +70,11 @@ public:
 
     virtual void configure(tue::Configuration config) {}
 
-    virtual PerceptionResult process(const std::vector<MeasurementConstPtr>& measurements) const;
+    virtual void process(EntityConstPtr e, tue::Configuration& result) const {}
 
-    virtual PerceptionResult process(const Measurement& msr) const { return PerceptionResult(); }
+//    virtual PerceptionResult process(const std::vector<MeasurementConstPtr>& measurements) const;
+
+//    virtual PerceptionResult process(const Measurement& msr) const { return PerceptionResult(); }
 
     const std::string& name() const { return name_; }
 

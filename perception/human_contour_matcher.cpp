@@ -1,8 +1,11 @@
 #include "human_contour_matcher.h"
 
 #include "ed/measurement.h"
+#include <ed/entity.h>
+
 #include <rgbd/Image.h>
 #include <rgbd/View.h>
+
 
 /*
     This perception module can eventually be dynamically loaded into ED. For now, you can test the
@@ -66,13 +69,15 @@ void HumanContourMatcher::loadModel(const std::string& model_name, const std::st
 
 // ----------------------------------------------------------------------------------------------------
 
-ed::PerceptionResult HumanContourMatcher::process(const ed::Measurement& msr) const
+void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) const
 {
-    // This will contain the perception results (in this case, whether we detected a human or not)
-    ed::PerceptionResult res;
-
     if (!init_success_)
-        return res;
+        return;
+
+    // Get the best measurement from the entity
+    ed::MeasurementConstPtr msr = e->bestMeasurement();
+    if (!msr)
+        return;
 
     float depth_sum = 0;
     float avg_depht;
@@ -80,14 +85,14 @@ ed::PerceptionResult HumanContourMatcher::process(const ed::Measurement& msr) co
     uint point_counter = 0;
 
     // Get the depth image from the measurement
-    const cv::Mat& depth_image = msr.image()->getDepthImage();
-    const cv::Mat& color_image = msr.image()->getRGBImage();
+    const cv::Mat& depth_image = msr->image()->getDepthImage();
+    const cv::Mat& color_image = msr->image()->getRGBImage();
 
     cv::Mat mask_cv = cv::Mat::zeros(depth_image.rows, depth_image.cols, CV_8UC1);
 
     // Iterate over all points in the mask. You must specify the width of the image on which you
     // want to apply the mask (see the begin(...) method).
-    for(ed::ImageMask::const_iterator it = msr.imageMask().begin(depth_image.cols); it != msr.imageMask().end(); ++it)
+    for(ed::ImageMask::const_iterator it = msr->imageMask().begin(depth_image.cols); it != msr->imageMask().end(); ++it)
     {
         // mask's (x, y) coordinate in the depth image
         const cv::Point2i& p_2d = *it;
@@ -107,7 +112,8 @@ ed::PerceptionResult HumanContourMatcher::process(const ed::Measurement& msr) co
     human_classifier_.Classify(depth_image, color_image, mask_cv, avg_depht, classification_error);
 //    std::cout << "[human_contour_matcher] " << "Perception result, human = " << classification_error << "\n";
 
-    res.addInfo("human", classification_error);
+    result.setValue("type", "human");
+    result.setValue("type-score", classification_error);
 
     // If you're sure the measurement originates from a human, you can set this in the result
     //    ( addInfo(label, score, [pose]) )
@@ -115,8 +121,6 @@ ed::PerceptionResult HumanContourMatcher::process(const ed::Measurement& msr) co
 
     // If you're sure the measurement does NOT originate from a human, you can do the same but set a low score:
     // res.addInfo("human", 0)
-
-    return res;
 }
 
 ED_REGISTER_PERCEPTION_MODULE(HumanContourMatcher)

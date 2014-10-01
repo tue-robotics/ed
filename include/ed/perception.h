@@ -28,7 +28,7 @@ private:
 
     std::vector<class_loader::ClassLoader*> perception_loaders_;
 
-    PerceptionModulePtr perception_module_;
+    std::vector<PerceptionModuleConstPtr> perception_modules_;
 
     std::map<UUID, PerceptionWorker*> workers_;
 

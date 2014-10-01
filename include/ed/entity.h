@@ -79,7 +79,7 @@ private:
 
     double creation_time_;
 
-    tue::Configuration config_;
+    tue::Configuration config_;   
 
 };
 

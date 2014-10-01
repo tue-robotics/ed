@@ -4,7 +4,7 @@
 
 #include "ed/models/models.h"
 
-#include "ed/perception/aggregator.h"
+//#include "ed/perception/aggregator.h"
 
 #include <ros/package.h>
 
@@ -18,12 +18,20 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-EntityPtr updateEntityType(const EntityConstPtr& e, const std::string& type, bool fit_shape)
+EntityPtr updateEntityType(const EntityConstPtr& e, tue::Configuration perception_result, bool fit_shape)
 {
     EntityPtr e_updated(new Entity(*e));
 
-    // Update entity with label info
-    e_updated->setType(type);
+    // TODO: tue::Configuration is NOT thread safe and NOT immutable. This may go wrong...
+    tue::Configuration params;
+    params.add(e->getConfig());
+    params.add(perception_result);
+
+    std::string type;
+    if (params.value("type", type, tue::OPTIONAL))
+        e_updated->setType(type);
+
+    e_updated->setConfig(params);
 
     if (fit_shape)
     {
@@ -45,31 +53,31 @@ EntityPtr updateEntityType(const EntityConstPtr& e, const std::string& type, boo
     return e_updated;
 }
 
-// ----------------------------------------------------------------------------------------------------
+//// ----------------------------------------------------------------------------------------------------
 
-std::string getBestLabel(const PerceptionResult& result)
-{
-    double score_threshold = 0.5; // TODO: get rid of hard-coded value
+//std::string getBestLabel(const PerceptionResult& result)
+//{
+//    double score_threshold = 0.5; // TODO: get rid of hard-coded value
 
-    double max_score = 0;
-    const Percept* best_p = 0;
+//    double max_score = 0;
+//    const Percept* best_p = 0;
 
-    const std::map<std::string, Percept>& percepts = result.percepts();
-    for(std::map<std::string, Percept>::const_iterator it = percepts.begin(); it != percepts.end(); ++it)
-    {
-        const Percept& p = it->second;
-        if (p.score > max_score && p.score > score_threshold)
-        {
-            max_score = p.score;
-            best_p = &p;
-        }
-    }
+//    const std::map<std::string, Percept>& percepts = result.percepts();
+//    for(std::map<std::string, Percept>::const_iterator it = percepts.begin(); it != percepts.end(); ++it)
+//    {
+//        const Percept& p = it->second;
+//        if (p.score > max_score && p.score > score_threshold)
+//        {
+//            max_score = p.score;
+//            best_p = &p;
+//        }
+//    }
 
-    if (!best_p)
-        return "";
+//    if (!best_p)
+//        return "";
 
-    return best_p->label;
-}
+//    return best_p->label;
+//}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -86,8 +94,10 @@ Perception::~Perception()
         delete it->second;
     }
 
-    // Make sure the perception module is destroyed by resetting all shared pointers
-    perception_module_.reset();
+    // Make sure the perception modules are destroyed by resetting all shared pointers
+    for(std::vector<PerceptionModuleConstPtr>::iterator it = perception_modules_.begin();
+            it != perception_modules_.end(); ++it)
+        it->reset();
 
     // Once the modules are destroyed, we can destroy the loaders
     for(std::vector<class_loader::ClassLoader*>::iterator it = perception_loaders_.begin(); it != perception_loaders_.end(); ++it)
@@ -108,8 +118,6 @@ void Perception::configure(tue::Configuration config)
 
     if (config.readArray("modules"))
     {
-        boost::shared_ptr<ed::PerceptionAggregator> perception_aggregator(new PerceptionAggregator);
-
         while(config.nextArrayItem())
         {
             std::string lib;
@@ -134,14 +142,12 @@ void Perception::configure(tue::Configuration config)
                     }
 
                     // Add the perception module to the aggregator
-                    perception_aggregator->addPerceptionModule(perception_module);
+                    perception_modules_.push_back(perception_module);
                 }
             }
         }
 
         config.endArray();
-
-        perception_module_ = perception_aggregator;
     }
 }
 
@@ -149,8 +155,8 @@ void Perception::configure(tue::Configuration config)
 
 void Perception::update(std::map<UUID, EntityConstPtr>& entities)
 {
-    // Don't update if there is no perception module
-    if (!perception_module_)
+    // Don't update if there are no perception modules
+    if (perception_modules_.empty())
         return;
 
 //    int num_visualization_images = 0;
@@ -160,21 +166,21 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
         const UUID& id = it->first;
         const EntityConstPtr& e = it->second;
 
-        if (e->type() != "")
-        {
-            std::map<ed::UUID, std::string>::iterator it2 = previous_entity_types_.find(e->id());
-            if (it2 == previous_entity_types_.end() || it2->second != e->type())
-            {
-                // The entity received a type it did not have before. Therefore, update it and fit
-                // a shape model
-                it->second = updateEntityType(e, e->type(), fit_shape_);
+//        if (e->type() != "")
+//        {
+//            std::map<ed::UUID, std::string>::iterator it2 = previous_entity_types_.find(e->id());
+//            if (it2 == previous_entity_types_.end() || it2->second != e->type())
+//            {
+//                // The entity received a type it did not have before. Therefore, update it and fit
+//                // a shape model
+//                it->second = updateEntityType(e, e->type(), fit_shape_);
 
-                previous_entity_types_[id] = e->type();
+//                previous_entity_types_[id] = e->type();
 
-                // We do not have to start a perception worker since we already have a type
-                continue;
-            }
-        }
+//                // We do not have to start a perception worker since we already have a type
+//                continue;
+//            }
+//        }
 
         std::map<UUID, PerceptionWorker*>::iterator it_worker = workers_.find(it->first);
         if (it_worker == workers_.end())
@@ -182,13 +188,13 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
             // No worker active for this entity, so create one
 
             // get the measurements from the entity
-            std::vector<MeasurementConstPtr> measurements;
-            e->measurements(measurements);
+//            std::vector<MeasurementConstPtr> measurements;
+//            e->measurements(measurements);
 
             // create worker and add measurements
             PerceptionWorker* worker = new PerceptionWorker();
-            worker->setMeasurements(measurements);
-            worker->setPerceptionModule(perception_module_);
+            worker->setEntity(e);
+            worker->setPerceptionModules(perception_modules_);
 
             workers_[id] = worker;
             worker->start();
@@ -210,7 +216,7 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
                 if (!measurements.empty())
                 {
                     // There are new measurements, so run the worker again
-                    worker->setMeasurements(measurements);
+                    worker->setEntity(e);
                     worker->start();
                 }
             }
@@ -218,12 +224,12 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
             else if (worker->isDone())
             {
                 // Check if the worker has found something useful
-                std::string label = getBestLabel(worker->getResult());
-                if (!label.empty())
-                {
+//                std::string label = getBestLabel(worker->getResult());
+//                if (!label.empty())
+//                {
                     // If so, assign the found label to the entity
-                     it->second = updateEntityType(e, label, fit_shape_);
-                }
+                     it->second = updateEntityType(e, worker->getResult(), fit_shape_);
+//                }
 
 //                // Get visualizations of perception module, and show if there are any
 //                const std::map<std::string, cv::Mat>& vis_images = worker->getResult().visualizationImages();
@@ -240,7 +246,7 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
                 // Set worker to idle. This way, the result is not checked again on the next iteration
                 worker->setIdle();
 
-                worker->t_last_processing = worker->measurements.front()->timestamp();
+                worker->t_last_processing = worker->timestamp();
             }
         }
 

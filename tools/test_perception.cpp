@@ -1,5 +1,7 @@
 #include <ed/perception_modules/perception_module.h>
-#include <ed/perception/aggregator.h>
+//#include <ed/perception/aggregator.h>
+
+#include <ed/entity.h>
 
 // Measurement data structures
 #include <ed/measurement.h>
@@ -66,7 +68,7 @@ int main(int argc, char **argv) {
 
     // - - - - -
 
-    ed::PerceptionAggregator perception_aggregator;
+    std::vector<ed::PerceptionModulePtr> modules;
 
     std::vector<class_loader::ClassLoader*> perception_loaders(perception_libs.size(), 0);
     for(unsigned int i = 0; i < perception_libs.size(); ++i)
@@ -77,7 +79,7 @@ int main(int argc, char **argv) {
         ed::PerceptionModulePtr perception_mod = ed::loadPerceptionModule(class_loader);
         if (perception_mod)
         {
-            perception_aggregator.addPerceptionModule(perception_mod);
+            modules.push_back(perception_mod);
         }
         else
         {
@@ -104,27 +106,20 @@ int main(int argc, char **argv) {
 
         showMeasurement(*msr);
 
+        ed::EntityPtr e(new ed::Entity("test-entity", "", 5, 0));
+        e->addMeasurement(msr);
+
         std::cout << std::endl << "------------------------------------------------------------" << std::endl;
         std::cout << "    " << filename.withoutExtension() << std::endl;
-
         std::cout << "------------------------------------------------------------" << std::endl << std::endl;
 
-//        std::vector<ed::MeasurementConstPtr> measurements;
-//        measurements.push_back(msr);
-
-        ed::PerceptionResult res = perception_aggregator.process(*msr);
-
-        if (res.percepts().empty())
+        for(std::vector<ed::PerceptionModulePtr>::iterator it_mod = modules.begin(); it_mod != modules.end(); ++it_mod)
         {
-            std::cout << "No information" << std::endl;
-        }
-        else
-        {
-            for(std::map<std::string, ed::Percept>::const_iterator it = res.percepts().begin(); it != res.percepts().end(); ++it)
-            {
-                std::cout << it->second.score << "\t" << it->first << std::endl;
-                std::cout << it->second.pose << "\n" << std::endl;
-            }
+            tue::Configuration result;
+            (*it_mod)->process(e, result);
+
+            // Display the result
+            std::cout << result << std::endl;
         }
 
         ++n_measurements;
@@ -133,12 +128,13 @@ int main(int argc, char **argv) {
     }
 
     if (n_measurements == 0)
-    {
         std::cout << "No measurements found." << std::endl;
-    }
 
-    perception_aggregator.clear();
+    // Delete all perception modules
+    for(std::vector<ed::PerceptionModulePtr>::iterator it_mod = modules.begin(); it_mod != modules.end(); ++it_mod)
+        it_mod->reset();
 
+    // Delete the class loaders (which will unload the libraries)
     for(unsigned int i = 0; i < perception_loaders.size(); ++i)
         delete perception_loaders[i];
 

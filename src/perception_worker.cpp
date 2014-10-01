@@ -1,4 +1,6 @@
 #include "ed/perception_worker.h"
+#include "ed/entity.h"
+#include "ed/measurement.h"
 
 namespace ed
 {
@@ -17,9 +19,22 @@ PerceptionWorker::~PerceptionWorker()
 
 // ----------------------------------------------------------------------------------------------------
 
+double PerceptionWorker::timestamp() const
+{
+    if (entity_)
+    {
+        MeasurementConstPtr msr = entity_->lastMeasurement();
+        if (msr)
+            return timestamp();
+    }
+    return 0;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void PerceptionWorker::start()
 {
-    if (measurements.empty())
+    if (!entity_)
         return;
 
     state_ = RUNNING;
@@ -37,7 +52,14 @@ void PerceptionWorker::stop()
 
 void PerceptionWorker::run()
 {
-    result_ = module_->process(measurements);
+    // Clear reset from possible previous time
+    result_ = tue::Configuration();
+
+    // Do the actual processing
+    for(std::vector<PerceptionModuleConstPtr>::const_iterator it = modules_.begin(); it != modules_.end(); ++it)
+        (*it)->process(entity_, result_);
+
+    // Set state to DONE
     state_ = DONE;
 }
 

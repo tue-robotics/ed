@@ -9,17 +9,17 @@
 namespace ed
 {
 
-// ----------------------------------------------------------------------------------------------------
+//// ----------------------------------------------------------------------------------------------------
 
-PerceptionResult PerceptionModule::process(const std::vector<MeasurementConstPtr>& measurements) const
-{
-    if (!measurements.empty())
-    {
-        return process(*measurements.front());
-    }
+//PerceptionResult PerceptionModule::process(const std::vector<MeasurementConstPtr>& measurements) const
+//{
+//    if (!measurements.empty())
+//    {
+//        return process(*measurements.front());
+//    }
 
-    return PerceptionResult();
-}
+//    return PerceptionResult();
+//}
 
 // ----------------------------------------------------------------------------------------------------
 

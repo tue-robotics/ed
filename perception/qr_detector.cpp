@@ -1,6 +1,7 @@
 #include "qr_detector.h"
 
 #include "ed/measurement.h"
+#include "ed/entity.h"
 
 #include <rgbd/View.h>
 #include "ed/mask.h"
@@ -60,17 +61,20 @@ void QRDetector::loadModel(const std::string& model_name, const std::string& mod
 
 // ----------------------------------------------------------------------------------------------------
 
-ed::PerceptionResult QRDetector::process(const ed::Measurement& msr) const
+void QRDetector::process(ed::EntityConstPtr e, tue::Configuration& result) const
 {
-    ed::PerceptionResult res;
+    // Get the best measurement from the entity
+    ed::MeasurementConstPtr msr = e->bestMeasurement();
+    if (!msr)
+        return;
 
-    const cv::Mat& rgb_image = msr.image()->getRGBImage();
+    const cv::Mat& rgb_image = msr->image()->getRGBImage();
 
-    rgbd::View view(*msr.image(), rgb_image.cols);
+    rgbd::View view(*msr->image(), rgb_image.cols);
 
     // Create the rect
     std::vector<cv::Point2i> pnts;
-    for (ed::ImageMask::const_iterator it = msr.imageMask().begin(rgb_image.cols); it != msr.imageMask().end(); ++it ) {
+    for (ed::ImageMask::const_iterator it = msr->imageMask().begin(rgb_image.cols); it != msr->imageMask().end(); ++it ) {
         pnts.push_back(*it);
     }
     cv::Rect rect = cv::boundingRect(pnts);
@@ -92,14 +96,31 @@ ed::PerceptionResult QRDetector::process(const ed::Measurement& msr) const
 
         geo::Pose3D pose;
         if (qr_detector_zbar::getPoseFromCornerPoints(v,pose)) {
-            pose = msr.sensorPose() * pose;
+            pose = msr->sensorPose() * pose;
             geo::Pose3D snapped;
-            snapZHorizontalOrVertical(pose,snapped);
-            res.addInfo(label,1.0, snapped);
+            snapZHorizontalOrVertical(pose, snapped);
+
+            result.writeGroup("qr");
+            result.setValue("label", label);
+
+            result.writeGroup("position");
+            result.setValue("x", snapped.t.x);
+            result.setValue("y", snapped.t.y);
+            result.setValue("z", snapped.t.z);
+            result.endGroup();
+
+            geo::Quaternion quat;
+            snapped.R.getRotation(quat);
+            result.writeGroup("orientation");
+            result.setValue("x", quat.x);
+            result.setValue("y", quat.y);
+            result.setValue("z", quat.z);
+            result.setValue("w", quat.w);
+            result.endGroup();
+
+            result.endGroup(); // end "qr"
         }
     }
-
-    return res;
 }
 
 ED_REGISTER_PERCEPTION_MODULE(QRDetector)

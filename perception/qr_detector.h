@@ -16,7 +16,7 @@ public:
 
     void loadModel(const std::string& model_name, const std::string& model_path);
 
-    ed::PerceptionResult process(const ed::Measurement& msr) const;
+    void process(ed::EntityConstPtr e, tue::Configuration& result) const;
 
 };
 

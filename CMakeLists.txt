@@ -99,7 +99,7 @@ add_library(ed_perception
     src/perception_modules/perception_module.cpp
     src/perception.cpp
     src/perception_worker.cpp
-    src/perception/aggregator.cpp
+    # src/perception/aggregator.cpp
     src/perception/model_fitter.cpp
 )
 target_link_libraries(ed_perception ed_core)

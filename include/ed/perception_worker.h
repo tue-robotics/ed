@@ -35,21 +35,23 @@ public:
 
     void setIdle() { state_ = IDLE; }
 
-    inline void setPerceptionModule(const PerceptionModuleConstPtr& module)
+    inline void setPerceptionModules(const std::vector<PerceptionModuleConstPtr>& modules)
     {
-        module_ = module;
+        modules_ = modules;
     }
 
-    inline void setMeasurements(const std::vector<MeasurementConstPtr>& measurements_)
+    inline void setEntity(const EntityConstPtr& e)
     {
-        measurements = measurements_;
+        entity_ = e;
     }
 
-    inline const PerceptionResult& getResult() const { return result_; }
+    double timestamp() const;
+
+    inline tue::Configuration getResult() const { return result_; }
 
     double t_last_processing;
 
-    std::vector<MeasurementConstPtr> measurements;
+    EntityConstPtr entity_;
 
 protected:
 
@@ -57,9 +59,9 @@ protected:
 
     boost::thread processing_thread_;
 
-    PerceptionModuleConstPtr module_;
+    std::vector<PerceptionModuleConstPtr> modules_;
 
-    PerceptionResult result_;
+    tue::Configuration result_;
 
     void run();
 

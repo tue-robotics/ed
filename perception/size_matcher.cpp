@@ -1,6 +1,7 @@
 #include "size_matcher.h"
 
 #include "ed/measurement.h"
+#include "ed/entity.h"
 #include <rgbd/Image.h>
 #include <rgbd/View.h>
 
@@ -54,25 +55,28 @@ void SizeMatcher::loadModel(const std::string& model_name, const std::string& mo
 
 // ----------------------------------------------------------------------------------------------------
 
-PerceptionResult SizeMatcher::process(const Measurement& msr) const
+void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) const
 {
-    PerceptionResult res;
+    // Get the best measurement from the entity
+    ed::MeasurementConstPtr msr = e->bestMeasurement();
+    if (!msr)
+        return;
 
-    const cv::Mat& rgb_image = msr.image()->getRGBImage();
+    const cv::Mat& rgb_image = msr->image()->getRGBImage();
 
     geo::Vector3 min(1e10, 1e10, 1e10);
     geo::Vector3 max(-1e10, -1e10, -1e10);
 
-    rgbd::View view(*msr.image(), msr.imageMask().width());
+    rgbd::View view(*msr->image(), msr->imageMask().width());
 
-    for(ed::ImageMask::const_iterator it = msr.imageMask().begin(view.getWidth()); it != msr.imageMask().end(); ++it)
+    for(ed::ImageMask::const_iterator it = msr->imageMask().begin(view.getWidth()); it != msr->imageMask().end(); ++it)
     {
         const cv::Point2i& p_2d = *it;
 
         geo::Vector3 p;
         if (view.getPoint3D(p_2d.x, p_2d.y, p))
         {
-            geo::Vector3 p_MAP = msr.sensorPose() * p;
+            geo::Vector3 p_MAP = msr->sensorPose() * p;
             min.x = std::min(min.x, p_MAP.x); max.x = std::max(max.x, p_MAP.x);
             min.y = std::min(min.y, p_MAP.y); max.y = std::max(max.y, p_MAP.y);
             min.z = std::min(min.z, p_MAP.z); max.z = std::max(max.z, p_MAP.z);
@@ -82,6 +86,11 @@ PerceptionResult SizeMatcher::process(const Measurement& msr) const
     geo::Vector3 size = max - min;
     double width = sqrt(size.x * size.x + size.z * size.z);
     double height = size.y;
+
+    result.writeGroup("size");
+    result.setValue("width", width);
+    result.setValue("height", height);
+    result.endGroup();
 
 //    std::cout << "SizeMatcher: width = " << width << ", height = " << height << std::endl << std::endl;
 
@@ -108,17 +117,32 @@ PerceptionResult SizeMatcher::process(const Measurement& msr) const
         if (match)
             hyps.push_back(label);
         else
-            res.addInfo(label, 0);
+        {
+            // Set this hypothesis to 0
+            result.writeArray("hypotheses");
+            result.addArrayItem();
+            result.setValue("type", label);
+            result.setValue("score", 0);
+            result.endArrayItem();
+            result.endArray(); // end "hypotheses"
+        }
     }
 
     if (!hyps.empty())
     {
+        result.writeArray("hypotheses");
+
         double prob = 1.0 / hyps.size();
         for(std::vector<std::string>::const_iterator it = hyps.begin(); it != hyps.end(); ++it)
-            res.addInfo(*it, prob);
-    }
+        {
+            result.addArrayItem();
+            result.setValue("type", *it);
+            result.setValue("score", prob);
+            result.endArrayItem();
+        }
 
-    return res;
+        result.endArray(); // end "hypotheses"
+    }
 }
 
 ED_REGISTER_PERCEPTION_MODULE(SizeMatcher)
