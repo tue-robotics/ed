@@ -57,7 +57,7 @@ void PointNormalALM::process(const RGBDData& sensor_data,
         tue::ScopedTimer t(profiler_, "1) get_world_model_pcl");
 
         // Create a render view
-        rgbd::View sensor_view(*sensor_data.image, 160);   // TODO: REMOVE HARD-CODED VALUE
+        rgbd::View sensor_view(*sensor_data.image, 640);   // TODO: REMOVE HARD-CODED VALUE
 
         profiler_.startTimer("render");
 
@@ -65,13 +65,13 @@ void PointNormalALM::process(const RGBDData& sensor_data,
         WorldModelRenderer wmr;
         cv::Mat wm_depth_img = cv::Mat::zeros(sensor_view.getHeight(), sensor_view.getWidth(), CV_32F);
         pcl::PointCloud<pcl::PointXYZ>::Ptr world_model_pcl(new pcl::PointCloud<pcl::PointXYZ>);
-        wmr.render(sensor_data.sensor_pose, entities, 3, sensor_view, wm_depth_img, *world_model_pcl, world_model_pc_entity_ptrs);
+        wmr.render(sensor_data.sensor_pose, entities, 4, sensor_view, wm_depth_img, *world_model_pcl, world_model_pc_entity_ptrs);
 
         profiler_.stopTimer();
 
         //! Downsample the pointcloud
         profiler_.startTimer("down sample");
-        pcl::PointCloud<pcl::PointXYZ>::ConstPtr world_model_pcl_downsampled = helpers::ddp::downSamplePcl(world_model_pcl,0.05);
+        pcl::PointCloud<pcl::PointXYZ>::ConstPtr world_model_pcl_downsampled = helpers::ddp::downSamplePcl(world_model_pcl,0.03);
         profiler_.stopTimer();
 
         //! Calculate the normals with use of pcl

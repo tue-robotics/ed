@@ -21,7 +21,6 @@ void PolygonHeightALM::configure(tue::Configuration config)
     if (config.readGroup("parameters"))
     {
         config.value("cell_size", cell_size_);
-        config.value("max_range", max_range_);
         config.value("tolerance", tolerance_);
         config.value("min_cluster_size", min_cluster_size_);
 
@@ -29,7 +28,6 @@ void PolygonHeightALM::configure(tue::Configuration config)
 
         std::cout << "Parameters polygon height association: \n" <<
         "- cell_size: " << cell_size_ << "\n" <<
-        "- max_range: " << max_range_ << "\n" <<
         "- tolerance: " << tolerance_ << "\n" <<
         "- min_cluster_size: " << min_cluster_size_ << "\n" <<
         "- visualize: " << visualize_ << std::endl;

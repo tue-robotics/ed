@@ -155,7 +155,7 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
     {
         tue::ScopedTimer t(profiler_, "2) filter points behind wm");
 
-        rgbd::View view(*rgbd_image, 320);
+        rgbd::View view(*rgbd_image, 640);
 
         // Visualize the frustrum
         helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(view, sensor_pose, vis_marker_pub_, 0, "frustrum_top_kinect");
@@ -222,7 +222,7 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
     {
         tue::ScopedTimer t(profiler_, "3) create sensor point cloud");
 
-        helpers::ddp::extractPointCloud(rgbd_data, 0.03, 3, 4);  // TODO: GET RID OF HARD-CODED VALUES
+        helpers::ddp::extractPointCloud(rgbd_data, 0.01, 4.0, 1);  // TODO: GET RID OF HARD-CODED VALUES
     }
 
     //! 4) Calculate point cloud normals
