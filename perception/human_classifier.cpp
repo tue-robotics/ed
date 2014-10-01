@@ -663,7 +663,7 @@ void HumanClassifier::LoadParameters(){
     kDebugFolder = "/tmp/human_classifier/";
 
     kDebugMode = false;
-    kFaceDetectEnabled = true;
+    kFaceDetectEnabled = false;
     kMatchIterations = 30;
     kDtLineWidth = 1;
     kMaxTemplateErr = 12;

@@ -41,7 +41,7 @@
 
 HumanContourMatcher::HumanContourMatcher() :
     PerceptionModule("human_contour_matcher"),
-    human_classifier_("HumanClassifier"), init_success_(false)
+    human_classifier_("human_contour_matcher"), init_success_(false)
 {
 }
 

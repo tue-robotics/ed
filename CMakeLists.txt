@@ -161,6 +161,12 @@ add_library(human_contour_matcher
 )
 target_link_libraries(human_contour_matcher ed_perception)
 
+add_library(face_detector
+    perception/face_detector.cpp
+    perception/face_detector.h
+)
+target_link_libraries(face_detector ed_perception)
+
 #add_library(odu_finder
 #    perception/odu_finder/odu_finder_module.cpp
 #    perception/odu_finder/odu_finder_module.h
@@ -244,6 +250,7 @@ add_dependencies(test_sampling ${PROJECT_NAME}_gencpp)
 
 add_executable(test_human_classifier test/test_human_classifier.cpp)
 target_link_libraries(test_human_classifier human_contour_matcher ${OpenCV_LIBRARIES})
+target_link_libraries(test_human_classifier face_detector ${OpenCV_LIBRARIES})
 add_dependencies(test_human_classifier ${PROJECT_NAME}_gencpp)
 
 add_executable(test_service_speed test/test_service_speed.cpp)

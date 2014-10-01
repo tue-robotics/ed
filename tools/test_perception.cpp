@@ -51,13 +51,13 @@ int main(int argc, char **argv) {
 
     if (argc < 3)
     {
-        std::cout << "Usage:\n\n   test_perception PERCEPTION_LIBRARY MEASUREMENT_DIRECTORY [PERCEPTION_LIBRARY_2] ...\n\n";
+        std::cout << "Usage for:\n\n   test_perception MEASUREMENT_DIRECTORY PERCEPTION_LIBRARY [PERCEPTION_LIBRARY_2]\n\n";
         return 1;
     }
     else if (argc == 3)
     {
-        measurement_dir = argv[2];
-        perception_libs.push_back(argv[1]);
+        measurement_dir = argv[1];
+        perception_libs.push_back(argv[2]);
     }
     else if (argc > 3)
     {
