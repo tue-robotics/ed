@@ -25,6 +25,18 @@ private:
     std::string kDebugFolder;   /*!< Path of the debug folder */
     std::string kCascadePath;   /*!< Path of the cascade training folder */
 
+    bool Detect(cv::CascadeClassifier& classifierFront,
+                cv::CascadeClassifier& classifierProfile,
+                const cv::Mat &colorImage,
+                const cv::Mat &mask_cv, const std::string &entity_id) const;
+
+    void CleanDebugFolder(const std::string& folder);
+
+    bool LoadCascades(cv::CascadeClassifier classifierFront, cv::CascadeClassifier classifierProfile) const;
+
+    //void Initializations(const std::string& module_name, const std::string& model_name, const std::string &module_path) const;
+
+
 public:
 
     FaceDetector();
@@ -34,10 +46,6 @@ public:
     void loadModel(const std::string& model_name, const std::string& model_path);
 
     void process(ed::EntityConstPtr e, tue::Configuration& result) const;
-
-//    void Initializations(const std::string& module_name, const std::string& model_name, const std::string &module_path) const;
-
-    bool LoadCascades(cv::CascadeClassifier classifierFront, cv::CascadeClassifier classifierProfile) const;
 
 };
 
