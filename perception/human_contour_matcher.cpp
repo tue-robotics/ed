@@ -82,7 +82,10 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
     float depth_sum = 0;
     float avg_depht;
     float classification_error = 0;
+    float classification_deviation = 0;
+    std::string classification_stance;
     uint point_counter = 0;
+    bool is_human = false;
 
     // Get the depth image from the measurement
     const cv::Mat& depth_image = msr->image()->getDepthImage();
@@ -106,14 +109,25 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
         point_counter++;
     }
 
-    // ...
 
     avg_depht = depth_sum/(float)point_counter;
-    human_classifier_.Classify(depth_image, color_image, mask_cv, avg_depht, classification_error);
-//    std::cout << "[human_contour_matcher] " << "Perception result, human = " << classification_error << "\n";
 
-    result.setValue("type", "human");
-    result.setValue("type-score", classification_error);
+    is_human = human_classifier_.Classify(depth_image, color_image, mask_cv, avg_depht, classification_error, classification_deviation, classification_stance);
+
+    result.writeGroup("matching_result");
+    result.setValue("classification_stance", classification_stance);
+    result.setValue("classification_error", classification_error);
+    result.setValue("classification_deviation", classification_deviation);
+    result.endGroup();
+
+    if(is_human)
+    {
+        result.setValue("type", "human_contour");
+        result.setValue("type-score", 1.0);
+    }else{
+        result.setValue("type", "human_contour");
+        result.setValue("type-score", 0.0);
+    }
 
     // If you're sure the measurement originates from a human, you can set this in the result
     //    ( addInfo(label, score, [pose]) )

@@ -83,7 +83,9 @@ class HumanClassifier {
                       const cv::Mat& color_img,
                       const cv::Mat& mask,
                       float& avg_depth,
-                      float& template_match_error) const;
+                      float& template_match_error,
+                      float &template_match_deviation,
+                      std::string &template_stance) const;
 
         // Tries to fit a template on the given measurement
         bool TemplateClassification(const cv::Mat& depth_image,

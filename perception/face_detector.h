@@ -25,16 +25,21 @@ private:
     std::string kDebugFolder;   /*!< Path of the debug folder */
     std::string kCascadePath;   /*!< Path of the cascade training folder */
 
-    bool Detect(cv::CascadeClassifier& classifierFront,
-                cv::CascadeClassifier& classifierProfile,
-                const cv::Mat &colorImage,
-                const cv::Mat &mask_cv, const std::string &entity_id) const;
+
+
+    bool DetectFaces(const cv::Mat &colorImage,
+                     const cv::Mat &mask_cv,
+                     const std::string &entity_id,
+                     std::vector<cv::Rect>& faces_front,
+                     std::vector<cv::Rect>& faces_profile) const;
 
     void CleanDebugFolder(const std::string& folder);
 
-    bool LoadCascades(cv::CascadeClassifier classifierFront, cv::CascadeClassifier classifierProfile) const;
+    bool LoadCascades() const;
 
-    //void Initializations(const std::string& module_name, const std::string& model_name, const std::string &module_path) const;
+    int ClipInt(int val, int min, int max) const;
+
+    void OptimizeContour(const cv::Mat& mask_orig, const cv::Mat& mask_opt) const;
 
 
 public:

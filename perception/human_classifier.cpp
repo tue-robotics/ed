@@ -21,33 +21,45 @@ bool HumanClassifier::Classify(const cv::Mat& depth_img,
                                const cv::Mat& color_img,
                                const cv::Mat& mask,
                                float& avg_depth,
-                               float& template_match_error) const {
+                               float& template_match_error,
+                               float& template_match_deviation,
+                               std::string& template_stance) const {
 
 //    std::cout << "[" << kModuleName << "] " << "Classifying object" << std::endl;
 
     cv::Point3i match_pos, match_init_pos;
     float match_error;
     float match_variance;
-    float match_deviation;
     TemplateType template_type;
     Roi measurement;
     bool faceDetected = false;
 
     // try the template matching
-    if (TemplateClassification(depth_img, mask, avg_depth, match_pos, match_init_pos, match_error, match_variance, match_deviation, template_type, measurement)){
-        std::cout << "[" << kModuleName << "] " << "Template matching result:" << std::endl;
-        if (template_type == FaceFront)
-            std::cout << "[" << kModuleName << "] " << "\tStance: Front" << std::endl;
-        else if (template_type == FaceLeft)
-            std::cout << "[" << kModuleName << "] " << "\tStance: Left" << std::endl;
-        else if (template_type == FaceRight)
-            std::cout << "[" << kModuleName << "] " << "\tStance: Right" << std::endl;
-        else if (template_type == NoMatch)
-            std::cout << "[" << kModuleName << "] " << "\tStance: No Match!" << std::endl;
+    if (TemplateClassification(depth_img, mask, avg_depth, match_pos, match_init_pos, match_error, match_variance, template_match_deviation, template_type, measurement)){
 
-        std::cout << "[" << kModuleName << "] " << "\tError: " << match_error << std::endl;
- //       std::cout << "[" << kModuleName << "] " << "\tVariance: " << match_variance << std::endl;
-        std::cout << "[" << kModuleName << "] " << "\tDeviation: " << match_deviation << std::endl;
+//        std::cout << "[" << kModuleName << "] " << "Template matching result:" << std::endl;
+        if (template_type == FaceFront){
+            template_stance = "front";
+//            std::cout << "[" << kModuleName << "] " << "\tStance: Front" << std::endl;
+        }
+        else if (template_type == FaceLeft){
+            template_stance = "side_left";
+//            std::cout << "[" << kModuleName << "] " << "\tStance: Left" << std::endl;
+        }
+        else if (template_type == FaceRight){
+            template_stance = "side_right";
+//            std::cout << "[" << kModuleName << "] " << "\tStance: Right" << std::endl;
+        }
+        else if (template_type == NoMatch){
+            template_stance = "";
+            template_match_error = 0;
+            template_match_deviation = 0;
+//            std::cout << "[" << kModuleName << "] " << "\tStance: No Match!" << std::endl;
+        }
+
+//        std::cout << "[" << kModuleName << "] " << "\tError: " << match_error << std::endl;
+//        std::cout << "[" << kModuleName << "] " << "\tVariance: " << match_variance << std::endl;
+//        std::cout << "[" << kModuleName << "] " << "\tDeviation: " << template_match_deviation << std::endl;
     }else{
 //        std::cout << "[" << kModuleName << "] " << "Could not match any of the templates" << std::endl;
     }
@@ -56,13 +68,10 @@ bool HumanClassifier::Classify(const cv::Mat& depth_img,
     if (kFaceDetectEnabled)
         faceDetected = FaceDetection(color_img, measurement);
 
-
-    // TODO report the cascade classifier for frontal faces in another way, not just 0 or 1
+    template_match_error = match_error;
     if ((match_error < kMaxTemplateErr && template_type != NoMatch) || faceDetected){
-        template_match_error = 1.0;
         return true;
     }else{
-        template_match_error = 0.0;
         return false;
     }
 }
@@ -598,9 +607,7 @@ bool HumanClassifier::Initializations(const std::string& model_name, const std::
     LoadParameters();
 
 	// clean/create debug folder
-    std::cout << "[" << kModuleName << "] " << "Cleaning debug/output folders. Don't worry about error comments like 'rm: cannot remove'" << std::endl;
-	CleanDebugFolder(kDebugFolder);
-
+    if (kDebugMode) CleanDebugFolder(kDebugFolder);
 
     // Load templates by the same order you enumerate them in "enum TemplateType"
     kTemplatesOriginal.clear();
@@ -613,16 +620,6 @@ bool HumanClassifier::Initializations(const std::string& model_name, const std::
     }
     else
         std::cout << "[" << kModuleName << "] " << "Templates sucessfully loaded" << std::endl;
-
-    // Load haar cascade trainning files
-//    if (kFaceDetectEnabled){
-//        if (!kDetectFaceFront.load(cascade_path + "haarcascade_frontalface_default.xml") ||
-//            !kDetectFaceProfile.load(cascade_path + "haarcascade_profileface.xml")) {
-//            std::cout << "[" << kModuleName << "] " << "Unable to load all haar cascade files" << std::endl;
-//        } else {
-//            std::cout << "[" << kModuleName << "] " << "Haar cascade XML files sucessfully loaded." << std::endl;
-//        }
-//    }
 
     // initialize structuing element for morphological operations
     kMorphElement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4), cv::Point(-1, -1));
@@ -673,6 +670,8 @@ void HumanClassifier::LoadParameters(){
 
 
 void HumanClassifier::CleanDebugFolder(const std::string& folder){
+    std::cout << "[" << kModuleName << "] " << "Cleaning debug/output folders. Don't worry about error comments like 'rm: cannot remove'" << std::endl;
+
     if (system(std::string("mkdir " + folder + " > nul").c_str()) != 0){
 		//printf("\nUnable to create output folder. Already created?\n");
 	}
