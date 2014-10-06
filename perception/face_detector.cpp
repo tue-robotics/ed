@@ -50,20 +50,20 @@ void FaceDetector::loadModel(const std::string& model_name, const std::string& m
         kClassProfileMinNeighbors = 2;
         kClassProfileMinSize = cv::Size(20,20);
 
-        if (kDebugMode){
-            kDebugFolder = "/tmp/face_detector/";
-            CleanDebugFolder(kDebugFolder);
-
-            // create debug window
-            cv::namedWindow("Face Detector Output", CV_WINDOW_AUTOSIZE);
-        }
-
         // load training files
         if (!classifier_front.load(kCascadePath + "haarcascade_frontalface_default.xml") ||
                 !classifier_profile.load(kCascadePath + "haarcascade_profileface.xml")) {
 
             std::cout << "[" << kModuleName << "] " << "Unable to load all haar cascade files ("<< kCascadePath << ")" << std::endl;
             return;
+        }
+
+        if (kDebugMode){
+            kDebugFolder = "/tmp/face_detector/";
+            CleanDebugFolder(kDebugFolder);
+
+            // create debug window
+            cv::namedWindow("Face Detector Output", CV_WINDOW_AUTOSIZE);
         }
 
         init_success_ = true;
@@ -152,11 +152,8 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
 
     cv::Mat cascade_img;
     cv::Rect bounding_box;
-
     std::vector<std::vector<cv::Point> > contour;
     bool face_detected;
-
-
 
 
     // find the contours of the mask
