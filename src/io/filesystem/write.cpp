@@ -7,6 +7,8 @@
 
 #include <rgbd/serialization.h>
 
+#include <geolib/serialization.h>
+
 #include <fstream>
 
 namespace ed
@@ -47,6 +49,22 @@ bool write(const std::string& filename, const Measurement& msr)
             std::cout << "Could not save to " << filename_mask << std::endl;
         }
     }
+
+    // save sensor pose
+    {
+        std::string filename_pose = filename + ".poseMAP";
+        std::ofstream f_out;
+        f_out.open(filename_pose.c_str(), std::ifstream::binary);
+        if (f_out.is_open())
+        {
+            f_out << msr.sensorPose();
+        }
+        else
+        {
+            std::cout << "Could not save to " << filename_pose << std::endl;
+        }
+    }
+
     return true;
 }
 
