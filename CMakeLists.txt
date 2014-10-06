@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   visualization_msgs
   nav_msgs
+  ann2
 )
 
 find_package(PCL REQUIRED)
@@ -167,13 +168,13 @@ add_library(face_detector
 )
 target_link_libraries(face_detector ed_perception)
 
-#add_library(odu_finder
-#    perception/odu_finder/odu_finder_module.cpp
-#    perception/odu_finder/odu_finder_module.h
-#    perception/odu_finder/odu_finder.cpp
-#    perception/odu_finder/odu_finder.h
-#)
-#target_link_libraries(odu_finder ed_perception)
+add_library(odu_finder
+    perception/odu_finder/odu_finder_module.cpp
+    perception/odu_finder/odu_finder_module.h
+    perception/odu_finder/odu_finder.cpp
+    perception/odu_finder/odu_finder.h
+)
+target_link_libraries(odu_finder ed_perception)
 
 add_library(qr_detector
     perception/qr_detector.cpp

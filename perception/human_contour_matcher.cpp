@@ -71,6 +71,7 @@ void HumanContourMatcher::loadModel(const std::string& model_name, const std::st
 
 void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) const
 {
+    // if initialization failed, return
     if (!init_success_)
         return;
 
@@ -109,15 +110,15 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
         point_counter++;
     }
 
-
     avg_depht = depth_sum/(float)point_counter;
 
     is_human = human_classifier_.Classify(depth_image, color_image, mask_cv, avg_depht, classification_error, classification_deviation, classification_stance);
 
+    // assert results
     result.writeGroup("matching_result");
-    result.setValue("classification_stance", classification_stance);
-    result.setValue("classification_error", classification_error);
-    result.setValue("classification_deviation", classification_deviation);
+    result.setValue("stance", classification_stance);
+    result.setValue("error", classification_error);
+    result.setValue("deviation", classification_deviation);
     result.endGroup();
 
     if(is_human)
@@ -128,13 +129,6 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
         result.setValue("type", "human_contour");
         result.setValue("type-score", 0.0);
     }
-
-    // If you're sure the measurement originates from a human, you can set this in the result
-    //    ( addInfo(label, score, [pose]) )
-    // res.addInfo("human", 1.0);
-
-    // If you're sure the measurement does NOT originate from a human, you can do the same but set a low score:
-    // res.addInfo("human", 0)
 }
 
 ED_REGISTER_PERCEPTION_MODULE(HumanContourMatcher)

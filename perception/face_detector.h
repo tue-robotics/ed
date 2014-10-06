@@ -18,6 +18,7 @@ class FaceDetector : public ed::PerceptionModule
  */
 private:
 
+    // module configuration
     bool init_success_;
     bool kDebugMode;            /*!< Enable debug mode */
     std::string	kModuleName;    /*!< Name of the module, for output */
@@ -26,6 +27,17 @@ private:
     std::string kCascadePath;   /*!< Path of the cascade training folder */
 
 
+    // Cascade classifier configuration
+    double kClassFrontScaleFactor;  // Parameter specifying how much the image size is reduced at each image scale
+    int kClassFrontMinNeighbors;    // Parameter specifying how many neighbors each candidate rectangle should have to retain it.
+    cv::Size kClassFrontMinSize;    // Minimum possible object size. Objects smaller than that are ignored.
+
+    double kClassProfileScaleFactor;  // Parameter specifying how much the image size is reduced at each image scale
+    int kClassProfileMinNeighbors;    // Parameter specifying how many neighbors each candidate rectangle should have to retain it.
+    cv::Size kClassProfileMinSize;   // Minimum possible object size. Objects smaller than that are ignored.
+
+    mutable cv::CascadeClassifier classifier_front;
+    mutable cv::CascadeClassifier classifier_profile;
 
     bool DetectFaces(const cv::Mat &colorImage,
                      const cv::Mat &mask_cv,
@@ -34,8 +46,6 @@ private:
                      std::vector<cv::Rect>& faces_profile) const;
 
     void CleanDebugFolder(const std::string& folder);
-
-    bool LoadCascades() const;
 
     int ClipInt(int val, int min, int max) const;
 

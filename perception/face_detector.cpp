@@ -42,12 +42,28 @@ void FaceDetector::loadModel(const std::string& model_name, const std::string& m
         kCascadePath = model_path + "/cascade_classifiers/";
         kDebugMode = false;
 
+        kClassFrontScaleFactor = 1.2;
+        kClassFrontMinNeighbors = 2;
+        kClassFrontMinSize = cv::Size(20,20);
+
+        kClassProfileScaleFactor= 1.1;
+        kClassProfileMinNeighbors = 2;
+        kClassProfileMinSize = cv::Size(20,20);
+
         if (kDebugMode){
             kDebugFolder = "/tmp/face_detector/";
             CleanDebugFolder(kDebugFolder);
 
             // create debug window
             cv::namedWindow("Face Detector Output", CV_WINDOW_AUTOSIZE);
+        }
+
+        // load training files
+        if (!classifier_front.load(kCascadePath + "haarcascade_frontalface_default.xml") ||
+                !classifier_profile.load(kCascadePath + "haarcascade_profileface.xml")) {
+
+            std::cout << "[" << kModuleName << "] " << "Unable to load all haar cascade files ("<< kCascadePath << ")" << std::endl;
+            return;
         }
 
         init_success_ = true;
@@ -66,6 +82,9 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
     if (!msr)
         return;
 
+    std::vector<cv::Rect> faces_front;
+    std::vector<cv::Rect> faces_profile;
+
     // Get the depth and color image from the measurement
     const cv::Mat& depth_image = msr->image()->getDepthImage();
     const cv::Mat& color_image = msr->image()->getRGBImage();
@@ -83,24 +102,15 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
         mask_cv.at<unsigned char>(cv::Point2i(ClipInt(p_2d.x + 8, 0, depth_image.cols), p_2d.y)) = 255; // TODO: remove this hack after calibrating the kinect
     }
 
-    // load training files, if it fails bail out
-//    if (!LoadCascades()){
-//        std::cout << "[" << kModuleName << "] " << "Haar Cascade XML files failed loading. Returning." << std::endl;
-//        result.setValue("type", "face");
-//        result.setValue("type-score", 0.0);
-//        return;
-//    }
-
     // improve the contours of the mask
     OptimizeContour(mask_cv, mask_cv);
 
-    std::vector<cv::Rect> faces_front;
-    std::vector<cv::Rect> faces_profile;
-
+    // Detect faces in the measurment and assert the results
     if(DetectFaces(color_image, mask_cv, e->id(), faces_front, faces_profile)){
         result.setValue("type", "face");
         result.setValue("type-score", 1.0);
 
+        // if front faces were detected
         if (faces_front.size() > 0){
             result.writeArray("faces_front");
             for (uint j = 0; j < faces_front.size(); j++) {
@@ -113,6 +123,7 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
             result.endArray();
         }
 
+        // if profile faces were detected
         if (faces_profile.size() > 0){
             result.writeArray("faces_profile");
             for (uint j = 0; j < faces_profile.size(); j++) {
@@ -124,8 +135,8 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
             }
             result.endArray();
         }
-
     }else{
+        // no faces detected
         result.setValue("type", "face");
         result.setValue("type-score", 0.0);
     }
@@ -141,18 +152,12 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
 
     cv::Mat cascade_img;
     cv::Rect bounding_box;
-    cv::CascadeClassifier classifier_front;
-    cv::CascadeClassifier classifier_profile;
+
     std::vector<std::vector<cv::Point> > contour;
     bool face_detected;
 
-    // load training files
-    if (!classifier_front.load(kCascadePath + "haarcascade_frontalface_default.xml") ||
-            !classifier_profile.load(kCascadePath + "haarcascade_profileface.xml")) {
 
-        std::cout << "[" << kModuleName << "] " << "Unable to load all haar cascade files ("<< kCascadePath << ")" << std::endl;
-        return false;
-    }
+
 
     // find the contours of the mask
     findContours(mask_cv, contour, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -160,27 +165,24 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
     // create a minimum area bounding box
     bounding_box = cv::boundingRect(contour[0]);
 
-//    std::cout << "[" << kModuleName << "] " << "color = "<< color_img.cols << ", " << color_img.rows << std::endl;
-//    std::cout << "[" << kModuleName << "] " << "mask = "<< mask_cv.cols << ", " << mask_cv.rows << std::endl;
-//    std::cout << "[" << kModuleName << "] " << "bounding = "<< bounding_box.height << ", " << bounding_box.height << std::endl;
-
-    // create a copy of the masked image, for the bounding box area
+    // create a copy of the masked image
     color_img.copyTo(cascade_img, mask_cv);
+
+    // select only the area of the bounding box
     cascade_img(bounding_box).copyTo(cascade_img);
 
     // increase contrast of the image
     normalize(cascade_img, cascade_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
 
     // detect frontal faces
-    classifier_front.detectMultiScale(cascade_img, faces_front, 1.2, 2, 0|CV_HAAR_SCALE_IMAGE);
+    classifier_front.detectMultiScale(cascade_img, faces_front, kClassFrontScaleFactor, kClassFrontMinNeighbors, 0|CV_HAAR_SCALE_IMAGE, kClassFrontMinSize);
 
     // only search profile faces if the frontal face detection failed
     if (faces_front.size() == 0){
-        classifier_profile.detectMultiScale(cascade_img, faces_profile, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE);
+        classifier_profile.detectMultiScale(cascade_img, faces_profile, kClassProfileScaleFactor, kClassProfileMinNeighbors, 0|CV_HAAR_SCALE_IMAGE, kClassProfileMinSize);
     }
 
     face_detected = (faces_front.size() > 0 || faces_profile.size() > 0);
-
 
     // update the coordinates of the faces found, to the overral image
     for (uint j = 0; j < faces_front.size(); j++) {
@@ -194,8 +196,7 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
     }
 
     // if debug mode is active and faces were found
-//    if (kDebugMode && faceDetected){
-      if (kDebugMode){
+    if (kDebugMode){
         cv::Mat debugImg;
 
         color_img.copyTo(debugImg);
@@ -206,7 +207,7 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
         for (uint j = 0; j < faces_profile.size(); j++)
             cv::rectangle(debugImg, faces_profile[j], cv::Scalar(0, 0, 255), 2, CV_AA);
 
-//        cv::imwrite(kDebugFolder + entity_id + "_faces.png", debugImg);
+//      cv::imwrite(kDebugFolder + entity_id + "_faces.png", debugImg);
         cv::imshow("Face Detector Output", debugImg);
     }
 
@@ -219,33 +220,13 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
 void FaceDetector::OptimizeContour(const cv::Mat& mask_orig, const cv::Mat& mask_opt) const{
 
     mask_orig.copyTo(mask_opt);
-//    cv::imwrite(kDebugFolder + "original.png", mask_orig);
 
-    // blur the contour, also expands a bit
+    // blur the contour, also expands it a bit
     for (uint i = 6; i < 18; i = i + 2){
         blur(mask_opt, mask_opt, cv::Size( i, i ), cv::Point(-1,-1) );
     }
-//    cv::imwrite(kDebugFolder + "blurred.png", mask_opt);
 
     cv::threshold(mask_opt, mask_opt, 50, 255, CV_THRESH_BINARY);
-//    cv::imwrite(kDebugFolder + "threshold.png", mask_opt);
-
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-bool FaceDetector::LoadCascades() const
-{
-//    if (!kClassifierFront.load(kCascadePath + "haarcascade_frontalface_default.xml") ||
-//            !kClassifierProfile.load(kCascadePath + "haarcascade_profileface.xml")) {
-
-//        std::cout << "[" << kModuleName << "] " << "Unable to load all haar cascade files ("<< kCascadePath << ")" << std::endl;
-//        return false;
-//    } else {
-////        if (kDebugMode) std::cout << "[" << kModuleName << "] " << "Haar cascade XML files sucessfully loaded." << std::endl;
-//    }
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------------------------------

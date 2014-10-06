@@ -19,7 +19,7 @@ public:
 
     void loadConfig(const std::string& config_path);
 
-    ed::PerceptionResult process(const ed::Measurement& msr) const;
+    void process(ed::EntityConstPtr e, tue::Configuration& result) const;
 
 private:
 
