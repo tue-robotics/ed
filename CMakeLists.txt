@@ -168,13 +168,13 @@ add_library(face_detector
 )
 target_link_libraries(face_detector ed_perception)
 
-add_library(odu_finder
+add_library(ed_odu_finder
     perception/odu_finder/odu_finder_module.cpp
     perception/odu_finder/odu_finder_module.h
     perception/odu_finder/odu_finder.cpp
     perception/odu_finder/odu_finder.h
 )
-target_link_libraries(odu_finder ed_perception)
+target_link_libraries(ed_odu_finder ed_perception)
 
 add_library(qr_detector
     perception/qr_detector.cpp
