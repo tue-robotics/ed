@@ -288,7 +288,6 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
     //! 8) Clearing
     {
         tue::ScopedTimer t(profiler_, "8) clearing");
-        std::cout << "--- Entities in view: ----" << std::endl;
 
         std::vector<UUID> entities_in_view_not_associated;
         for (std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
