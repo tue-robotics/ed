@@ -20,14 +20,12 @@ void PolygonHeightALM::configure(tue::Configuration config)
 {
     if (config.readGroup("parameters"))
     {
-        config.value("cell_size", cell_size_);
         config.value("tolerance", tolerance_);
         config.value("min_cluster_size", min_cluster_size_);
 
         config.value("visualize", visualize_);
 
         std::cout << "Parameters polygon height association: \n" <<
-        "- cell_size: " << cell_size_ << "\n" <<
         "- tolerance: " << tolerance_ << "\n" <<
         "- min_cluster_size: " << min_cluster_size_ << "\n" <<
         "- visualize: " << visualize_ << std::endl;
@@ -51,7 +49,7 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
     unsigned int i = 0;
     profiler_.startTimer("association");
     // Keep track of the entities that have an association
-    std::set<UUID> associated_entities;
+    std::map<UUID, std::vector<std::pair<PointCloudMaskPtr,ConvexHull2D> > > associated_entities;
     for(std::vector<PointCloudMaskPtr>::const_iterator it = clusters.begin(); it != clusters.end(); ++it )
     {
         const PointCloudMaskPtr& cluster = *it;
@@ -65,7 +63,6 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
 
         bool associated = false;
         UUID associated_id = "";
-        unsigned int max_measurement_seq = 0;
 
         for(std::map<UUID, EntityConstPtr>::const_iterator e_it = entities.begin(); e_it != entities.end(); ++e_it)
         {
@@ -78,62 +75,45 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
             if ( helpers::ddp::polygonCollisionCheck(polygon, e->convexHull(), overlap_factor) )
             {
                 associated = true;
-                if (e->measurementSeq() > max_measurement_seq)
-                    associated_id = e->id();
+                associated_id = e->id();
+                break;
             }
         }
 
-        // If this cluster did not associate, add it to 'not associated mask'
         if (associated)
-        {
-            // Create the measurement (For now based on one found convex hull, other info gets rejected)
-            MeasurementPtr m(new Measurement(rgbd_data, cluster, polygon));
-
-            // Make a copy of the entity such that we can add the associated measurement
-            EntityPtr e_updated(new Entity(*entities[associated_id]));
-
-            // Add measurement to entity
-            e_updated->addMeasurement(m);
-
-            // Add updated entity to the map
-            entities[associated_id] = e_updated;
-
             // Keep track of entities that have been associated
-            associated_entities.insert(associated_id);
-        }
+            associated_entities[associated_id].push_back(std::make_pair<PointCloudMaskPtr, ConvexHull2D>(cluster,polygon));
         else
-        {
             not_associated_mask->insert(not_associated_mask->end(), cluster->begin(), cluster->end());
-        }
     }
     profiler_.stopTimer();
 
-    //! 3. Collect entities in view (based on center point)
-    std::vector<UUID> entities_in_view_not_associated;
-    profiler_.startTimer("get_entities_in_view");
-    for (std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    // Add the associated clusters
+    for (std::map<UUID, std::vector<std::pair<PointCloudMaskPtr,ConvexHull2D> > >::iterator it = associated_entities.begin(); it != associated_entities.end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
-
-        if (!e->shape()) //! if it has a shape
+        ConvexHull2D polygon;
+        PointCloudMaskPtr pcl_mask(new PointCloudMask());
+        for (std::vector<std::pair<PointCloudMaskPtr,ConvexHull2D> >::iterator cit = it->second.begin(); cit != it->second.end(); ++cit)
         {
-            bool in_frustrum, object_in_front;
-            if (helpers::ddp::inView(rgbd_data.image, rgbd_data.sensor_pose, e->convexHull().center_point, 2.5, in_frustrum, object_in_front))
+            for (unsigned int i = 0; i < cit->first->size(); ++i)
             {
-                if (associated_entities.find(it->first) == associated_entities.end()) //! if no association found with this object
-                {
-                    entities_in_view_not_associated.push_back(it->first);
-                }
+                pcl_mask->push_back(cit->first->at(i));
             }
+            helpers::ddp::add2DConvexHull(cit->second, polygon);
         }
-    }
-    profiler_.stopTimer();
 
-    //! 5. Remove entities that do not have an association
-    profiler_.startTimer("clearing");
-    for (std::vector<UUID>::const_iterator it = entities_in_view_not_associated.begin(); it != entities_in_view_not_associated.end(); ++it)
-        entities.erase(*it);
-    profiler_.stopTimer();
+        // Create the measurement (For now based on one found convex hull, other info gets rejected)
+        MeasurementPtr m(new Measurement(rgbd_data, pcl_mask, polygon));
+
+        // Make a copy of the entity such that we can add the associated measurement
+        EntityPtr e_updated(new Entity(*entities[it->first]));
+
+        // Add measurement to entity
+        e_updated->addMeasurement(m);
+
+        // Add updated entity to the map
+        entities[it->first] = e_updated;
+    }
 
     pub_profile_.publish();
 }

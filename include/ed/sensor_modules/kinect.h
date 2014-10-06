@@ -33,6 +33,12 @@ private:
     std::map<std::string, RGBDALModulePtr> al_modules_;
     std::map<std::string, RGBDSegModulePtr> seg_modules_;
 
+    //! Tunable params
+    float voxel_size_;
+    float max_range_;
+    float clearing_padding_fraction_;
+    int normal_k_search_;
+
 };
 
 }

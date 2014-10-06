@@ -40,12 +40,13 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
     type_(type),
     shape_revision_(0),
     measurements_(measurement_buffer_size),
+    convex_hull_buffer_(20),
     measurements_seq_(0),
     creation_time_(creation_time),
-    pose_(geo::Pose3D::identity())
+    pose_(geo::Pose3D::identity()),
+    velocity_(geo::Pose3D::identity())
 {
     convex_hull_.center_point = geo::Vector3(0,0,0);
-    std::cout << "Created entity with ID: " << id_ << std::endl;
 }
 
 Entity::~Entity()
@@ -80,21 +81,33 @@ void Entity::addMeasurement(MeasurementConstPtr measurement)
     }
 
     // Update the convex hull
-    updateConvexHull();
+    updateConvexHull(measurement);
 }
 
-void Entity::updateConvexHull()
+void Entity::updateConvexHull(MeasurementConstPtr m)
 {
     // Remove points from the convex hull that are currently in view
-    helpers::ddp::removeInViewConvexHullPoints(lastMeasurement()->image(), lastMeasurement()->sensorPose(), convex_hull_);
+    helpers::ddp::removeInViewConvexHullPoints(m->image(), m->sensorPose(), convex_hull_);
 
-    // Add the last measurements to the convex hull :)
-    for ( unsigned int i = 0; i < 5 && i < measurements_.size(); ++i ) { //! TODO: CHECK INFLUENCE OF THIS PARAMETER
-        const MeasurementConstPtr& m = measurements_[i];
-        if (m) {
-            helpers::ddp::add2DConvexHull(m->convexHull(),convex_hull_);
+    helpers::ddp::add2DConvexHull(m->convexHull(),convex_hull_);
+
+    convex_hull_buffer_.push_front(std::make_pair(convex_hull_, ros::Time::now().toSec())); // Store the convex hulls over time for velocity calculation
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void Entity::convexHullAtTimeStamp(const double timestamp, ConvexHull2D& chull, double& actual_timestamp) const
+{
+    for(boost::circular_buffer<std::pair<ConvexHull2D, double> >::const_iterator it = convex_hull_buffer_.begin(); it != convex_hull_buffer_.end(); ++it)
+    {
+        if (it->second < timestamp)
+        {
+            chull = it->first;
+            actual_timestamp = it->second;
+            return;
         }
     }
+    actual_timestamp = 0;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -108,6 +121,7 @@ void Entity::measurements(std::vector<MeasurementConstPtr>& measurements, double
             measurements.push_back(m);
     }
 }
+
 
 // ----------------------------------------------------------------------------------------------------
 

@@ -6,6 +6,7 @@
 #include <rgbd/View.h>
 
 #include <pcl/features/normal_3d.h>
+#include <pcl/features/normal_3d_omp.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/surface/convex_hull.h>
@@ -186,7 +187,7 @@ void calculatePointCloudNormals(RGBDData& output, int k_search)
     if (output.point_cloud->points.size() < 3)
         return;
 
-    pcl::NormalEstimation<pcl::PointXYZ, pcl::PointNormal> norm_est;
+    pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::PointNormal> norm_est;
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ> ());
     norm_est.setSearchMethod(tree);
     norm_est.setKSearch(k_search);
@@ -313,7 +314,7 @@ pcl::PointCloud<pcl::PointNormal>::ConstPtr pclToNpcl(const pcl::PointCloud<pcl:
         return npcl;
     }
 
-    pcl::NormalEstimation<pcl::PointXYZ, pcl::PointNormal> norm_est;
+    pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::PointNormal> norm_est;
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ> ());
     norm_est.setSearchMethod(tree);
     norm_est.setKSearch(k_search);
@@ -457,6 +458,9 @@ bool polygonCollisionCheck(const ConvexHull2D& chull1, const ConvexHull2D& chull
         polygon2 << ClipperLib::IntPoint(pit->x*1000,pit->y*1000);
     }
 
+    if (ClipperLib::Area(polygon1) == 0 || ClipperLib::Area(polygon2) == 0)
+        return false;
+
     double area1 = ClipperLib::Area(polygon1) / (1000*1000);
 
     ClipperLib::Clipper c;
@@ -486,7 +490,7 @@ void removeInViewConvexHullPoints(rgbd::ImageConstPtr rgbd_image, const geo::Pos
     for ( pcl::PointCloud<pcl::PointXYZ>::iterator it = convex_hull.chull.begin(); it != convex_hull.chull.end() ; ) {
         geo::Vector3 p(it->x,it->y, (convex_hull.max_z + convex_hull.min_z) / 2);
         bool in_frustrum, object_in_front;
-        if ( inView(rgbd_image, sensor_pose, p, 2.9, in_frustrum, object_in_front) ) { //! TODO: THis param here <--
+        if ( inView(rgbd_image, sensor_pose, p, 2.9, 0.2, in_frustrum, object_in_front) ) { //! TODO: THis param here <--
             it = convex_hull.chull.erase(it);
         } else {
             ++it;
@@ -496,7 +500,7 @@ void removeInViewConvexHullPoints(rgbd::ImageConstPtr rgbd_image, const geo::Pos
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, const geo::Vector3& p, float max_range, bool& in_frustrum, bool& object_in_front)
+bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, const geo::Vector3& p, float max_range, float padding_fraction, bool& in_frustrum, bool& object_in_front)
 {
     in_frustrum = false;
     object_in_front = false;
@@ -510,11 +514,14 @@ bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, cons
 
     cv::Point2d idx = view.getRasterizer().project3Dto2D(p_SENSOR);
 
-    if (idx.x >= 0 && idx.x < view.getWidth() && idx.y >= 0 && idx.y < view.getHeight()) {
+    if (idx.x >= view.getWidth()*padding_fraction &&
+            idx.x < view.getWidth() - view.getWidth()*padding_fraction &&
+            idx.y >= view.getHeight()*padding_fraction &&
+            idx.y < view.getHeight() - view.getHeight()*padding_fraction) {
         in_frustrum = true;
         float img_depth = fabs(view.getDepth(idx.x,idx.y));
 
-        if ( p_depth < img_depth && p_depth < max_range ) //! TODO: THIS NEEDS REVISION! -- Already had some but still crucial part!
+        if ( p_depth /*- 0.1*/ < img_depth && p_depth < max_range ) //! TODO: THIS NEEDS REVISION! -- Already had some but still crucial part!
         {
             return true;
         }
@@ -527,6 +534,36 @@ bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, cons
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void getDisplacementVector(const ConvexHull2D& c1, const ConvexHull2D& c2, geo::Vector3& dv)
+{
+    Eigen::Vector4f input_min, input_max, output_min, output_max;
+    pcl::getMinMax3D (c1.chull, input_min, input_max);
+    pcl::getMinMax3D (c2.chull, output_min, output_max);
+
+    Eigen::Vector4f d_max = input_max-output_max;
+    Eigen::Vector4f d_min = input_min-output_min;
+
+    // Only expansion
+    if (d_max[0] < 0) d_max[0] = 0;
+    if (d_max[1] < 0) d_max[1] = 0;
+    if (d_max[2] < 0) d_max[2] = 0;
+    if (d_min[0] > 0) d_min[0] = 0;
+    if (d_min[1] > 0) d_min[1] = 0;
+    if (d_min[2] > 0) d_min[2] = 0;
+
+    if (-d_min[0] > fabs(d_max[0]))
+        dv.x = d_min[0];
+    else
+        dv.x = d_max[0];
+
+    if (-d_min[1] > d_max[1])
+        dv.y = d_min[1];
+    else
+        dv.y = d_max[1];
+
+    dv.z = 0;
+}
 
 }
 

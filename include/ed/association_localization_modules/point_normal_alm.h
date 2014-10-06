@@ -19,7 +19,7 @@ class AssociationPR : public pcl::PointRepresentation <pcl::PointNormal>
         AssociationPR ()
         {
             // Define the number of dimensions
-            nr_dimensions_ = 4;
+            nr_dimensions_ = 6;
         }
 
         // Override the copyToFloatArray method to define our feature vector
@@ -29,7 +29,10 @@ class AssociationPR : public pcl::PointRepresentation <pcl::PointNormal>
             out[0] = p.x;
             out[1] = p.y;
             out[2] = p.z;
-            out[3] = p.curvature;
+            out[3] = p.normal_x;
+            out[4] = p.normal_y;
+            out[5] = p.normal_z;
+//            out[3] = p.curvature;
         }
 };
 
@@ -49,10 +52,16 @@ public:
 protected:
 
     pcl::KdTreeFLANN<pcl::PointNormal>::Ptr tree_;
-    AssociationPR point_representation_;
-    float position_weight_; // tunable param
-    float curvature_weight_; // tunable param
-    float association_correspondence_distance_; // tunable param
+    AssociationPR point_representation_, point_representation2_;
+
+    //! tunable params
+    float position_weight_;
+    float normal_weight_;
+    float association_correspondence_distance_;
+    int render_width_;
+    float render_max_range_;
+    float render_voxel_size_;
+    int normal_k_search_;
 
 };
 

@@ -61,7 +61,9 @@ void get2DConvexHullsFromDepthImageMask(rgbd::ImageConstPtr rgbd_image, const ge
 
 void removeInViewConvexHullPoints(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, ConvexHull2D& convex_hull);
 
-bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, const geo::Vector3& p, float max_range, bool& in_frustrum, bool& object_in_front);
+bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, const geo::Vector3& p, float max_range, float padding_fraction, bool& in_frustrum, bool& object_in_front);
+
+void getDisplacementVector(const ConvexHull2D& c1, const ConvexHull2D& c2, geo::Vector3& dv);
 
 
 }

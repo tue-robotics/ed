@@ -26,8 +26,6 @@ namespace ed
 
 void addNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, std::map<UUID, EntityConstPtr>& entities)
 {
-//    std::cout << "CREATING NEW ENTITY" << std::endl;
-
     // Create the measurement
     MeasurementConstPtr m(new Measurement(rgbd_data, mask));
 
@@ -39,6 +37,68 @@ void addNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, std:
 
     // Add entity to ed
     entities[e->id()] = e;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void filterPointsBehindWorldModel(const std::map<UUID, EntityConstPtr>& entities, const geo::Pose3D& sensor_pose, rgbd::ImagePtr rgbd_image, const ros::Publisher& pub)
+{
+    rgbd::View view(*rgbd_image, 160);
+
+    // Visualize the frustrum
+    helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(view, sensor_pose, pub, 0, "frustrum_top_kinect");
+
+    cv::Mat wm_depth_image(view.getHeight(), view.getWidth(), CV_32FC1, 0.0);
+
+    geo::PointerMap pointer_map;    // TODO: GET RID OF THIS
+    geo::TriangleMap triangle_map;  // TODO: GET RID OF THIS
+    geo::DefaultRenderResult res(wm_depth_image, 0, pointer_map, triangle_map);
+
+    for(std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    {
+        const EntityConstPtr& e = it->second;
+
+        if (e->shape())
+        {
+            geo::Pose3D pose = sensor_pose.inverse() * e->pose();
+            geo::RenderOptions opt;
+            opt.setMesh(e->shape()->getMesh(), pose);
+
+            // Render
+            view.getRasterizer().render(opt, res);
+        }
+    }
+
+    const cv::Mat& depth_image = rgbd_image->getDepthImage();
+    cv::Mat new_depth_image(depth_image.rows, depth_image.cols, CV_32FC1);
+
+    float f = (float)view.getWidth() / depth_image.cols;
+
+    for(int y = 0; y < depth_image.rows; ++y)
+    {
+        for(int x = 0; x < depth_image.cols; ++x)
+        {
+            float d_sensor = depth_image.at<float>(y, x);
+            float d_wm = wm_depth_image.at<float>(f * y, f * x);
+            if (d_sensor == d_sensor && d_wm != 0) // Check if point is actually valid
+            {
+                if ( d_sensor < d_wm )
+                {
+                    new_depth_image.at<float>(y, x) = depth_image.at<float>(y, x);
+                }
+                else
+                {
+                    new_depth_image.at<float>(y, x) = -d_wm; // TODO: <-- This value; Valid point @ world model object ( used for not taking int account when rendering but taking into account @ clearing )
+                }
+            }
+            else
+            {
+                new_depth_image.at<float>(y, x) = -d_wm;
+            }
+        }
+    }
+
+    rgbd_image->setDepthImage(new_depth_image);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -112,8 +172,11 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
         rgbd_client_.intialize(source_);
     }
 
-    // Takes some time to get the first image
-//    ros::Duration(1.0).sleep();
+    // Get tunable params
+    config.value("voxel_size", voxel_size_);
+    config.value("max_range", max_range_);
+    config.value("clearing_padding_fraction", clearing_padding_fraction_);
+    config.value("normal_k_search", normal_k_search_);
 }
 
 void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
@@ -154,63 +217,7 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
     //! 2) Preprocess image: remove all data points that are behind world model entities
     {
         tue::ScopedTimer t(profiler_, "2) filter points behind wm");
-
-        rgbd::View view(*rgbd_image, 640);
-
-        // Visualize the frustrum
-        helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(view, sensor_pose, vis_marker_pub_, 0, "frustrum_top_kinect");
-
-        cv::Mat wm_depth_image(view.getHeight(), view.getWidth(), CV_32FC1, 0.0);
-
-        geo::PointerMap pointer_map;    // TODO: GET RID OF THIS
-        geo::TriangleMap triangle_map;  // TODO: GET RID OF THIS
-        geo::DefaultRenderResult res(wm_depth_image, 0, pointer_map, triangle_map);
-
-        for(std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
-        {
-            const EntityConstPtr& e = it->second;
-
-            if (e->shape())
-            {
-                geo::Pose3D pose = sensor_pose.inverse() * e->pose();
-                geo::RenderOptions opt;
-                opt.setMesh(e->shape()->getMesh(), pose);
-
-                // Render
-                view.getRasterizer().render(opt, res);
-            }
-        }
-
-        const cv::Mat& depth_image = rgbd_image->getDepthImage();
-        cv::Mat new_depth_image(depth_image.rows, depth_image.cols, CV_32FC1);
-
-        float f = (float)view.getWidth() / depth_image.cols;
-
-        for(int y = 0; y < depth_image.rows; ++y)
-        {
-            for(int x = 0; x < depth_image.cols; ++x)
-            {
-                float d_sensor = depth_image.at<float>(y, x);
-                float d_wm = wm_depth_image.at<float>(f * y, f * x);
-                if (d_sensor == d_sensor && d_wm != 0) // Check if point is actually valid
-                {
-                    if ( d_sensor < d_wm)
-                    {
-                        new_depth_image.at<float>(y, x) = depth_image.at<float>(y, x);
-                    }
-                    else
-                    {
-                        new_depth_image.at<float>(y, x) = -d_wm; // TODO: <-- This value; Valid point @ world model object ( used for not taking int account when rendering but taking into account @ clearing )
-                    }
-                }
-                else
-                {
-                    new_depth_image.at<float>(y, x) = 0;
-                }
-            }
-        }
-
-        rgbd_image->setDepthImage(new_depth_image);
+        filterPointsBehindWorldModel(entities, sensor_pose, rgbd_image, vis_marker_pub_);
     }
 
     // Construct RGBD Data
@@ -222,16 +229,16 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
     {
         tue::ScopedTimer t(profiler_, "3) create sensor point cloud");
 
-        helpers::ddp::extractPointCloud(rgbd_data, 0.01, 4.0, 1);  // TODO: GET RID OF HARD-CODED VALUES
+        helpers::ddp::extractPointCloud(rgbd_data, voxel_size_, max_range_, 1);
     }
 
     //! 4) Calculate point cloud normals
     {
         tue::ScopedTimer t(profiler_, "4) calculate sensor pc normals");
-        helpers::ddp::calculatePointCloudNormals(rgbd_data, 15);
+        helpers::ddp::calculatePointCloudNormals(rgbd_data, normal_k_search_);
     }
 
-//    if (visualize_)
+    if (visualize_)
         helpers::visualization::publishNpclVisualizationMarker(rgbd_data.sensor_pose, rgbd_data.point_cloud_with_normals,
                                                                vis_marker_pub_, 0, "sensor_npcl");
 
@@ -253,9 +260,11 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
         }
     }
 
-    //! 6) Segment the residual sensor data
+    //! 7) Segment the residual sensor data
     if (!pc_mask->empty())
     {
+        tue::ScopedTimer t(profiler_, "7) Segmentation");
+
         std::vector<PointCloudMaskPtr> segments;
         segments.push_back(pc_mask);
 
@@ -276,7 +285,34 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
         profiler_.stopTimer();
     }
 
-    // Visualize segmented pcl / image
+    //! 8) Clearing
+    {
+        tue::ScopedTimer t(profiler_, "8) clearing");
+        std::cout << "--- Entities in view: ----" << std::endl;
+
+        std::vector<UUID> entities_in_view_not_associated;
+        for (std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+        {
+            const EntityConstPtr& e = it->second;
+
+            if (!e->shape()) //! if it has no shape
+            {
+                bool in_frustrum, object_in_front;
+                if (helpers::ddp::inView(rgbd_data.image, rgbd_data.sensor_pose, e->convexHull().center_point, max_range_, clearing_padding_fraction_, in_frustrum, object_in_front))
+                {
+                    MeasurementConstPtr m = e->lastMeasurement();
+
+                    if (m && ros::Time::now().toSec() - m->timestamp() > 1.0)
+                    {
+                        entities_in_view_not_associated.push_back(it->first);
+                    }
+                }
+            }
+        }
+
+        for (std::vector<UUID>::const_iterator it = entities_in_view_not_associated.begin(); it != entities_in_view_not_associated.end(); ++it)
+            entities.erase(*it);
+    }
 
     pub_profile_.publish();
 }

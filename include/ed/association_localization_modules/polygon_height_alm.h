@@ -24,7 +24,6 @@ public:
 protected:
 
     /// Tunable params
-    double cell_size_;
     double tolerance_;
     int min_cluster_size_;
 
