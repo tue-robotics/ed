@@ -114,12 +114,14 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
 
     is_human = human_classifier_.Classify(depth_image, color_image, mask_cv, avg_depht, classification_error, classification_deviation, classification_stance);
 
+    if (classification_error > 0){
     // assert results
-    result.writeGroup("matching_result");
-    result.setValue("stance", classification_stance);
-    result.setValue("error", classification_error);
-    result.setValue("deviation", classification_deviation);
-    result.endGroup();
+        result.writeGroup("matching_result");
+        result.setValue("stance", classification_stance);
+        result.setValue("error", classification_error);
+        result.setValue("deviation", classification_deviation);
+        result.endGroup();
+    }
 
     if(is_human)
     {
