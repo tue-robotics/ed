@@ -56,7 +56,8 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
         masked_mono_image.at<unsigned char>(*it) = mono_image.at<unsigned char>(*it);
 
     // process the image
-    std::map<std::string, float> results = odu_finder_.process_image(masked_mono_image);
+    IplImage img(masked_mono_image);
+    std::map<std::string, float> results = odu_finder_.process_image(&img);
 
     result.writeArray("hypotheses");
     for(std::map<std::string, float>::const_iterator it = results.begin(); it != results.end(); ++it)

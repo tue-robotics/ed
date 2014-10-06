@@ -13,18 +13,18 @@
 using namespace odu_finder;
 ////////////////////////////
 DocumentInfo::DocumentInfo() :
-delete_document(false) {
+    delete_document(false) {
 }
 
 //////////////////////////////////////////////////////////////////////
 DocumentInfo::DocumentInfo(vt::Document* document, std::string& name) :
-                            delete_document(false), document(document), name(name) {
+    delete_document(false), document(document), name(name) {
 }
 
 ////////////////////////////
 DocumentInfo::~DocumentInfo() {
     if (delete_document)
-        delete document;
+        delete[] document;
 }
 
 ///////////////////////////////////////////
@@ -55,8 +55,18 @@ void DocumentInfo::read(std::istream& in) {
 
 /////////////////////////////////////////////////////////////////////////////////////
 ODUFinder::ODUFinder() :
-                            camera_image(NULL), template_image(NULL), image(NULL), visualization_mode_(FRAMES),
-                            tree_builder(Feature::Zero())  { //SEQUENCES) {  //FRAMES) {   //SEQUENCES
+    camera_image(NULL), template_image(NULL), image(NULL), tree_builder(Feature::Zero()), visualization_mode_(FRAMES),
+    tuning_object_(""), current_mode_(odu_finder::RECOGNITION)
+{ //SEQUENCES) {  //FRAMES) {   //SEQUENCES
+
+    //! Set tuning mode
+    ros::NodeHandle nh("~");
+    std::string ss_name = nh.getNamespace() + "/set_tuning_mode";
+    srv_server_ = nh.advertiseService<pein_srvs::TuningMode::Request, pein_srvs::TuningMode::Response>
+            (ss_name, boost::bind(&ODUFinder::srvCB, this, _1, _2));
+    ROS_INFO("Started tuning service server '%s'", ss_name.c_str());
+
+
     command = std::string("/load");
     database_location = std::string("database/germandeli");
     images_directory = std::string("data/germandeli");
@@ -71,7 +81,7 @@ ODUFinder::ODUFinder() :
     enable_incremental_learning = 0;
     enable_visualization = 0;
     object_id = 700000;
-//    frame_number = 0;
+    frame_number = 0;
     radius_adaptation_r_min = 200.0;
     radius_adaptation_r_max = 600.9;
     radius_adaptation_A = 800.0;
@@ -101,9 +111,9 @@ ODUFinder::ODUFinder() :
     strcat(loggerFileName, timeStr);
 
     //ROS_INFO("Creating statistics file at: %s\n", loggerFileName);
-    ROS_INFO("Creating statistics file at: %s\n", "test.txt");
+    //ROS_INFO("Creating statistics file at: %s\n", "test.txt");
     //logger.open(loggerFileName, std::fstream::out);
-    logger.open ("/home/monica/test.txt", std::ofstream::app);
+    //logger.open ("/home/monica/test.txt", std::ofstream::app);
 
     //color table - used for the visualization only
     color_table[0] = cvScalar(255, 0, 0);
@@ -125,9 +135,22 @@ ODUFinder::ODUFinder() :
 void ODUFinder::set_visualization(bool enable_visualization_in) {
     enable_visualization = enable_visualization_in;
     if (enable_visualization) {
-        cvNamedWindow("visualization", CV_WINDOW_AUTOSIZE);
-        cvStartWindowThread();
+        if (pein_vis_)
+        {
+            cvNamedWindow("visualization", CV_WINDOW_AUTOSIZE);
+            cvStartWindowThread();
+        }
     }
+}
+
+void ODUFinder::set_object_threshold(double ot)
+{
+    if (ot >= 0.0 && ot <= 2.0)
+    {
+        object_threshold = ot;
+        return;
+    }
+    object_threshold = 1.0;
 }
 
 //////////////////////
@@ -141,37 +164,50 @@ ODUFinder::~ODUFinder() {
     delete db;
     std::map<int, DocumentInfo*>::iterator iter;
     for (iter = documents_map.begin(); iter != documents_map.end(); ++iter)
-        delete iter->second;
-    logger.close();
+        delete[] iter->second;
+    //logger.close();
 }
 
+
+////////////////////////////////////////////////////////
+bool ODUFinder::srvCB(pein_srvs::TuningMode::Request req, pein_srvs::TuningMode::Response resp)
+{
+    if (req.object_class.empty())
+    {
+        current_mode_ = odu_finder::RECOGNITION;
+    }
+    else
+    {
+        current_mode_ = odu_finder::TUNING;
+        tuning_object_ = req.object_class;
+        // Reset statistics
+        obj_sum_.setLabel(tuning_object_);
+        // @todo: check if object is in the model set
+    }
+
+    resp.result = true;
+    return true;
+}
+
+
 ///////////////////////////////////////////////////////////////
-std::map<std::string, float> ODUFinder::process_image(const cv::Mat& camera_image_in) const {
+std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in) {
 
     std::map<std::string,float> results;
 
-    //extract keypoints in the whole image
-    ROS_INFO("call keypoints extractor!");
+    //! Extract keypoints in the whole image
     Keypoint keypoints = extract_keypoints(camera_image_in);
     Keypoint p = keypoints;
-    size_t camera_keypoints_count = 0;
-    //declare vector<T*> vt;
+    camera_keypoints_count = 0;
+
+    //! Push keypoints in the vocabulary tree document
     vt::Document full_doc;
-    //push keypoints in the vocabulary tree document
-
-//    cv::Mat image_keypoints = camera_image_in.clone();
-
     while (p != NULL) {
         Feature f(p->descrip);
         full_doc.push_back(tree.quantize(f));
-//        image_keypoints.at<unsigned char>((int)p->row, (int)p->col) = 255;
         p = p->next;
         ++camera_keypoints_count;
     }
-
-//    cv::imshow("keypoints", image_keypoints);
-//    cv::waitKey(3);
-
     ROS_INFO_STREAM(camera_keypoints_count << " keypoints found!");
 
     // cluster keypoints
@@ -203,11 +239,10 @@ std::map<std::string, float> ODUFinder::process_image(const cv::Mat& camera_imag
     if (enable_clustering) {
         std::vector<int> membership(camera_keypoints_count);
         cluster_count = cluster_points(points, camera_keypoints_count,
-                membership, radius_adaptation_r_max, radius_adaptation_r_min,
-                radius_adaptation_A, radius_adaptation_K);
+                                       membership, radius_adaptation_r_max, radius_adaptation_r_min,
+                                       radius_adaptation_A, radius_adaptation_K);
         ROS_INFO_STREAM("Clusters found = " << cluster_count);
 
-        std::vector<unsigned int> cluster_sizes;
         cluster_sizes.resize(cluster_count, 0);
         cluster_sizes.assign(cluster_count, 0);
         for (size_t i = 0; i < camera_keypoints_count; ++i) {
@@ -217,8 +252,6 @@ std::map<std::string, float> ODUFinder::process_image(const cv::Mat& camera_imag
         }
         delete[] points;
     }
-
-    std::map<uint32_t, float> matches_map;
     matches_map.clear();
     //		std::map<uint32_t, float>::iterator it;
     //		for ( it=matches_map.begin() ; it != matches_map.end(); it++ )
@@ -229,7 +262,6 @@ std::map<std::string, float> ODUFinder::process_image(const cv::Mat& camera_imag
     vt::Matches matches;
     //find #votes_count matches
     db->find(full_doc, votes_count + 1, matches);
-    ROS_INFO("Whole image: ");
 
     //calculate scores over all image
     // @TODO - Why is calculation over all image necessary?
@@ -248,61 +280,63 @@ std::map<std::string, float> ODUFinder::process_image(const cv::Mat& camera_imag
             continue;
 
         db->find(cluster_doc, votes_count + 1, cluster_matches);
-        ROS_INFO_STREAM("Cluster " << c << "(size = " << cluster_doc.size()	<< "):");
-        update_matches_map(cluster_matches, cluster_doc.size(), matches_map);
+        ROS_INFO_STREAM("Cluster with size " << c );
+        update_matches_map(cluster_matches, cluster_doc.size());
     }
 
 
-    // Sort the votes
+    //! Sort the results such that first guess has highest score
     std::vector<std::pair<uint32_t, float> > votes(matches_map.size());
     std::map<uint32_t, float>::iterator iter = matches_map.begin();
     for (int i = 0; iter != matches_map.end(); ++iter, ++i) {
         votes[i].first = iter->first;
         votes[i].second = iter->second;
     }
-
-    //print results
-    ROS_INFO("RESULTS: ");
     std::sort(votes.begin(), votes.end(), compare_pairs);
 
-    // if object is unknown either skip detection
-    // or add the template to the database
-    if (votes.size() > 0 && votes[0].second < unknown_object_threshold) {
-//        ROS_INFO("Unknown object!");
-//        if (enable_incremental_learning) {
-//            time_t rawtime;
-//            struct tm * timeinfo;
-//            char buffer[25];
-//            time(&rawtime);
-//            timeinfo = localtime(&rawtime);
-//            //TODO: change this to whatever object appearance are we learning for
-//            strftime(buffer, 25, "Object_%Y%m%d%H%M%S", timeinfo);
-//            std::string object_name(buffer);
-//            add_image_to_database(full_doc, object_name);
-//            ROS_INFO("Object added into database as %s!", object_name.c_str());
-//        }
-    } else {
+    //! Print results
+
+    ROS_INFO("RESULTS (threshold = %f)", object_threshold);
+
+    //! Check whether or not the object is recognized (or in tuning mode)
+    float best_tuning_score = -1.0;
+    if (current_mode_ == odu_finder::TUNING)
+    {
+		for (uint i = 0; (i < votes.size() && i < (uint) documents_map.size()); ++i)
+		{
+			//! Get name current object
+            std::string name = documents_map[votes[i].first]->name;
+            size_t position = name.find_first_of("0123456789.");
+            std::string short_name;
+            if (position > 0 && position <= name.size()) short_name = std::string(name.c_str(), position);
+            else short_name = name.c_str();
+
+            if (tuning_object_ == short_name)
+            {
+                best_tuning_score = std::max(best_tuning_score, votes[i].second);
+            }
+		}
+	}
+    
+    if (votes.size() > 0 && votes[0].second <= object_threshold && current_mode_ != odu_finder::TUNING) {
+
+        ROS_INFO(" - no object recognized");
+    }
+    else {
         for (uint i = 0; (i < votes.size() && i < (uint) documents_map.size()); ++i)
         {
             //ROS_INFO(" - %s, %f", documents_map[votes[i].first]->name.c_str(),	votes[i].second);
-            if (votes[i].second > unknown_object_threshold)
+            if (votes[i].second > object_threshold)
             {
                 // For ease of writing
-                std::string name;
                 float score = votes[i].second;
-                std::map<int, DocumentInfo*>::const_iterator it_doc = documents_map.find(votes[i].first);
-                if (it_doc != documents_map.end())
-                    name = it_doc->second->name;
-                else
-                    std::cout << "Could not find name!" << std::endl;
+                std::string name = documents_map[votes[i].first]->name;
 
                 // Get short name
                 size_t position = name.find_first_of("0123456789.");
                 std::string short_name;
-                if (position > 0 && position <= name.size())
-                    short_name = std::string(name.c_str(), position);
-                else
-                    short_name = name.c_str();
+                if (position > 0 && position <= name.size()) short_name = std::string(name.c_str(), position);
+                else short_name = name.c_str();
 
                 // Store the maximum score of the current object
                 if (results.find(short_name) == results.end())
@@ -319,11 +353,14 @@ std::map<std::string, float> ODUFinder::process_image(const cv::Mat& camera_imag
                 }
             }
         }
+
+        ROS_DEBUG("Results has size %zu", results.size());
+
         //int current_id = votes[0].first;
 
         // @TODO: make this a parameter
         // classify with the sliding window
-        std::string name;
+        //std::string name;
         DocumentInfo** documents_to_visualize =	new DocumentInfo*[templates_to_show];
         for (int i=0; i<templates_to_show; ++i)
             documents_to_visualize[i] = NULL;
@@ -373,59 +410,120 @@ std::map<std::string, float> ODUFinder::process_image(const cv::Mat& camera_imag
         // Log the results
         //TODO: make this optional and probably distinguish between different types of
         //image names
-        ROS_INFO("Writing to the statistics file\n");
-//          logger << "FRAME " << frame_number << std::endl;
-//          frame_number++;
+        // ROS_INFO("Writing to the statistics file\n");
+        //logger << "FRAME " << frame_number << std::endl;
+        frame_number++;
 
-        std::set<std::string> unique_names;
+        //std::set<std::string> unique_names;
+        //int added = 0;
+        // for (uint i = 0; added < templates_to_show && i < votes.size(); ++i)
+        // {
 
+        //! Print the name of the best match
+        if (!votes.empty())
+        {
+            DocumentInfo* d = documents_map[votes[0].first];
+            size_t position = d->name.find_first_of("0123456789.");
+            //size_t position = std::min(position_us, position_dot);
 
-//        logger << std::endl;
-//        logger.flush();
+            // int frame_number = 0;
+            // ROS_INFO("documents_map %s" , d->name.c_str());
+
+            //  if (position == std::string::npos)
+            //     position = d->name.find('.');
+
+            // Keep only the class label
+            std::string short_name;
+            if (position > 0 && position <= d->name.size())
+            {
+                short_name = std::string(d->name.c_str(), position);
+            }
+            else
+            {
+                short_name = d->name.c_str();
+            }
+            //std::cerr << "short_name: " << short_name << std::endl;
+
+            /*if (unique_names.find(short_name) == unique_names.end())
+            {
+                unique_names.insert(short_name);
+                documents_to_visualize[added] = documents_map[votes[i].first];
+                logger << short_name.c_str() << "\t" << votes[i].second
+                        << std::endl;
+
+                //if (stat_summary_map.find(short_name) == stat_summary_map.end())
+                //	stat_summary_map[short_name] = 0;
+                //++stat_summary_map[short_name];
+                added++;
+            }*/
+            // }
+            // ROS_INFO("the name appears %d times" , count2++);
+        }
+
+        //logger << std::endl;
+        //logger.flush();
 
         //visualize
-//        if (enable_visualization) {
-//            if (visualization_mode_ == FRAMES)
-//                visualize(camera_image_in, documents_to_visualize, &camera_keypoints);
-//            else
-//            {
-//                if (documents_to_visualize[0] != NULL)
-//                {
-//                    save_result_for_sequence(documents_to_visualize[0]->name);
-//                }
-//            }
+        if (enable_visualization) {
+            if (visualization_mode_ == FRAMES)
+            {
+                visualize(camera_image_in, documents_to_visualize, &camera_keypoints);
+            }
+            else
+            {
+                if (documents_to_visualize[0] != NULL)
+                    save_result_for_sequence(documents_to_visualize[0]->name);
+            }
 
-//        }
+        }
         delete[] documents_to_visualize;
         //also for logging
-        size_t last_slash_id = name.find_last_of("/");
-        if (last_slash_id == std::string::npos)
-            last_slash_id = 0;
-        else
-            ++last_slash_id;
+        //size_t last_slash_id = name.find_last_of("/");
+        //if (last_slash_id == std::string::npos)
+        //    last_slash_id = 0;
+        //else
+        //    ++last_slash_id;
         //return the name of the object, that is the correponding image name
-        return results;
+        //return name.substr(last_slash_id, name.find_last_of('.')
+        //                   - last_slash_id).c_str();
     }
 
+    if (current_mode_ == odu_finder::TUNING && best_tuning_score >= 0.0)
+    {
+        obj_sum_.update(best_tuning_score);
+        obj_sum_.print();
+    }
     FreeKeypoints(keypoints);
+
     return results;
 }
 
 //////////////////////
 int ODUFinder::start() {
-    //if init build and save the database
-    if (command.compare("/init") == 0) {
+
+    //! if init build and save the database
+    if (command.compare("/init") == 0)
+    {
         build_database(images_directory);
         save_database(database_location);
     }
-    //load previosly built database and perform recognition
+    //! if load, load previously built database and perform recognition
     else if (command.compare("/load") == 0)
-        load_database(database_location);
-    //only extract sift features and save them in a specified images_directory
+    {
+        if (load_database(database_location) < 0)
+        {
+            return -1;
+        }
+    }
+    //! if sift_only, only extract sift features and save them in a specified images_directory
     else if (command.compare("/sift_only") == 0)
+    {
         process_images(images_directory);
+    }
     else
+    {
         return 1;
+    }
 
     return 0;
 }
@@ -441,7 +539,7 @@ void ODUFinder::build_database(std::string directory) {
             all_features.push_back(images[i][j]);
 
     ROS_INFO_STREAM("Building a tree with " << all_features.size()
-            << " nodes...");
+                    << " nodes...");
     tree_builder.build(all_features, tree_k, tree_levels);
     tree = tree_builder.tree();
     ROS_INFO("Creating the documents...");
@@ -460,7 +558,7 @@ void ODUFinder::build_database(std::string directory) {
     ROS_INFO("Populating the database with the documents...");
     for (unsigned int i = 0; i < images.size(); ++i) {
         documents_map[db->insert(docs[i])] = new DocumentInfo(&(docs[i]),
-                image_names[i]);
+                                                              image_names[i]);
     }
 
     ROS_INFO("Training database...");
@@ -506,11 +604,19 @@ void ODUFinder::save_database(std::string& directory) {
 }
 
 /////////////////////////////////////////////////////
-void ODUFinder::load_database(const std::string& directory) {
+int ODUFinder::load_database(const std::string& directory) {
     ROS_INFO("Loading the tree...");
     std::string tree_file(directory);
     tree_file.append("/images.tree");
-    tree.load(tree_file.c_str());
+    try {
+        tree.load(tree_file.c_str());
+    }
+    catch (std::runtime_error e)
+    {
+        ROS_ERROR("Could not load tree file: %s", e.what());
+        return -1;
+    }
+
     ROS_INFO("Initializing the database...");
     db = new vt::Database(tree.words());//, tree.splits());
     std::string documents_file(directory);
@@ -527,14 +633,19 @@ void ODUFinder::load_database(const std::string& directory) {
         vt::Document* doc = document_info->document;
         int d = db->insert(*doc);
         documents_map[d] = document_info;
+        //ROS_INFO("\tloaded %s", document_info->name.c_str());
     }
 
+    ROS_INFO("ODUFinder uses %zu images", map_size);
+    counter_ = map_size+1; // to avoid overwriting previous images during learning add a unique number behind the image
     ROS_INFO("Loading weights...");
     std::string weights_file(directory);
     weights_file.append("/images.weights");
     db->loadWeights(weights_file.c_str());
     in.close();
     ROS_INFO("READY!");
+
+    return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -548,7 +659,7 @@ void ODUFinder::add_image_to_database(vt::Document& doc, std::string& name) {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 void ODUFinder::trace_directory(const char* dir, const char* prefix,
-        std::vector<FeatureVector>& images, bool onlySaveImages) {
+                                std::vector<FeatureVector>& images, bool onlySaveImages) {
     ROS_INFO("Tracing directory: %s", dir);
     DIR *pdir = opendir(dir);
     struct dirent *pent = NULL;
@@ -559,7 +670,7 @@ void ODUFinder::trace_directory(const char* dir, const char* prefix,
 
     while ((pent = readdir(pdir))) {
         if (strcmp(pent->d_name, ".") != 0 && strcmp(pent->d_name, "..") != 0
-                && strcmp(pent->d_name, "IGNORE") != 0) {
+                && strcmp(pent->d_name, "IGNORE") != 0 && strcmp(pent->d_name, ".svn") != 0) {
             std::string short_filename(prefix);
             short_filename.append(pent->d_name);
             std::string filename(dir);
@@ -575,7 +686,7 @@ void ODUFinder::trace_directory(const char* dir, const char* prefix,
                 filename.append("/");
                 short_filename.append("/");
                 trace_directory(filename.c_str(), short_filename.c_str(),
-                        images, onlySaveImages);
+                                images, onlySaveImages);
             } else {
                 process_file(filename, images, onlySaveImages);
                 image_names.push_back(short_filename);
@@ -587,157 +698,170 @@ void ODUFinder::trace_directory(const char* dir, const char* prefix,
 
 //////////////////////////////////////////////////////////////////////
 void ODUFinder::visualize(IplImage *camera_image_in,
-        DocumentInfo** template_document_info,
-        std::vector<KeypointExt*> *camera_keypoints) {
-//    int templates_count = 0;
-
-//    if (visualization_mode_ == FRAMES)
-//        templates_count = templates_to_show;
-//    else if (visualization_mode_ == SEQUENCES)
-//    {
-//        templates_count = sequence_buffer.size();
-//    }
-
-//    if (template_image != NULL)
-//        cvReleaseImage(&template_image);
-
-//    if (image != NULL)
-//        cvReleaseImage(&image);
-
-//    std::string image_file(images_for_visualization_directory);
-//    IplImage** template_images = new IplImage*[templates_count];
-//    int total_height = 0;
-//    int max_width = 0;
+                          DocumentInfo** template_document_info,
+                          std::vector<KeypointExt*> *camera_keypoints) {
+    int templates_count = 0;
 
 
-//    //calculate dimensions of the display image
-//    for (int i = 0; i < templates_count; ++i) {
-//        std::string template_image_file(image_file);
+    if (visualization_mode_ == FRAMES)
+        templates_count = templates_to_show;
+    else if (visualization_mode_ == SEQUENCES)
+    {
+        templates_count = sequence_buffer.size();
+    }
 
-//        template_images[i] = NULL;
+    if (template_image != NULL)
+        cvReleaseImage(&template_image);
 
-//        if (visualization_mode_ == FRAMES) {
-//            if (template_document_info[i] != NULL) {
-//                template_image_file.append(
-//                        template_document_info[i]->name.c_str());
-//                template_images[i] = cvLoadImage(template_image_file.c_str(),
-//                        CV_LOAD_IMAGE_GRAYSCALE);
-//            }
-//        } else if (visualization_mode_ == SEQUENCES) {
-//            template_image_file.append(sequence_buffer[i]);
-//            template_images[i] = cvLoadImage(template_image_file.c_str(),
-//                    CV_LOAD_IMAGE_GRAYSCALE);
-//        }
+    if (image != NULL)
+        cvReleaseImage(&image);
 
-//        if (template_images[i] != NULL) {
-//            total_height += template_images[i]->height;
-//            max_width = MAX(max_width, template_images[i]->width);
-//        }
-//    }
-
-//    int height = camera_image_in->height;
-
-//    float scale_factor = ( total_height == 0 ? 0 : ((float) height) / ((float) total_height));
-
-//    if (scale_factor > 0.0001)
-//        max_width = (int) (max_width * scale_factor);
-//    else
-//        max_width = 0;
-
-//    IplImage* tmp_image = cvCreateImage(cvSize(camera_image_in->width
-//            + max_width, height), camera_image_in->depth,
-//            camera_image_in->nChannels);
+    std::string image_file(images_for_visualization_directory);
+    IplImage** template_images = new IplImage*[templates_count];
+    int total_height = 0;
+    int max_width = 0;
 
 
-//    cvFillImage(tmp_image, 0);
-//    cvSetImageROI(tmp_image, cvRect(0, 0, camera_image_in->width,
-//            camera_image_in->height));
-//    cvCopy(camera_image_in, tmp_image);
+    //calculate dimensions of the display image
+    for (int i = 0; i < templates_count; ++i) {
+        std::string template_image_file(image_file);
 
-//    //show template images
-//    int last_y = 0;
-//    for (int i = 0; i < templates_count; ++i) {
-//        if (template_images[i] == NULL)
-//            continue;
+        template_images[i] = NULL;
 
-//        IplImage* tmp_template_image = cvCreateImage(cvSize(
-//                template_images[i]->width * scale_factor,
-//                template_images[i]->height * scale_factor),
-//                template_images[i]->depth, template_images[i]->nChannels);
-//        cvResize(template_images[i], tmp_template_image);
-//        cvSetImageROI(tmp_image, cvRect(camera_image_in->width, last_y,
-//                tmp_template_image->width, tmp_template_image->height));
-//        last_y += tmp_template_image->height;
+        if (visualization_mode_ == FRAMES) {
+            if (template_document_info[i] != NULL) {
+                template_image_file.append(
+                            template_document_info[i]->name.c_str());
+                template_images[i] = cvLoadImage(template_image_file.c_str(),
+                                                 CV_LOAD_IMAGE_GRAYSCALE);
+            }
+        } else if (visualization_mode_ == SEQUENCES) {
+            template_image_file.append(sequence_buffer[i]);
+            template_images[i] = cvLoadImage(template_image_file.c_str(),
+                                             CV_LOAD_IMAGE_GRAYSCALE);
+        }
 
-//        //free resources
-//        cvCopy(tmp_template_image, tmp_image);
-//        cvReleaseImage(&tmp_template_image);
-//    }
+        if (template_images[i] != NULL) {
+            total_height += template_images[i]->height;
+            max_width = MAX(max_width, template_images[i]->width);
+        }
+    }
 
-//    cvResetImageROI(tmp_image);
-//    image = cvCreateImage(cvSize(tmp_image->width, tmp_image->height),
-//            tmp_image->depth, 3);
-//    cvCvtColor(tmp_image, image, CV_GRAY2RGB);
-//    cvReleaseImage(&tmp_image);
-//    // display camera image keypoints
-//    if (camera_keypoints != NULL)
-//    {
-//        for (unsigned int i = 0; i < camera_keypoints->size(); ++i) {
-//            if (cluster_sizes[(*camera_keypoints)[i]->cluster]
-//                              >= (size_t) min_cluster_size)
-//                cvCircle(image, cvPoint((int) ((*camera_keypoints)[i]->keypoint->col),
-//                        (int) ((*camera_keypoints)[i]->keypoint->row)), 3,
-//                        color_table[(*camera_keypoints)[i]->cluster % COLORS]);
-//        }
-//    }
-//    //display template keypoints
-//    for (int i = 0; i < templates_count; ++i) {
-//        if (template_images[i] == NULL)
-//            continue;
-//        //    Keypoint template_keypoints = extract_keypoints(template_images[i], true);
-//        //    for (int ii=0; template_keypoints != NULL; ++ii, template_keypoints = template_keypoints->next)
-//        //    {
-//        //      cvCircle(image, cvPoint((int)(camera_image_in->width + template_keypoints->col),
-//        //                              (int)(template_keypoints->row)), 3,
-//        //               color_table[1 % COLORS]); //0, 255, 0
-//        //    }
-//        //free remaining resources
-//        cvReleaseImage(&template_images[i]);
-//    }
+    int height = camera_image_in->height;
 
-//    delete[] template_images;
+    float scale_factor = ( total_height == 0 ? 0 : ((float) height) / ((float) total_height));
 
-//    //if the region of interest around keypoints is needed
-//    //useful for e.g. in-hand object modeling
-//    if (extract_roi_)
-//        extract_roi(camera_image, (*camera_keypoints));
-//    else
-//        image_roi = NULL;
+    if (scale_factor > 0.0001)
+        max_width = (int) (max_width * scale_factor);
+    else
+        max_width = 0;
+
+    IplImage* tmp_image = cvCreateImage(cvSize(camera_image_in->width
+                                               + max_width, height), camera_image_in->depth,
+                                        camera_image_in->nChannels);
 
 
-//    // 	// display template image keypoints
-//    //   std::vector<KeypointExt*> template_keypoints;
-//    //   if (template_document_info != NULL)
-//    //   {
-//    // //    template_keypoints.resize(template_document_info->document->size());
-//    //     Keypoint tmp_keypoints = extract_keypoints(template_image, true);
-//    //     for (int i=0; tmp_keypoints != NULL; ++i, tmp_keypoints = tmp_keypoints->next)
-//    //     {
-//    //       cvCircle(image, cvPoint((int)(camera_image_in->width + tmp_keypoints->col), (int)(tmp_keypoints->row)), 3, cvScalar(0, 255, 255));
-//    //       //    template_keypoints[i] = new KeypointExt(tmp_keypoints, template_document_info->document->at(i));
-//    //     }
-//    //   }
+    cvFillImage(tmp_image, 0);
+    cvSetImageROI(tmp_image, cvRect(0, 0, camera_image_in->width,
+                                    camera_image_in->height));
+    cvCopy(camera_image_in, tmp_image);
 
-//    cvShowImage("visualization", image);
+    //show template images
+    // JOS
+    /*
+    int last_y = 0;
+    for (int i = 0; i < templates_count; ++i) {
+        if (template_images[i] == NULL)
+            continue;
 
-//    // Free resources
-//    if (camera_keypoints != NULL)
-//        for (std::vector<KeypointExt*>::iterator iter = (*camera_keypoints).begin(); iter != (*camera_keypoints).end(); ++iter)
-//            delete *iter;
+        IplImage* tmp_template_image = cvCreateImage(cvSize(
+                                                         template_images[i]->width * scale_factor,
+                                                         template_images[i]->height * scale_factor),
+                                                     template_images[i]->depth, template_images[i]->nChannels);
+        cvResize(template_images[i], tmp_template_image);
+        cvSetImageROI(tmp_image, cvRect(camera_image_in->width, last_y,
+                                        tmp_template_image->width, tmp_template_image->height));
+        last_y += tmp_template_image->height;
+
+        //free resources
+        cvCopy(tmp_template_image, tmp_image);
+        cvReleaseImage(&tmp_template_image);
+    }*/
+
+    cvResetImageROI(tmp_image);
+    image = cvCreateImage(cvSize(tmp_image->width, tmp_image->height),
+                          tmp_image->depth, 3);
+
+    //JOS
+    if (pein_vis_)
+    {
+        cvCvtColor(tmp_image, image, CV_GRAY2RGB);
+        cvReleaseImage(&tmp_image);
+
+        // display camera image keypoints
+        if (camera_keypoints != NULL)
+        {
+            for (unsigned int i = 0; i < camera_keypoints->size(); ++i) {
+                if (cluster_sizes[(*camera_keypoints)[i]->cluster]
+                        >= (size_t) min_cluster_size)
+                    cvCircle(image, cvPoint((int) ((*camera_keypoints)[i]->keypoint->col),
+                                            (int) ((*camera_keypoints)[i]->keypoint->row)), 3,
+                             color_table[(*camera_keypoints)[i]->cluster % COLORS]);
+            }
+        }
+        //display template keypoints
+        for (int i = 0; i < templates_count; ++i) {
+            if (template_images[i] == NULL)
+                continue;
+            //    Keypoint template_keypoints = extract_keypoints(template_images[i], true);
+            //    for (int ii=0; template_keypoints != NULL; ++ii, template_keypoints = template_keypoints->next)
+            //    {
+            //      cvCircle(image, cvPoint((int)(camera_image_in->width + template_keypoints->col),
+            //                              (int)(template_keypoints->row)), 3,
+            //               color_table[1 % COLORS]); //0, 255, 0
+            //    }
+            //free remaining resources
+            cvReleaseImage(&template_images[i]);
+        }
+    }
+
+    delete[] template_images;
+
+    //if the region of interest around keypoints is needed
+    //useful for e.g. in-hand object modeling
+    if (extract_roi_)
+        extract_roi(camera_image, (*camera_keypoints));
+    else
+        image_roi = NULL;
+
+
+    // 	// display template image keypoints
+    //   std::vector<KeypointExt*> template_keypoints;
+    //   if (template_document_info != NULL)
+    //   {
+    // //    template_keypoints.resize(template_document_info->document->size());
+    //     Keypoint tmp_keypoints = extract_keypoints(template_image, true);
+    //     for (int i=0; tmp_keypoints != NULL; ++i, tmp_keypoints = tmp_keypoints->next)
+    //     {
+    //       cvCircle(image, cvPoint((int)(camera_image_in->width + tmp_keypoints->col), (int)(tmp_keypoints->row)), 3, cvScalar(0, 255, 255));
+    //       //    template_keypoints[i] = new KeypointExt(tmp_keypoints, template_document_info->document->at(i));
+    //     }
+    //   }
+
+    // JOS
+    if (pein_vis_)
+    {
+        cvShowImage("visualization", image);
+    }
+
+    // Free resources
+    if (camera_keypoints != NULL)
+        for (std::vector<KeypointExt*>::iterator iter = (*camera_keypoints).begin(); iter != (*camera_keypoints).end(); ++iter)
+            delete *iter;
 }
 
 /////////////////////////////////////////////////////////////////////
-void ODUFinder::update_matches_map(const vt::Matches& matches, size_t size, std::map<uint32_t, float>& matches_map) const {
+void ODUFinder::update_matches_map(vt::Matches& matches, size_t size) {
     for (int i = 0; (i < votes_count && i < (int) matches.size()); ++i) {
         if (matches_map.count(matches[i].id) == 0)
             matches_map[matches[i].id] = 0;
@@ -754,17 +878,16 @@ void ODUFinder::update_matches_map(const vt::Matches& matches, size_t size, std:
         float size_score = 1;//size/80.0;
         float score = database_score * place_score * size_score;
         matches_map[matches[i].id] += score;
-//        ROS_INFO("\t%f\t%f\t%f\t%s", matches[i].score, diff, score,
-//                documents_map[matches[i].id]->name.c_str());
+        //ROS_INFO("\t%f\t%f\t%f\t%s", matches[i].score, diff, score, documents_map[matches[i].id]->name.c_str());
     }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 void ODUFinder::process_file(std::string& filename,
-        std::vector<FeatureVector>& images, bool onlySaveImages) {
+                             std::vector<FeatureVector>& images, bool onlySaveImages) {
     ROS_INFO("Processing file %s...", filename.c_str());
     IplImage *image = cvLoadImage((char*) filename.c_str(),
-            CV_LOAD_IMAGE_GRAYSCALE);
+                                  CV_LOAD_IMAGE_GRAYSCALE);
     Keypoint keypoints = extract_keypoints(image);
     ROS_INFO("Keypoints extracted");
     FeatureVector features;
@@ -785,7 +908,7 @@ void ODUFinder::process_file(std::string& filename,
         p = keypoints;
         while (p != NULL) {
             cvCircle(colour_image, cvPoint((int) (p->col), (int) (p->row)), 3,
-                    cvScalar(255, 255, 0));
+                     cvScalar(255, 255, 0));
             p = p->next;
         }
         cvSaveImage((char*) filename.c_str(), colour_image);
@@ -797,12 +920,12 @@ void ODUFinder::process_file(std::string& filename,
 }
 
 ///////////////////////////////////////////////////////////////////////
-Keypoint ODUFinder::extract_keypoints(const cv::Mat& image, bool frames_only) const {
-    Image sift_image = CreateImage(image.rows, image.cols);
-    for (int i = 0; i < image.rows; ++i) {
-        uint8_t* pSrc = (uint8_t*) image.data + image.step * i;
+Keypoint ODUFinder::extract_keypoints(IplImage *image, bool frames_only) {
+    Image sift_image = CreateImage(image->height, image->width);
+    for (int i = 0; i < image->height; ++i) {
+        uint8_t* pSrc = (uint8_t*) image->imageData + image->widthStep * i;
         float* pDst = sift_image->pixels + i * sift_image->stride;
-        for (int j = 0; j < image.cols; ++j)
+        for (int j = 0; j < image->width; ++j)
             pDst[j] = (float) pSrc[j] * (1.0f / 255.0f);
     }
 
@@ -825,20 +948,20 @@ void ODUFinder::write_stat_summary() {
     }
 
     std::sort(pairs.begin(), pairs.end(), compare_pairs2);
-    logger << "--- SUMMARY ---" << std::endl;
-    for (unsigned int i = 0; i < pairs.size(); ++i)
-        logger << pairs[i].first.c_str() << "\t" << pairs[i].second
-        << std::endl;
-    logger.close();
+    //logger << "--- SUMMARY ---" << std::endl;
+    //for (unsigned int i = 0; i < pairs.size(); ++i)
+    //    logger << pairs[i].first.c_str() << "\t" << pairs[i].second
+    //           << std::endl;
+    //logger.close();
 }
 
 /////////////////////////////
 void ODUFinder::extract_roi(IplImage *image,
-        std::vector<KeypointExt*> camera_keypoints) {
+                            std::vector<KeypointExt*> camera_keypoints) {
     //create a sequence storage for projected points
     CvMemStorage* stor = cvCreateMemStorage(0);
     CvSeq* seq = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq),
-            sizeof(CvPoint), stor);
+                             sizeof(CvPoint), stor);
 
     for (unsigned long i = 0; i < camera_keypoints.size(); i++) {
         cv::Point2d uv;
@@ -850,13 +973,13 @@ void ODUFinder::extract_roi(IplImage *image,
     //draw rectangle around the points
     CvRect rect = cvBoundingRect(seq);
     ROS_DEBUG_STREAM("rect: " << rect.x << " " << rect.y << " " << rect.width
-            << " " << rect.height);
+                     << " " << rect.height);
 
     //get subimage, aka region of interest
     cvSetImageROI(image, rect);
     //sub-image
     image_roi = cvCreateImage(cvSize(rect.width, rect.height), image->depth,
-            image->nChannels);
+                              image->nChannels);
 
     cvCopy(image, image_roi);
     cvResetImageROI(image); // release image ROI
@@ -874,3 +997,4 @@ void ODUFinder::visualize_sequence() {
 void ODUFinder::clear_sequence_buffer() {
     sequence_buffer.clear();
 }
+
