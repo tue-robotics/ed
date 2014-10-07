@@ -177,6 +177,7 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
     config.value("max_range", max_range_);
     config.value("clearing_padding_fraction", clearing_padding_fraction_);
     config.value("normal_k_search", normal_k_search_);
+    config.value("visualize_", visualize_);
 }
 
 void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
