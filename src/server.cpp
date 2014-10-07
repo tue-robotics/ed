@@ -302,12 +302,6 @@ void Server::update()
         mergeEntities(5.0, 0.5);
     }
 
-    // Velocity calculation entities
-    {
-        tue::ScopedTimer t(profiler_, "velocity calculation");
-        calculateVelocities(0.5);
-    }
-
     pub_profile_.publish();
 }
 
@@ -362,43 +356,6 @@ void Server::storeEntityMeasurements(const std::string& path) const
         {
             std::cout << "Saving measurement failed." << std::endl;
         }
-    }
-}
-
-void Server::calculateVelocities(double dt)
-{
-    // Calculated mean velocity
-    double t_now = ros::Time::now().toSec();
-
-    // Iter over all entities and check if the current_time - last_update_time > not_updated_time
-    for (std::map<UUID, EntityConstPtr>::iterator it = entities_.begin(); it != entities_.end(); ++it)
-    {
-        EntityPtr e(new Entity(*it->second));
-
-        if (e->measurementSeq() == 0)
-            continue;
-
-        ConvexHull2D chull;
-        double timestamp;
-        e->convexHullAtTimeStamp(t_now - dt, chull, timestamp);
-
-        double delta = t_now - timestamp;
-        if (delta > 1.0) // Not older than 1.0 sec
-        {
-            e->setVelocity(geo::Pose3D::identity());
-        }
-        else
-        {
-            geo::Vector3 dv;
-
-            helpers::ddp::getDisplacementVector(chull, e->convexHull(), dv);
-
-            geo::Pose3D v = geo::Pose3D::identity();
-            v.t = dv / delta;
-            e->setVelocity(v);
-        }
-
-        entities_[e->id()] = e;
     }
 }
 

@@ -91,23 +91,28 @@ void Entity::updateConvexHull(MeasurementConstPtr m)
 
     helpers::ddp::add2DConvexHull(m->convexHull(),convex_hull_);
 
-    convex_hull_buffer_.push_front(std::make_pair(convex_hull_, ros::Time::now().toSec())); // Store the convex hulls over time for velocity calculation
+    convex_hull_buffer_.push_front(std::make_pair(convex_hull_, m->timestamp())); // Store the convex hulls over time for velocity calculation
+
+    calculateVelocity();
 }
 
-// ----------------------------------------------------------------------------------------------------
-
-void Entity::convexHullAtTimeStamp(const double timestamp, ConvexHull2D& chull, double& actual_timestamp) const
+void Entity::calculateVelocity()
 {
-    for(boost::circular_buffer<std::pair<ConvexHull2D, double> >::const_iterator it = convex_hull_buffer_.begin(); it != convex_hull_buffer_.end(); ++it)
+    velocity_ = geo::Pose3D::identity();
+
+    double current = convex_hull_buffer_[0].second;
+    for (boost::circular_buffer<std::pair<ConvexHull2D, double> >::iterator it = convex_hull_buffer_.begin(); it != convex_hull_buffer_.end(); ++it)
     {
-        if (it->second < timestamp)
+        double dt = current - it->second;
+        if (dt > 0.5)
         {
-            chull = it->first;
-            actual_timestamp = it->second;
+            if (dt < 1.0)
+            {
+                helpers::ddp::getDisplacementVector(convex_hull_, it->first, velocity_.t);
+            }
             return;
         }
     }
-    actual_timestamp = 0;
 }
 
 // ----------------------------------------------------------------------------------------------------

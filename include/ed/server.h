@@ -73,9 +73,6 @@ private:
     std::map<UUID, EntityConstPtr> entities_;
     void initializeWorld();
 
-    //! Calculate velocities
-    void calculateVelocities(double dt);
-
     //! Merge the entities!
     void mergeEntities(double not_updated_time, double overlap_fraction);
 

@@ -45,7 +45,6 @@ public:
     inline int shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
 
     inline const ConvexHull2D& convexHull() const { return convex_hull_; }
-    void convexHullAtTimeStamp(const double timestamp, ConvexHull2D& chull, double& actual_timestamp) const;
 
     void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
 
@@ -83,6 +82,7 @@ private:
     geo::Pose3D velocity_;
 
     void updateConvexHull(MeasurementConstPtr measurement);
+    void calculateVelocity();
 
     double creation_time_;
 
