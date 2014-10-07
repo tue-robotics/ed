@@ -3,9 +3,10 @@ sensors:
   type: kinect
   source: /amigo/top_kinect/rgbd
   frame_id: /amigo/top_kinect/openni_rgb_optical_frame
+  visualize: 0
   voxel_size: 0.03
   max_range: 3.0
-  clearing_padding_fraction: 0.2
+  clearing_padding_fraction: 0.05
   normal_k_search: 15
   association_modules:
   - type: PointNormal
@@ -17,20 +18,20 @@ sensors:
         render_max_range: 3.2
         render_voxel_size: 0.03
         normal_k_search: 15
-        visualize: 1
+        visualize: 0
   - type: PolygonHeight
     parameters:
-        cell_size: 0.03
+        cell_size: 0.05
         max_range: 3.0
         tolerance: 0.035
         min_cluster_size: 20
-        visualize: 1
+        visualize: 0
   segmentation_modules:
   - type: EuclideanClustering
     parameters:
-        tolerance: 0.035
+        tolerance: 0.05
         min_cluster_size: 20
-        visualize: 1
+        visualize: 0
 
 visualize: 1
 world_name: robotics_testlab_B
