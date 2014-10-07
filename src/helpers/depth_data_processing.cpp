@@ -521,7 +521,7 @@ bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, cons
         in_frustrum = true;
         float img_depth = fabs(view.getDepth(idx.x,idx.y));
 
-        if ( p_depth /*- 0.1*/ < img_depth && p_depth < max_range ) //! TODO: THIS NEEDS REVISION! -- Already had some but still crucial part!
+        if ( (p_depth < img_depth || img_depth <= 0) && p_depth < max_range ) //! TODO: THIS NEEDS REVISION! -- Already had some but still crucial part!
         {
             return true;
         }
