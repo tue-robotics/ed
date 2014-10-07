@@ -537,6 +537,12 @@ bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, cons
 
 void getDisplacementVector(const ConvexHull2D& c1, const ConvexHull2D& c2, geo::Vector3& dv)
 {
+    if (c1.chull.size() == 0 || c2.chull.size() == 0)
+    {
+        dv = geo::Vector3(0,0,0);
+        return;
+    }
+
     Eigen::Vector4f input_min, input_max, output_min, output_max;
     pcl::getMinMax3D (c1.chull, input_min, input_max);
     pcl::getMinMax3D (c2.chull, output_min, output_max);

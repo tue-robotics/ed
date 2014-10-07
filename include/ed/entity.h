@@ -80,8 +80,9 @@ private:
 
     geo::Pose3D pose_;
     geo::Pose3D velocity_;
+    geo::Vector3 average_displacement_vector_;
 
-    void updateConvexHull(MeasurementConstPtr measurement);
+    void updateEntityState(MeasurementConstPtr m);
     void calculateVelocity();
 
     double creation_time_;

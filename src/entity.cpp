@@ -44,7 +44,8 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
     measurements_seq_(0),
     creation_time_(creation_time),
     pose_(geo::Pose3D::identity()),
-    velocity_(geo::Pose3D::identity())
+    velocity_(geo::Pose3D::identity()),
+    average_displacement_vector_(geo::Vector3(0,0,0))
 {
     convex_hull_.center_point = geo::Vector3(0,0,0);
 }
@@ -81,18 +82,19 @@ void Entity::addMeasurement(MeasurementConstPtr measurement)
     }
 
     // Update the convex hull
-    updateConvexHull(measurement);
+    updateEntityState(measurement);
 }
 
-void Entity::updateConvexHull(MeasurementConstPtr m)
+void Entity::updateEntityState(MeasurementConstPtr m)
 {
-    // Remove points from the convex hull that are currently in view
+    // Update the chull
     helpers::ddp::removeInViewConvexHullPoints(m->image(), m->sensorPose(), convex_hull_);
-
     helpers::ddp::add2DConvexHull(m->convexHull(),convex_hull_);
 
+    // Update chull buffer
     convex_hull_buffer_.push_front(std::make_pair(convex_hull_, m->timestamp())); // Store the convex hulls over time for velocity calculation
 
+    // Calculate velocity
     calculateVelocity();
 }
 
@@ -108,7 +110,14 @@ void Entity::calculateVelocity()
         {
             if (dt < 1.0)
             {
-                helpers::ddp::getDisplacementVector(convex_hull_, it->first, velocity_.t);
+                geo::Vector3 dv;
+
+                helpers::ddp::getDisplacementVector(convex_hull_buffer_[0].first, it->first, dv);
+
+                // Set velocity
+                velocity_.t = dv / dt;
+
+                average_displacement_vector_ = (average_displacement_vector_ + dv) / 2;
             }
             return;
         }

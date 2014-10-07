@@ -8,6 +8,7 @@
 
 #include <ed/world_model.h>
 #include <ed/entity.h>
+#include <ed/measurement.h>
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -22,6 +23,7 @@ void OccupancyGridPublisherPlugin::configure(tue::Configuration config)
     config.value("frame_id", frame_id_);
 
     config.value("specifier", specifier_, tue::OPTIONAL);
+    config.value("sim_time", sim_time_);
 
     //! Re-initialize if topic has changed
     if (old_topic != "" && topic_ != old_topic)
@@ -152,6 +154,18 @@ void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Ma
             if ( worldToMap(p1w.x, p1w.y, p1.x, p1.y) && worldToMap(p2w.x, p2w.y, p2.x, p2.y) )
                 cv::line(map, p1, p2, 100);
 
+            // Velocity
+            ed::MeasurementConstPtr m = e->lastMeasurement();
+            if (m && (ros::Time::now().toSec() - m->timestamp()) < sim_time_)
+            {
+                if (sim_time_ > 0 && e->velocity().t.length2() > 1e-6)
+                {
+                    p1w += sim_time_ * e->velocity().t;
+                    p2w += sim_time_ * e->velocity().t;
+                    if ( worldToMap(p1w.x, p1w.y, p1.x, p1.y) && worldToMap(p2w.x, p2w.y, p2.x, p2.y) )
+                        cv::line(map, p1, p2, 100);
+                }
+            }
         }
     }
 }
