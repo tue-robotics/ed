@@ -39,7 +39,7 @@ private:
     mutable cv::CascadeClassifier classifier_front;
     mutable cv::CascadeClassifier classifier_profile;
 
-    bool DetectFaces(const cv::Mat &colorImage,
+    bool DetectFaces(const cv::Mat &masked_img,
                      const cv::Mat &mask_cv,
                      const std::string &entity_id,
                      std::vector<cv::Rect>& faces_front,

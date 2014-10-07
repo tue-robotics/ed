@@ -85,28 +85,32 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
     std::vector<cv::Rect> faces_front;
     std::vector<cv::Rect> faces_profile;
 
-    // Get the depth and color image from the measurement
-    const cv::Mat& depth_image = msr->image()->getDepthImage();
+    // create a view
+    rgbd::View view(*msr->image(), msr->image()->getRGBImage().cols);
+
+    // get color image
     const cv::Mat& color_image = msr->image()->getRGBImage();
 
-    cv::Mat mask_cv = cv::Mat::zeros(depth_image.rows, depth_image.cols, CV_8UC1);
+    // crop it to match the view
+    cv::Mat cropped_image(color_image(cv::Rect(0,0,view.getWidth(), view.getHeight())));
 
+    cv::Mat mask = cv::Mat::zeros(view.getHeight(), view.getWidth(), CV_8UC1);
     // Iterate over all points in the mask
-    for(ed::ImageMask::const_iterator it = msr->imageMask().begin(depth_image.cols); it != msr->imageMask().end(); ++it)
+    for(ed::ImageMask::const_iterator it = msr->imageMask().begin(view.getWidth()); it != msr->imageMask().end(); ++it)
     {
         // mask's (x, y) coordinate in the depth image
         const cv::Point2i& p_2d = *it;
 
         // paint a mask
-//        mask_cv.at<unsigned char>(*it) = 255;
-        mask_cv.at<unsigned char>(cv::Point2i(ClipInt(p_2d.x + 8, 0, depth_image.cols), p_2d.y)) = 255; // TODO: remove this hack after calibrating the kinect
+        mask.at<unsigned char>(*it) = 255;
+//        mask_cv.at<unsigned char>(cv::Point2i(ClipInt(p_2d.x + 8, 0, view.getWidth()), p_2d.y)) = 255;
     }
 
     // improve the contours of the mask
-    OptimizeContour(mask_cv, mask_cv);
+    OptimizeContour(mask, mask);
 
     // Detect faces in the measurment and assert the results
-    if(DetectFaces(color_image, mask_cv, e->id(), faces_front, faces_profile)){
+    if(DetectFaces(cropped_image, mask, e->id(), faces_front, faces_profile)){
         result.setValue("type", "face");
         result.setValue("type-score", 1.0);
 
@@ -114,24 +118,27 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
         if (faces_front.size() > 0){
             result.writeArray("faces_front");
             for (uint j = 0; j < faces_front.size(); j++) {
-                result.nextArrayItem();
+                result.addArrayItem();
                 result.setValue("x", faces_front[j].x);
                 result.setValue("y", faces_front[j].y);
                 result.setValue("width", faces_front[j].width);
                 result.setValue("height", faces_front[j].height);
+                result.endArrayItem();
             }
             result.endArray();
         }
+
 
         // if profile faces were detected
         if (faces_profile.size() > 0){
             result.writeArray("faces_profile");
             for (uint j = 0; j < faces_profile.size(); j++) {
-                result.nextArrayItem();
+                result.addArrayItem();
                 result.setValue("x", faces_profile[j].x);
                 result.setValue("y", faces_profile[j].y);
                 result.setValue("width", faces_profile[j].width);
                 result.setValue("height", faces_profile[j].height);
+                result.endArrayItem();
             }
             result.endArray();
         }
@@ -144,7 +151,7 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
 
 // ----------------------------------------------------------------------------------------------------
 
-bool FaceDetector::DetectFaces(const cv::Mat& color_img,
+bool FaceDetector::DetectFaces(const cv::Mat& masked_img,
                                const cv::Mat& mask_cv,
                                const std::string& entity_id,
                                std::vector<cv::Rect>& faces_front,
@@ -155,7 +162,6 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
     std::vector<std::vector<cv::Point> > contour;
     bool face_detected;
 
-
     // find the contours of the mask
     findContours(mask_cv, contour, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
@@ -163,10 +169,10 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
     bounding_box = cv::boundingRect(contour[0]);
 
     // create a copy of the masked image
-    color_img.copyTo(cascade_img, mask_cv);
+//    masked_img.copyTo(cascade_img, mask_cv);
 
     // select only the area of the bounding box
-    cascade_img(bounding_box).copyTo(cascade_img);
+    masked_img(bounding_box).copyTo(cascade_img);
 
     // increase contrast of the image
     normalize(cascade_img, cascade_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
@@ -196,13 +202,14 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
     if (kDebugMode){
         cv::Mat debugImg;
 
-        color_img.copyTo(debugImg);
+        masked_img.copyTo(debugImg);
 
         for (uint j = 0; j < faces_front.size(); j++)
             cv::rectangle(debugImg, faces_front[j], cv::Scalar(0, 255, 0), 2, CV_AA);
 
         for (uint j = 0; j < faces_profile.size(); j++)
             cv::rectangle(debugImg, faces_profile[j], cv::Scalar(0, 0, 255), 2, CV_AA);
+
 
 //      cv::imwrite(kDebugFolder + entity_id + "_faces.png", debugImg);
         cv::imshow("Face Detector Output", debugImg);
@@ -217,6 +224,9 @@ bool FaceDetector::DetectFaces(const cv::Mat& color_img,
 void FaceDetector::OptimizeContour(const cv::Mat& mask_orig, const cv::Mat& mask_opt) const{
 
     mask_orig.copyTo(mask_opt);
+
+    //        cv::Vector<cv::Point2i>
+    //                cv::convexHull()
 
     // blur the contour, also expands it a bit
     for (uint i = 6; i < 18; i = i + 2){
