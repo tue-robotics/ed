@@ -60,12 +60,11 @@ ODUFinder::ODUFinder() :
 { //SEQUENCES) {  //FRAMES) {   //SEQUENCES
 
     //! Set tuning mode
-    ros::NodeHandle nh("~");
-    std::string ss_name = nh.getNamespace() + "/set_tuning_mode";
-    srv_server_ = nh.advertiseService<pein_srvs::TuningMode::Request, pein_srvs::TuningMode::Response>
-            (ss_name, boost::bind(&ODUFinder::srvCB, this, _1, _2));
-    ROS_INFO("Started tuning service server '%s'", ss_name.c_str());
-
+//    ros::NodeHandle nh("~");
+//    std::string ss_name = nh.getNamespace() + "/set_tuning_mode";
+//    srv_server_ = nh.advertiseService<pein_srvs::TuningMode::Request, pein_srvs::TuningMode::Response>
+//            (ss_name, boost::bind(&ODUFinder::srvCB, this, _1, _2));
+//    ROS_INFO("Started tuning service server '%s'", ss_name.c_str());
 
     command = std::string("/load");
     database_location = std::string("database/germandeli");
