@@ -88,7 +88,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 
     for(std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
     {
-        std::cout << it->first << std::endl;
+//        std::cout << it->first << std::endl;
 
         const ed::EntityConstPtr& e = it->second;
         if (!req.id.empty() && e->id() != req.id)
