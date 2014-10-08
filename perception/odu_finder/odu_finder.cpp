@@ -55,16 +55,18 @@ void DocumentInfo::read(std::istream& in) {
 
 /////////////////////////////////////////////////////////////////////////////////////
 ODUFinder::ODUFinder() :
-    camera_image(NULL), template_image(NULL), image(NULL), tree_builder(Feature::Zero()), visualization_mode_(FRAMES),
+        camera_image(NULL), template_image(NULL), image(NULL), tree_builder(Feature::Zero()), visualization_mode_(FRAMES),
     tuning_object_(""), current_mode_(odu_finder::RECOGNITION)
 { //SEQUENCES) {  //FRAMES) {   //SEQUENCES
 
+    std::cout << "Creating ODU object" << std::endl;
+
     //! Set tuning mode
-    ros::NodeHandle nh("~");
-    std::string ss_name = nh.getNamespace() + "/set_tuning_mode";
-    srv_server_ = nh.advertiseService<pein_srvs::TuningMode::Request, pein_srvs::TuningMode::Response>
-            (ss_name, boost::bind(&ODUFinder::srvCB, this, _1, _2));
-    ROS_INFO("Started tuning service server '%s'", ss_name.c_str());
+//    ros::NodeHandle nh("~");
+//    std::string ss_name = nh.getNamespace() + "/set_tuning_mode";
+//    srv_server_ = nh.advertiseService<pein_srvs::TuningMode::Request, pein_srvs::TuningMode::Response>
+//            (ss_name, boost::bind(&ODUFinder::srvCB, this, _1, _2));
+//    ROS_INFO("Started tuning service server '%s'", ss_name.c_str());
 
 
     command = std::string("/load");
@@ -921,7 +923,9 @@ void ODUFinder::process_file(std::string& filename,
 
 ///////////////////////////////////////////////////////////////////////
 Keypoint ODUFinder::extract_keypoints(IplImage *image, bool frames_only) {
+    std::cout << "this" << std::endl;
     Image sift_image = CreateImage(image->height, image->width);
+    std::cout << "this 2" << std::endl;
     for (int i = 0; i < image->height; ++i) {
         uint8_t* pSrc = (uint8_t*) image->imageData + image->widthStep * i;
         float* pDst = sift_image->pixels + i * sift_image->stride;

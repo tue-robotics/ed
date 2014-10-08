@@ -39,8 +39,8 @@ private:
     mutable cv::CascadeClassifier classifier_front;
     mutable cv::CascadeClassifier classifier_profile;
 
-    bool DetectFaces(const cv::Mat &masked_img,
-                     const cv::Mat &mask_cv,
+    bool DetectFaces(const cv::Mat &cropped_img,
+                     const cv::Mat &mask,
                      const std::string &entity_id,
                      std::vector<cv::Rect>& faces_front,
                      std::vector<cv::Rect>& faces_profile) const;
@@ -49,7 +49,9 @@ private:
 
     int ClipInt(int val, int min, int max) const;
 
-    void OptimizeContour(const cv::Mat& mask_orig, const cv::Mat& mask_opt) const;
+    void OptimizeContourHull(const cv::Mat& mask_orig, cv::Mat& mask_optimized) const;
+
+    void OptimizeContourBlur(const cv::Mat& mask_orig, cv::Mat& mask_optimized) const;
 
 
 public:
