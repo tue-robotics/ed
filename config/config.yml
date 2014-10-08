@@ -43,6 +43,8 @@ perception:
 #    -  lib: libhuman_contour_matcher.so
 
 plugins:
+- name: gui_server
+  lib: libed_gui_server_plugin.so
 - name: builder
   lib: libed_builder_plugin.so
 - name: obstacle_grid_publisher
