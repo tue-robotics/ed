@@ -53,6 +53,8 @@ private:
 
     void OptimizeContourBlur(const cv::Mat& mask_orig, cv::Mat& mask_optimized) const;
 
+    std::string GenerateID() const;
+
 
 public:
 

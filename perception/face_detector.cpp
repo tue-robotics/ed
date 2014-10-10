@@ -107,7 +107,8 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
     }
 
     // improve the contours of the mask
-    OptimizeContour(mask, mask);
+//    OptimizeContourHull(mask, mask);
+    OptimizeContourBlur(mask, mask);
 
     // Detect faces in the measurment and assert the results
     if(DetectFaces(cropped_image, mask, e->id(), faces_front, faces_profile)){
@@ -151,8 +152,8 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
 
 // ----------------------------------------------------------------------------------------------------
 
-bool FaceDetector::DetectFaces(const cv::Mat& masked_img,
-                               const cv::Mat& mask_cv,
+bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
+                               const cv::Mat& mask,
                                const std::string& entity_id,
                                std::vector<cv::Rect>& faces_front,
                                std::vector<cv::Rect>& faces_profile) const{
@@ -163,7 +164,7 @@ bool FaceDetector::DetectFaces(const cv::Mat& masked_img,
     bool face_detected;
 
     // find the contours of the mask
-    findContours(mask_cv, contour, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    findContours(mask, contour, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
     // create a minimum area bounding box
     bounding_box = cv::boundingRect(contour[0]);
@@ -172,7 +173,7 @@ bool FaceDetector::DetectFaces(const cv::Mat& masked_img,
 //    masked_img.copyTo(cascade_img, mask_cv);
 
     // select only the area of the bounding box
-    masked_img(bounding_box).copyTo(cascade_img);
+    cropped_img(bounding_box).copyTo(cascade_img);
 
     // increase contrast of the image
     normalize(cascade_img, cascade_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
@@ -202,7 +203,7 @@ bool FaceDetector::DetectFaces(const cv::Mat& masked_img,
     if (kDebugMode){
         cv::Mat debugImg;
 
-        masked_img.copyTo(debugImg);
+        cropped_img.copyTo(debugImg, mask);
 
         for (uint j = 0; j < faces_front.size(); j++)
             cv::rectangle(debugImg, faces_front[j], cv::Scalar(0, 255, 0), 2, CV_AA);
@@ -211,7 +212,8 @@ bool FaceDetector::DetectFaces(const cv::Mat& masked_img,
             cv::rectangle(debugImg, faces_profile[j], cv::Scalar(0, 0, 255), 2, CV_AA);
 
 
-//      cv::imwrite(kDebugFolder + entity_id + "_faces.png", debugImg);
+        cv::imwrite(kDebugFolder + GenerateID() + "_face_detector_mask.png", debugImg);
+        cv::imwrite(kDebugFolder + GenerateID() + "_face_detector_full.png", cropped_img);
         cv::imshow("Face Detector Output", debugImg);
     }
 
@@ -221,19 +223,51 @@ bool FaceDetector::DetectFaces(const cv::Mat& masked_img,
 
 // ----------------------------------------------------------------------------------------------------
 
-void FaceDetector::OptimizeContour(const cv::Mat& mask_orig, const cv::Mat& mask_opt) const{
+void FaceDetector::OptimizeContourHull(const cv::Mat& mask_orig, cv::Mat& mask_optimized) const{
 
-    mask_orig.copyTo(mask_opt);
+    std::vector<std::vector<cv::Point> > hull;
+    std::vector<std::vector<cv::Point> > contours;
 
-    //        cv::Vector<cv::Point2i>
-    //                cv::convexHull()
+    cv::findContours(mask_orig, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    for (uint i = 0; i < contours.size(); i++){
+        hull.push_back(std::vector<cv::Point>());
+        cv::convexHull(cv::Mat(contours[i]), hull.back(), false);
+
+        mask_optimized = cv::Mat::zeros(mask_orig.size(), CV_8UC1);
+
+        cv::drawContours(mask_optimized, hull, -1, cv::Scalar(255), CV_FILLED);
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void FaceDetector::OptimizeContourBlur(const cv::Mat& mask_orig, cv::Mat& mask_optimized) const{
+
+    mask_orig.copyTo(mask_optimized);
 
     // blur the contour, also expands it a bit
     for (uint i = 6; i < 18; i = i + 2){
-        blur(mask_opt, mask_opt, cv::Size( i, i ), cv::Point(-1,-1) );
+        cv::blur(mask_optimized, mask_optimized, cv::Size( i, i ), cv::Point(-1,-1) );
     }
 
-    cv::threshold(mask_opt, mask_opt, 50, 255, CV_THRESH_BINARY);
+    cv::threshold(mask_optimized, mask_optimized, 50, 255, CV_THRESH_BINARY);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+std::string FaceDetector::GenerateID() const{
+    static const char alphanum[] =
+        "0123456789"
+        "abcdef";
+
+    std::string ID;
+    for (int i = 0; i < 10; ++i) {
+        int n = rand() / (RAND_MAX / (sizeof(alphanum) - 1) + 1);
+        ID += alphanum[n];
+    }
+
+    return ID;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -246,6 +280,8 @@ void FaceDetector::CleanDebugFolder(const std::string& folder){
         //printf("\nUnable to clean output folder \n");
     }
 }
+
+// ----------------------------------------------------------------------------------------------------
 
 int FaceDetector::ClipInt(int val, int min, int max) const{
     return val <= min ? min : val >= max ? max : val;

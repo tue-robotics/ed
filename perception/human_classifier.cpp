@@ -196,8 +196,8 @@ bool HumanClassifier::TemplateClassification(const cv::Mat& depth_image,
 
 
             cv::imwrite(kDebugFolder + msrID + "_debug1_Mask.png", mask);
-//            cv::imwrite(kDebugFolder + "debug2_Contour_obj_1_.png", contour_line);
-//            cv::imwrite(kDebugFolder + "debug3_DistanceTransform_obj_1_.png", map_dt);
+            cv::imwrite(kDebugFolder + msrID + "_debug2_Contour_obj_1_.png", contour_line);
+//            cv::imwrite(kDebugFolder + msrID + "_debug3_DistanceTransform_obj_1_.png", map_dt);
 
             // draw the template over the distance transform map
 
