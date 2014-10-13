@@ -22,6 +22,8 @@ public:
 
     void update(std::map<UUID, EntityConstPtr>& entities);
 
+    bool getEnvironmentVariable(const std::string& var, std::string& value);
+
 private:
 
     bool fit_shape_;
