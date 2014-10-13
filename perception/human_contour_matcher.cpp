@@ -114,6 +114,8 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
 
     is_human = human_classifier_.Classify(depth_image, color_image, mask_cv, avg_depht, classification_error, classification_deviation, classification_stance);
 
+    result.writeGroup("perception_result");
+
     if (classification_error > 0){
     // assert results
         result.writeGroup("matching_result");
@@ -125,12 +127,12 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
 
     if(is_human)
     {
-        result.setValue("type", "human_contour");
-        result.setValue("type-score", 1.0);
+        result.setValue("human_contour_score", 1.0);
     }else{
-        result.setValue("type", "human_contour");
-        result.setValue("type-score", 0.0);
+        result.setValue("human_contour_score", 0.0);
     }
+
+    result.endGroup();
 }
 
 ED_REGISTER_PERCEPTION_MODULE(HumanContourMatcher)
