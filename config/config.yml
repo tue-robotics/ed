@@ -38,15 +38,16 @@ world_name: robotics_testlab_B
 perception:
     fit_shapes: 1
     modules:
-#    -  lib: libsize_matcher.so
+    -  lib: libsize_matcher.so
 #    -  lib: libodu_finder.so
 #    -  lib: libhuman_contour_matcher.so
+#    -  lib: libface_detector.so
 
 plugins:
 - name: gui_server
   lib: libed_gui_server_plugin.so
-- name: builder
-  lib: libed_builder_plugin.so
+#- name: builder
+#  lib: libed_builder_plugin.so
 - name: obstacle_grid_publisher
   lib: libed_occupancy_grid_publisher_plugin.so
   parameters:
