@@ -23,7 +23,9 @@ void OccupancyGridPublisherPlugin::configure(tue::Configuration config)
     config.value("frame_id", frame_id_);
 
     config.value("specifier", specifier_, tue::OPTIONAL);
-    config.value("sim_time", sim_time_);
+    config.value("sim_time", sim_time_, tue::OPTIONAL);
+
+    config.value("object_persistence_time", object_persistence_time_, tue::OPTIONAL);
 
     //! Re-initialize if topic has changed
     if (old_topic != "" && topic_ != old_topic)
@@ -128,6 +130,15 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
 
 void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Mat& map)
 {
+    int value = 100;
+
+    //! Check object persistence time
+    if (object_persistence_time_ > 0 && e->lastMeasurement())
+    {
+        if ((ros::Time::now().toSec() - e->lastMeasurement()->timestamp()) > object_persistence_time_)
+            value = 99;
+    }
+
     geo::ShapeConstPtr shape = e->shape();
     if (shape)  // Do shape
     {
@@ -146,9 +157,9 @@ void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Ma
 
                 // Check if all points are on the map
                 if ( worldToMap(p1w.x, p1w.y, p1.x, p1.y) && worldToMap(p2w.x, p2w.y, p2.x, p2.y) && worldToMap(p3w.x, p3w.y, p3.x, p3.y) ) {
-                    cv::line(map, p1, p2, 100);
-                    cv::line(map, p1, p3, 100);
-                    cv::line(map, p2, p3, 100);
+                    cv::line(map, p1, p2, value);
+                    cv::line(map, p1, p3, value);
+                    cv::line(map, p2, p3, value);
                 }
             }
         }
@@ -170,7 +181,7 @@ void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Ma
             // Check if all points are on the map
             cv::Point2i p1, p2;
             if ( worldToMap(p1w.x, p1w.y, p1.x, p1.y) && worldToMap(p2w.x, p2w.y, p2.x, p2.y) )
-                cv::line(map, p1, p2, 100);
+                cv::line(map, p1, p2, value);
 
             // Velocity
             ed::MeasurementConstPtr m = e->lastMeasurement();

@@ -55,6 +55,7 @@ plugins:
       topic: /ed_map
       frame_id: /map
       sim_time: 1.0
+      object_persistence_time: 10
 - name: loc_grid_publisher
   lib: libed_occupancy_grid_publisher_plugin.so
   parameters:
