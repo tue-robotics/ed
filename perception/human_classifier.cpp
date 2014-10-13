@@ -69,7 +69,7 @@ bool HumanClassifier::Classify(const cv::Mat& depth_img,
         faceDetected = FaceDetection(color_img, measurement);
 
     template_match_error = match_error;
-    if ((match_error < kMaxTemplateErr && template_type != NoMatch) || faceDetected){
+    if ((template_match_error < kMaxTemplateErr && template_type != NoMatch) || faceDetected){
         return true;
     }else{
         return false;
@@ -454,10 +454,7 @@ float HumanClassifier::ErrorFunction(const cv::Mat& grad_x,
 
 bool HumanClassifier::FaceDetection(const cv::Mat &color_img, Roi &measurement) const{
 
-    //    return true;
-
-    // if face detection is enabled, the template matching failed, the match location is bellow the
-    //      hight limit and the person is not facing away from the camera
+    // if face detection is enabled, and the template matching didnt fail
     if (kFaceDetectEnabled && measurement.templType != NoMatch){
 
         std::vector<cv::Rect> facesFront;
