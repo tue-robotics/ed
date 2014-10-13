@@ -54,6 +54,13 @@ void OccupancyGridPublisherPlugin::process(const ed::WorldModel& world, ed::Upda
 
         publishMapMsg(map);
     }
+    else
+    {
+        std::cout << "Error getting map data:" << std::endl;
+        std::cout << "width: " << width_ << std::endl;
+        std::cout << "height: " << height_ << std::endl;
+        std::cout << "resolution: " << res_ << std::endl;
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -81,13 +88,24 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
         geo::ShapeConstPtr shape = e->shape();
         if (shape)  // Do shape
         {
-            double r = shape->getMesh().getMaxRadius();
+            const std::vector<geo::Triangle>& triangles = shape->getMesh().getTriangles();
 
-            min.x = std::min(e->pose().getOrigin().x - r, min.x);
-            max.x = std::max(e->pose().getOrigin().x + r, max.x);
+            for(std::vector<geo::Triangle>::const_iterator it = triangles.begin(); it != triangles.end(); ++it) {
 
-            min.y = std::min(e->pose().getOrigin().y - r, min.y);
-            max.y = std::max(e->pose().getOrigin().y + r, max.y);
+                geo::Vector3 p1w = e->pose() * it->p1_;
+                geo::Vector3 p2w = e->pose() * it->p2_;
+                geo::Vector3 p3w = e->pose() * it->p3_;
+
+                // Filter the ground
+                if (p1w.getZ() > 0.05001 && p2w.getZ() > 0.050001 && p3w.getZ() > 0.05001)
+                {
+                    min.x = std::min(std::min(std::min(p1w.x, min.x), p2w.x), p3w.x);
+                    max.x = std::max(std::max(std::max(p1w.x, max.x), p2w.x), p3w.x);
+
+                    min.y = std::min(std::min(std::min(p1w.y, min.y), p2w.y), p3w.y);
+                    max.y = std::max(std::max(std::max(p1w.y, max.y), p2w.y), p3w.y);
+                }
+            }
         }
     }
 
@@ -103,7 +121,7 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
     width_ = (max.x - min.x) / res_;
     height_ = (max.y - min.y) / res_;
 
-    return (width_ > 0 && height_ > 0);
+    return (width_ > 0 && height_ > 0 && width_*height_ < 100000000);
 }
 
 // ----------------------------------------------------------------------------------------------------
