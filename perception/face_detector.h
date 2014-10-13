@@ -56,6 +56,11 @@ private:
     std::string GenerateID() const;
 
 
+/*
+* ###########################################
+*  				    PUBLIC
+* ###########################################
+*/
 public:
 
     FaceDetector();

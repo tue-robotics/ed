@@ -110,10 +110,11 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
 //    OptimizeContourHull(mask, mask);
     OptimizeContourBlur(mask, mask);
 
+    // initialize group
+    result.writeGroup("perception_result");
+
     // Detect faces in the measurment and assert the results
     if(DetectFaces(cropped_image, mask, e->id(), faces_front, faces_profile)){
-        result.setValue("type", "face");
-        result.setValue("type-score", 1.0);
 
         // if front faces were detected
         if (faces_front.size() > 0){
@@ -129,7 +130,6 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
             result.endArray();
         }
 
-
         // if profile faces were detected
         if (faces_profile.size() > 0){
             result.writeArray("faces_profile");
@@ -143,11 +143,17 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
             }
             result.endArray();
         }
+
+        result.setValue("face_score", 1.0);
+
     }else{
         // no faces detected
-        result.setValue("type", "face");
-        result.setValue("type-score", 0.0);
+        result.setValue("face_score", 0.0);
     }
+
+//    result.endArrayItem();
+//    result.endArray();
+    result.endGroup();
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -166,11 +172,13 @@ bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
     // find the contours of the mask
     findContours(mask, contour, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
+    if (contour.size() == 0){
+//        std::cout << "[" << kModuleName << "] " << "No contours found on this mask " << mask.cols << ", " << mask.rows << std::endl;
+        return false;
+    }
+
     // create a minimum area bounding box
     bounding_box = cv::boundingRect(contour[0]);
-
-    // create a copy of the masked image
-//    masked_img.copyTo(cascade_img, mask_cv);
 
     // select only the area of the bounding box
     cropped_img(bounding_box).copyTo(cascade_img);
@@ -178,12 +186,48 @@ bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
     // increase contrast of the image
     normalize(cascade_img, cascade_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
 
+    cv::CascadeClassifier classifier_front_local;
+    cv::CascadeClassifier classifier_profile_local;
+
+    // load training files
+    if (!classifier_front_local.load(kCascadePath + "haarcascade_frontalface_default.xml") ||
+            !classifier_profile_local.load(kCascadePath + "haarcascade_profileface.xml")) {
+
+        std::cout << "[" << kModuleName << "] " << "Unable to load all haar cascade files ("<< kCascadePath << ")" << std::endl;
+
+        return false;
+    }
+
     // detect frontal faces
-    classifier_front.detectMultiScale(cascade_img, faces_front, kClassFrontScaleFactor, kClassFrontMinNeighbors, 0|CV_HAAR_SCALE_IMAGE, kClassFrontMinSize);
+//    classifier_front.detectMultiScale(cascade_img,
+//                                      faces_front,
+//                                      kClassFrontScaleFactor,
+//                                      kClassFrontMinNeighbors,
+//                                      0|CV_HAAR_SCALE_IMAGE,
+//                                      kClassFrontMinSize);
+
+    classifier_front_local.detectMultiScale(cascade_img,
+                                            faces_front,
+                                            kClassFrontScaleFactor,
+                                            kClassFrontMinNeighbors,
+                                            0|CV_HAAR_SCALE_IMAGE,
+                                            kClassFrontMinSize);
 
     // only search profile faces if the frontal face detection failed
     if (faces_front.size() == 0){
-        classifier_profile.detectMultiScale(cascade_img, faces_profile, kClassProfileScaleFactor, kClassProfileMinNeighbors, 0|CV_HAAR_SCALE_IMAGE, kClassProfileMinSize);
+//        classifier_profile.detectMultiScale(cascade_img,
+//                                            faces_profile,
+//                                            kClassProfileScaleFactor,
+//                                            kClassProfileMinNeighbors,
+//                                            0|CV_HAAR_SCALE_IMAGE,
+//                                            kClassProfileMinSize);
+
+        classifier_profile_local.detectMultiScale(cascade_img,
+                                                  faces_profile,
+                                                  kClassProfileScaleFactor,
+                                                  kClassProfileMinNeighbors,
+                                                  0|CV_HAAR_SCALE_IMAGE,
+                                                  kClassProfileMinSize);
     }
 
     face_detected = (faces_front.size() > 0 || faces_profile.size() > 0);
