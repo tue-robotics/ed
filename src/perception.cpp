@@ -85,8 +85,25 @@ Perception::~Perception()
 void Perception::configure(tue::Configuration config)
 {
     // Get the ED directory
-    std::string ed_dir = ros::package::getPath("ed");
-    std::string lib_dir = ed_dir + "/lib/";
+    std::string ed_dir;
+    std::string lib_dir;
+
+    if (getEnvironmentVariable("ED_PLUGIN_PATH", ed_dir))
+    {
+        std::stringstream ss(ed_dir);
+        std::string item;
+        while (std::getline(ss, item, ':')){
+            ed_dir = item + "/";
+            break;
+        }
+    }
+    else
+    {
+        std::cout << "Error: Environment variable ED_PLUGIN_PATH not set. Getting the path through ros getPackage." << std::endl;
+        ed_dir = ros::package::getPath("ed");
+    }
+
+    lib_dir = ed_dir;
 
     config.value("fit_shapes", fit_shape_);
 
@@ -202,6 +219,18 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
         }
 
     }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool Perception::getEnvironmentVariable(const std::string& var, std::string& value)
+{
+     const char * val = ::getenv(var.c_str());
+     if ( val == 0 )
+         return false;
+
+     value = val;
+     return true;
 }
 
 // ----------------------------------------------------------------------------------------------------
