@@ -145,6 +145,12 @@ add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
 #                                          PERCEPTION MODULES
 # ------------------------------------------------------------------------------------------------
 
+add_library(type_aggregator
+    perception/type_aggregator.cpp
+    perception/type_aggregator.h
+)
+target_link_libraries(type_aggregator ed_perception)
+
 add_library(size_matcher
     perception/size_matcher.cpp
     perception/size_matcher.h
