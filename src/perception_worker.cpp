@@ -25,7 +25,7 @@ double PerceptionWorker::timestamp() const
     {
         MeasurementConstPtr msr = entity_->lastMeasurement();
         if (msr)
-            return timestamp();
+            return msr->timestamp();
     }
     return 0;
 }
