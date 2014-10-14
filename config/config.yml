@@ -3,7 +3,7 @@ sensors:
   type: kinect
   source: /amigo/top_kinect/rgbd
   frame_id: /amigo/top_kinect/openni_rgb_optical_frame
-  visualize: 0
+  visualize: 1
   voxel_size: 0.02
   max_range: 3.0
   clearing_padding_fraction: 0.05
@@ -40,8 +40,9 @@ perception:
     modules:
     -  lib: libsize_matcher.so
 #    -  lib: libodu_finder.so
-#    -  lib: libhuman_contour_matcher.so
-#    -  lib: libface_detector.so
+    -  lib: libhuman_contour_matcher.so
+    -  lib: libface_detector.so
+    -  lib: libtype_aggregator.so
 
 plugins:
 - name: gui_server
