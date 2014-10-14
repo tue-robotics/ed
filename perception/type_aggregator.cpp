@@ -10,7 +10,6 @@ TypeAggregator::TypeAggregator():
     PerceptionModule("type_aggregator"),
     init_success_(false)
 {
-    std::cout << "TypeAggregator class created!" << std::endl;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -23,16 +22,16 @@ TypeAggregator::~TypeAggregator()
 
 void TypeAggregator::loadModel(const std::string& model_name, const std::string& model_path)
 {
-    /*
-    Load any model specific data here
-        model_name: the name of the model (e.g. 'human')
-        model_path: the directory in which the models are stored
-    */
     if (model_name.compare("aggregator") == 0){
 
         kModuleName = "type_aggregator";
 
-        std::cout << "[" << kModuleName << "] " << "Finished loading" << std::endl;
+        kPluginNames.push_back("human_contour_matcher");
+        kPluginNames.push_back("face_detector");
+        kPluginNames.push_back("size_matcher");
+        kPositiveTresh = 0.5;
+
+        std::cout << "[" << kModuleName << "] " << "Finished loading model" << std::endl;
 
         init_success_ = true;
     }
@@ -42,50 +41,57 @@ void TypeAggregator::loadModel(const std::string& model_name, const std::string&
 
 void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) const
 {
-    if (result.readArray("plugins"))
+    // if initialization failed, return
+    if (!init_success_)
+        return;
+
+    float score = 0;
+    std::string type = "";
+    std::string label = "";
+
+    // find perception_result group
+    if (result.readGroup("perception_result"))
     {
-       std::cout << "[" << kModuleName << "] " << "found perception_result!" << std::endl;
+        // find perception plugins already executed
+        for(std::vector<std::string>::const_iterator pluginName = kPluginNames.begin(); pluginName != kPluginNames.end(); ++pluginName) {
+           if (result.readGroup(*pluginName)){
+               // read the score
+               if (result.value("score", score))
+               {
+                   // if its bigger than the threshold, add that label
+                   if (score > kPositiveTresh){
+                       if (result.value("label", label)){
+                           // if its not the first label, add a coma and then the new label
+                           if (!type.empty())
+                               type.append(", ");
 
-        while(result.nextArrayItem())
-        {
-            std::cout << "[" << kModuleName << "] " << "next array item" << std::endl;
-            std::string name;
-            if (result.value("name", name))
-            {
-                std::cout << "[" << kModuleName << "] " << "name: " << name << std::endl;
-
-//                std::map<std::string, SensorModulePtr>::iterator it_sensor = sensors_.find(name);
-
-//                if (it_sensor == sensors_.end())
-//                {
-//                    // Sensor module does not yet exist. Determine the type and create a sensor
-//                    // module accordingly.
-
-//                    std::string type;
-//                    if (config.value("type", type))
-//                    {
-//                        if (type == "kinect")
-//                        {
-//                            SensorModulePtr sensor_mod(new Kinect(tf_listener_));
-//                            sensor_mod->configure(config);
-//                            sensors_[name] = sensor_mod;
-//                        }
-//                    }
-                }
-//                else
-//                {
-//                    // Sensor module exists, so reconfigure
-//                    it_sensor->second->configure(config, true);
-//                }
-//            }
+                           type.append(label);
+                       }
+                   }
+               }
+               result.endGroup();
+           }
         }
 
-//        config.endArray();
+        result.endGroup();
+
+        // if no type was found, then its unknown
+        if (type.empty())
+            type = "Unknown";
+
+        result.setValue("type", type);
+//        std::cout << "[" << kModuleName << "] " << "type: " << type << std::endl;
     }
     else{
-//        std::cout << "[" << kModuleName << "] " << "no array found in perception_result" << std::endl;
+//        std::cout << "[" << kModuleName << "] " << "perception_result group not found." << std::endl;
     }
+}
+
+
+void TypeAggregator::classify(std::vector<std::string> perceptionRes, std::string entityType) const{
 
 }
+
+
 
 ED_REGISTER_PERCEPTION_MODULE(TypeAggregator)
