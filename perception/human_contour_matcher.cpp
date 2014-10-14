@@ -63,6 +63,7 @@ void HumanContourMatcher::loadModel(const std::string& model_name, const std::st
     */
 
     if (model_name.compare("human") == 0){
+        kModuleName = "human_contour_matcher";
         init_success_ = human_classifier_.Initializations(model_name, model_path + "/");
     }
 }
@@ -114,25 +115,33 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
 
     is_human = human_classifier_.Classify(depth_image, color_image, mask_cv, avg_depht, classification_error, classification_deviation, classification_stance);
 
-    result.writeGroup("perception_result");
+    // ----------------------- assert results -----------------------
+
+    // create group if it doesnt exist
+    if (!result.readGroup("perception_result"))
+    {
+        result.writeGroup("perception_result");
+    }
+
+    // assert the results to the entity
+    result.writeGroup(kModuleName);
+    result.setValue("label", "Human Shape");
 
     if (classification_error > 0){
-    // assert results
-        result.writeGroup("matching_result");
         result.setValue("stance", classification_stance);
         result.setValue("error", classification_error);
         result.setValue("deviation", classification_deviation);
-        result.endGroup();
     }
 
     if(is_human)
     {
-        result.setValue("human_contour_score", 1.0);
+        result.setValue("score", 1.0);
     }else{
-        result.setValue("human_contour_score", 0.0);
+        result.setValue("score", 0.0);
     }
 
-    result.endGroup();
+    result.endGroup();  // close human_contour_matcher group
+    result.endGroup();  // close perception_result group
 }
 
 ED_REGISTER_PERCEPTION_MODULE(HumanContourMatcher)

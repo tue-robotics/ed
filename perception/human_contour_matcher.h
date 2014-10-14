@@ -11,6 +11,7 @@ private:
     HumanClassifier human_classifier_;
 
     bool init_success_;
+    std::string	kModuleName;    /*!< Name of the module, for output */
 
 public:
 
