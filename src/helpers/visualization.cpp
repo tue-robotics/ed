@@ -554,6 +554,12 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                     cv::Scalar c(c_rgba.b*255, c_rgba.g*255, c_rgba.r*255);
 
                     cv::rectangle(color_img, rect, c);
+
+                    std::vector<cv::Point2i> chull;
+                    cv::convexHull(pnts,chull);
+                    std::vector<std::vector<cv::Point2i> > contours; contours.push_back(chull);
+
+                    cv::drawContours(color_img,contours,0,c);
                     cv::putText(color_img, e->id() + "(" + e->type() + ")", cv::Point(std::max(0.0,rect.x-.5*rect.width),
                                                               std::max(0,rect.y-20)), 1, 1.2, c);
                 }
