@@ -530,6 +530,43 @@ void showMeasurement(MeasurementConstPtr measurement, const std::string& id)
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::ImageConstPtr rgbd_image)
+{
+    cv::Mat color_img = rgbd_image->getRGBImage().clone();
+    for (std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    {
+        const EntityConstPtr& e = it->second;
+
+        if (!e->shape()) //! if it has no shape
+        {
+            if (e->lastMeasurement())
+            {
+                MeasurementConstPtr m = e->lastMeasurement();
+
+                if (m->timestamp() == rgbd_image->getTimestamp())
+                {
+                    std::vector<cv::Point2i> pnts;
+                    for (ImageMask::const_iterator mit = m->imageMask().begin(color_img.cols); mit != m->imageMask().end(); ++mit)
+                        pnts.push_back(*mit);
+                    cv::Rect rect = cv::boundingRect(pnts);
+
+                    std_msgs::ColorRGBA c_rgba = getColor(e->id());
+                    cv::Scalar c(c_rgba.b*255, c_rgba.g*255, c_rgba.r*255);
+
+                    cv::rectangle(color_img, rect, c);
+                    cv::putText(color_img, e->id() + "(" + e->type() + ")", cv::Point(std::max(0.0,rect.x-.5*rect.width),
+                                                              std::max(0,rect.y-20)), 1, 1.2, c);
+                }
+            }
+        }
+    }
+
+    cv::imshow("measurements", color_img);
+    cv::waitKey(3);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 void showSegmentedImage(const rgbd::ImageConstPtr image, const std::vector<ImageMask>& segments, const std::string& name)
 {
     rgbd::View view(*image,640);

@@ -41,8 +41,7 @@ void publishRGBDViewFrustrumVisualizationMarker(const rgbd::View& view, const ge
 
 
 
-
-
+void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::ImageConstPtr rgbd_image);
 
 void showMeasurement(MeasurementConstPtr measurement, const std::string& id);
 

@@ -314,6 +314,12 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
             entities.erase(*it);
     }
 
+    //! 8) Visualization
+    if (visualize_)
+    {
+        helpers::visualization::showMeasurements(entities, rgbd_data.image);
+    }
+
     pub_profile_.publish();
 }
 
