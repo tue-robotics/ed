@@ -113,9 +113,9 @@ int main(int argc, char **argv) {
         std::cout << "    " << filename.withoutExtension() << std::endl;
         std::cout << "------------------------------------------------------------" << std::endl << std::endl;
 
+        tue::Configuration result;
         for(std::vector<ed::PerceptionModulePtr>::iterator it_mod = modules.begin(); it_mod != modules.end(); ++it_mod)
         {
-            tue::Configuration result;
             (*it_mod)->process(e, result);
 
             // Display the result
