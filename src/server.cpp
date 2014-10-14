@@ -193,13 +193,14 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
         full_lib_file = getFullLibraryPath(lib_file);
         if (full_lib_file.empty())
         {
-            error += "Could not find '" + lib_file + "'.";
+            error += "Could not find plugin '" + lib_file + "'.";
+            return PluginContainerPtr();
         }
     }
 
     if (!tue::filesystem::Path(full_lib_file).exists())
     {
-        error += "Could not find '" + full_lib_file + "'.";
+        error += "Could not find plugin '" + full_lib_file + "'.";
         return PluginContainerPtr();
     }
 
