@@ -35,6 +35,10 @@ private:
     bool init_success_;
     std::string	kModuleName;    /*!< Name of the module, for output */
 
+    std::vector<std::string> kPluginNames;
+    float kPositiveTresh;
+
+    void classify(std::vector<std::string> perceptionRes, std::string entityType) const;
 
 };
 

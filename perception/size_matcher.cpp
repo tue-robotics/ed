@@ -78,8 +78,8 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
         geo::Vector3 p;
         if (view.getPoint3D(p_2d.x, p_2d.y, p))
         {
-            geo::Vector3 p_MAP = msr->sensorPose() * p;
-//            geo::Vector3 p_MAP = p;     // use this only when testing
+//            geo::Vector3 p_MAP = msr->sensorPose() * p;
+            geo::Vector3 p_MAP = p;     // use this only when sensorPose is not available
 
             min.x = std::min(min.x, p_MAP.x); max.x = std::max(max.x, p_MAP.x);
             min.y = std::min(min.y, p_MAP.y); max.y = std::max(max.y, p_MAP.y);
@@ -91,11 +91,6 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
     geo::Vector3 size = max - min;
     double object_width = sqrt(size.x * size.x + size.z * size.z);
     double object_height = size.y;
-
-    result.writeGroup("size");
-    result.setValue("width", object_width);
-    result.setValue("height", object_height);
-    result.endGroup();
 
     std::vector<std::string> hyps;
 
@@ -123,9 +118,27 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
             hyps.push_back(label);
     }
 
+    // ----------------------- assert results -----------------------
+
+    // create group if it doesnt exist
+    if (!result.readGroup("perception_result"))
+    {
+        result.writeGroup("perception_result");
+    }
+
+    result.writeGroup("size_matcher");
+
+    result.writeGroup("size");
+    result.setValue("width", object_width);
+    result.setValue("height", object_height);
+    result.endGroup();
+
     // if an hypothesis is found, assert it
     if (!hyps.empty())
     {
+        result.setValue("label", "Small Object");
+        result.setValue("score", 1.0);
+
         // probability depends on the number of hypothesis
         double prob = 1.0 / hyps.size();
 
@@ -133,12 +146,15 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
         for(std::vector<std::string>::const_iterator it = hyps.begin(); it != hyps.end(); ++it)
         {
             result.addArrayItem();
-            result.setValue("type", *it);
+            result.setValue("name", *it);
             result.setValue("score", prob);
             result.endArrayItem();
         }
         result.endArray();
     }
+
+    result.endGroup();  // close size_matcher group
+    result.endGroup();  // close perception_result group
 }
 
 ED_REGISTER_PERCEPTION_MODULE(SizeMatcher)

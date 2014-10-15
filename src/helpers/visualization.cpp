@@ -79,7 +79,7 @@ void getNameAndTypeVisualizationMarker(const geo::Vector3& center_point, const U
     geo::convert(center_point,m.pose.position);
     m.pose.position.z += 0.1;
 
-    m.text = name.substr(0,5) + " - (" + type + ")";
+    m.text = type + "(" + name.substr(0,4) +  ")";
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -560,7 +560,7 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                     std::vector<std::vector<cv::Point2i> > contours; contours.push_back(chull);
 
                     cv::drawContours(color_img,contours,0,c);
-                    cv::putText(color_img, e->id() + "(" + e->type() + ")", cv::Point(std::max(0.0,rect.x-.5*rect.width),
+                    cv::putText(color_img, e->type() + "(" + e->id().substr(0,4) +  ")", cv::Point(std::max(0.0,rect.x-.5*rect.width),
                                                               std::max(0,rect.y-20)), 1, 1.2, c);
                 }
             }

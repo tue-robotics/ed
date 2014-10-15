@@ -110,8 +110,16 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
 //    OptimizeContourHull(mask, mask);
     OptimizeContourBlur(mask, mask);
 
-    // initialize group
-    result.writeGroup("perception_result");
+    // ----------------------- assert results -----------------------
+
+    // create group if it doesnt exist
+    if (!result.readGroup("perception_result"))
+    {
+        result.writeGroup("perception_result");
+    }
+
+    result.writeGroup(kModuleName);
+    result.setValue("label", "Face");
 
     // Detect faces in the measurment and assert the results
     if(DetectFaces(cropped_image, mask, e->id(), faces_front, faces_profile)){
@@ -144,16 +152,15 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
             result.endArray();
         }
 
-        result.setValue("face_score", 1.0);
+        result.setValue("score", 1.0);
 
     }else{
         // no faces detected
-        result.setValue("face_score", 0.0);
+        result.setValue("score", 0.0);
     }
 
-//    result.endArrayItem();
-//    result.endArray();
-    result.endGroup();
+    result.endGroup();  // close face_detector group
+    result.endGroup();  // close perception_result group
 }
 
 // ----------------------------------------------------------------------------------------------------
