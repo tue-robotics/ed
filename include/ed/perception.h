@@ -26,7 +26,7 @@ public:
 
 private:
 
-    bool fit_shape_;
+    std::vector<std::string> plugin_paths_;
 
     std::vector<class_loader::ClassLoader*> perception_loaders_;
 

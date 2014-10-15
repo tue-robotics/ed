@@ -10,6 +10,8 @@
 
 #include <ed/perception/model_fitter.h>
 
+#include <tue/filesystem/path.h>
+
 // Visualization
 #include <opencv2/highgui/highgui.hpp>
 
@@ -18,7 +20,7 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-EntityPtr updateEntityType(const EntityConstPtr& e, tue::Configuration perception_result, bool fit_shape)
+EntityPtr updateEntityType(const EntityConstPtr& e, tue::Configuration perception_result)
 {
     EntityPtr e_updated(new Entity(*e));
 
@@ -32,23 +34,6 @@ EntityPtr updateEntityType(const EntityConstPtr& e, tue::Configuration perceptio
         e_updated->setType(type);
 
     e_updated->setConfig(params);
-
-    if (fit_shape)
-    {
-//        // Lookup the object shape in the object db
-//        ed::models::Loader loader;
-//        geo::ShapePtr shape = loader.loadShape(type);
-
-//        if (shape) {
-//            geo::Pose3D fitted_pose;
-//            if (ed::model_fitter::fit(*e, shape, fitted_pose))
-//            {
-//                // Set shape and pose
-//                e_updated->setShape(shape);
-//                e_updated->setPose(fitted_pose);
-//            }
-//        }
-    }
 
     return e_updated;
 }
@@ -84,28 +69,20 @@ Perception::~Perception()
 
 void Perception::configure(tue::Configuration config)
 {
-    // Get the ED directory
-    std::string ed_dir;
-    std::string lib_dir;
-
-    if (getEnvironmentVariable("ED_PLUGIN_PATH", ed_dir))
+    // Get the plugin paths
+    std::string ed_plugin_paths;
+    if (getEnvironmentVariable("ED_PLUGIN_PATH", ed_plugin_paths))
     {
-        std::stringstream ss(ed_dir);
+        std::stringstream ss(ed_plugin_paths);
         std::string item;
-        while (std::getline(ss, item, ':')){
-            ed_dir = item + "/";
-            break;
-        }
+        while (std::getline(ss, item, ':'))
+            plugin_paths_.push_back(item);
     }
     else
     {
-        std::cout << "Error: Environment variable ED_PLUGIN_PATH not set. Getting the path through ros getPackage." << std::endl;
-        ed_dir = ros::package::getPath("ed");
+        config.addError("Environment variable ED_PLUGIN_PATH not set.");
+        return;
     }
-
-    lib_dir = ed_dir;
-
-    config.value("fit_shapes", fit_shape_);
 
     if (config.readArray("modules"))
     {
@@ -114,7 +91,22 @@ void Perception::configure(tue::Configuration config)
             std::string lib;
             if (config.value("lib", lib))
             {
-                std::string lib_file = lib_dir + lib;
+                std::string lib_file;
+                for(std::vector<std::string>::const_iterator it = plugin_paths_.begin(); it != plugin_paths_.end(); ++it)
+                {
+                    std::string lib_file_test = *it + "/" + lib;
+                    if (tue::filesystem::Path(lib_file_test).exists())
+                    {
+                        lib_file = lib_file_test;
+                        break;
+                    }
+                }
+
+                if (lib_file.empty())
+                {
+                    config.addError("Perception plugin '" + lib + "' could not be found.");
+                    return;
+                }
 
                 // Load the library
                 class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(lib_file);
@@ -209,7 +201,7 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
             else if (worker->isDone())
             {
                 // Update the entity with the results from the worker
-                it->second = updateEntityType(e, worker->getResult(), fit_shape_);
+                it->second = updateEntityType(e, worker->getResult());
 
                 // Set worker to idle. This way, the result is not checked again on the next iteration
                 worker->setIdle();
