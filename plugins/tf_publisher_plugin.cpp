@@ -44,6 +44,11 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
 
         pose_MAP = e->pose();
 
+		if (e->bestMeasurement())
+		{
+			pose_MAP.t = e->convexHull().center_point;
+		}
+
         tf::StampedTransform t;
         geo::convert(pose_MAP, t);
         t.frame_id_ = root_frame_id_;
