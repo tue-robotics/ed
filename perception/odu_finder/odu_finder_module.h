@@ -5,7 +5,7 @@
 
 namespace odu_finder
 {
-class ODUFinder;
+    class ODUFinder;
 }
 
 class ODUFinderModule : public ed::PerceptionModule
@@ -25,7 +25,11 @@ private:
 
     std::string config_path_;
 
-//    odu_finder::ODUFinder* odu_finder_;
+    void OptimizeContourHull(const cv::Mat& mask_orig, cv::Mat& mask_optimized) const;
+
+//    odu_finder::ODUFinder odu_finder_;
+
+    odu_finder::ODUFinder* odu_finder_;
 
 };
 
