@@ -3,6 +3,14 @@
 
 #include <ed/perception_modules/perception_module.h>
 
+template <typename T1, typename T2>
+struct less_second {
+    typedef std::pair<T1, T2> type;
+    bool operator ()(type const& a, type const& b) const {
+        return a.second < b.second;
+    }
+};
+
 class TypeAggregator : public ed::PerceptionModule
 {
 
@@ -38,8 +46,7 @@ private:
     std::vector<std::string> kPluginNames;
     float kPositiveTresh;
 
-    void classify(std::vector<std::string> perceptionRes, std::string entityType) const;
-
+    std::string best_hypothesis(std::map<std::string, std::map<std::string, float> > hypothesis) const;
 };
 
 #endif
