@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   ed_object_models
   geolib2
   geometry_msgs
-#  libsiftfast
+  #libsiftfast
   rgbd
   pcl_conversions
   roscpp
@@ -180,7 +180,7 @@ add_library(ed_odu_finder
     perception/odu_finder/odu_finder.cpp
     perception/odu_finder/odu_finder.h
 )
-target_link_libraries(ed_odu_finder ed_perception)
+target_link_libraries(ed_odu_finder ed_perception /usr/local/lib/libsiftfast.so)
 
 add_library(qr_detector
     perception/qr_detector.cpp
