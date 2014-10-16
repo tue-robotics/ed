@@ -105,6 +105,7 @@ public:
     int frame_number;
     std::map<std::string, int> stat_summary_map;
     bool extract_roi_;
+    std::string moduleName_;
 
     // IMAGES
     IplImage *camera_image, *template_image, *image ,*image_roi;
