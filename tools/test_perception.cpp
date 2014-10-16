@@ -119,8 +119,9 @@ int main(int argc, char **argv) {
             (*it_mod)->process(e, result);
 
             // Display the result
-            std::cout << result << std::endl;
         }
+
+        std::cout << result << std::endl;
 
         ++n_measurements;
 
