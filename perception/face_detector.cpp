@@ -113,7 +113,7 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
     // ----------------------- assert results -----------------------
 
     // create group if it doesnt exist
-    if (!result.readGroup("perception_result"))
+    if (!result.readGroup("perception_result", tue::OPTIONAL))
     {
         result.writeGroup("perception_result");
     }
@@ -193,6 +193,7 @@ bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
     // increase contrast of the image
     normalize(cascade_img, cascade_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
 
+    // using locally created classifiers because opencv does not support threading
     cv::CascadeClassifier classifier_front_local;
     cv::CascadeClassifier classifier_profile_local;
 
@@ -206,13 +207,6 @@ bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
     }
 
     // detect frontal faces
-//    classifier_front.detectMultiScale(cascade_img,
-//                                      faces_front,
-//                                      kClassFrontScaleFactor,
-//                                      kClassFrontMinNeighbors,
-//                                      0|CV_HAAR_SCALE_IMAGE,
-//                                      kClassFrontMinSize);
-
     classifier_front_local.detectMultiScale(cascade_img,
                                             faces_front,
                                             kClassFrontScaleFactor,
@@ -222,13 +216,6 @@ bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
 
     // only search profile faces if the frontal face detection failed
     if (faces_front.size() == 0){
-//        classifier_profile.detectMultiScale(cascade_img,
-//                                            faces_profile,
-//                                            kClassProfileScaleFactor,
-//                                            kClassProfileMinNeighbors,
-//                                            0|CV_HAAR_SCALE_IMAGE,
-//                                            kClassProfileMinSize);
-
         classifier_profile_local.detectMultiScale(cascade_img,
                                                   faces_profile,
                                                   kClassProfileScaleFactor,
