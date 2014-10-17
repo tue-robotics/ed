@@ -660,7 +660,7 @@ void HumanClassifier::LoadParameters(){
     kFaceDetectEnabled = false;
     kMatchIterations = 30;
     kDtLineWidth = 1;
-    kMaxTemplateErr = 12;
+    kMaxTemplateErr = 15;
     kBorderSize = 20;
     kNumSlicesMatching = 7;
 }
