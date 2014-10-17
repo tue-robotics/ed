@@ -26,6 +26,7 @@ void ODUFinderModule::loadConfig(const std::string& config_path)
 {
     config_path_ = config_path;
 
+    // creat odu finder instance
     odu_finder_ = new odu_finder::ODUFinder();
     odu_finder_->load_database(config_path_);
 }
@@ -76,6 +77,7 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
     // ----------------------- PROCESS IMAGE -----------------------
 
     IplImage img(masked_mono_image);
+
     std::map<std::string, float> results = odu_finder_->process_image(&img);
 
 

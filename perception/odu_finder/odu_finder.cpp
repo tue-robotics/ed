@@ -23,9 +23,8 @@ DocumentInfo::DocumentInfo(vt::Document* document, std::string& name) :
 
 ////////////////////////////
 DocumentInfo::~DocumentInfo() {
-    // TODO: i just commented this because it crashed
-//    if (delete_document)
-//        delete[] document;
+    if (delete_document)
+        delete[] document;
 }
 
 ///////////////////////////////////////////
@@ -54,6 +53,8 @@ void DocumentInfo::read(std::istream& in) {
     delete[] name;
 }
 
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 ODUFinder::ODUFinder() :
         camera_image(NULL), template_image(NULL), image(NULL), tree_builder(Feature::Zero()), visualization_mode_(FRAMES),
@@ -71,7 +72,6 @@ ODUFinder::ODUFinder() :
     database_location = std::string("database/germandeli");
     images_directory = std::string("data/germandeli");
     images_for_visualization_directory = std::string("");
-//    votes_count = 30;
     votes_count = 10;
     tree_k = 5;
     tree_levels = 5;
@@ -89,12 +89,11 @@ ODUFinder::ODUFinder() :
     radius_adaptation_K = 0.02;
     count_templates = 0;
     moduleName_ = "odu_finder";
-//    pein_vis_ = true;
 
+    pein_vis_ = false;
     object_threshold = 0.22;
-
-    // TODO: i just put 1 here without knowing what it means!
-    templates_to_show = 1;
+    extract_roi_ = false;
+    templates_to_show = 4;
 
 
 
@@ -175,10 +174,9 @@ ODUFinder::~ODUFinder() {
     }
     delete db;
 
-    // TODO: i just commented this because it crashed
-//    std::map<int, DocumentInfo*>::iterator iter;
-//    for (iter = documents_map.begin(); iter != documents_map.end(); ++iter)
-//        delete[] iter->second;
+    std::map<int, DocumentInfo*>::iterator iter;
+    for (iter = documents_map.begin(); iter != documents_map.end(); ++iter)
+        delete[] iter->second;
 }
 
 
@@ -225,10 +223,6 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
 
     std::cout << "[" << moduleName_ << "] " << camera_keypoints_count << " keypoints found!" << std::endl;
 
-    // cluster keypoints
-    //features2d.clear();
-    //features2d.resize(camera_keypoints_count);
-
     //double** points = new double*[camera_keypoints_count];
     ANNpointArray points;
     points = annAllocPts(camera_keypoints_count, 2);
@@ -274,9 +268,6 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
 
     matches_map.clear();
 
-    //		std::map<uint32_t, float>::iterator it;
-    //		for ( it=matches_map.begin() ; it != matches_map.end(); it++ )
-    //			it->second *= 0.4;
 
     // Search the whole image
 
@@ -285,10 +276,6 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
 
     //find #votes_count matches
     db->find(full_doc, votes_count + 1, matches);
-
-    //calculate scores over all image
-    // @TODO - Why is calculation over all image necessary?
-    //update_matches_map(matches, camera_keypoints_count);
 
     // Calculates and accumulates scores for each cluster
     for (size_t c = 0; c < cluster_count; ++c) {
@@ -384,56 +371,9 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
 
         //int current_id = votes[0].first;
 
-        // @TODO: make this a parameter
-        // classify with the sliding window
-        //std::string name;
-
-
-
         DocumentInfo** documents_to_visualize =	new DocumentInfo*[templates_to_show];
         for (int i=0; i<templates_to_show; ++i)
             documents_to_visualize[i] = NULL;
-
-        //		if (sliding_window_size == 1) {
-        //			documents_to_visualize[0] = documents_map[current_id];
-        //			name = documents_map[current_id]->name;
-        //		} else {
-        //			sliding_window.push_back(current_id);
-        //
-        //			if (sliding_window.size() > sliding_window_size)
-        //				sliding_window.pop_front();
-        //
-        //			last_templates.clear();
-        //
-        //			std::list<int>::iterator iter = sliding_window.begin();
-        //			for (int i = 0; iter != sliding_window.end(); ++iter, ++i) {
-        //				if (last_templates.find(*iter) == last_templates.end())
-        //					last_templates[*iter] = 0;
-        //
-        //				last_templates[*iter] += sliding_window_size;// + (sliding_windows_size - i);
-        //			}
-        //
-        //			std::map<int, int>::iterator map_iter = last_templates.begin();
-        //
-        //			// Get all pairs in order to sort them later
-        //			std::vector<std::pair<int, int> > pairs(last_templates.size());
-        //
-        //			for (; map_iter != last_templates.end(); ++map_iter)
-        //			{
-        //				std::pair<int, int> p;
-        //				p.first = map_iter->first;
-        //				p.second = map_iter->second;
-        //				pairs.push_back(p);
-        //			}
-        //
-        //			std::sort(pairs.begin(), pairs.end(), compare_pairs);
-        //
-        //			for (int i=0; i<templates_to_show; ++i)
-        //				documents_to_visualize[i] = documents_map[pairs[i].first];
-        //
-        //			name = documents_map[pairs[0].first]->name;
-        //
-        //		}
 
 
         // Log the results
@@ -443,12 +383,8 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
         //logger << "FRAME " << frame_number << std::endl;
         frame_number++;
 
-        //std::set<std::string> unique_names;
-        //int added = 0;
-        // for (uint i = 0; added < templates_to_show && i < votes.size(); ++i)
-        // {
 
-        //! Print the name of the best match
+        // Print the name of the best match
         if (!votes.empty())
         {
             DocumentInfo* d = documents_map[votes[0].first];
@@ -471,22 +407,6 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
             {
                 short_name = d->name.c_str();
             }
-            //std::cerr << "short_name: " << short_name << std::endl;
-
-            /*if (unique_names.find(short_name) == unique_names.end())
-            {
-                unique_names.insert(short_name);
-                documents_to_visualize[added] = documents_map[votes[i].first];
-                logger << short_name.c_str() << "\t" << votes[i].second
-                        << std::endl;
-
-                //if (stat_summary_map.find(short_name) == stat_summary_map.end())
-                //	stat_summary_map[short_name] = 0;
-                //++stat_summary_map[short_name];
-                added++;
-            }*/
-            // }
-            // ROS_INFO("the name appears %d times" , count2++);
         }
 
         //logger << std::endl;
@@ -804,19 +724,16 @@ void ODUFinder::visualize(IplImage *camera_image_in,
     else
         max_width = 0;
 
-    IplImage* tmp_image = cvCreateImage(cvSize(camera_image_in->width
-                                               + max_width, height), camera_image_in->depth,
-                                        camera_image_in->nChannels);
-
+    IplImage* tmp_image = cvCreateImage(cvSize(camera_image_in->width + max_width, height),
+                                        camera_image_in->depth, camera_image_in->nChannels);
 
     cvFillImage(tmp_image, 0);
-    cvSetImageROI(tmp_image, cvRect(0, 0, camera_image_in->width,
-                                    camera_image_in->height));
+    cvSetImageROI(tmp_image, cvRect(0, 0, camera_image_in->width, camera_image_in->height));
     cvCopy(camera_image_in, tmp_image);
 
     //show template images
     // JOS
-    /*
+
     int last_y = 0;
     for (int i = 0; i < templates_count; ++i) {
         if (template_images[i] == NULL)
@@ -826,19 +743,19 @@ void ODUFinder::visualize(IplImage *camera_image_in,
                                                          template_images[i]->width * scale_factor,
                                                          template_images[i]->height * scale_factor),
                                                      template_images[i]->depth, template_images[i]->nChannels);
+
         cvResize(template_images[i], tmp_template_image);
-        cvSetImageROI(tmp_image, cvRect(camera_image_in->width, last_y,
-                                        tmp_template_image->width, tmp_template_image->height));
+
+        cvSetImageROI(tmp_image, cvRect(camera_image_in->width, last_y, tmp_template_image->width, tmp_template_image->height));
         last_y += tmp_template_image->height;
 
         //free resources
         cvCopy(tmp_template_image, tmp_image);
         cvReleaseImage(&tmp_template_image);
-    }*/
+    }
 
     cvResetImageROI(tmp_image);
-    image = cvCreateImage(cvSize(tmp_image->width, tmp_image->height),
-                          tmp_image->depth, 3);
+    image = cvCreateImage(cvSize(tmp_image->width, tmp_image->height), tmp_image->depth, 3);
 
     //JOS
     if (pein_vis_)
@@ -860,13 +777,7 @@ void ODUFinder::visualize(IplImage *camera_image_in,
         for (int i = 0; i < templates_count; ++i) {
             if (template_images[i] == NULL)
                 continue;
-            //    Keypoint template_keypoints = extract_keypoints(template_images[i], true);
-            //    for (int ii=0; template_keypoints != NULL; ++ii, template_keypoints = template_keypoints->next)
-            //    {
-            //      cvCircle(image, cvPoint((int)(camera_image_in->width + template_keypoints->col),
-            //                              (int)(template_keypoints->row)), 3,
-            //               color_table[1 % COLORS]); //0, 255, 0
-            //    }
+
             //free remaining resources
             cvReleaseImage(&template_images[i]);
         }
@@ -880,20 +791,6 @@ void ODUFinder::visualize(IplImage *camera_image_in,
         extract_roi(camera_image, (*camera_keypoints));
     else
         image_roi = NULL;
-
-
-    // 	// display template image keypoints
-    //   std::vector<KeypointExt*> template_keypoints;
-    //   if (template_document_info != NULL)
-    //   {
-    // //    template_keypoints.resize(template_document_info->document->size());
-    //     Keypoint tmp_keypoints = extract_keypoints(template_image, true);
-    //     for (int i=0; tmp_keypoints != NULL; ++i, tmp_keypoints = tmp_keypoints->next)
-    //     {
-    //       cvCircle(image, cvPoint((int)(camera_image_in->width + tmp_keypoints->col), (int)(tmp_keypoints->row)), 3, cvScalar(0, 255, 255));
-    //       //    template_keypoints[i] = new KeypointExt(tmp_keypoints, template_document_info->document->at(i));
-    //     }
-    //   }
 
     // JOS
     if (pein_vis_)
@@ -1021,13 +918,16 @@ void ODUFinder::extract_roi(IplImage *image, std::vector<KeypointExt*> camera_ke
         pt.y = camera_keypoints[i]->keypoint->row;
         cvSeqPush(seq, &pt);
     }
+
     //draw rectangle around the points
     CvRect rect = cvBoundingRect(seq);
-    ROS_DEBUG_STREAM("rect: " << rect.x << " " << rect.y << " " << rect.width
-                     << " " << rect.height);
+
+    std::cout << "[" << moduleName_ << "] " << "rect: " << rect.x << " " << rect.y << " "
+              << rect.width << " " << rect.height << std::endl;
 
     //get subimage, aka region of interest
     cvSetImageROI(image, rect);
+
     //sub-image
     image_roi = cvCreateImage(cvSize(rect.width, rect.height), image->depth,
                               image->nChannels);
