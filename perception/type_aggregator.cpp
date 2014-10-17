@@ -49,7 +49,7 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) c
     float score = 0;
     std::string type = "";
     std::string label = "";
-    std::map<std::string, std::map<std::string, float> > hypothesis;
+    std::map<std::string, std::map<std::string, float> > hypothesis;    // [hypothesis name | [plugin who named it | score]]
     std::map<std::string, std::map<std::string, float> >::iterator map_it;
 
     // find perception_result group
@@ -100,7 +100,6 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) c
                            }
                        }
                    }
-
                    result.endArray();
                }
 
@@ -126,7 +125,7 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) c
         result.setValue("type", type);
     }
     else{
-        result.setValue("type", "Unprocessed");
+//        result.setValue("type", "Unprocessed");
 //        std::cout << "[" << kModuleName << "] " << "perception_result group not found." << std::endl;
     }
 }
@@ -138,26 +137,30 @@ std::string TypeAggregator::best_hypothesis(std::map<std::string, std::map<std::
     std::map<std::string, float>::const_iterator it_inner;
     std::map<std::string, float> ordered_map;
     float highest_score = 0;
+    float final_score;
     std::string best_hypothesis = "";
 
+    // iterate through all hypothesis
     for(it_outer = hypothesis.begin(); it_outer != hypothesis.end(); ++it_outer)
     {
-        float final_score = 0;
+        final_score = 0;
 //        std::cout << it_outer->first << std::endl;
 
+        // acumulate all the scores for this hypothesis
         for(it_inner = it_outer->second.begin(); it_inner != it_outer->second.end(); ++it_inner)
         {
 //            std::cout << "\t " << it_inner->first << ", " << it_inner->second << std::endl;
             final_score += it_inner->second;
         }
 
+        // save the best hypothesis
         if (highest_score < final_score){
             highest_score = final_score;
             best_hypothesis = it_outer->first;
         }
 
         // fill new map with the final scores
-        ordered_map.insert(std::pair<std::string, float>(it_outer->first, final_score));
+//        ordered_map.insert(std::pair<std::string, float>(it_outer->first, final_score));
     }
 
     return best_hypothesis;
