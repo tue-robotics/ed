@@ -23,6 +23,7 @@
 #include <ed/plugin.h>
 #include <ed/plugin_container.h>
 #include <ed/LoadPlugin.h>
+#include <tue/config/loaders/yaml.h>
 
 ed::Server* ed_wm;
 
@@ -148,9 +149,20 @@ bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response&
     {
         if (!req.configuration.empty())
         {
-            // TODO: proper configuration
-            double freq = atof(req.configuration.c_str());
-            container->setLoopFrequency(freq);
+            tue::Configuration cfg;
+            if (tue::config::loadFromYAMLString(req.configuration, cfg))
+            {
+                container->plugin()->configure(cfg);
+
+                double loop_frequency;
+                if (cfg.value("loop_frequency", loop_frequency, tue::OPTIONAL))
+                {
+                    container->setLoopFrequency(loop_frequency);
+                }
+            }
+
+            if (cfg.hasError())
+                res.error_msg = cfg.error();
         }
 
         container->plugin()->initialize();
