@@ -300,7 +300,7 @@ int main(int argc, char** argv)
 
     tue::Configuration config;
 
-    // Check if a config file was provided. If so, load it. If not, load a default config.
+    // Check if a config file was provided. If so, load it. If not, load the default AMIGO config.
     if (argc >= 2)
     {
         std::string yaml_filename = argv[1];
@@ -311,8 +311,8 @@ int main(int argc, char** argv)
         // Get the ED directory
         std::string ed_dir = ros::package::getPath("ed");
 
-        // Load the YAML config file
-        config.loadFromYAMLFile(ed_dir + "/config/config.yml");
+        // Load the default AMIGO YAML config file
+        config.loadFromYAMLFile(ed_dir + "/config/config_amigo.yml");
     }
 
     // Configure ED

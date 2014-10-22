@@ -1,0 +1,106 @@
+sensors:
+- name: top_kinect
+  type: kinect
+  source: /sergio/top_kinect/rgbd
+  frame_id: /sergio/top_kinect/openni_rgb_optical_frame
+  visualize: 0
+  voxel_size: 0.02
+  max_range: 3.0
+  clearing_padding_fraction: 0.05
+  normal_k_search: 15
+  association_modules:
+  - type: PointNormal
+    parameters:
+        association_correspondence_distance: 0.3
+        position_weight: 2.0
+        normal_weight: 1.0
+        render_width: 320
+        render_max_range: 3.2
+        render_voxel_size: 0.02
+        normal_k_search: 15
+        visualize: 0
+  - type: PolygonHeight
+    parameters:
+        max_range: 3.0
+        tolerance: 0.035
+        min_cluster_size: 20
+        visualize: 0
+  segmentation_modules:
+  - type: EuclideanClustering
+    parameters:
+        tolerance: 0.035
+        min_cluster_size: 20
+        visualize: 0
+
+visualize: 1
+world_name: robotics_testlab_B
+
+perception:
+    fit_shapes: 1
+    modules:
+#    -  lib: libsize_matcher.so
+#    -  lib: libodu_finder.so
+#    -  lib: libhuman_contour_matcher.so
+#    -  lib: libface_detector.so
+#    -  lib: libtype_aggregator.so
+
+plugins:
+- name: gui_server
+  lib: libed_gui_server_plugin.so
+  parameters:
+      robot_name: sergio
+#- name: builder
+#  lib: libed_builder_plugin.so
+- name: obstacle_grid_publisher
+  lib: libed_occupancy_grid_publisher_plugin.so
+  parameters:
+      frequency: 10
+      resolution: 0.05
+      topic: /ed_map
+      frame_id: /map
+      sim_time: 1.0
+      object_persistence_time: 10
+- name: loc_grid_publisher
+  lib: libed_occupancy_grid_publisher_plugin.so
+  parameters:
+      frequency: 1
+      resolution: 0.025
+      topic: /ed_loc_map
+      frame_id: /map
+      specifier: localizable
+      sim_time: 0.0
+- name: tf_publisher
+  lib: libed_tf_publisher_plugin.so
+  parameters:
+      root_frame_id: /map
+#- name: amigo_plugin
+#  lib: ed_robot_plugin
+#  parameters:
+#      robot_name: amigo
+#      urdf_rosparam: /amigo/robot_description
+#      joint_topics:
+#          - topic: /amigo/torso/measurements
+#- name: hello_world2
+#  lib: libed_hello_world_plugin.so
+#  parameters:
+#      text: "Hello world! 2"
+#- name: hello_world3
+#  lib: libed_hello_world_plugin.so
+#  parameters:
+#      text: "Hello world! 3"
+
+gui:
+    enabled: 1
+    srv_get_measurements: /ed/gui/get_measurements
+    srv_set_label: /ed/gui/set_label
+    srv_raise_event: /ed/gui/raise_event
+    srv_get_command: /ed/gui/get_gui_command
+    map_image_topic: /ed/gui/map_image
+    map_image_width: 500
+    map_image_height: 500
+    world_width: 11.0
+    world_height: 11.0
+    cam_x: 4.5
+    cam_y: 4.4
+    cam_z: 10.0
+
