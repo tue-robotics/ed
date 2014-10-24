@@ -54,23 +54,21 @@ void DocumentInfo::read(std::istream& in) {
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////////////
-ODUFinder::ODUFinder() :
+ODUFinder::ODUFinder(const std::string& plugin_path, bool debug_mode) :
         camera_image(NULL), template_image(NULL), image(NULL), tree_builder(Feature::Zero()), visualization_mode_(FRAMES),
     tuning_object_(""), current_mode_(odu_finder::RECOGNITION)
 { //SEQUENCES) {  //FRAMES) {   //SEQUENCES
 
-    //! Set tuning mode
-//    ros::NodeHandle nh("~");
-//    std::string ss_name = nh.getNamespace() + "/set_tuning_mode";
-//    srv_server_ = nh.advertiseService<pein_srvs::TuningMode::Request, pein_srvs::TuningMode::Response>
-//            (ss_name, boost::bind(&ODUFinder::srvCB, this, _1, _2));
-//    ROS_INFO("Started tuning service server '%s'", ss_name.c_str());
+//    command = std::string("/load");
+//    database_location = std::string("database/germandeli");
+//    images_directory = std::string("data/germandeli");
 
-    command = std::string("/load");
-    database_location = std::string("database/germandeli");
-    images_directory = std::string("data/germandeli");
+    debug_mode_ = debug_mode;
+
+    database_location = std::string(plugin_path);
+    images_directory = std::string(plugin_path + "/models/");
+
     images_for_visualization_directory = std::string("");
     votes_count = 10;
     tree_k = 5;
@@ -90,41 +88,10 @@ ODUFinder::ODUFinder() :
     count_templates = 0;
     moduleName_ = "odu_finder";
 
-    pein_vis_ = false;
-    object_threshold = 0.22;
-    extract_roi_ = false;
-    templates_to_show = 4;
-
-
-
-    //		SiftParameters params = GetSiftParameters();
-    //		params.DoubleImSize = 0;
-    //		SetSiftParameters(params);
-
-
-    // Logger
-//    rospack::ROSPack rp;
-//    char *p[] = { "rospack", "find", "objects_of_daily_use_finder" };
-    //std::string p("rospack find objects_of_daily_use_finder");
-//    rp.run(3, p);
-    //ROS_INFO("ERROOORR %s",p.c_str());
-    //rp.run(p);
-//    char loggerFileName[300];
-    //Copy string with char * strcpy ( char * destination, const char * source );
-//    strcpy(loggerFileName, rp.getOutput().c_str());
-    //Get string length
-//    loggerFileName[strlen(loggerFileName) - 1] = 0;
-//    char timeStr[30];
-//    time_t t = time(NULL);
-    //Format time to string with size_t strftime ( char * ptr, size_t maxsize, const char * format, const struct tm * timeptr );
-//    strftime(timeStr, 30, "/stat_%Y%m%d_%H%M%S.txt", localtime(&t));
-    //Concatenate strings with char * strcat ( char * destination, const char * source );
-//    strcat(loggerFileName, timeStr);
-
-    //ROS_INFO("Creating statistics file at: %s\n", loggerFileName);
-    //ROS_INFO("Creating statistics file at: %s\n", "test.txt");
-    //logger.open(loggerFileName, std::fstream::out);
-    //logger.open ("/home/monica/test.txt", std::ofstream::app);
+    // replace the parameter loading through ROS, migh override the previous
+    if (!loadParams("load")){
+        std::cout << "[" << moduleName_ << "] " << "ERROR: loading parameters!" << std::endl;
+    }
 
     //color table - used for the visualization only
     color_table[0] = cvScalar(255, 0, 0);
@@ -145,6 +112,7 @@ ODUFinder::ODUFinder() :
 ///////////////////////////////////////////////////////////////
 void ODUFinder::set_visualization(bool enable_visualization_in) {
     enable_visualization = enable_visualization_in;
+
     if (enable_visualization) {
         if (pein_vis_)
         {
@@ -179,6 +147,52 @@ ODUFinder::~ODUFinder() {
         delete[] iter->second;
 }
 
+
+bool ODUFinder::loadParams(std::string mode) {
+
+    // if init build and save the database
+    if (mode.compare("build_database") == 0){
+        build_database(images_directory);   // (find pein_odufinder)/images/robotics_testlab_B/
+        save_database(database_location);   // (find pein_odufinder)/database/
+
+        std::cout << "[" << moduleName_ << "] " << "Done building the database!" << std::endl;
+        std::cout << "[" << moduleName_ << "] " << "Loading new database!" << std::endl;
+
+        if (load_database(database_location) < 0)
+            return false;
+        else
+            return true;
+    // if load, load previously built database and perform recognition
+    }else if (mode.compare("load") == 0){
+
+        if (load_database(database_location) < 0) return false;
+
+        enable_visualization = 1;
+        enable_clustering = 1;      // No results if switched off (what?)
+
+    // if learn, only extract sift features and save them in a specified images_directory
+    }else if (mode.compare("learn") == 0){
+//        name="images_folder" type="string" value="$(find objects_of_daily_use_finder)/images_with_keypoints/" />
+
+        process_images(images_directory);
+    }else{
+        return false;
+    }
+
+    // For small databases, use 5, for large databases (3500+) use 7 -->
+    tree_k = 5;
+    tree_levels = 5;
+
+    object_threshold = 0.22;
+    object_threshold = 0.14;
+    votes_count = 10;
+
+    pein_vis_ = false;
+    extract_roi_ = false;
+    templates_to_show = 4;
+
+    return true;
+}
 
 ////////////////////////////////////////////////////////
 bool ODUFinder::srvCB(pein_srvs::TuningMode::Request req, pein_srvs::TuningMode::Response resp)
@@ -221,7 +235,7 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
         ++camera_keypoints_count;
     }
 
-    std::cout << "[" << moduleName_ << "] " << camera_keypoints_count << " keypoints found!" << std::endl;
+    if (debug_mode_) std::cout << "[" << moduleName_ << "] " << camera_keypoints_count << " keypoints found!" << std::endl;
 
     //double** points = new double*[camera_keypoints_count];
     ANNpointArray points;
@@ -254,7 +268,7 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
                                        radius_adaptation_A,
                                        radius_adaptation_K);
 
-        std::cout << "[" << moduleName_ << "] " << "Clusters found = " << cluster_count << std::endl;
+        if (debug_mode_) std::cout << "[" << moduleName_ << "] " << "Clusters found = " << cluster_count << std::endl;
 
         cluster_sizes.resize(cluster_count, 0);
         cluster_sizes.assign(cluster_count, 0);
@@ -293,10 +307,10 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
 
         update_matches_map(cluster_matches, cluster_doc.size());
 
-        std::cout << "[" << moduleName_ << "] " << "Cluster with size " << c << std::endl;
+        if (debug_mode_) std::cout << "[" << moduleName_ << "] " << "Cluster with size " << c << std::endl;
     }
 
-    std::cout << "[" << moduleName_ << "] " << "MATCHES MAP SIZE " << matches_map.size() << std::endl;
+    if (debug_mode_) std::cout << "[" << moduleName_ << "] " << "MATCHES MAP SIZE " << matches_map.size() << std::endl;
 
     // Sort the results such that first guess has highest score
     std::vector<std::pair<uint32_t, float> > votes(matches_map.size());
@@ -310,7 +324,7 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
     std::sort(votes.begin(), votes.end(), compare_pairs);
 
     // Print results
-    std::cout << "[" << moduleName_ << "] " << "RESULTS (threshold = " << object_threshold << ")"  << std::endl;
+    if (debug_mode_) std::cout << "[" << moduleName_ << "] " << "RESULTS (threshold = " << object_threshold << ")"  << std::endl;
 
     // Check whether or not the object is recognized (or in tuning mode)
     float best_tuning_score = -1.0;
@@ -333,7 +347,7 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
 	}
     
     if (votes.size() > 0 && votes[0].second <= object_threshold && current_mode_ != odu_finder::TUNING) {
-        std::cout << "[" << moduleName_ << "] " << " no object recognized" << std::endl;
+        if(debug_mode_) std::cout << "[" << moduleName_ << "] " << "No object recognized" << std::endl;
     }
     else {
         for (uint i = 0; (i < votes.size() && i < (uint) documents_map.size()); ++i)
@@ -348,6 +362,7 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
                 // Get short name
                 size_t position = name.find_first_of("0123456789.");
                 std::string short_name;
+
                 if (position > 0 && position <= name.size()) short_name = std::string(name.c_str(), position);
                 else short_name = name.c_str();
 
@@ -356,18 +371,19 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
                 {
                     // Case: object not yet in the map
                     results[short_name] = score;
-                    std::cout << "[" << moduleName_ << "] " << "Added " << short_name.c_str() << " with score " << score << std::endl;
+                    if (debug_mode_) std::cout << "[" << moduleName_ << "] " << "Added " << short_name.c_str() << " with score " << score << std::endl;
                 }
                 else
                 {
                     // Case: object already within map
                     results[short_name] = std::max(score, results[short_name]);
-                    //ROS_INFO("Updated score %s", short_name.c_str());
                 }
+            }else{
+                if (debug_mode_) std::cout << "[" << moduleName_ << "] " << "Discarded " << documents_map[votes[i].first]->name << " with score " << votes[i].second << std::endl;
             }
         }
 
-        std::cout << "[" << moduleName_ << "] " << "Results has size " << results.size() << std::endl;
+        if(debug_mode_) std::cout << "[" << moduleName_ << "] " << "Results has size " << results.size() << std::endl;
 
         //int current_id = votes[0].first;
 
@@ -375,20 +391,14 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
         for (int i=0; i<templates_to_show; ++i)
             documents_to_visualize[i] = NULL;
 
-
-        // Log the results
-        //TODO: make this optional and probably distinguish between different types of
-        //image names
-        // ROS_INFO("Writing to the statistics file\n");
-        //logger << "FRAME " << frame_number << std::endl;
         frame_number++;
-
 
         // Print the name of the best match
         if (!votes.empty())
         {
             DocumentInfo* d = documents_map[votes[0].first];
             size_t position = d->name.find_first_of("0123456789.");
+
             //size_t position = std::min(position_us, position_dot);
 
             // int frame_number = 0;
@@ -409,9 +419,6 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
             }
         }
 
-        //logger << std::endl;
-        //logger.flush();
-
         //visualize
         if (enable_visualization) {
             if (visualization_mode_ == FRAMES)
@@ -426,15 +433,6 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
 
         }
         delete[] documents_to_visualize;
-        //also for logging
-        //size_t last_slash_id = name.find_last_of("/");
-        //if (last_slash_id == std::string::npos)
-        //    last_slash_id = 0;
-        //else
-        //    ++last_slash_id;
-        //return the name of the object, that is the correponding image name
-        //return name.substr(last_slash_id, name.find_last_of('.')
-        //                   - last_slash_id).c_str();
     }
 
     if (current_mode_ == odu_finder::TUNING && best_tuning_score >= 0.0)
@@ -447,35 +445,37 @@ std::map<std::string, float> ODUFinder::process_image(IplImage* camera_image_in)
     return results;
 }
 
-//////////////////////
-int ODUFinder::start() {
+////////////////////////
+//int ODUFinder::start() {
 
-    //! if init build and save the database
-    if (command.compare("/init") == 0)
-    {
-        build_database(images_directory);
-        save_database(database_location);
-    }
-    //! if load, load previously built database and perform recognition
-    else if (command.compare("/load") == 0)
-    {
-        if (load_database(database_location) < 0)
-        {
-            return -1;
-        }
-    }
-    //! if sift_only, only extract sift features and save them in a specified images_directory
-    else if (command.compare("/sift_only") == 0)
-    {
-        process_images(images_directory);
-    }
-    else
-    {
-        return 1;
-    }
+//    std::cout << "Hey this was called!!" << std::endl;
 
-    return 0;
-}
+//    //! if init build and save the database
+//    if (command.compare("/init") == 0)
+//    {
+//        build_database(images_directory);
+//        save_database(database_location);
+//    }
+//    //! if load, load previously built database and perform recognition
+//    else if (command.compare("/load") == 0)
+//    {
+//        if (load_database(database_location) < 0)
+//        {
+//            return -1;
+//        }
+//    }
+//    //! if sift_only, only extract sift features and save them in a specified images_directory
+//    else if (command.compare("/sift_only") == 0)
+//    {
+//        process_images(images_directory);
+//    }
+//    else
+//    {
+//        return 1;
+//    }
+
+//    return 0;
+//}
 
 /////////////////////////////////////////////////////
 void ODUFinder::build_database(std::string directory) {
@@ -550,8 +550,6 @@ void ODUFinder::save_database_without_tree(std::string& directory) {
     weights_file.append("/images.weights");
     db->saveWeights(weights_file.c_str());
     out.close();
-
-    std::cout << "[" << moduleName_ << "] " << "Done! Press Ctrl+C and roslaunch detect.launch" << std::endl;
 }
 
 /////////////////////////////////////////////////////
@@ -600,7 +598,7 @@ int ODUFinder::load_database(const std::string& directory) {
         //ROS_INFO("\tloaded %s", document_info->name.c_str());
     }
 
-    std::cout << "[" << moduleName_ << "] " << "ODUFinder uses" << map_size  << " images" << std::endl;
+    std::cout << "[" << moduleName_ << "] " << "ODUFinder uses " << map_size << " images" << std::endl;
 
     counter_ = map_size+1; // to avoid overwriting previous images during learning add a unique number behind the image
 
@@ -880,8 +878,9 @@ Keypoint ODUFinder::extract_keypoints(IplImage *image, bool frames_only) {
     Keypoint keypoints;
     if (frames_only)
         keypoints = GetKeypointFrames(sift_image);
-    else
+    else{
         keypoints = GetKeypoints(sift_image);
+    }
     DestroyAllImages();
     return keypoints;
 }
@@ -896,11 +895,6 @@ void ODUFinder::write_stat_summary() {
     }
 
     std::sort(pairs.begin(), pairs.end(), compare_pairs2);
-    //logger << "--- SUMMARY ---" << std::endl;
-    //for (unsigned int i = 0; i < pairs.size(); ++i)
-    //    logger << pairs[i].first.c_str() << "\t" << pairs[i].second
-    //           << std::endl;
-    //logger.close();
 }
 
 /////////////////////////////
@@ -929,11 +923,11 @@ void ODUFinder::extract_roi(IplImage *image, std::vector<KeypointExt*> camera_ke
     cvSetImageROI(image, rect);
 
     //sub-image
-    image_roi = cvCreateImage(cvSize(rect.width, rect.height), image->depth,
-                              image->nChannels);
+    image_roi = cvCreateImage(cvSize(rect.width, rect.height), image->depth, image->nChannels);
 
     cvCopy(image, image_roi);
     cvResetImageROI(image); // release image ROI
+
     return;
 }
 
