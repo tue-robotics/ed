@@ -3,6 +3,11 @@
 
 #include <ed/perception_modules/perception_module.h>
 
+// OpenCV includes
+#include <opencv/cv.h>
+#include "opencv2/highgui/highgui.hpp"
+#include <cv_bridge/cv_bridge.h>
+
 template <typename T1, typename T2>
 struct less_second {
     typedef std::pair<T1, T2> type;

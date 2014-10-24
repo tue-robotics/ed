@@ -3,7 +3,8 @@
 #include <ed/entity.h>
 #include <algorithm>
 
-
+#include <rgbd/Image.h>
+#include <rgbd/View.h>
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -45,6 +46,33 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) c
     // if initialization failed, return
     if (!init_success_)
         return;
+
+    /*
+    // Get the best measurement from the entity
+    ed::MeasurementConstPtr msr = e->bestMeasurement();
+    if (!msr)
+        return;
+
+    // create a view
+    rgbd::View view(*msr->image(), msr->image()->getRGBImage().cols);
+
+    // get color image
+    const cv::Mat& color_image = msr->image()->getRGBImage();
+
+    // crop it to match the view
+    cv::Mat cropped_image(color_image(cv::Rect(0,0,view.getWidth(), view.getHeight())));
+
+    cv::Mat mask = cv::Mat::zeros(view.getHeight(), view.getWidth(), CV_8UC1);
+    // Iterate over all points in the mask
+    for(ed::ImageMask::const_iterator it = msr->imageMask().begin(view.getWidth()); it != msr->imageMask().end(); ++it)
+    {
+        // mask's (x, y) coordinate in the depth image
+        const cv::Point2i& p_2d = *it;
+
+        // paint a mask
+        mask.at<unsigned char>(*it) = 255;
+    }
+    */
 
     float score = 0;
     std::string type = "";
@@ -120,25 +148,27 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) c
 
         // if no type was found, then its unknown
         if (type.empty())
-            type = "Unknown";
+            type = "UNKNOWN";
 
         result.setValue("type", type);
+
+//        cv::imwrite("/tmp/aggregator/" + e->id() + "_type_" + type + ".png", mask);
     }
     else{
-//        result.setValue("type", "Unprocessed");
 //        std::cout << "[" << kModuleName << "] " << "perception_result group not found." << std::endl;
     }
 }
 
+// ----------------------------------------------------------------------------------------------------
 
 std::string TypeAggregator::best_hypothesis(std::map<std::string, std::map<std::string, float> > hypothesis) const{
 
     std::map<std::string, std::map<std::string, float> >::const_iterator it_outer;
     std::map<std::string, float>::const_iterator it_inner;
-    std::map<std::string, float> ordered_map;
     float highest_score = 0;
     float final_score;
     std::string best_hypothesis = "";
+    uint equal_results = 0;
 
     // iterate through all hypothesis
     for(it_outer = hypothesis.begin(); it_outer != hypothesis.end(); ++it_outer)
@@ -155,15 +185,21 @@ std::string TypeAggregator::best_hypothesis(std::map<std::string, std::map<std::
 
         // save the best hypothesis
         if (highest_score < final_score){
+            // update best score
             highest_score = final_score;
             best_hypothesis = it_outer->first;
-        }
 
-        // fill new map with the final scores
-//        ordered_map.insert(std::pair<std::string, float>(it_outer->first, final_score));
+            //reset counter
+            equal_results = 0;
+        }else if (highest_score == final_score){
+            equal_results++;
+        }
     }
 
-    return best_hypothesis;
+    if (equal_results > 1)
+        return "INCONCLUSIVE";
+    else
+        return best_hypothesis;
 }
 
 
