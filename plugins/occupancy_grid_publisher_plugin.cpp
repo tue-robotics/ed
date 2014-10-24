@@ -25,8 +25,6 @@ void OccupancyGridPublisherPlugin::configure(tue::Configuration config)
     config.value("specifier", specifier_, tue::OPTIONAL);
     config.value("sim_time", sim_time_, tue::OPTIONAL);
 
-    config.value("object_persistence_time", object_persistence_time_, tue::OPTIONAL);
-
     //! Re-initialize if topic has changed
     if (old_topic != "" && topic_ != old_topic)
     {
@@ -133,9 +131,11 @@ void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Ma
     int value = 100;
 
     //! Check object persistence time
-    if (object_persistence_time_ > 0 && e->lastMeasurement())
+    double persistence_time;
+    if (e->getConfig().value("object_persistence", persistence_time, tue::OPTIONAL) && e->lastMeasurement())
     {
-        if ((ros::Time::now().toSec() - e->lastMeasurement()->timestamp()) > object_persistence_time_)
+        std::cout << e->id() << std::endl;
+        if ((ros::Time::now().toSec() - e->lastMeasurement()->timestamp()) > persistence_time)
             value = 99;
     }
 
