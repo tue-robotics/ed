@@ -275,11 +275,12 @@ void trace_directory(const char* dir, const char* prefix, std::vector<FeatureVec
             } else {
                 // else process it
                 std::string extension (short_filename.substr(short_filename.find_last_of(".") + 1));
+                std::string fileName (short_filename.substr(short_filename.find_last_of("/") + 1, short_filename.find_last_of(".")));
 
                 if(extension.compare("png") == 0 || extension.compare("jpg") == 0 ||
                    extension.compare("PNG") == 0 || extension.compare("JPG") == 0) {
                     process_file(filename, images, onlySaveImages);
-                    image_names.push_back(short_filename);
+                    image_names.push_back(fileName);
                 } else {
                     std::cout << "[" << moduleName_ << "] " << "Not an image, skipping file " << filename << std::endl;
                 }
