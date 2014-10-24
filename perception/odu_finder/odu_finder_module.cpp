@@ -27,14 +27,14 @@ void ODUFinderModule::loadConfig(const std::string& config_path)
     config_path_ = config_path;
 
     // creat odu finder instance
-    odu_finder_ = new odu_finder::ODUFinder();
-    odu_finder_->load_database(config_path_);
+    odu_finder_ = new odu_finder::ODUFinder(config_path_, false);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) const
 {
+
     // Get the best measurement from the entity
     ed::MeasurementConstPtr msr = e->bestMeasurement();
     if (!msr)
@@ -43,6 +43,8 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
     // ----------------------- PREPARE IMAGE -----------------------
 
     cv::Mat masked_mono_image;
+    cv::Rect bounding_box;
+    uint min_x, max_x, min_y, max_y;
 
     // create a view
     rgbd::View view(*msr->image(), msr->image()->getRGBImage().cols);
@@ -53,8 +55,14 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
     // crop it to match the view
     cv::Mat cropped_image(color_image(cv::Rect(0,0,view.getWidth(), view.getHeight())));
 
-    cv::Mat mask = cv::Mat::zeros(view.getHeight(), view.getWidth(), CV_8UC1);
+    // initialize bounding box points
+    max_x = 0;
+    max_y = 0;
+    min_x = view.getWidth();
+    min_y = view.getHeight();
+
     // create a mask in CV Mat
+    cv::Mat mask = cv::Mat::zeros(view.getHeight(), view.getWidth(), CV_8UC1);
     for(ed::ImageMask::const_iterator it = msr->imageMask().begin(view.getWidth()); it != msr->imageMask().end(); ++it)
     {
         // mask's (x, y) coordinate in the depth image
@@ -62,23 +70,37 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
 
         // paint a mask
         mask.at<unsigned char>(*it) = 255;
+
+        // update the boundary coordinates
+        if (min_x > p_2d.x) min_x = p_2d.x;
+        if (max_x < p_2d.x) max_x = p_2d.x;
+        if (min_y > p_2d.y) min_y = p_2d.y;
+        if (max_y < p_2d.y) max_y = p_2d.y;
     }
 
     // improve the contours of the mask
-    OptimizeContourHull(mask, mask);
+//    OptimizeContourHull(mask, mask, bounding_box);
 
     // apply the mask to the whole image
-    cropped_image.copyTo(masked_mono_image, mask);
+//    cropped_image.copyTo(masked_mono_image, mask);
+
+//    cv::imwrite("/tmp/odu/zozo.png", cropped_image(cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y)));
 
     // convert it to grayscale
-    cv::cvtColor(masked_mono_image, masked_mono_image, CV_BGR2GRAY);
+//    cv::cvtColor(masked_mono_image, masked_mono_image, CV_BGR2GRAY);
+    cv::cvtColor(cropped_image, masked_mono_image, CV_BGR2GRAY);
 
 
     // ----------------------- PROCESS IMAGE -----------------------
 
-    IplImage img(masked_mono_image);
+//    IplImage img(masked_mono_image(bounding_box));
+    IplImage img(masked_mono_image(cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y)));
+    std::map<std::string, float> results;
 
-    std::map<std::string, float> results = odu_finder_->process_image(&img);
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_update_);
+        results = odu_finder_->process_image(&img);
+    }
 
 
     // ----------------------- SAVE RESULTS -----------------------
@@ -112,21 +134,36 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
 
 // ----------------------------------------------------------------------------------------------------
 
-void ODUFinderModule::OptimizeContourHull(const cv::Mat& mask_orig, cv::Mat& mask_optimized) const{
+void ODUFinderModule::OptimizeContourHull(const cv::Mat& mask_orig, cv::Mat& mask_optimized, cv::Rect& bounding_box) const{
 
     std::vector<std::vector<cv::Point> > hull;
     std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Rect> bounding_boxes;
+    cv::Mat tempMat;
 
     cv::findContours(mask_orig, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    tempMat = cv::Mat::zeros(mask_orig.size(), CV_8UC1);
 
     for (uint i = 0; i < contours.size(); i++){
         hull.push_back(std::vector<cv::Point>());
         cv::convexHull(cv::Mat(contours[i]), hull.back(), false);
 
-        mask_optimized = cv::Mat::zeros(mask_orig.size(), CV_8UC1);
+        bounding_boxes.push_back(cv::boundingRect(hull.back()));
 
-        cv::drawContours(mask_optimized, hull, -1, cv::Scalar(255), CV_FILLED);
+        cv::drawContours(tempMat, hull, -1, cv::Scalar(255), CV_FILLED);
     }
+
+//    cv::imwrite("/tmp/odu/opt.png", mask_optimized);
+
+    contours.clear();
+    mask_optimized = cv::Mat(tempMat);
+
+    cv::findContours(tempMat, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    if (contours.size()>0) bounding_box = cv::boundingRect(contours[0]);
+
+//    cv::imwrite("/tmp/odu/bounding.png", mask_optimized(bounding_box));
 }
 
 ED_REGISTER_PERCEPTION_MODULE(ODUFinderModule)
