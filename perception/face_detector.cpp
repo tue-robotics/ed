@@ -266,13 +266,13 @@ void FaceDetector::OptimizeContourHull(const cv::Mat& mask_orig, cv::Mat& mask_o
     std::vector<std::vector<cv::Point> > hull;
     std::vector<std::vector<cv::Point> > contours;
 
+    mask_optimized = cv::Mat::zeros(mask_orig.size(), CV_8UC1);
+
     cv::findContours(mask_orig, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
     for (uint i = 0; i < contours.size(); i++){
         hull.push_back(std::vector<cv::Point>());
         cv::convexHull(cv::Mat(contours[i]), hull.back(), false);
-
-        mask_optimized = cv::Mat::zeros(mask_orig.size(), CV_8UC1);
 
         cv::drawContours(mask_optimized, hull, -1, cv::Scalar(255), CV_FILLED);
     }
