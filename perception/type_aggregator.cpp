@@ -146,7 +146,7 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) c
             type.append(best_hypothesis(hypothesis));
         }
 
-        if (!type.empty() && (type.find("Face") >= 0 || type.find("Human Shape") >= 0))
+        if (!type.empty() && e->convexHull().max_z - e->convexHull().min_z > 1.0 && (type.find("Face") >= 0 || type.find("Human Shape") >= 0))
             result.setValue("type", "human");
 
 //        cv::imwrite("/tmp/aggregator/" + e->id() + "_type_" + type + ".png", mask);
