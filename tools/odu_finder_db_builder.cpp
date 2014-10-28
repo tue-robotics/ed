@@ -22,7 +22,10 @@
 
 #include <time.h>
 
-//#include "common.h"
+#include <tue/config/configuration.h>
+
+//#include <boost/filesystem.hpp>
+//using boost::filesystem;
 
 // TYPE DEFS
 typedef Eigen::Matrix<float, 1, 128> Feature;
@@ -98,9 +101,11 @@ void build_database(std::string directory);
 void process_images(std::string directory);
 void save_database_without_tree(std::string& directory);
 void save_database(std::string& directory);
+bool is_included_dir(std::string dir);
 
 // CONFIGURATION VARIABLES
 std::string moduleName_;
+std::vector<std::string> included_dirs;
 int votes_count;
 int tree_k;
 int tree_levels;
@@ -120,20 +125,52 @@ std::map<int, DocumentInfo*> documents_map;
 
 int main(int argc, char **argv)
 {
-    if( argc != 3)
+    if( argc < 3)
     {
-        std::cout << "Usage:\n\n\t odu_finder_db_builder <images_directory> <database_directory>\n\n";
+        std::cout << "Usage:\n\n\t odu_finder_db_builder <images_directory> <database_directory> <models_list>[Opt]\n\n";
         return 1;
     }
 
     std::string images_directory = argv[1];
     std::string database_directory = argv[2];
+    moduleName_ = "odu_finder_db_builder";
+
+    if (argc < 4){
+        std::cout << "[" << moduleName_ << "] " << "Model list not specified. Using all models" << std::endl;
+    }else{
+
+        std::string model_list_path = argv[3];
+
+
+        tue::Configuration model_list;
+        std::string model_name;
+
+        // load list of models to include
+        if (model_list.loadFromYAMLFile(model_list_path)){
+            if (model_list.readArray("include_models")){
+                while(model_list.nextArrayItem())
+                {
+                    if (model_list.value("name", model_name))
+                    {
+                        std::cout << "[" << moduleName_ << "] " << "Model: " << model_name << std::endl;
+                        included_dirs.push_back(model_name);
+                    }
+                }
+                model_list.endArray();
+            }else{
+                std::cout << "[" << moduleName_ << "] " << "Model list incorrectly built." << ". Accepting all models" << std::endl;
+                std::cout << model_list.error() << std::endl;
+            }
+        }else{
+            std::cout << "[" << moduleName_ << "] " << "Model list not found at " << model_list_path << ". Accepting all models" << std::endl;
+            std::cout << model_list.error() << std::endl;
+        }
+    }
 
     tree_builder = vt::TreeBuilder<Feature> (Feature::Zero());
-
-    moduleName_ = "odu_finder_db_builder";
     tree_k = 5;
     tree_levels = 5;
+
 
     std::cout << "[" << moduleName_ << "] " << "Building database..." << std::endl;
     build_database(images_directory);
@@ -168,9 +205,7 @@ void build_database(std::string directory) {
     docs.resize(images.size());
 
     for (unsigned int i = 0; i < images.size(); ++i) {
-        //printf("\tImage %d\n", i);
         for (unsigned int j = 0; j < images[i].size(); ++j) {
-            //printf("\t\tFeature %d\n", j);
             docs[i].push_back(tree.quantize(images[i][j]));
         }
     }
@@ -191,12 +226,6 @@ void build_database(std::string directory) {
     std::cout << "[" << moduleName_ << "] " << "Database created!" << std::endl;
 }
 
-// ----------------------------------------------------------------------------------------------------
-
-void process_images(std::string directory) {
-    std::vector<FeatureVector> images;
-    trace_directory(directory.c_str(), "", images, true);
-}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -238,6 +267,7 @@ void save_database(std::string& directory) {
 
 // ----------------------------------------------------------------------------------------------------
 
+
 void trace_directory(const char* dir, const char* prefix, std::vector<FeatureVector>& images, bool onlySaveImages) {
 
     std::cout << "[" << moduleName_ << "] " << "Tracing directory: " << dir << std::endl;
@@ -245,11 +275,20 @@ void trace_directory(const char* dir, const char* prefix, std::vector<FeatureVec
     DIR *pdir = opendir(dir);
     struct dirent *pent = NULL;
 
+    // return in case file or folder does not exist
     if (pdir == NULL) {
         std::cout << "[" << moduleName_ << "] " << "ERROR! Directory " << dir << " not found" << std::endl;
         return;
     }
 
+    // skip the rest of the directory in case it is not in the include list
+    if (!is_included_dir(prefix)){
+        std::cout << "[" << moduleName_ << "] " << "Model not in the included list, skipping." << std::endl;
+        closedir(pdir);
+        return;
+    }
+
+    // crawl through the directory
     while ((pent = readdir(pdir))) {
         if (strcmp(pent->d_name, ".") != 0 && strcmp(pent->d_name, "..") != 0
                 && strcmp(pent->d_name, "IGNORE") != 0 && strcmp(pent->d_name, ".svn") != 0) {
@@ -273,21 +312,55 @@ void trace_directory(const char* dir, const char* prefix, std::vector<FeatureVec
                 short_filename.append("/");
                 trace_directory(filename.c_str(), short_filename.c_str(), images, onlySaveImages);
             } else {
+
+                int curr_pos = 0;
+                int prev_occur = 0;
+                int last_occur = short_filename.find_last_of("/");
+                std::vector<uint> occurrences;
+
+                // get occurrences of '/' in the directory path
+                while ((curr_pos = short_filename.find("/", curr_pos)) != std::string::npos && curr_pos < last_occur) {
+                    occurrences.push_back(curr_pos);
+                    curr_pos+=1;
+                    prev_occur = curr_pos;
+                }
+
                 // else process it
                 std::string extension (short_filename.substr(short_filename.find_last_of(".") + 1));
-                std::string fileName (short_filename.substr(short_filename.find_last_of("/") + 1, short_filename.find_last_of(".")));
+                std::string image_name (short_filename.substr(short_filename.find_last_of("/") + 1, short_filename.find_last_of(".")));
+                std::string parent_dir (short_filename.substr(prev_occur, last_occur - prev_occur));
 
-                if(extension.compare("png") == 0 || extension.compare("jpg") == 0 ||
-                   extension.compare("PNG") == 0 || extension.compare("JPG") == 0) {
+                // if is has an allowed extention and the parent directory is odu_finder
+                if((extension.compare("png") == 0 || extension.compare("jpg") == 0 ||
+                   extension.compare("PNG") == 0 || extension.compare("JPG") == 0) && parent_dir.compare("odu_finder") == 0) {
                     process_file(filename, images, onlySaveImages);
-                    image_names.push_back(fileName);
+                    image_names.push_back(image_name);
                 } else {
-                    std::cout << "[" << moduleName_ << "] " << "Not an image, skipping file " << filename << std::endl;
+                    std::cout << "[" << moduleName_ << "] " << "Not an image or not in folder 'odu_finder', skipping file " << filename << std::endl;
                 }
             }
         }
     }
+
     closedir(pdir);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool is_included_dir(std::string dir){
+
+    // if the name of the directory or the include list is empty, than accept it
+    if (dir.empty() || included_dirs.empty())
+        return true;
+
+    for(std::vector<std::string>::const_iterator it = included_dirs.begin(); it != included_dirs.end(); ++it) {
+        if (dir.find(*it) != std::string::npos){
+//            std::cout << "[" << moduleName_ << "] " << "DIR INCLUDED: " << dir << std::endl;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // ----------------------------------------------------------------------------------------------------
