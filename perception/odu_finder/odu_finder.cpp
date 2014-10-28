@@ -67,7 +67,7 @@ ODUFinder::ODUFinder(const std::string& plugin_path, bool debug_mode) :
     debug_mode_ = debug_mode;
 
     database_location = std::string(plugin_path);
-    images_directory = std::string(plugin_path + "/models/");
+    images_directory = std::string(plugin_path + "/../../models/");
 
     images_for_visualization_directory = std::string("");
     votes_count = 10;
@@ -183,8 +183,7 @@ bool ODUFinder::loadParams(std::string mode) {
     tree_k = 5;
     tree_levels = 5;
 
-    object_threshold = 0.22;
-    object_threshold = 0.14;
+    object_threshold = 0.20;
     votes_count = 10;
 
     pein_vis_ = false;
