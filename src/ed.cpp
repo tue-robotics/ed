@@ -67,33 +67,6 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
     ed::MeasurementConstPtr m = e.lastMeasurement();
     if (m)
         msg.last_update_time =  ros::Time(m->timestamp());
-
-    // Hacky for affordances (How are we going to sent the total config?)
-    tue::Configuration cfg = e.getConfig();
-    if (cfg.readGroup("affordances", tue::OPTIONAL))
-    {
-        std::cout << "has affordances" << std::endl;
-        if (cfg.readGroup("navigate-to", tue::OPTIONAL))
-        {
-            std::cout << "has navigate-to" << std::endl;
-            if (cfg.readGroup("position_constraint", tue::OPTIONAL))
-            {
-                std::cout << "has pc" << std::endl;
-                std::string constraint;
-                std::string frame = e.id();
-
-                cfg.value("constraint", constraint, tue::OPTIONAL);
-
-                msg.string_keys.push_back("frame");
-                msg.string_values.push_back(frame);
-
-                msg.string_keys.push_back("constraint");
-                msg.string_values.push_back(constraint);
-            }
-            cfg.endGroup();
-        }
-        cfg.endGroup();
-    }
 }
 
 // ----------------------------------------------------------------------------------------------------

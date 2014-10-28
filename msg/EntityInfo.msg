@@ -14,9 +14,3 @@ geometry_msgs/Point center_point
 float32 z_min
 float32 z_max
 
-# Key value pairs
-string[] string_keys
-string[] string_values
-string[] numeric_keys
-float32[] numeric_values
-
