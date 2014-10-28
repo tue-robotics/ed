@@ -77,7 +77,7 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
         return;
 
     // Get the best measurement from the entity
-    ed::MeasurementConstPtr msr = e->bestMeasurement();
+    ed::MeasurementConstPtr msr = e->lastMeasurement();
     if (!msr)
         return;
 

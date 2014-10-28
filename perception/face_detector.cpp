@@ -78,7 +78,7 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
         return;
 
     // Get the best measurement from the entity
-    ed::MeasurementConstPtr msr = e->bestMeasurement();
+    ed::MeasurementConstPtr msr = e->lastMeasurement();
     if (!msr)
         return;
 
