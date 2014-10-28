@@ -1,8 +1,8 @@
 sensors:
 - name: top_kinect
   type: kinect
-  source: /amigo/top_kinect/rgbd
-  frame_id: /amigo/top_kinect/openni_rgb_optical_frame
+  source: /sergio/top_kinect/rgbd
+  frame_id: /sergio/top_kinect/openni_rgb_optical_frame
   visualize: 0
   voxel_size: 0.02
   max_range: 3.0
@@ -38,15 +38,17 @@ world_name: robotics_testlab_B
 perception:
     fit_shapes: 1
     modules:
-    -  lib: libsize_matcher.so
+#    -  lib: libsize_matcher.so
 #    -  lib: libodu_finder.so
-    -  lib: libhuman_contour_matcher.so
-    -  lib: libface_detector.so
-    -  lib: libtype_aggregator.so
+#    -  lib: libhuman_contour_matcher.so
+#    -  lib: libface_detector.so
+#    -  lib: libtype_aggregator.so
 
 plugins:
 - name: gui_server
   lib: libed_gui_server_plugin.so
+  parameters:
+      robot_name: sergio
 #- name: builder
 #  lib: libed_builder_plugin.so
 - name: obstacle_grid_publisher

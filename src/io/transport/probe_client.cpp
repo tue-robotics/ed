@@ -43,9 +43,9 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     srv.request.library_path = lib;
 
     double freq = 1000; // default
-    std::stringstream config;
-    config << freq;
-    srv.request.configuration = config.str();
+    tue::Configuration config;
+    config.setValue("loop_frequency", freq);
+    srv.request.configuration = config.toYAMLString();
 
     std::string error;
 

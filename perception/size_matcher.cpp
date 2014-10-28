@@ -118,15 +118,17 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
             hyps.push_back(label);
     }
 
-    // ----------------------- assert results -----------------------
+    // ----------------------- SAVE RESULTS -----------------------
 
     // create group if it doesnt exist
-    if (!result.readGroup("perception_result"))
+    if (!result.readGroup("perception_result", tue::OPTIONAL))
     {
         result.writeGroup("perception_result");
     }
 
     result.writeGroup("size_matcher");
+
+//    result.setValue("label", "Small Object");
 
     result.writeGroup("size");
     result.setValue("width", object_width);
@@ -136,8 +138,7 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
     // if an hypothesis is found, assert it
     if (!hyps.empty())
     {
-        result.setValue("label", "Small Object");
-        result.setValue("score", 1.0);
+//        result.setValue("score", 1.0);
 
         // probability depends on the number of hypothesis
         double prob = 1.0 / hyps.size();
@@ -151,6 +152,8 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
             result.endArrayItem();
         }
         result.endArray();
+    }else{
+//        result.setValue("score", 0.0);
     }
 
     result.endGroup();  // close size_matcher group

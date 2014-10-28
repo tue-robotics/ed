@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   ed_object_models
   geolib2
   geometry_msgs
-#  libsiftfast
+  #libsiftfast
   rgbd
   pcl_conversions
   roscpp
@@ -180,7 +180,7 @@ add_library(ed_odu_finder
     perception/odu_finder/odu_finder.cpp
     perception/odu_finder/odu_finder.h
 )
-target_link_libraries(ed_odu_finder ed_perception)
+target_link_libraries(ed_odu_finder ed_perception /usr/local/lib/libsiftfast.so)
 
 add_library(qr_detector
     perception/qr_detector.cpp
@@ -244,6 +244,10 @@ add_dependencies(test-perception ${PROJECT_NAME}_gencpp)
 add_executable(create-rgbd-measurement tools/create_rgbd_measurement.cpp)
 target_link_libraries(create-rgbd-measurement ed_core ed_io ${OpenCV_LIBRARIES})
 add_dependencies(create-rgbd-measurement ${PROJECT_NAME}_gencpp)
+
+add_executable(odu-finder-db-builder tools/odu_finder_db_builder.cpp)
+target_link_libraries(odu-finder-db-builder ${OpenCV_LIBRARIES} /usr/local/lib/libsiftfast.so ${catkin_LIBRARIES})
+add_dependencies(odu-finder-db-builder ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS

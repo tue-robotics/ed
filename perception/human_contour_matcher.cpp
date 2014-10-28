@@ -118,7 +118,7 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
     // ----------------------- assert results -----------------------
 
     // create group if it doesnt exist
-    if (!result.readGroup("perception_result"))
+    if (!result.readGroup("perception_result", tue::OPTIONAL))
     {
         result.writeGroup("perception_result");
     }

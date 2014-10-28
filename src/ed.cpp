@@ -23,6 +23,7 @@
 #include <ed/plugin.h>
 #include <ed/plugin_container.h>
 #include <ed/LoadPlugin.h>
+#include <tue/config/loaders/yaml.h>
 
 ed::Server* ed_wm;
 
@@ -175,9 +176,20 @@ bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response&
     {
         if (!req.configuration.empty())
         {
-            // TODO: proper configuration
-            double freq = atof(req.configuration.c_str());
-            container->setLoopFrequency(freq);
+            tue::Configuration cfg;
+            if (tue::config::loadFromYAMLString(req.configuration, cfg))
+            {
+                container->plugin()->configure(cfg);
+
+                double loop_frequency;
+                if (cfg.value("loop_frequency", loop_frequency, tue::OPTIONAL))
+                {
+                    container->setLoopFrequency(loop_frequency);
+                }
+            }
+
+            if (cfg.hasError())
+                res.error_msg = cfg.error();
         }
 
         container->plugin()->initialize();
@@ -315,7 +327,7 @@ int main(int argc, char** argv)
 
     tue::Configuration config;
 
-    // Check if a config file was provided. If so, load it. If not, load a default config.
+    // Check if a config file was provided. If so, load it. If not, load the default AMIGO config.
     if (argc >= 2)
     {
         std::string yaml_filename = argv[1];
@@ -326,8 +338,8 @@ int main(int argc, char** argv)
         // Get the ED directory
         std::string ed_dir = ros::package::getPath("ed");
 
-        // Load the YAML config file
-        config.loadFromYAMLFile(ed_dir + "/config/config.yml");
+        // Load the default AMIGO YAML config file
+        config.loadFromYAMLFile(ed_dir + "/config/config_amigo.yml");
     }
 
     // Configure ED

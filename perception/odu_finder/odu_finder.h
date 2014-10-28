@@ -105,6 +105,8 @@ public:
     int frame_number;
     std::map<std::string, int> stat_summary_map;
     bool extract_roi_;
+    std::string moduleName_;
+    bool debug_mode_;
 
     // IMAGES
     IplImage *camera_image, *template_image, *image ,*image_roi;
@@ -153,7 +155,7 @@ public:
     Mode current_mode_;
 
 public:
-    ODUFinder();
+    ODUFinder(const std::string& plugin_path, bool debug_mode);
 
     ~ODUFinder();
 
@@ -271,6 +273,8 @@ protected:
     Keypoint extract_keypoints(IplImage *image, bool frames_only = false);
 
     bool srvCB(pein_srvs::TuningMode::Request req, pein_srvs::TuningMode::Response resp);
+
+    bool loadParams(std::string mode);
 };
 }
 #endif  //#ifndef ODU_FINDER_H_
