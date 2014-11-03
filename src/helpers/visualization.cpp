@@ -10,6 +10,8 @@
 #include <geolib/Shape.h>
 #include <geolib/ros/msg_conversions.h>
 
+#include <stdlib.h>
+
 namespace ed
 {
 
@@ -42,12 +44,20 @@ std_msgs::ColorRGBA getColor(unsigned int id)
     float colors[8][3] = { {1,0,0} , {0,1,0} , {0,0,1} , {1,1,0} , {1,0,1} , {0,1,1} , {1,1,1} , {0,0,0} };
     unsigned int color_id = id % 8;
 
+    float red_id = (id % 100)/100.0;
+    float green_id = ((id/2) % 100)/100.0;
+    float blue_id = ((id/3) % 100)/100.0;
+
     std_msgs::ColorRGBA c;
 
     c.a = 1.0;
-    c.r = colors[color_id][0];
-    c.g = colors[color_id][1];
-    c.b = colors[color_id][2];
+//    c.r = colors[color_id][0];
+//    c.g = colors[color_id][1];
+//    c.b = colors[color_id][2];
+
+    c.r = red_id;
+    c.g = green_id;
+    c.b = blue_id;
 
     return c;
 }
@@ -544,24 +554,44 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                 MeasurementConstPtr m = e->lastMeasurement();
 
                 if (m->timestamp() == rgbd_image->getTimestamp())
-                {
+                {                   
                     std::vector<cv::Point2i> pnts;
                     for (ImageMask::const_iterator mit = m->imageMask().begin(color_img.cols); mit != m->imageMask().end(); ++mit)
                         pnts.push_back(*mit);
-                    cv::Rect rect = cv::boundingRect(pnts);
+
+                    // get the bounding rectangle of the mask
+                    cv::Rect bounding_rect = cv::boundingRect(pnts);
 
                     std_msgs::ColorRGBA c_rgba = getColor(e->id());
-                    cv::Scalar c(c_rgba.b*255, c_rgba.g*255, c_rgba.r*255);
+                    cv::Scalar color(c_rgba.b*255, c_rgba.g*255, c_rgba.r*255);
 
-                    cv::rectangle(color_img, rect, c);
+                    // draw bounding box rectangle
+                    cv::rectangle(color_img, bounding_rect, color, 2);
 
                     std::vector<cv::Point2i> chull;
                     cv::convexHull(pnts,chull);
                     std::vector<std::vector<cv::Point2i> > contours; contours.push_back(chull);
 
-                    cv::drawContours(color_img,contours,0,c);
-                    cv::putText(color_img, e->type() + "(" + e->id().substr(0,4) +  ")", cv::Point(std::max(0.0,rect.x-.5*rect.width),
-                                                              std::max(0,rect.y-20)), 1, 1.2, c);
+                    tue::Configuration config = e->getConfig();
+                    std::string type;
+                    if (!config.value("perception_type", type, tue::OPTIONAL)) type = e->type();
+
+                    // draw convex hull contours
+                    cv::drawContours(color_img,contours,0,color, 1);
+
+                    // draw name background rectangle
+                    cv::rectangle(color_img, cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(0, -30),
+                                  cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(((type.size() + 6) * 11) + 5, -10),
+                                  color - cv::Scalar(180, 180, 180), CV_FILLED);
+
+                    // draw name and ID
+                    cv::putText(color_img, type + "(" + e->id().substr(0,4) + ")",
+                                cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(5, -15),
+                                1, 1.2, color, 1, CV_AA);
+
+//                    cv::putText(color_img, type + "(" + e->id().substr(0,4) +  ")",
+//                                cv::Point(std::max(0.0,bounding_rect.x-.5*bounding_rect.width), std::max(0,bounding_rect.y-20)),
+//                                1, 1.2, c, 1, CV_AA);
                 }
             }
         }
