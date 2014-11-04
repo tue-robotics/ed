@@ -40,7 +40,7 @@ void FaceDetector::loadModel(const std::string& model_name, const std::string& m
         kModuleName = "face_detector";
         kModelName = model_name;
         kCascadePath = model_path + "/cascade_classifiers/";
-        kDebugMode = true;
+        kDebugMode = false;
 
         kClassFrontScaleFactor = 1.2;
         kClassFrontMinNeighbors = 2;
