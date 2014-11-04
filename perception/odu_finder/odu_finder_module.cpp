@@ -121,7 +121,7 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
         for(std::map<std::string, float>::const_iterator it = results.begin(); it != results.end(); ++it)
         {
             result.addArrayItem();
-            result.setValue("name", it->first);
+            result.setValue("name", it->first + "_odu");
             result.setValue("score", it->second);
             result.endArrayItem();
         }
