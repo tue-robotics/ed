@@ -7,7 +7,6 @@
 #ifndef HUMAN_CLASSIFIER_H_
 #define HUMAN_CLASSIFIER_H_
 
-
 // OpenCV includes
 #include <opencv/cv.h>
 #include "opencv2/highgui/highgui.hpp"
@@ -58,9 +57,6 @@ class HumanClassifier {
         cv::Mat kMorphElement;      /*!< Morphologic operations structural element */
         int kNumSlicesMatching;     /*!< Number of slices to calculate best match initial position */
 
-        // ##### FACE DETECTION VARIABLES #####
-//        cv::CascadeClassifier kDetectFaceFront;     /*!< Cascade classifier for frontal faces */
-//        cv::CascadeClassifier kDetectFaceProfile;   /*!< Cascade classifier for profile faces */
         std::string cascade_path_;
 
 
