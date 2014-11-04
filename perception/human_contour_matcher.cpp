@@ -77,7 +77,7 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
         return;
 
     // Get the best measurement from the entity
-    ed::MeasurementConstPtr msr = e->lastMeasurement();
+    ed::MeasurementConstPtr msr = e->bestMeasurement();
     if (!msr)
         return;
 
@@ -125,7 +125,7 @@ void HumanContourMatcher::process(ed::EntityConstPtr e, tue::Configuration& resu
 
     // assert the results to the entity
     result.writeGroup(kModuleName);
-    result.setValue("label", "Human Shape");
+    result.setValue("label", "human_shape");
 
     if (classification_error > 0){
         result.setValue("stance", classification_stance);
