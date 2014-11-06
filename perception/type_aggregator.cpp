@@ -33,6 +33,7 @@ void TypeAggregator::loadModel(const std::string& model_name, const std::string&
         kPluginNames.push_back("face_detector");
         kPluginNames.push_back("size_matcher");
         kPluginNames.push_back("odu_finder");
+        kPluginNames.push_back("color_matcher");
 
         kPositiveTresh = 0.5;
 
@@ -92,7 +93,7 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
 
     if (!type.empty()){
         entity_conf.setValue("type", type);
-        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << std::endl;
+//        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << std::endl;
     }else{
 //        std::cout << "[" << kModuleName << "] " << "No hypothesis found." << std::endl;
     }
