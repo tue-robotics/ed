@@ -7,36 +7,6 @@
 #include <rgbd/View.h>
 
 
-/*
-    This perception module can eventually be dynamically loaded into ED. For now, you can test the
-    module by using ED's 'test-perception' tool. This tool works as follows:
-
-        rosrun test-perception LIRBARY_PATH MEASUREMENT_DIRECTORY
-
-    The first argument, LIBRARY_PATH is a path to the library file (.so) of this perception module.
-    As you can see in the CMakeLists.txt, this file is compiled into a seperate library called
-
-        libhuman_contour_matcher.so
-
-    The second argument, MEASUREMENT_DIRECTORY, specifies the directory that contains (RGBD)
-    measurements the 'test-perception' tool should test your module on. Each measurement consists
-    of 2 files with the same name but different extensions: .mask and .rgbd. The '.mask' file
-    contains the mask, i.e., the part of the images that was segmented out by ED. The '.rgbd'
-    file contains the RGBD-data. Example measurements can be found in ed_data_storage/rgbd_measurements
-    (contained in data-pkgs)
-
-    'test-perception' will crawl through the MEASUREMENT_DIRECTORY and feed all the measurements
-    to your perception module, and show the outcome.
-
-    Example:
-
-        rosbuild:   rosrun ed test-perception `rospack find ed`/lib/libhuman_contour_matcher.so `rospack find ed_data_storage`/rgbd_measurements
-        catkin:     rosrun ed test-perception ~/ros/groovy/catkin_ws/devel/lib/libhuman_contour_matcher.so `rospack find ed_data_storage`/rgbd_measurements
-
-    And press space to go to the next measurements.
-
-*/
-
 // ----------------------------------------------------------------------------------------------------
 
 HumanContourMatcher::HumanContourMatcher() :
