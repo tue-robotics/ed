@@ -32,40 +32,40 @@ std::string colorToString(Color color)
     switch(color)
     {
     case Black:
-        return "Black";
+        return "black";
         break;
     case Blue:
-        return "Blue";
+        return "blue";
         break;
     case Brown:
-        return "Brown";
+        return "brown";
         break;
     case Grey:
-        return "Grey";
+        return "grey";
         break;
     case Green:
-        return "Green";
+        return "green";
         break;
     case Orange:
-        return "Orange";
+        return "orange";
         break;
     case Pink:
-        return "Pink";
+        return "pink";
         break;
     case Purple:
-        return "Purple";
+        return "purple";
         break;
     case Red:
-        return "Red";
+        return "red";
         break;
     case White:
-        return "White";
+        return "white";
         break;
     case Yellow:
-        return "Yellow";
+        return "yellow";
         break;
     default:
-        return "None";
+        return "none";
     }
 }
 
