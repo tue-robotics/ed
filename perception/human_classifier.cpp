@@ -647,7 +647,7 @@ bool HumanClassifier::LoadTemplate(const std::string& template_path, std::vector
 		template_list.back().push_back(templateContours[0][i]);
 	}
 
-    std::cout << "[" << kModuleName << "] " << "Template loaded: " << template_path << ", " << template_list.back().size() << " points" << std::endl;
+//    std::cout << "[" << kModuleName << "] " << "Template loaded: " << template_path << ", " << template_list.back().size() << " points" << std::endl;
 
     return true;
 }
