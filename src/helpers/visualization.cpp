@@ -562,8 +562,14 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                     // get the bounding rectangle of the mask
                     cv::Rect bounding_rect = cv::boundingRect(pnts);
 
+                    // calculate color components
                     std_msgs::ColorRGBA c_rgba = getColor(e->id());
-                    cv::Scalar color(c_rgba.b*255, c_rgba.g*255, c_rgba.r*255);
+                    int red = c_rgba.r * 255;
+                    int green = c_rgba.g * 255;
+                    int blue = c_rgba.b * 255;
+
+                    // create Scalar color with a minimum
+                    cv::Scalar color(std::max(red, 80), std::max(green, 80), std::max(blue, 80));
 
                     // draw bounding box rectangle
                     cv::rectangle(color_img, bounding_rect, color, 2);
@@ -574,7 +580,23 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
 
                     tue::Configuration config = e->getConfig();
                     std::string type;
-                    if (!config.value("perception_type", type, tue::OPTIONAL)) type = e->type();
+                    std::string info;
+                    float certainty = 0;
+
+                    // update perception type and certainty if possible
+                    if (config.readGroup("perception_result", tue::OPTIONAL))
+                    {
+                        if (config.readGroup("type_aggregator", tue::OPTIONAL))
+                        {
+                            if (config.value("type", type, tue::OPTIONAL) &&
+                                config.value("certainty", certainty, tue::OPTIONAL)){
+                                info.append(boost::lexical_cast<std::string>((int)(certainty*100)) + "%");
+                            }
+                        }
+                    }else{
+                        type = e->type();
+                        info = e->id().substr(0,4);
+                    }
 
                     // draw convex hull contours
                     cv::drawContours(color_img,contours,0,color, 1);
@@ -582,16 +604,12 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                     // draw name background rectangle
                     cv::rectangle(color_img, cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(0, -30),
                                   cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(((type.size() + 6) * 11) + 5, -10),
-                                  color - cv::Scalar(180, 180, 180), CV_FILLED);
+                                  color - cv::Scalar(140, 140, 140), CV_FILLED);
 
                     // draw name and ID
-                    cv::putText(color_img, type + "(" + e->id().substr(0,4) + ")",
+                    cv::putText(color_img, type + "(" + info + ")",
                                 cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(5, -15),
                                 1, 1.2, color, 1, CV_AA);
-
-//                    cv::putText(color_img, type + "(" + e->id().substr(0,4) +  ")",
-//                                cv::Point(std::max(0.0,bounding_rect.x-.5*bounding_rect.width), std::max(0,bounding_rect.y-20)),
-//                                1, 1.2, c, 1, CV_AA);
                 }
             }
         }
