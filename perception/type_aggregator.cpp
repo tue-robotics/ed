@@ -57,6 +57,7 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
     std::map<std::string, std::map<std::string, float> > hypothesis;   // [label | [plugin who named it | score]]
     std::map<std::string, std::pair<std::string, float> > features;    // [hypothesis name | [plugin who named it | score]]
     std::string type = "";
+    float certainty;
 
     /*
     // Get the best measurement from the entity
@@ -89,11 +90,23 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
     collect_results(entity_conf, hypothesis, features);
 
     // match results with dictionary
-    match_dictonary(hypothesis, features, type);
+    match_dictonary(hypothesis, features, type, certainty);
 
-    if (!type.empty()){
+    if (!type.empty() && certainty > 0.2){
         entity_conf.setValue("type", type);
-//        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << std::endl;
+
+        if (!entity_conf.readGroup("perception_result", tue::OPTIONAL))
+        {
+            entity_conf.writeGroup("perception_result");
+        }
+
+        entity_conf.writeGroup("type_aggregator");
+        entity_conf.setValue("type", type);
+        entity_conf.setValue("certainty", certainty);
+        entity_conf.endGroup();
+        entity_conf.endGroup();
+
+//        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << " (" << certainty << ")" << std::endl;
     }else{
 //        std::cout << "[" << kModuleName << "] " << "No hypothesis found." << std::endl;
     }
@@ -105,16 +118,17 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
 
 void TypeAggregator::match_dictonary(std::map<std::string, std::map<std::string, float> >& hypothesis,
                                      std::map<std::string, std::pair<std::string, float> >& features,
-                                     std::string& type) const{
+                                     std::string& type,
+                                     float& certainty) const{
 
     // iterators
     std::map<std::string, std::vector<std::string> >::const_iterator dict_it;
     std::map<std::string, std::map<std::string, float> >::const_iterator hypot_it;
     std::map<std::string, std::pair<std::string, float> >::const_iterator feat_it;
 
-    dictionary_match best_match2;
-    best_match2.matches = 0;
-    best_match2.score = 0;
+    dictionary_match best_match;
+    best_match.matches = 0;
+    best_match.score = 0;
 
     // iterate through all dictionary entries
     for(dict_it = dictionary.begin(); dict_it != dictionary.end(); ++dict_it)
@@ -125,8 +139,6 @@ void TypeAggregator::match_dictonary(std::map<std::string, std::map<std::string,
         curr_match.matches = 0;
         curr_match.score = 0;
 
-//        std::cout << "[" << kModuleName << "] " << "Dictionary entry: " << dict_it->first << std::endl;
-
         // iterate through all features of a particular dictionary entry
         for(std::vector<std::string>::const_iterator feat_name = dict_it->second.begin(); feat_name != dict_it->second.end(); ++feat_name) {
 
@@ -135,8 +147,7 @@ void TypeAggregator::match_dictonary(std::map<std::string, std::map<std::string,
             {
                 if (hypot_it->first.compare(*feat_name) == 0)
                 {
-//                    std::cout << "[" << kModuleName << "] " << "Match hypothesis on " << *feat_name << std::endl;
-                    curr_match.score += hypot_it->second.begin()->second;    // TODO: right now i'm sure begin exists but i shouldn't be assuming, change it
+                    curr_match.score += hypot_it->second.begin()->second;
                     curr_match.matches++;
                 }
             }
@@ -146,26 +157,24 @@ void TypeAggregator::match_dictonary(std::map<std::string, std::map<std::string,
             {
                 if (feat_it->first.compare(*feat_name) == 0)
                 {
-//                    std::cout << "[" << kModuleName << "] " << "Match feature on " << *feat_name << std::endl;
                     curr_match.matches++;
                 }
             }
         }
 
-//        if (curr_match.matches>0)
-//            std::cout << "[" << kModuleName << "] " << "Result on " << dict_it->first << ": " << curr_match.entry << " " << curr_match.matches << "/"
+//        if (curr_match.matches > 0)
+//            std::cout << "[" << kModuleName << "] " << "Result on " << dict_it->first << ": features " << " " << curr_match.matches << "/"
 //                      << dict_it->second.size() << ", " << curr_match.score << std::endl;
 
         // update best match
-        if ((best_match2.matches < curr_match.matches) ||
-            (best_match2.matches == curr_match.matches && best_match2.score < curr_match.score)){
-            best_match2 = curr_match;
+        if ((best_match.matches < curr_match.matches) ||
+            (best_match.matches == curr_match.matches && best_match.score < curr_match.score)){
+            best_match = curr_match;
         }
     }
 
-    // to add some consistency, results have to have more than one match
-    if (best_match2.matches > 1)
-        type = best_match2.entry;
+    type = best_match.entry;
+    certainty = (float)best_match.matches / dictionary.find(best_match.entry)->second.size();
 }
 
 

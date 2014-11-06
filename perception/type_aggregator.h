@@ -63,7 +63,7 @@ private:
 
     void match_dictonary(std::map<std::string, std::map<std::string, float> >& hypothesis,
                            std::map<std::string, std::pair<std::string, float> >& features,
-                           std::string& type) const;
+                           std::string& type, float &certainty) const;
 };
 
 #endif
