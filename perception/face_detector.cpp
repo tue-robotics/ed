@@ -77,6 +77,8 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
     if (!init_success_)
         return;
 
+    // ---------- Prepare measurement ----------
+
     // Get the best measurement from the entity
     ed::MeasurementConstPtr msr = e->bestMeasurement();
     if (!msr)
@@ -118,7 +120,7 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
         if (max_y < p_2d.y) max_y = p_2d.y;
     }
 
-    // ----------------------- assert results -----------------------
+    // ----------------------- Process and Assert results -----------------------
 
     // create group if it doesnt exist
     if (!result.readGroup("perception_result", tue::OPTIONAL))
@@ -126,7 +128,8 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
         result.writeGroup("perception_result");
     }
 
-    result.writeGroup(kModuleName);
+    result.writeGroup("face_detector");
+
     result.setValue("label", "face");
 
     // Detect faces in the measurment and assert the results
