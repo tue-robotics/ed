@@ -51,13 +51,14 @@ std_msgs::ColorRGBA getColor(unsigned int id)
     std_msgs::ColorRGBA c;
 
     c.a = 1.0;
-//    c.r = colors[color_id][0];
-//    c.g = colors[color_id][1];
-//    c.b = colors[color_id][2];
 
     c.r = red_id;
     c.g = green_id;
     c.b = blue_id;
+
+//        c.r = colors[color_id][0];
+//        c.g = colors[color_id][1];
+//        c.b = colors[color_id][2];
 
     return c;
 }
@@ -542,7 +543,7 @@ void showMeasurement(MeasurementConstPtr measurement, const std::string& id)
 
 void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::ImageConstPtr rgbd_image)
 {
-    cv::Mat color_img = rgbd_image->getRGBImage().clone();
+    cv::Mat color_img = rgbd_image->getRGBImage().clone() * 0.2;
     for (std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
     {
         const EntityConstPtr& e = it->second;
@@ -553,11 +554,14 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
             {
                 MeasurementConstPtr m = e->lastMeasurement();
 
-                if (m->timestamp() == rgbd_image->getTimestamp())
+                if (m->timestamp() == rgbd_image->getTimestamp() && e->measurementSeq() > 5)
                 {                   
                     std::vector<cv::Point2i> pnts;
                     for (ImageMask::const_iterator mit = m->imageMask().begin(color_img.cols); mit != m->imageMask().end(); ++mit)
+                    {
+                        color_img.at<cv::Vec3b>(*mit) = rgbd_image->getRGBImage().at<cv::Vec3b>(*mit);
                         pnts.push_back(*mit);
+                    }
 
                     // get the bounding rectangle of the mask
                     cv::Rect bounding_rect = cv::boundingRect(pnts);
@@ -574,13 +578,15 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                     // draw bounding box rectangle
                     cv::rectangle(color_img, bounding_rect, color, 2);
 
-                    std::vector<cv::Point2i> chull;
-                    cv::convexHull(pnts,chull);
-                    std::vector<std::vector<cv::Point2i> > contours; contours.push_back(chull);
+//                    std::vector<cv::Point2i> chull;
+//                    cv::convexHull(pnts,chull);
+//                    std::vector<std::vector<cv::Point2i> > contours; contours.push_back(chull);
+//                    // draw convex hull contours
+//                    cv::drawContours(color_img,contours,0,color, 1);
 
                     tue::Configuration config = e->getConfig();
                     std::string type;
-                    std::string info;
+                    std::string info = e->id().substr(0,4);
                     float certainty = 0;
 
                     // update perception type and certainty if possible
@@ -590,16 +596,12 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                         {
                             if (config.value("type", type, tue::OPTIONAL) &&
                                 config.value("certainty", certainty, tue::OPTIONAL)){
-                                info.append(boost::lexical_cast<std::string>((int)(certainty*100)) + "%");
+                                info.append(" " + boost::lexical_cast<std::string>((int)(certainty*100)) + "%");
                             }
                         }
                     }else{
                         type = e->type();
-                        info = e->id().substr(0,4);
                     }
-
-                    // draw convex hull contours
-                    cv::drawContours(color_img,contours,0,color, 1);
 
                     // draw name background rectangle
                     cv::rectangle(color_img, cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(0, -30),
@@ -614,6 +616,9 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
             }
         }
     }
+
+//    static cv::VideoWriter v("output.avi", CV_FOURCC('M','J','P','G'), 10, cv::Size(color_img.cols, color_img.rows));
+//    v.write(color_img);
 
     cv::imshow("measurements", color_img);
     cv::waitKey(3);
