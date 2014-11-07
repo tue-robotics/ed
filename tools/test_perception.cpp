@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
         if (filename.extension() != ".mask")
             continue;
 
-        std::cout << filename << std::endl;
+//        std::cout << filename << std::endl;
 
         ed::MeasurementPtr msr(new ed::Measurement);
         if (!ed::read(filename.withoutExtension().string(), *msr))

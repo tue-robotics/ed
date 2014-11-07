@@ -141,7 +141,6 @@ int main(int argc, char **argv)
 
         std::string model_list_path = argv[3];
 
-
         tue::Configuration model_list;
         std::string model_name;
 

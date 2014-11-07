@@ -29,14 +29,18 @@ SizeMatcher::~SizeMatcher()
 
 void SizeMatcher::loadModel(const std::string& model_name, const std::string& model_path)
 {
+    kModuleName = "size_matcher";
+
     std::string filename = model_path + "/sizes.txt";
+
+//    std::cout << "[" << kModuleName << "] " << "Loading sizes file from " << model_path + "/sizes.txt" << std::endl;
 
     // Load file
     std::ifstream model_file;
     model_file.open(filename.c_str());
     if (!model_file.is_open())
     {
-        std::cout << "Could not open file " << filename << std::endl;
+        std::cout << "[" << kModuleName << "] " << "Could not open file " << filename << std::endl;
         return;
     }
 
@@ -51,6 +55,9 @@ void SizeMatcher::loadModel(const std::string& model_name, const std::string& mo
     }
 
     models_[model_name] = model_vec;
+
+    small_tresh = 0.5;
+    medium_tresh = 0.7;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -105,7 +112,7 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
         {
             const ObjectSize& model_size = *it_size;
 
-            // if the object is smaller or the same size as the model, add hypothesis
+            // if the object size is within the min and max, add hypothesis
             if (object_height >= model_size.min_height && object_height <= model_size.max_height &&
                     object_width >= model_size.min_width && object_width <= model_size.max_width)
             {
@@ -128,18 +135,24 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
 
     result.writeGroup("size_matcher");
 
-//    result.setValue("label", "Small Object");
-
     result.writeGroup("size");
     result.setValue("width", object_width);
     result.setValue("height", object_height);
     result.endGroup();
 
+    if ((object_width + object_height) < small_tresh){
+        result.setValue("label", "small_size");
+    }else if (small_tresh < (object_width + object_height) && (object_width + object_height) < medium_tresh){
+        result.setValue("label", "medium_size");
+    }else if (medium_tresh < (object_width + object_height)){
+        result.setValue("label", "large_size");
+    }
+
+    result.setValue("score", 1.0);
+
     // if an hypothesis is found, assert it
     if (!hyps.empty())
     {
-//        result.setValue("score", 1.0);
-
         // probability depends on the number of hypothesis
         double prob = 1.0 / hyps.size();
 
@@ -147,13 +160,11 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
         for(std::vector<std::string>::const_iterator it = hyps.begin(); it != hyps.end(); ++it)
         {
             result.addArrayItem();
-            result.setValue("name", *it);
+            result.setValue("name", *it + "_size");
             result.setValue("score", prob);
             result.endArrayItem();
         }
         result.endArray();
-    }else{
-//        result.setValue("score", 0.0);
     }
 
     result.endGroup();  // close size_matcher group
@@ -161,7 +172,5 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
 }
 
 ED_REGISTER_PERCEPTION_MODULE(SizeMatcher)
-
 }
-
 }

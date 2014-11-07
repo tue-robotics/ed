@@ -63,7 +63,7 @@ void FaceDetector::loadModel(const std::string& model_name, const std::string& m
             CleanDebugFolder(kDebugFolder);
 
             // create debug window
-            cv::namedWindow("Face Detector Output", CV_WINDOW_AUTOSIZE);
+//            cv::namedWindow("Face Detector Output", CV_WINDOW_AUTOSIZE);
         }
 
         init_success_ = true;
@@ -77,13 +77,16 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
     if (!init_success_)
         return;
 
+    // ---------- Prepare measurement ----------
+
     // Get the best measurement from the entity
-    ed::MeasurementConstPtr msr = e->lastMeasurement();
+    ed::MeasurementConstPtr msr = e->bestMeasurement();
     if (!msr)
         return;
 
     std::vector<cv::Rect> faces_front;
     std::vector<cv::Rect> faces_profile;
+    uint min_x, max_x, min_y, max_y;
 
     // create a view
     rgbd::View view(*msr->image(), msr->image()->getRGBImage().cols);
@@ -94,6 +97,12 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
     // crop it to match the view
     cv::Mat cropped_image(color_image(cv::Rect(0,0,view.getWidth(), view.getHeight())));
 
+    // initialize bounding box points
+    max_x = 0;
+    max_y = 0;
+    min_x = view.getWidth();
+    min_y = view.getHeight();
+
     cv::Mat mask = cv::Mat::zeros(view.getHeight(), view.getWidth(), CV_8UC1);
     // Iterate over all points in the mask
     for(ed::ImageMask::const_iterator it = msr->imageMask().begin(view.getWidth()); it != msr->imageMask().end(); ++it)
@@ -103,14 +112,15 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
 
         // paint a mask
         mask.at<unsigned char>(*it) = 255;
-//        mask_cv.at<unsigned char>(cv::Point2i(ClipInt(p_2d.x + 8, 0, view.getWidth()), p_2d.y)) = 255;
+
+        // update the boundary coordinates
+        if (min_x > p_2d.x) min_x = p_2d.x;
+        if (max_x < p_2d.x) max_x = p_2d.x;
+        if (min_y > p_2d.y) min_y = p_2d.y;
+        if (max_y < p_2d.y) max_y = p_2d.y;
     }
 
-    // improve the contours of the mask
-//    OptimizeContourHull(mask, mask);
-    OptimizeContourBlur(mask, mask);
-
-    // ----------------------- assert results -----------------------
+    // ----------------------- Process and Assert results -----------------------
 
     // create group if it doesnt exist
     if (!result.readGroup("perception_result", tue::OPTIONAL))
@@ -118,11 +128,12 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
         result.writeGroup("perception_result");
     }
 
-    result.writeGroup(kModuleName);
-    result.setValue("label", "Face");
+    result.writeGroup("face_detector");
+
+    result.setValue("label", "face");
 
     // Detect faces in the measurment and assert the results
-    if(DetectFaces(cropped_image, mask, e->id(), faces_front, faces_profile)){
+    if(DetectFaces(cropped_image(cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y)), faces_front, faces_profile)){
 
         // if front faces were detected
         if (faces_front.size() > 0){
@@ -166,29 +177,14 @@ void FaceDetector::process(ed::EntityConstPtr e, tue::Configuration& result) con
 // ----------------------------------------------------------------------------------------------------
 
 bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
-                               const cv::Mat& mask,
-                               const std::string& entity_id,
                                std::vector<cv::Rect>& faces_front,
                                std::vector<cv::Rect>& faces_profile) const{
 
     cv::Mat cascade_img;
-    cv::Rect bounding_box;
-    std::vector<std::vector<cv::Point> > contour;
     bool face_detected;
 
-    // find the contours of the mask
-    findContours(mask, contour, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-    if (contour.size() == 0){
-//        std::cout << "[" << kModuleName << "] " << "No contours found on this mask " << mask.cols << ", " << mask.rows << std::endl;
-        return false;
-    }
-
-    // create a minimum area bounding box
-    bounding_box = cv::boundingRect(contour[0]);
-
-    // select only the area of the bounding box
-    cropped_img(bounding_box).copyTo(cascade_img);
+    // create a copy of the image
+    cropped_img.copyTo(cascade_img);
 
     // increase contrast of the image
     normalize(cascade_img, cascade_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
@@ -226,22 +222,9 @@ bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
 
     face_detected = (faces_front.size() > 0 || faces_profile.size() > 0);
 
-    // update the coordinates of the faces found, to the overral image
-    for (uint j = 0; j < faces_front.size(); j++) {
-        faces_front[j].x += bounding_box.x;
-        faces_front[j].y += bounding_box.y;
-    }
-
-    for (uint j = 0; j < faces_profile.size(); j++) {
-        faces_profile[j].x += bounding_box.x;
-        faces_profile[j].y += bounding_box.y;
-    }
-
     // if debug mode is active and faces were found
     if (kDebugMode){
-        cv::Mat debugImg;
-
-        cropped_img.copyTo(debugImg, mask);
+        cv::Mat debugImg(cropped_img);
 
         for (uint j = 0; j < faces_front.size(); j++)
             cv::rectangle(debugImg, faces_front[j], cv::Scalar(0, 255, 0), 2, CV_AA);
@@ -250,9 +233,8 @@ bool FaceDetector::DetectFaces(const cv::Mat& cropped_img,
             cv::rectangle(debugImg, faces_profile[j], cv::Scalar(0, 0, 255), 2, CV_AA);
 
 
-        cv::imwrite(kDebugFolder + GenerateID() + "_face_detector_mask.png", debugImg);
-        cv::imwrite(kDebugFolder + GenerateID() + "_face_detector_full.png", cropped_img);
-        cv::imshow("Face Detector Output", debugImg);
+        cv::imwrite(kDebugFolder + GenerateID() + "_face_detector.png", debugImg);
+//        cv::imshow("Face Detector Output", debugImg);
     }
 
     return face_detected;

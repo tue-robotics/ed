@@ -43,7 +43,6 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
     // ----------------------- PREPARE IMAGE -----------------------
 
     cv::Mat masked_mono_image;
-    cv::Rect bounding_box;
     uint min_x, max_x, min_y, max_y;
 
     // create a view
@@ -78,22 +77,11 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
         if (max_y < p_2d.y) max_y = p_2d.y;
     }
 
-    // improve the contours of the mask
-//    OptimizeContourHull(mask, mask, bounding_box);
-
-    // apply the mask to the whole image
-//    cropped_image.copyTo(masked_mono_image, mask);
-
-//    cv::imwrite("/tmp/odu/zozo.png", cropped_image(cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y)));
-
-    // convert it to grayscale
-//    cv::cvtColor(masked_mono_image, masked_mono_image, CV_BGR2GRAY);
     cv::cvtColor(cropped_image, masked_mono_image, CV_BGR2GRAY);
 
 
     // ----------------------- PROCESS IMAGE -----------------------
 
-//    IplImage img(masked_mono_image(bounding_box));
     IplImage img(masked_mono_image(cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y)));
     std::map<std::string, float> results;
 
@@ -121,7 +109,7 @@ void ODUFinderModule::process(ed::EntityConstPtr e, tue::Configuration& result) 
         for(std::map<std::string, float>::const_iterator it = results.begin(); it != results.end(); ++it)
         {
             result.addArrayItem();
-            result.setValue("name", it->first);
+            result.setValue("name", it->first + "_odu");
             result.setValue("score", it->second);
             result.endArrayItem();
         }

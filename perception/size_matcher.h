@@ -48,6 +48,10 @@ private:
 
     std::map<std::string, std::vector<ObjectSize> > models_;
 
+    float small_tresh;
+    float medium_tresh;
+
+    std::string	kModuleName;    /*!< Name of the module, for output */
 };
 
 }

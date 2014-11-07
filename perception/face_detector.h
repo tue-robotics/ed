@@ -40,10 +40,8 @@ private:
     mutable cv::CascadeClassifier classifier_profile;
 
     bool DetectFaces(const cv::Mat &cropped_img,
-                     const cv::Mat &mask,
-                     const std::string &entity_id,
-                     std::vector<cv::Rect>& faces_front,
-                     std::vector<cv::Rect>& faces_profile) const;
+                     std::vector<cv::Rect> &faces_front,
+                     std::vector<cv::Rect> &faces_profile) const;
 
     void CleanDebugFolder(const std::string& folder);
 

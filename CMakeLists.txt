@@ -191,6 +191,15 @@ add_library(qr_detector
 target_link_libraries(qr_detector ed_perception)
 target_link_libraries(qr_detector /usr/lib/libzbar.so)
 
+
+add_library(color_matcher
+    perception/color_matcher/color_matcher.cpp
+    perception/color_matcher/color_matcher.h
+    perception/color_matcher/color_name_table.cpp
+    perception/color_matcher/color_name_table.h
+)
+target_link_libraries(color_matcher ed_perception)
+
 #rosbuild_add_library(model_fitter
 #    perception/model_fitter.cpp
 #    perception/model_fitter.h

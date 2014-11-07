@@ -8,16 +8,16 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <cv_bridge/cv_bridge.h>
 
-template <typename T1, typename T2>
-struct less_second {
-    typedef std::pair<T1, T2> type;
-    bool operator ()(type const& a, type const& b) const {
-        return a.second < b.second;
-    }
-};
+struct dictionary_match{
+    uint matches;
+    float score;
+    std::string entry;
+} ;
 
 class TypeAggregator : public ed::PerceptionModule
 {
+
+
 
 /*
 * ###########################################
@@ -49,9 +49,21 @@ private:
     std::string	kModuleName;    /*!< Name of the module, for output */
 
     std::vector<std::string> kPluginNames;
+    std::map<std::string, std::vector<std::string> > dictionary;
+
     float kPositiveTresh;
 
+    void collect_results(tue::Configuration &entity_conf,
+                         std::map<std::string, std::map<std::string, float> >& hypothesis,
+                         std::map<std::string, std::pair<std::string, float> >& features) const;
+
     std::string best_hypothesis(std::map<std::string, std::map<std::string, float> > hypothesis) const;
+
+    bool load_dictionary(const std::string path) ;
+
+    void match_dictonary(std::map<std::string, std::map<std::string, float> >& hypothesis,
+                           std::map<std::string, std::pair<std::string, float> >& features,
+                           std::string& type, float &certainty) const;
 };
 
 #endif

@@ -6,6 +6,7 @@
 #include <rgbd/Image.h>
 #include <rgbd/View.h>
 
+
 // ----------------------------------------------------------------------------------------------------
 
 TypeAggregator::TypeAggregator():
@@ -32,8 +33,14 @@ void TypeAggregator::loadModel(const std::string& model_name, const std::string&
         kPluginNames.push_back("face_detector");
         kPluginNames.push_back("size_matcher");
         kPluginNames.push_back("odu_finder");
+        kPluginNames.push_back("color_matcher");
 
         kPositiveTresh = 0.5;
+
+        if (load_dictionary(model_path + "/type_dictionary.yml"))
+            std::cout << "[" << kModuleName << "] " << "Ready!" << std::endl;
+        else
+            return;
 
         init_success_ = true;
     }
@@ -41,11 +48,16 @@ void TypeAggregator::loadModel(const std::string& model_name, const std::string&
 
 // ----------------------------------------------------------------------------------------------------
 
-void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) const
+void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_conf) const
 {
     // if initialization failed, return
     if (!init_success_)
         return;
+
+    std::map<std::string, std::map<std::string, float> > hypothesis;   // [label | [plugin who named it | score]]
+    std::map<std::string, std::pair<std::string, float> > features;    // [hypothesis name | [plugin who named it | score]]
+    std::string type = "";
+    float certainty;
 
     /*
     // Get the best measurement from the entity
@@ -74,85 +86,158 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& result) c
     }
     */
 
+    // collect the perception results from different plugins
+    collect_results(entity_conf, hypothesis, features);
+
+    // match results with dictionary
+    match_dictonary(hypothesis, features, type, certainty);
+
+    if (!type.empty() && certainty > 0.2){
+        entity_conf.setValue("type", type);
+
+        if (!entity_conf.readGroup("perception_result", tue::OPTIONAL))
+        {
+            entity_conf.writeGroup("perception_result");
+        }
+
+        entity_conf.writeGroup("type_aggregator");
+        entity_conf.setValue("type", type);
+        entity_conf.setValue("certainty", certainty);
+        entity_conf.endGroup();
+        entity_conf.endGroup();
+
+//        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << " (" << certainty << ")" << std::endl;
+    }else{
+//        std::cout << "[" << kModuleName << "] " << "No hypothesis found." << std::endl;
+    }
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+
+
+void TypeAggregator::match_dictonary(std::map<std::string, std::map<std::string, float> >& hypothesis,
+                                     std::map<std::string, std::pair<std::string, float> >& features,
+                                     std::string& type,
+                                     float& certainty) const{
+
+    // iterators
+    std::map<std::string, std::vector<std::string> >::const_iterator dict_it;
+    std::map<std::string, std::map<std::string, float> >::const_iterator hypot_it;
+    std::map<std::string, std::pair<std::string, float> >::const_iterator feat_it;
+
+    dictionary_match best_match;
+    best_match.matches = 0;
+    best_match.score = 0;
+
+    // iterate through all dictionary entries
+    for(dict_it = dictionary.begin(); dict_it != dictionary.end(); ++dict_it)
+    {
+        dictionary_match curr_match;
+
+        curr_match.entry = dict_it->first;
+        curr_match.matches = 0;
+        curr_match.score = 0;
+
+        // iterate through all features of a particular dictionary entry
+        for(std::vector<std::string>::const_iterator feat_name = dict_it->second.begin(); feat_name != dict_it->second.end(); ++feat_name) {
+
+            // find matches with hypothesis
+            for(hypot_it = hypothesis.begin(); hypot_it != hypothesis.end(); ++hypot_it)
+            {
+                if (hypot_it->first.compare(*feat_name) == 0)
+                {
+                    curr_match.score += hypot_it->second.begin()->second;
+                    curr_match.matches++;
+                }
+            }
+
+            // find matches with features
+            for(feat_it = features.begin(); feat_it != features.end(); ++feat_it)
+            {
+                if (feat_it->first.compare(*feat_name) == 0)
+                {
+                    curr_match.matches++;
+                }
+            }
+        }
+
+//        if (curr_match.matches > 0)
+//            std::cout << "[" << kModuleName << "] " << "Result on " << dict_it->first << ": features " << " " << curr_match.matches << "/"
+//                      << dict_it->second.size() << ", " << curr_match.score << std::endl;
+
+        // update best match
+        if ((best_match.matches < curr_match.matches) ||
+            (best_match.matches == curr_match.matches && best_match.score < curr_match.score)){
+            best_match = curr_match;
+        }
+    }
+
+    type = best_match.entry;
+    certainty = (float)best_match.matches / dictionary.find(best_match.entry)->second.size();
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+
+void TypeAggregator::collect_results(tue::Configuration& entity_conf,
+                                     std::map<std::string, std::map<std::string, float> >& hypothesis,
+                                     std::map<std::string, std::pair<std::string, float> >& features) const{
+
     float score = 0;
-    std::string type = "";
     std::string label = "";
-    std::map<std::string, std::map<std::string, float> > hypothesis;    // [hypothesis name | [plugin who named it | score]]
     std::map<std::string, std::map<std::string, float> >::iterator map_it;
 
     // find perception_result group
-    if (result.readGroup("perception_result", tue::OPTIONAL))
+    if (entity_conf.readGroup("perception_result", tue::OPTIONAL))
     {
         // find perception plugins that already processed the entity
         for(std::vector<std::string>::const_iterator pluginName = kPluginNames.begin(); pluginName != kPluginNames.end(); ++pluginName) {
-           if (result.readGroup(*pluginName)){
+            // visit every perception plugin
+            if (entity_conf.readGroup(*pluginName)){
 
-               // If it has a Score field, than it has a unique result
-               if (result.value("score", score, tue::OPTIONAL))
+               // collect Labels
+               if (entity_conf.value("score", score, tue::OPTIONAL) && entity_conf.value("label", label, tue::OPTIONAL))
                {
                    // if its bigger than the threshold, add that label
                    if (score > kPositiveTresh){
-                       if (result.value("label", label)){
-                           // if its not the first label, add a coma and then the new label
-                           if (!type.empty()) type.append(", ");
-
-                           type.append(label);
-                       }
+                       std::pair<std::string, float> temp (*pluginName, score);
+                       features.insert(std::pair<std::string, std::pair<std::string, float> >(label, temp));
+//                       std::cout << "Feature " << label << ", from " << *pluginName << " with " << score << std::endl;
                    }
                }
 
-               // If it has a Hypothesis field, than it has multiple result
-               if (result.readArray("hypothesis", tue::OPTIONAL)){
-//                   std::cout << "[" << kModuleName << "] " << "In " << *pluginName << std::endl;
+               // collect Hypothesis
+               if (entity_conf.readArray("hypothesis", tue::OPTIONAL)){
                    // iterate through the hypothesis
-                   while(result.nextArrayItem())
+                   while(entity_conf.nextArrayItem())
                    {
                        std::string hypothesis_name;
                        float hypothesis_score;
                        // if the hypothesis has a name and score
-                       if (result.value("name", hypothesis_name) && result.value("score", hypothesis_score))
+                       if (entity_conf.value("name", hypothesis_name) && entity_conf.value("score", hypothesis_score))
                        {
-//                           std::cout << "[" << kModuleName << "] " << "Found: " << hypothesis_name << ", " << hypothesis_score << std::endl;
                            map_it = hypothesis.find(hypothesis_name);
                            // if hypothesis already exists, add the plugin name and score where it was found
                            if (map_it != hypothesis.end()){
-//                               std::cout << "[" << kModuleName << "] " << "\t appending: " << *pluginName << ", " << hypothesis_score << std::endl;
                                map_it->second.insert(std::pair<std::string, float>(*pluginName, hypothesis_score));
                            }else{
-//                               std::cout << "[" << kModuleName << "] " << "\t adding: " << hypothesis_name << ", " << hypothesis_score << std::endl;
                                // otherwise add a new entry
                                std::map<std::string, float> temp;
                                temp.insert(std::pair<std::string, float>(*pluginName, hypothesis_score));
-
                                hypothesis.insert(std::pair<std::string, std::map<std::string, float> >(hypothesis_name, temp));
+//                               std::cout << "Hypothesis " << hypothesis_name << ", from " << *pluginName << " with " << hypothesis_score << std::endl;
                            }
                        }
                    }
-                   result.endArray();
+                   entity_conf.endArray();
                }
-
                // close the group just read
-               result.endGroup();
+               entity_conf.endGroup();
            }
         }
         // close perception_result group
-        result.endGroup();
-
-        // determine result from the hypothesis if any
-        if (!hypothesis.empty()){
-            // if its not the first label, add a coma and then the new label
-            if (!type.empty()) type.append(", ");
-
-            type.append(best_hypothesis(hypothesis));
-        }
-
-        if (!type.empty() && e->convexHull().max_z - e->convexHull().min_z > 1.0 && (type.find("Face") >= 0 || type.find("Human Shape") >= 0))
-            result.setValue("type", "human");
-
-//        cv::imwrite("/tmp/aggregator/" + e->id() + "_type_" + type + ".png", mask);
-    }
-    else{
-//        std::cout << "[" << kModuleName << "] " << "perception_result group not found." << std::endl;
+        entity_conf.endGroup();
     }
 }
 
@@ -194,10 +279,59 @@ std::string TypeAggregator::best_hypothesis(std::map<std::string, std::map<std::
     }
 
     if (equal_results > 1)
-        return "INCONCLUSIVE";
+        return "Inconclusive";
     else
         return best_hypothesis;
 }
 
+bool TypeAggregator::load_dictionary(const std::string path) {
+    if (path.empty()){
+        std::cout << "[" << kModuleName << "] " << "Dictionary path not specified." << std::endl;
+        return false;
+    }else{
+
+        std::cout << "[" << kModuleName << "] " << "Loading dictionary from " << path << "." << std::endl;
+
+        tue::Configuration dictionary_conf;
+        std::string type_entry;
+        std::string feature_name;
+        std::vector<std::string> features;
+
+        // load list of models to include
+        if (dictionary_conf.loadFromYAMLFile(path)){
+            if (dictionary_conf.readArray("conclusions")){
+                while(dictionary_conf.nextArrayItem())
+                {
+                    if (dictionary_conf.value("type", type_entry))
+                    {
+                        features.clear();
+                        if (dictionary_conf.readArray("features"))
+                        {
+                            while(dictionary_conf.nextArrayItem())
+                            {
+                                if (dictionary_conf.value("name", feature_name))
+                                {
+                                    features.push_back(feature_name);
+                                }
+                            }
+                        }
+                        dictionary_conf.endArray();
+                        dictionary.insert(std::pair<std::string, std::vector<std::string> >(type_entry, features));
+                    }
+                }
+                dictionary_conf.endArray();
+            }else{
+                std::cout << "[" << kModuleName << "] " << "Dictionary incorrectly built." << std::endl;
+                std::cout << dictionary_conf.error() << std::endl;
+                return false;
+            }
+        }else{
+            std::cout << "[" << kModuleName << "] " << "Dictionary not found at " << path << "." << std::endl;
+            std::cout << dictionary_conf.error() << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
 
 ED_REGISTER_PERCEPTION_MODULE(TypeAggregator)
