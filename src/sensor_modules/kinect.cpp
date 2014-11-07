@@ -80,9 +80,9 @@ void filterPointsBehindWorldModel(const std::map<UUID, EntityConstPtr>& entities
         {
             float d_sensor = depth_image.at<float>(y, x);
             float d_wm = wm_depth_image.at<float>(f * y, f * x);
-            if (d_sensor == d_sensor && d_wm != 0) // Check if point is actually valid
+            if (d_sensor == d_sensor) // Check if point is actually valid
             {
-                if ( d_sensor < d_wm )
+                if ( d_wm == 0 || d_sensor < d_wm )
                 {
                     new_depth_image.at<float>(y, x) = depth_image.at<float>(y, x);
                 }
