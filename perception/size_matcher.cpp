@@ -27,38 +27,27 @@ SizeMatcher::~SizeMatcher()
 
 // ----------------------------------------------------------------------------------------------------
 
-void SizeMatcher::loadModel(const std::string& model_name, const std::string& model_path)
-{
+void SizeMatcher::loadConfig(const std::string& config_path) {
+
     kModuleName = "size_matcher";
-
-    std::string filename = model_path + "/sizes.txt";
-
-//    std::cout << "[" << kModuleName << "] " << "Loading sizes file from " << model_path + "/sizes.txt" << std::endl;
-
-    // Load file
-    std::ifstream model_file;
-    model_file.open(filename.c_str());
-    if (!model_file.is_open())
-    {
-        std::cout << "[" << kModuleName << "] " << "Could not open file " << filename << std::endl;
-        return;
-    }
-
-    std::vector<ObjectSize> model_vec;
-
-    // Get data from file
-    double h_min = 0, h_max = 0, w_min = 0, w_max = 0;
-    while (model_file >> h_min >> h_max >> w_min >> w_max)
-    {
-        ObjectSize obj_sz(h_min, h_max, w_min, w_max);
-        model_vec.push_back(obj_sz);
-    }
-
-    models_[model_name] = model_vec;
 
     small_tresh = 0.5;
     medium_tresh = 0.7;
 }
+
+// ----------------------------------------------------------------------------------------------------
+
+void SizeMatcher::loadModel(const std::string& model_name, const std::string& model_path)
+{
+
+    std::string filename = model_path + "/sizes.txt"; 
+
+//    std::cout << "[" << kModuleName << "] " << "Loading sizes from model " << model_name << std::endl;
+
+    if (!load_size(filename, model_name))
+        std::cout << "[" << kModuleName << "] " << "Could not load sizes from" << model_path + "/sizes.txt" << std::endl;
+}
+
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -101,6 +90,8 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
 
     std::vector<std::string> hyps;
 
+//    std::cout << "Obj HxW: " << object_height << " x " << object_width << std::endl;
+
     // compare object size to loaded models
     for(std::map<std::string, std::vector<ObjectSize> >::const_iterator it = models_.begin(); it != models_.end(); ++it)
     {
@@ -111,6 +102,9 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
         for(std::vector<ObjectSize>::const_iterator it_size = sizes.begin(); it_size != sizes.end(); ++it_size)
         {
             const ObjectSize& model_size = *it_size;
+
+//            std::cout << "Model " << label << " : " << model_size.min_height << "-" << model_size.max_height <<
+//                         " x " << model_size.min_width << "-" << model_size.max_width << std::endl;
 
             // if the object size is within the min and max, add hypothesis
             if (object_height >= model_size.min_height && object_height <= model_size.max_height &&
@@ -169,6 +163,33 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
 
     result.endGroup();  // close size_matcher group
     result.endGroup();  // close perception_result group
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool SizeMatcher::load_size(std::string path, std::string model_name){
+    std::ifstream model_file;
+
+    // Open file
+    model_file.open(path.c_str());
+
+    if (!model_file.is_open())
+        return false;
+
+    std::vector<ObjectSize> model_vec;
+
+    // Get data from file
+    double h_min = 0, h_max = 0, w_min = 0, w_max = 0;
+    while (model_file >> h_min >> h_max >> w_min >> w_max)
+    {
+        ObjectSize obj_sz(h_min, h_max, w_min, w_max);
+        model_vec.push_back(obj_sz);
+    }
+
+    // save sizes to models vector
+    models_[model_name] = model_vec;
+
+    return true;
 }
 
 ED_REGISTER_PERCEPTION_MODULE(SizeMatcher)
