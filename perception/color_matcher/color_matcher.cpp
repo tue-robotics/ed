@@ -187,7 +187,7 @@ std::map<std::string, double> ColorMatcher::getImageColorProbability(const cv::M
 
                 int r,g,b;
                 colorToRGB(stringToColor(highest_prob_name),r,g,b);
-//                img.at<cv::Vec3b>(y, x) = cv::Vec3b(b,g,r);       // Why was this here? its painting over the image
+//                img.at<cv::Vec3b>(y, x) = cv::Vec3b(b,g,r);       // Paint over the image for debugging
             }
         }
     }
