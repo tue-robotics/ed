@@ -597,7 +597,7 @@ int ODUFinder::load_database(const std::string& directory) {
         //ROS_INFO("\tloaded %s", document_info->name.c_str());
     }
 
-    std::cout << "[" << moduleName_ << "] " << "ODUFinder uses " << map_size << " images" << std::endl;
+//    std::cout << "[" << moduleName_ << "] " << "ODUFinder uses " << map_size << " images" << std::endl;
 
     counter_ = map_size+1; // to avoid overwriting previous images during learning add a unique number behind the image
 
@@ -608,7 +608,7 @@ int ODUFinder::load_database(const std::string& directory) {
     db->loadWeights(weights_file.c_str());
     in.close();
 
-    std::cout << "[" << moduleName_ << "] " << "READY!" << std::endl;
+    std::cout << "[" << moduleName_ << "] " << "Ready!" << std::endl;
 
     return 1;
 }
