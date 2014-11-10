@@ -25,16 +25,12 @@ HumanContourMatcher::~HumanContourMatcher()
 
 void HumanContourMatcher::loadModel(const std::string& model_name, const std::string& model_path)
 {
-    /*
-    Load any model specific data here (e.g., in this case, the human contour templates)
-
-        model_name: the name of the model (e.g. 'human')
-        model_path: the directory in which the models are stored
-    */
-
     if (model_name.compare("human") == 0){
         kModuleName = "human_contour_matcher";
+
         init_success_ = human_classifier_.Initializations(model_name, model_path + "/");
+
+        std::cout << "[" << kModuleName << "] " << "Ready!" << std::endl;
     }
 }
 
