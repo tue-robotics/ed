@@ -31,7 +31,7 @@ public:
 
     virtual ~TypeAggregator();
 
-    void loadModel(const std::string& model_name, const std::string& model_path);
+    void loadConfig(const std::string& config_path);
 
     void process(ed::EntityConstPtr e, tue::Configuration& result) const;
 
@@ -53,6 +53,14 @@ private:
 
     float kPositiveTresh;
 
+    void collect_features(tue::Configuration &entity_conf,
+                          std::map<std::string, std::pair<std::string, float> >&features) const;
+
+    void match_features(std::map<std::string, std::pair<std::string, float> >& features,
+                        std::map<std::string, float>& type_hystogram,
+                        std::string& type,
+                        float& amount) const;
+
     void collect_results(tue::Configuration &entity_conf,
                          std::map<std::string, std::map<std::string, float> >& hypothesis,
                          std::map<std::string, std::pair<std::string, float> >& features) const;
@@ -64,6 +72,12 @@ private:
     void match_dictonary(std::map<std::string, std::map<std::string, float> >& hypothesis,
                            std::map<std::string, std::pair<std::string, float> >& features,
                            std::string& type, float &certainty) const;
+
+    void match_dictonary2(std::map<std::string, std::map<std::string, float> >& hypothesis,
+                          std::map<std::string, std::pair<std::string, float> >& features,
+                          std::map<std::string, float>& type_hysto,
+                          std::string& type,
+                          float& ammount) const;
 };
 
 #endif

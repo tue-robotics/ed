@@ -10,8 +10,7 @@
 // ----------------------------------------------------------------------------------------------------
 
 TypeAggregator::TypeAggregator():
-    PerceptionModule("type_aggregator"),
-    init_success_(false)
+    PerceptionModule("type_aggregator")
 {
 }
 
@@ -23,41 +22,43 @@ TypeAggregator::~TypeAggregator()
 
 // ----------------------------------------------------------------------------------------------------
 
-void TypeAggregator::loadModel(const std::string& model_name, const std::string& model_path)
-{
-    if (model_name.compare("aggregator") == 0){
+void TypeAggregator::loadConfig(const std::string& config_path) {
+    kModuleName = "type_aggregator";
 
-        kModuleName = "type_aggregator";
+    kPluginNames.push_back("human_contour_matcher");
+    kPluginNames.push_back("face_detector");
+    kPluginNames.push_back("size_matcher");
+    kPluginNames.push_back("odu_finder");
+    kPluginNames.push_back("color_matcher");
 
-        kPluginNames.push_back("human_contour_matcher");
-        kPluginNames.push_back("face_detector");
-        kPluginNames.push_back("size_matcher");
-        kPluginNames.push_back("odu_finder");
-        kPluginNames.push_back("color_matcher");
+    kPositiveTresh = 0.5;
 
-        kPositiveTresh = 0.5;
+    std::cout << "[" << kModuleName << "] " << "Loading dictionary ..." << config_path + "/type_dictionary.yml" << std::endl;
 
-        if (load_dictionary(model_path + "/type_dictionary.yml"))
-            std::cout << "[" << kModuleName << "] " << "Ready!" << std::endl;
-        else
-            return;
+    if (load_dictionary(config_path + "/type_dictionary.yml"))
+        std::cout << "[" << kModuleName << "] " << "Ready!" << std::endl;
+    else
+        std::cout << "[" << kModuleName << "] " << "Unable to load dictionary from " << config_path + "/type_dictionary.yml" << std::endl;
+        return;
 
-        init_success_ = true;
-    }
+    init_success_ = true;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_conf) const
 {
+
     // if initialization failed, return
-    if (!init_success_)
-        return;
+//    if (!init_success_)
+//        return;
 
     std::map<std::string, std::map<std::string, float> > hypothesis;   // [label | [plugin who named it | score]]
     std::map<std::string, std::pair<std::string, float> > features;    // [hypothesis name | [plugin who named it | score]]
+    std::map<std::string, float> type_histogram;
     std::string type = "";
-    float certainty;
+    float certainty = 0;
+
 
     /*
     // Get the best measurement from the entity
@@ -86,32 +87,130 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
     }
     */
 
-    // collect the perception results from different plugins
-    collect_results(entity_conf, hypothesis, features);
+    if (entity_conf.readGroup("perception_result", tue::OPTIONAL))
+    {
+        std::cout << "[" << kModuleName << "] " << "here" << std::endl;
 
-    // match results with dictionary
-    match_dictonary(hypothesis, features, type, certainty);
+        if (entity_conf.readArray("histogram", tue::OPTIONAL))
+        {
+            std::cout << "[" << kModuleName << "] " << "here2" << std::endl;
 
+            while(entity_conf.nextArrayItem())
+            {
+                std::string type;
+                float amount;
+
+                std::cout << "[" << kModuleName << "] " << "entryyyyy" << std::endl;
+
+                if (entity_conf.value("type", type, tue::OPTIONAL) && entity_conf.value("amount", amount, tue::OPTIONAL))
+                {
+                    type_histogram.insert(std::pair<std::string, float>(type, 1));
+                }else{
+                    std::cout << "[" << kModuleName << "] " << "Malformed histogram entry." << type << ", " << amount << std::endl;
+                }
+            }
+            entity_conf.endArray();
+        }
+        entity_conf.endGroup();
+    }
+
+    std::cout << "[" << kModuleName << "] " << "Hist size: " << type_histogram.size() << std::endl;
+
+    collect_features(entity_conf, features);
+
+    match_features(features, type_histogram, type, certainty);
+
+    // assert type
     if (!type.empty() && certainty > 0.2){
         entity_conf.setValue("type", type);
+    }
 
-        if (!entity_conf.readGroup("perception_result", tue::OPTIONAL))
-        {
-            entity_conf.writeGroup("perception_result");
-        }
+    // create or read perception_result group
+    if (!entity_conf.readGroup("perception_result", tue::OPTIONAL))
+    {
+        entity_conf.writeGroup("perception_result");
+    }
 
+    // Update histogram
+    entity_conf.writeArray("histogram");
+    for(std::map<std::string, float>::const_iterator it = type_histogram.begin(); it != type_histogram.end(); ++it)
+    {
+        entity_conf.addArrayItem();
+        entity_conf.setValue("type", it->first);
+        entity_conf.setValue("amount", it->second);
+        entity_conf.endArrayItem();
+    }
+    entity_conf.endArray();
+
+    if (!type.empty() && certainty > 0.2){
         entity_conf.writeGroup("type_aggregator");
         entity_conf.setValue("type", type);
         entity_conf.setValue("certainty", certainty);
-        entity_conf.endGroup();
-        entity_conf.endGroup();
 
-//        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << " (" << certainty << ")" << std::endl;
+        entity_conf.endGroup();
+        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << " (" << certainty << ")" << std::endl;
     }else{
 //        std::cout << "[" << kModuleName << "] " << "No hypothesis found." << std::endl;
     }
+
+    entity_conf.endGroup();
 }
 
+
+// ----------------------------------------------------------------------------------------------------
+
+
+void TypeAggregator::match_features(std::map<std::string, std::pair<std::string, float> >& features,
+                                    std::map<std::string, float>& type_hystogram,
+                                    std::string& type,
+                                    float& amount) const{
+
+    std::map<std::string, std::pair<std::string, float> >::const_iterator feat_it;
+    std::map<std::string, std::vector<std::string> >::const_iterator dict_it;
+    std::map<std::string, float>::iterator hist_it;
+
+    std::cout << "[" << kModuleName << "] " << "Histogram size (before): " << type_hystogram.size() << std::endl;
+
+    // iterate through all dictionary entries
+    for(dict_it = dictionary.begin(); dict_it != dictionary.end(); ++dict_it){
+        std::string dictionary_entry = dict_it->first;
+
+        // iterate through all features of a particular dictionary entry
+        for(std::vector<std::string>::const_iterator dict_feat = dict_it->second.begin(); dict_feat != dict_it->second.end(); ++dict_feat) {
+
+            // find matches with features
+            for(feat_it = features.begin(); feat_it != features.end(); ++feat_it)
+            {
+                float feat_score = feat_it->second.second;
+                if (feat_it->first.compare(*dict_feat) == 0 && feat_score > 0)
+                {
+                    // search for match with the dictionary
+                    hist_it = type_hystogram.find(dictionary_entry);
+
+                    // add a new entry or update the existing one
+                    if (hist_it != type_hystogram.end()){
+//                        std::cout << "[" << kModuleName << "] " << "Update entry: " << dictionary_entry << ", " <<
+//                                     hist_it->second  << " + " << feat_score << std::endl;
+                        hist_it->second += feat_score;
+                    }else{
+//                        std::cout << "[" << kModuleName << "] " << "New entry: " << dictionary_entry << ", " << feat_score << std::endl;
+                        type_hystogram.insert(std::pair<std::string, float>(dictionary_entry, feat_score));
+                    }
+                }
+            }
+        }
+    }
+
+    std::cout << "[" << kModuleName << "] " << "Histogram size (after): " << type_hystogram.size() << std::endl;
+
+    // find best result in the hystogram
+    for(hist_it = type_hystogram.begin(); hist_it != type_hystogram.end(); ++hist_it) {
+        if (amount < hist_it->second){
+            amount = hist_it->second;
+            type = hist_it->first;
+        }
+    }
+}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -180,6 +279,59 @@ void TypeAggregator::match_dictonary(std::map<std::string, std::map<std::string,
 
 // ----------------------------------------------------------------------------------------------------
 
+void TypeAggregator::collect_features(tue::Configuration& entity_conf, std::map<std::string, std::pair<std::string, float> >& features) const{
+
+
+    float score = 0;
+    std::string feat_name = "";
+    std::map<std::string, std::map<std::string, float> >::iterator map_it;
+
+    // find perception_result group
+    if (entity_conf.readGroup("perception_result"))
+    {
+        // find perception plugins that already processed the entity
+        for(std::vector<std::string>::const_iterator pluginName = kPluginNames.begin(); pluginName != kPluginNames.end(); ++pluginName) {
+            // visit every perception plugin
+            if (entity_conf.readGroup(*pluginName)){
+
+                // collect Features
+                if (entity_conf.value("score", score, tue::OPTIONAL) && entity_conf.value("label", feat_name, tue::OPTIONAL))
+                {
+                    std::pair<std::string, float> inner_pair (*pluginName, score);
+                    features.insert(std::pair<std::string, std::pair<std::string, float> >(feat_name, inner_pair));
+//                    std::cout << "Feature " << feat_name << ", from " << *pluginName << " with " << score << std::endl;
+                }
+
+                // collect Hypothesis
+                if (entity_conf.readArray("hypothesis", tue::OPTIONAL)){
+                    // iterate through the hypothesis
+                    while(entity_conf.nextArrayItem())
+                    {
+                        // if the hypothesis has a name and score
+                        if (entity_conf.value("name", feat_name, tue::OPTIONAL) && entity_conf.value("score", score, tue::OPTIONAL))
+                        {
+                            std::pair<std::string, float> inner_pair (*pluginName, score);
+                            features.insert(std::pair<std::string, std::pair<std::string, float> >(feat_name, inner_pair));
+//                            std::cout << "Feature " << feat_name << ", from " << *pluginName << " with " << score << std::endl;
+                        }
+                    }
+                    entity_conf.endArray();
+                }
+
+                // close the group just read
+                entity_conf.endGroup();
+            }else{
+                std::cout << "Didnt find group " << *pluginName << std::endl;
+            }
+        }
+
+        // close perception_result group
+        entity_conf.endGroup();
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void TypeAggregator::collect_results(tue::Configuration& entity_conf,
                                      std::map<std::string, std::map<std::string, float> >& hypothesis,
                                      std::map<std::string, std::pair<std::string, float> >& features) const{
@@ -196,7 +348,7 @@ void TypeAggregator::collect_results(tue::Configuration& entity_conf,
             // visit every perception plugin
             if (entity_conf.readGroup(*pluginName)){
 
-               // collect Labels
+               // collect features
                if (entity_conf.value("score", score, tue::OPTIONAL) && entity_conf.value("label", label, tue::OPTIONAL))
                {
                    // if its bigger than the threshold, add that label
@@ -289,9 +441,6 @@ bool TypeAggregator::load_dictionary(const std::string path) {
         std::cout << "[" << kModuleName << "] " << "Dictionary path not specified." << std::endl;
         return false;
     }else{
-
-        std::cout << "[" << kModuleName << "] " << "Loading dictionary from " << path << "." << std::endl;
-
         tue::Configuration dictionary_conf;
         std::string type_entry;
         std::string feature_name;
@@ -299,6 +448,7 @@ bool TypeAggregator::load_dictionary(const std::string path) {
 
         // load list of models to include
         if (dictionary_conf.loadFromYAMLFile(path)){
+
             if (dictionary_conf.readArray("conclusions")){
                 while(dictionary_conf.nextArrayItem())
                 {
