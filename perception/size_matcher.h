@@ -42,6 +42,8 @@ public:
 
     void loadModel(const std::string& model_name, const std::string& model_path);
 
+    void loadConfig(const std::string& config_path);
+
     void process(ed::EntityConstPtr e, tue::Configuration& result) const;
 
 private:
@@ -52,6 +54,8 @@ private:
     float medium_tresh;
 
     std::string	kModuleName;    /*!< Name of the module, for output */
+
+    bool load_size(std::string path, std::string model_name);
 };
 
 }
