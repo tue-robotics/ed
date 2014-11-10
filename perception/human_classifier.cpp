@@ -606,17 +606,19 @@ bool HumanClassifier::Initializations(const std::string& model_name, const std::
 	// clean/create debug folder
     if (kDebugMode) CleanDebugFolder(kDebugFolder);
 
+
+    std::cout << "[" << kModuleName << "] " << "Loading templates..." << std::endl;
+
     // Load templates by the same order you enumerate them in "enum TemplateType"
     kTemplatesOriginal.clear();
     if ( !LoadTemplate(template_path + "template_front_4_trimmed.png", kTemplatesOriginal) ||
          !LoadTemplate(template_path + "left_close.png", kTemplatesOriginal) ||
          !LoadTemplate(template_path + "right_close.png", kTemplatesOriginal))
     {
-        std::cout << "[" << kModuleName << "] " << "Unable to load all templates" << std::endl;
+        std::cout << "[" << kModuleName << "] " << "Unable to load all templates from " << template_path << std::endl;
         return false;
     }
-    else
-        std::cout << "[" << kModuleName << "] " << "Templates sucessfully loaded" << std::endl;
+
 
     // initialize structuing element for morphological operations
     kMorphElement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4), cv::Point(-1, -1));
