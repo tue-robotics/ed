@@ -57,7 +57,7 @@ private:
                           std::map<std::string, std::pair<std::string, float> >&features) const;
 
     void match_features(std::map<std::string, std::pair<std::string, float> >& features,
-                        std::map<std::string, float>& type_hystogram,
+                        std::map<std::string, float>& type_histogram,
                         std::string& type,
                         float& amount) const;
 

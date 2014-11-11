@@ -59,7 +59,6 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
     std::string type = "";
     float certainty = 0;
 
-
     /*
     // Get the best measurement from the entity
     ed::MeasurementConstPtr msr = e->bestMeasurement();
@@ -87,20 +86,15 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
     }
     */
 
+    // rebuild histogram from previous configuration
     if (entity_conf.readGroup("perception_result", tue::OPTIONAL))
     {
-        std::cout << "[" << kModuleName << "] " << "here" << std::endl;
-
         if (entity_conf.readArray("histogram", tue::OPTIONAL))
         {
-            std::cout << "[" << kModuleName << "] " << "here2" << std::endl;
-
             while(entity_conf.nextArrayItem())
             {
                 std::string type;
                 float amount;
-
-                std::cout << "[" << kModuleName << "] " << "entryyyyy" << std::endl;
 
                 if (entity_conf.value("type", type, tue::OPTIONAL) && entity_conf.value("amount", amount, tue::OPTIONAL))
                 {
@@ -114,16 +108,16 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
         entity_conf.endGroup();
     }
 
-    std::cout << "[" << kModuleName << "] " << "Hist size: " << type_histogram.size() << std::endl;
-
+    // collect features asserted by other perception plugins
     collect_features(entity_conf, features);
 
+    // match these features against the features dictionary
     match_features(features, type_histogram, type, certainty);
 
     // assert type
-    if (!type.empty() && certainty > 0.2){
-        entity_conf.setValue("type", type);
-    }
+//    if (!type.empty() && certainty > 0.5){
+//        entity_conf.setValue("type", type);
+//    }
 
     // create or read perception_result group
     if (!entity_conf.readGroup("perception_result", tue::OPTIONAL))
@@ -142,13 +136,13 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
     }
     entity_conf.endArray();
 
-    if (!type.empty() && certainty > 0.2){
+    if (!type.empty() && certainty > 0.5){
         entity_conf.writeGroup("type_aggregator");
         entity_conf.setValue("type", type);
         entity_conf.setValue("certainty", certainty);
 
         entity_conf.endGroup();
-        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << " (" << certainty << ")" << std::endl;
+//        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << " (" << certainty << ")" << std::endl;
     }else{
 //        std::cout << "[" << kModuleName << "] " << "No hypothesis found." << std::endl;
     }
@@ -161,15 +155,13 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
 
 
 void TypeAggregator::match_features(std::map<std::string, std::pair<std::string, float> >& features,
-                                    std::map<std::string, float>& type_hystogram,
+                                    std::map<std::string, float>& type_histogram,
                                     std::string& type,
                                     float& amount) const{
 
     std::map<std::string, std::pair<std::string, float> >::const_iterator feat_it;
     std::map<std::string, std::vector<std::string> >::const_iterator dict_it;
     std::map<std::string, float>::iterator hist_it;
-
-    std::cout << "[" << kModuleName << "] " << "Histogram size (before): " << type_hystogram.size() << std::endl;
 
     // iterate through all dictionary entries
     for(dict_it = dictionary.begin(); dict_it != dictionary.end(); ++dict_it){
@@ -185,26 +177,24 @@ void TypeAggregator::match_features(std::map<std::string, std::pair<std::string,
                 if (feat_it->first.compare(*dict_feat) == 0 && feat_score > 0)
                 {
                     // search for match with the dictionary
-                    hist_it = type_hystogram.find(dictionary_entry);
+                    hist_it = type_histogram.find(dictionary_entry);
 
                     // add a new entry or update the existing one
-                    if (hist_it != type_hystogram.end()){
+                    if (hist_it != type_histogram.end()){
 //                        std::cout << "[" << kModuleName << "] " << "Update entry: " << dictionary_entry << ", " <<
 //                                     hist_it->second  << " + " << feat_score << std::endl;
                         hist_it->second += feat_score;
                     }else{
 //                        std::cout << "[" << kModuleName << "] " << "New entry: " << dictionary_entry << ", " << feat_score << std::endl;
-                        type_hystogram.insert(std::pair<std::string, float>(dictionary_entry, feat_score));
+                        type_histogram.insert(std::pair<std::string, float>(dictionary_entry, feat_score));
                     }
                 }
             }
         }
     }
 
-    std::cout << "[" << kModuleName << "] " << "Histogram size (after): " << type_hystogram.size() << std::endl;
-
     // find best result in the hystogram
-    for(hist_it = type_hystogram.begin(); hist_it != type_hystogram.end(); ++hist_it) {
+    for(hist_it = type_histogram.begin(); hist_it != type_histogram.end(); ++hist_it) {
         if (amount < hist_it->second){
             amount = hist_it->second;
             type = hist_it->first;
