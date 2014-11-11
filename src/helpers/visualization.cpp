@@ -586,32 +586,36 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
 
                     tue::Configuration config = e->getConfig();
                     std::string type;
-                    std::string info = e->id().substr(0,4);
+                    std::string info ;//= e->id().substr(0,4);
                     float certainty = 0;
 
-                    // update perception type and certainty if possible
+                    // type will be the perception result
                     if (config.readGroup("perception_result", tue::OPTIONAL))
                     {
                         if (config.readGroup("type_aggregator", tue::OPTIONAL))
                         {
                             if (config.value("type", type, tue::OPTIONAL) &&
                                 config.value("certainty", certainty, tue::OPTIONAL)){
-                                info.append(" " + boost::lexical_cast<std::string>((int)(certainty*100)) + "%");
+                                info.append(boost::lexical_cast<std::string>(certainty).substr(0,4));
                             }
                         }
-                    }else{
+                    }
+
+                    // if no type was read, use the default and the UID
+                    if (type.empty()){
                         type = e->type();
+                        info = e->id().substr(0,4);
                     }
 
                     // draw name background rectangle
                     cv::rectangle(color_img, cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(0, -30),
-                                  cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(((type.size() + 6) * 11) + 5, -10),
+                                  cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(((type.size() + 6) * 10), -10),
                                   color - cv::Scalar(140, 140, 140), CV_FILLED);
 
                     // draw name and ID
                     cv::putText(color_img, type + "(" + info + ")",
                                 cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(5, -15),
-                                1, 1.2, color, 1, CV_AA);
+                                1, 1.0, color, 1, CV_AA);
                 }
             }
         }
