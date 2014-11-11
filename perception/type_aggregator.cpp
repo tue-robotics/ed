@@ -125,7 +125,7 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
         entity_conf.writeGroup("perception_result");
     }
 
-    // Update histogram
+    // Update histogram in the configuration
     entity_conf.writeArray("histogram");
     for(std::map<std::string, float>::const_iterator it = type_histogram.begin(); it != type_histogram.end(); ++it)
     {
@@ -134,20 +134,21 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
         entity_conf.setValue("amount", it->second);
         entity_conf.endArrayItem();
     }
-    entity_conf.endArray();
+    entity_conf.endArray(); // close histogram array
 
+    entity_conf.writeGroup("type_aggregator");
+    // assert type
     if (!type.empty() && certainty > 0.5){
-        entity_conf.writeGroup("type_aggregator");
         entity_conf.setValue("type", type);
         entity_conf.setValue("certainty", certainty);
 
-        entity_conf.endGroup();
 //        std::cout << "[" << kModuleName << "] " << "Asserted type: " << type << " (" << certainty << ")" << std::endl;
     }else{
 //        std::cout << "[" << kModuleName << "] " << "No hypothesis found." << std::endl;
     }
 
-    entity_conf.endGroup();
+    entity_conf.endGroup(); // close type_aggregator group
+    entity_conf.endGroup(); // close perception_result group
 }
 
 
