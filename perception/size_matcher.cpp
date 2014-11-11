@@ -74,8 +74,8 @@ void SizeMatcher::process(ed::EntityConstPtr e, tue::Configuration& result) cons
         geo::Vector3 p;
         if (view.getPoint3D(p_2d.x, p_2d.y, p))
         {
-//            geo::Vector3 p_MAP = msr->sensorPose() * p;
-            geo::Vector3 p_MAP = p;     // use this only when sensorPose is not available
+            geo::Vector3 p_MAP = msr->sensorPose() * p;
+//            geo::Vector3 p_MAP = p;     // use this only when sensorPose is not available
 
             min.x = std::min(min.x, p_MAP.x); max.x = std::max(max.x, p_MAP.x);
             min.y = std::min(min.y, p_MAP.y); max.y = std::max(max.y, p_MAP.y);
