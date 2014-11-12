@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
     if (argc < 3)
     {
-        std::cout << "Usage for:\n\n   test_perception MEASUREMENT_DIRECTORY PERCEPTION_LIBRARY [PERCEPTION_LIBRARY_2]\n\n";
+        std::cout << "Usage for:\n\n   test-perception MEASUREMENT_DIRECTORY PERCEPTION_LIBRARY [PERCEPTION_LIBRARY_2]\n\n";
         return 1;
     }
     else if (argc == 3)
@@ -95,8 +95,6 @@ int main(int argc, char **argv) {
     {
         if (filename.extension() != ".mask")
             continue;
-
-//        std::cout << filename << std::endl;
 
         ed::MeasurementPtr msr(new ed::Measurement);
         if (!ed::read(filename.withoutExtension().string(), *msr))
