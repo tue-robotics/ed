@@ -258,6 +258,10 @@ add_executable(odu-finder-db-builder tools/odu_finder_db_builder.cpp)
 target_link_libraries(odu-finder-db-builder ${OpenCV_LIBRARIES} /usr/local/lib/libsiftfast.so ${catkin_LIBRARIES})
 add_dependencies(odu-finder-db-builder ${PROJECT_NAME}_gencpp)
 
+add_executable(ed-learning-tool tools/ed_learning_tool.cpp)
+target_link_libraries(ed-learning-tool ed_core ed_perception ed_io ${OpenCV_LIBRARIES})
+add_dependencies(ed-learning-tool ${PROJECT_NAME}_gencpp)
+
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS
 # ------------------------------------------------------------------------------------------------
