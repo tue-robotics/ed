@@ -138,7 +138,7 @@ void TypeAggregator::process(ed::EntityConstPtr e, tue::Configuration& entity_co
 
     entity_conf.writeGroup("type_aggregator");
     // assert type
-    if (!type.empty() && certainty > 0.5){
+    if (!type.empty() && certainty > 1){
         entity_conf.setValue("type", type);
         entity_conf.setValue("certainty", certainty);
 
@@ -187,6 +187,7 @@ void TypeAggregator::match_features(std::map<std::string, std::pair<std::string,
                         hist_it->second += feat_score;
                     }else{
 //                        std::cout << "[" << kModuleName << "] " << "New entry: " << dictionary_entry << ", " << feat_score << std::endl;
+                        if (feat_score < 1) feat_score += 1;
                         type_histogram.insert(std::pair<std::string, float>(dictionary_entry, feat_score));
                     }
                 }
@@ -201,70 +202,6 @@ void TypeAggregator::match_features(std::map<std::string, std::pair<std::string,
             type = hist_it->first;
         }
     }
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-
-void TypeAggregator::match_dictonary(std::map<std::string, std::map<std::string, float> >& hypothesis,
-                                     std::map<std::string, std::pair<std::string, float> >& features,
-                                     std::string& type,
-                                     float& certainty) const{
-
-    // iterators
-    std::map<std::string, std::vector<std::string> >::const_iterator dict_it;
-    std::map<std::string, std::map<std::string, float> >::const_iterator hypot_it;
-    std::map<std::string, std::pair<std::string, float> >::const_iterator feat_it;
-
-    dictionary_match best_match;
-    best_match.matches = 0;
-    best_match.score = 0;
-
-    // iterate through all dictionary entries
-    for(dict_it = dictionary.begin(); dict_it != dictionary.end(); ++dict_it)
-    {
-        dictionary_match curr_match;
-
-        curr_match.entry = dict_it->first;
-        curr_match.matches = 0;
-        curr_match.score = 0;
-
-        // iterate through all features of a particular dictionary entry
-        for(std::vector<std::string>::const_iterator feat_name = dict_it->second.begin(); feat_name != dict_it->second.end(); ++feat_name) {
-
-            // find matches with hypothesis
-            for(hypot_it = hypothesis.begin(); hypot_it != hypothesis.end(); ++hypot_it)
-            {
-                if (hypot_it->first.compare(*feat_name) == 0)
-                {
-                    curr_match.score += hypot_it->second.begin()->second;
-                    curr_match.matches++;
-                }
-            }
-
-            // find matches with features
-            for(feat_it = features.begin(); feat_it != features.end(); ++feat_it)
-            {
-                if (feat_it->first.compare(*feat_name) == 0)
-                {
-                    curr_match.matches++;
-                }
-            }
-        }
-
-//        if (curr_match.matches > 0)
-//            std::cout << "[" << kModuleName << "] " << "Result on " << dict_it->first << ": features " << " " << curr_match.matches << "/"
-//                      << dict_it->second.size() << ", " << curr_match.score << std::endl;
-
-        // update best match
-        if ((best_match.matches < curr_match.matches) ||
-            (best_match.matches == curr_match.matches && best_match.score < curr_match.score)){
-            best_match = curr_match;
-        }
-    }
-
-    type = best_match.entry;
-    certainty = (float)best_match.matches / dictionary.find(best_match.entry)->second.size();
 }
 
 
@@ -322,110 +259,6 @@ void TypeAggregator::collect_features(tue::Configuration& entity_conf, std::map<
 }
 
 // ----------------------------------------------------------------------------------------------------
-
-void TypeAggregator::collect_results(tue::Configuration& entity_conf,
-                                     std::map<std::string, std::map<std::string, float> >& hypothesis,
-                                     std::map<std::string, std::pair<std::string, float> >& features) const{
-
-    float score = 0;
-    std::string label = "";
-    std::map<std::string, std::map<std::string, float> >::iterator map_it;
-
-    // find perception_result group
-    if (entity_conf.readGroup("perception_result", tue::OPTIONAL))
-    {
-        // find perception plugins that already processed the entity
-        for(std::vector<std::string>::const_iterator pluginName = kPluginNames.begin(); pluginName != kPluginNames.end(); ++pluginName) {
-            // visit every perception plugin
-            if (entity_conf.readGroup(*pluginName)){
-
-               // collect features
-               if (entity_conf.value("score", score, tue::OPTIONAL) && entity_conf.value("label", label, tue::OPTIONAL))
-               {
-                   // if its bigger than the threshold, add that label
-                   if (score > kPositiveTresh){
-                       std::pair<std::string, float> temp (*pluginName, score);
-                       features.insert(std::pair<std::string, std::pair<std::string, float> >(label, temp));
-//                       std::cout << "Feature " << label << ", from " << *pluginName << " with " << score << std::endl;
-                   }
-               }
-
-               // collect Hypothesis
-               if (entity_conf.readArray("hypothesis", tue::OPTIONAL)){
-                   // iterate through the hypothesis
-                   while(entity_conf.nextArrayItem())
-                   {
-                       std::string hypothesis_name;
-                       float hypothesis_score;
-                       // if the hypothesis has a name and score
-                       if (entity_conf.value("name", hypothesis_name) && entity_conf.value("score", hypothesis_score))
-                       {
-                           map_it = hypothesis.find(hypothesis_name);
-                           // if hypothesis already exists, add the plugin name and score where it was found
-                           if (map_it != hypothesis.end()){
-                               map_it->second.insert(std::pair<std::string, float>(*pluginName, hypothesis_score));
-                           }else{
-                               // otherwise add a new entry
-                               std::map<std::string, float> temp;
-                               temp.insert(std::pair<std::string, float>(*pluginName, hypothesis_score));
-                               hypothesis.insert(std::pair<std::string, std::map<std::string, float> >(hypothesis_name, temp));
-//                               std::cout << "Hypothesis " << hypothesis_name << ", from " << *pluginName << " with " << hypothesis_score << std::endl;
-                           }
-                       }
-                   }
-                   entity_conf.endArray();
-               }
-               // close the group just read
-               entity_conf.endGroup();
-           }
-        }
-        // close perception_result group
-        entity_conf.endGroup();
-    }
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-std::string TypeAggregator::best_hypothesis(std::map<std::string, std::map<std::string, float> > hypothesis) const{
-
-    std::map<std::string, std::map<std::string, float> >::const_iterator it_outer;
-    std::map<std::string, float>::const_iterator it_inner;
-    float highest_score = 0;
-    float final_score;
-    std::string best_hypothesis = "";
-    uint equal_results = 0;
-
-    // iterate through all hypothesis
-    for(it_outer = hypothesis.begin(); it_outer != hypothesis.end(); ++it_outer)
-    {
-        final_score = 0;
-//        std::cout << it_outer->first << std::endl;
-
-        // acumulate all the scores for this hypothesis
-        for(it_inner = it_outer->second.begin(); it_inner != it_outer->second.end(); ++it_inner)
-        {
-//            std::cout << "\t " << it_inner->first << ", " << it_inner->second << std::endl;
-            final_score += it_inner->second;
-        }
-
-        // save the best hypothesis
-        if (highest_score < final_score){
-            // update best score
-            highest_score = final_score;
-            best_hypothesis = it_outer->first;
-
-            //reset counter
-            equal_results = 0;
-        }else if (highest_score == final_score){
-            equal_results++;
-        }
-    }
-
-    if (equal_results > 1)
-        return "Inconclusive";
-    else
-        return best_hypothesis;
-}
 
 bool TypeAggregator::load_dictionary(const std::string path) {
     if (path.empty()){

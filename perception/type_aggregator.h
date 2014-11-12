@@ -61,23 +61,7 @@ private:
                         std::string& type,
                         float& amount) const;
 
-    void collect_results(tue::Configuration &entity_conf,
-                         std::map<std::string, std::map<std::string, float> >& hypothesis,
-                         std::map<std::string, std::pair<std::string, float> >& features) const;
-
-    std::string best_hypothesis(std::map<std::string, std::map<std::string, float> > hypothesis) const;
-
-    bool load_dictionary(const std::string path) ;
-
-    void match_dictonary(std::map<std::string, std::map<std::string, float> >& hypothesis,
-                           std::map<std::string, std::pair<std::string, float> >& features,
-                           std::string& type, float &certainty) const;
-
-    void match_dictonary2(std::map<std::string, std::map<std::string, float> >& hypothesis,
-                          std::map<std::string, std::pair<std::string, float> >& features,
-                          std::map<std::string, float>& type_hysto,
-                          std::string& type,
-                          float& ammount) const;
+    bool load_dictionary(const std::string path);
 };
 
 #endif
