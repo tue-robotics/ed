@@ -8,6 +8,8 @@
 
 #include <ed/models/entity.h>
 
+#include <tue/config/data.h>
+
 namespace ed
 {
 
@@ -54,8 +56,11 @@ public:
     inline const geo::Pose3D& velocity() const { return velocity_; }
     inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }
 
-    inline void setConfig(const tue::Configuration& config) { config_ = config; }
-    inline tue::Configuration getConfig() const { return config_.limitScope(); }
+//    inline void setConfig(const tue::Configuration& config) { config_ = config; }
+//    inline tue::Configuration getConfig() const { return config_.limitScope(); }
+
+    inline const tue::config::DataConstPtr& data() const { return config_; }
+    inline void setData(const tue::config::DataConstPtr& data) { config_ = data; }
 
     //! For debugging purposes
     bool in_frustrum;
@@ -87,7 +92,7 @@ private:
 
     double creation_time_;
 
-    tue::Configuration config_;   
+    tue::config::DataConstPtr config_;
 
 };
 

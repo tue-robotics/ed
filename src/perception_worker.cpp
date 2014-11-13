@@ -52,12 +52,14 @@ void PerceptionWorker::stop()
 
 void PerceptionWorker::run()
 {
-    // Clear reset from possible previous time
-    result_ = tue::Configuration();
+    // Reset from possible previous time
+    result_.reset(new tue::config::Data);
+
+    tue::Configuration rw(result_);
 
     // Do the actual processing
     for(std::vector<PerceptionModuleConstPtr>::const_iterator it = modules_.begin(); it != modules_.end(); ++it)
-        (*it)->process(entity_, result_);
+        (*it)->process(entity_, rw);
 
     // Set state to DONE
     state_ = DONE;

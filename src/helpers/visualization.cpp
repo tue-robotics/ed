@@ -12,6 +12,8 @@
 
 #include <stdlib.h>
 
+#include <tue/config/reader.h>
+
 namespace ed
 {
 
@@ -584,18 +586,18 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
 //                    // draw convex hull contours
 //                    cv::drawContours(color_img,contours,0,color, 1);
 
-                    tue::Configuration config = e->getConfig();
+                    tue::config::Reader config(e->data());
                     std::string type;
                     std::string info = e->id().substr(0,4);
                     float certainty = 0;
 
                     // update perception type and certainty if possible
-                    if (config.readGroup("perception_result", tue::OPTIONAL))
+                    if (config.readGroup("perception_result", tue::config::OPTIONAL))
                     {
-                        if (config.readGroup("type_aggregator", tue::OPTIONAL))
+                        if (config.readGroup("type_aggregator", tue::config::OPTIONAL))
                         {
-                            if (config.value("type", type, tue::OPTIONAL) &&
-                                config.value("certainty", certainty, tue::OPTIONAL)){
+                            if (config.value("type", type, tue::config::OPTIONAL) &&
+                                config.value("certainty", certainty, tue::config::OPTIONAL)){
                                 info.append(" " + boost::lexical_cast<std::string>((int)(certainty*100)) + "%");
                             }
                         }

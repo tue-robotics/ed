@@ -21,7 +21,7 @@ bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& enti
         e->setPose(new_e->pose);
 
     e->setShape(new_e->shape);
-    e->setConfig(new_e->config);
+    e->setData(new_e->config);
 
     entities.push_back(e);
 

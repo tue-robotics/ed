@@ -15,25 +15,27 @@
 // Visualization
 #include <opencv2/highgui/highgui.hpp>
 
+#include <tue/config/reader.h>
+
 namespace ed
 {
 
 // ----------------------------------------------------------------------------------------------------
 
-EntityPtr updateEntityType(const EntityConstPtr& e, tue::Configuration perception_result)
+EntityPtr updateEntityType(const EntityConstPtr& e, const tue::config::DataConstPtr& perception_result)
 {
     EntityPtr e_updated(new Entity(*e));
 
-    // TODO: tue::Configuration is NOT thread safe and NOT immutable. This may go wrong...
-    tue::Configuration params;
-    params.add(e->getConfig());
-    params.add(perception_result);
+    tue::config::DataPtr params(new tue::config::Data);
+    params->add(*e->data());
+    params->add(*perception_result);
 
+    tue::config::Reader r(params);
     std::string type;
-    if (params.value("type", type, tue::OPTIONAL))
+    if (r.value("type", type, tue::config::OPTIONAL))
         e_updated->setType(type);
 
-    e_updated->setConfig(params);
+    e_updated->setData(params);
 
     return e_updated;
 }
