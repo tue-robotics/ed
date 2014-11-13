@@ -53,7 +53,7 @@ void PerceptionWorker::stop()
 void PerceptionWorker::run()
 {
     // Reset from possible previous time
-    result_.reset(new tue::config::Data);
+    result_.reset();
 
     tue::Configuration rw(result_);
 

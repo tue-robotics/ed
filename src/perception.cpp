@@ -22,13 +22,13 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-EntityPtr updateEntityType(const EntityConstPtr& e, const tue::config::DataConstPtr& perception_result)
+EntityPtr updateEntityType(const EntityConstPtr& e, const tue::config::DataConstPointer& perception_result)
 {
     EntityPtr e_updated(new Entity(*e));
 
-    tue::config::DataPtr params(new tue::config::Data);
-    params->add(*e->data());
-    params->add(*perception_result);
+    tue::config::DataPointer params;
+    params.add(e->data());
+    params.add(perception_result);
 
     tue::config::Reader r(params);
     std::string type;
@@ -203,7 +203,8 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
             else if (worker->isDone())
             {
                 // Update the entity with the results from the worker
-                it->second = updateEntityType(e, worker->getResult());
+                if (worker->getResult().valid())
+                    it->second = updateEntityType(e, worker->getResult());
 
                 // Set worker to idle. This way, the result is not checked again on the next iteration
                 worker->setIdle();
