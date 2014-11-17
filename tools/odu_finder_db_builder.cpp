@@ -24,9 +24,6 @@
 
 #include <tue/config/configuration.h>
 
-//#include <boost/filesystem.hpp>
-//using boost::filesystem;
-
 // TYPE DEFS
 typedef Eigen::Matrix<float, 1, 128> Feature;
 typedef std::vector<Feature, Eigen::aligned_allocator<Feature> > FeatureVector;
