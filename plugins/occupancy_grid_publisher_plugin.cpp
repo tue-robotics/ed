@@ -10,6 +10,8 @@
 #include <ed/entity.h>
 #include <ed/measurement.h>
 
+#include <tue/config/reader.h>
+
 // ----------------------------------------------------------------------------------------------------
 
 void OccupancyGridPublisherPlugin::configure(tue::Configuration config)
@@ -81,7 +83,7 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
         if (specifier_ != "")
         {
             double val;
-            if (!e->getConfig().value(specifier_, val, tue::OPTIONAL) || !val)
+            if (!tue::config::Reader(e->data()).value(specifier_, val, tue::config::OPTIONAL) || !val)
                 continue;
         }
 
@@ -136,7 +138,7 @@ void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Ma
 
     //! Check object persistence time
     double persistence_time;
-    if (e->getConfig().value("object_persistence", persistence_time, tue::OPTIONAL) && e->lastMeasurement())
+    if (tue::config::Reader(e->data()).value("object_persistence", persistence_time, tue::config::OPTIONAL) && e->lastMeasurement())
     {
         std::cout << e->id() << std::endl;
         if ((ros::Time::now().toSec() - e->lastMeasurement()->timestamp()) > persistence_time)
