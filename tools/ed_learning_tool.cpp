@@ -1,5 +1,4 @@
 #include <ed/perception_modules/perception_module.h>
-//#include <ed/perception/aggregator.h>
 
 #include <ed/entity.h>
 
@@ -22,6 +21,16 @@
 // Show measurement
 #include <opencv2/highgui/highgui.hpp>
 
+#include "odu_finder_learner.cpp"
+
+// RGBD
+#include <rgbd/Image.h>
+#include <rgbd/View.h>
+
+// file writting
+#include <fstream>
+#include <string>
+#include <iostream>
 
 std::string kModuleName;
 
@@ -48,14 +57,23 @@ void showMeasurement(const ed::Measurement& msr)
 // ----------------------------------------------------------------------------------------------------
 
 void config_to_file(tue::Configuration& config, const std::string &model_name, const std::string &save_directory){
-    std::cout << "[" << kModuleName << "] " << "Saving config for '" << model_name << "'" << std::endl;
-    std::cout << "[" << kModuleName << "] \n" << config << std::endl;
+    std::string filename = save_directory + "/" + model_name + ".yaml";
+
+    std::cout << "[" << kModuleName << "] " << "Saving config for '" << model_name << "' at " << filename << std::endl;
+//    std::cout << "[" << kModuleName << "] \n" << config << std::endl;
+
+    std::ofstream out(filename.c_str(), std::ofstream::out);
+    if (out.is_open()){
+        out << config.toYAMLString();
+        out.close();
+    }else
+        std::cout << "[" << kModuleName << "]" << "Could not create file" << std::endl;
 }
 
 
 // ----------------------------------------------------------------------------------------------------
 
-void parse_config (tue::Configuration& config, const std::string &module_name, const std::string &model_name, tue::Configuration& final_config){
+void parse_config(tue::Configuration& config, const std::string &module_name, const std::string &model_name, tue::Configuration& final_config){
 
     // --------------- PARSE INFORMATION ---------------
 
@@ -147,6 +165,79 @@ void parse_config (tue::Configuration& config, const std::string &module_name, c
     final_config.endGroup(); // close model group
 }
 
+// ----------------------------------------------------------------------------------------------------
+
+void optimizeContourBlur(const cv::Mat& mask_orig, cv::Mat& mask_optimized){
+
+    mask_orig.copyTo(mask_optimized);
+
+    // blur the contour, also expands it a bit
+    for (uint i = 6; i < 18; i = i + 2){
+        cv::blur(mask_optimized, mask_optimized, cv::Size( i, i ), cv::Point(-1,-1) );
+    }
+
+    cv::threshold(mask_optimized, mask_optimized, 50, 255, CV_THRESH_BINARY);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+
+void imageToOduFinder(ed::EntityPtr& entity, OduFinderLearner& odu_learner){
+    // ---------- PREPARE MEASUREMENT ----------
+
+    // Get the best measurement from the entity
+    ed::MeasurementConstPtr msr = entity->bestMeasurement();
+    if (!msr)
+        return;
+
+    uint min_x, max_x, min_y, max_y;
+
+    // create a view
+    rgbd::View view(*msr->image(), msr->image()->getRGBImage().cols);
+
+    // get color image
+    const cv::Mat& color_image = msr->image()->getRGBImage();
+
+    // crop it to match the view
+    cv::Mat cropped_image(color_image(cv::Rect(0,0,view.getWidth(), view.getHeight())));
+
+    // initialize bounding box points
+    max_x = 0;
+    max_y = 0;
+    min_x = view.getWidth();
+    min_y = view.getHeight();
+
+    // initialize mask
+    cv::Mat mask = cv::Mat::zeros(view.getHeight(), view.getWidth(), CV_8UC1);
+    // Iterate over all points in the mask
+    for(ed::ImageMask::const_iterator it = msr->imageMask().begin(view.getWidth()); it != msr->imageMask().end(); ++it)
+    {
+        // mask's (x, y) coordinate in the depth image
+        const cv::Point2i& p_2d = *it;
+
+        // paint a mask
+        mask.at<unsigned char>(*it) = 255;
+
+        // update the boundary coordinates
+        if (min_x > p_2d.x) min_x = p_2d.x;
+        if (max_x < p_2d.x) max_x = p_2d.x;
+        if (min_y > p_2d.y) min_y = p_2d.y;
+        if (max_y < p_2d.y) max_y = p_2d.y;
+    }
+
+    optimizeContourBlur(mask, mask);
+
+    // ---------- PROCESS MEASUREMENT ----------
+
+    // Calculate img color prob
+    cv::Mat roi (cropped_image(cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y)));
+    cv::Mat roi_mask (mask(cv::Rect(min_x, min_y, max_x - min_x, max_y - min_y)));
+
+//    cv::imwrite("/tmp/learner/" + entity->id() + "_learner.png", roi);
+
+    odu_learner.learnImage(entity->id(), roi);
+}
+
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -154,9 +245,6 @@ int main(int argc, char **argv) {
 
     std::string measurement_dir;
     std::string output_dir;
-    std::vector<std::string> perception_libs;
-
-    kModuleName = "ed_learning_tool";
 
     if (argc < 3 || argc > 3)
     {
@@ -168,12 +256,16 @@ int main(int argc, char **argv) {
         output_dir = argv[2];
     }
 
+    std::vector<std::string> perception_libs;
+    kModuleName = "ed_learning_tool";
+
+    // used plugins
+    OduFinderLearner odu_learner = OduFinderLearner();
     perception_libs.push_back("/home/luisf/ros/hydro/dev/devel/lib/libsize_matcher.so");
     perception_libs.push_back("/home/luisf/ros/hydro/dev/devel/lib/libcolor_matcher.so");
-    // TODO: create class of the odu_db_builder
 
 
-    // ---------------- LOAD PERCEPTION LIBRARIES --------------tue::Configuration& final_config--
+    // ---------------- LOAD PERCEPTION LIBRARIES ----------------
 
     std::vector<ed::PerceptionModulePtr> modules;
 
@@ -232,20 +324,18 @@ int main(int argc, char **argv) {
 
         // if the model name changes, save the learned information
         if (last_model.compare(model_name) != 0){
-            config_to_file(parsed_conf, model_name, output_dir);
+            config_to_file(parsed_conf, last_model, output_dir);
             // reset config for new model
             parsed_conf = tue::Configuration();
             last_model = model_name;
         }
-
-        //showMeasurement(*msr);
 
         ed::EntityPtr e(new ed::Entity(model_name + "-entity", "", 5, 0));
         e->addMeasurement(msr);
 
         std::cout << "[" << kModuleName << "] " << "Entity '" << model_name << "' on " << filename.withoutExtension() << std::endl;
 
-        // execute all perception libraries on the entity
+        // ---------------- PROCESS MEASUREMENTS WITH LIBRARIES----------------
         for(std::vector<ed::PerceptionModulePtr>::iterator it_mod = modules.begin(); it_mod != modules.end(); ++it_mod)
         {
             tue::Configuration entity_conf;
@@ -253,8 +343,12 @@ int main(int argc, char **argv) {
             parse_config(entity_conf, (*it_mod)->name(), model_name, parsed_conf);
         }
 
+        // send the object image to OduFinder
+        imageToOduFinder(e, odu_learner);
+
         ++n_measurements;
 
+        //showMeasurement(*msr);
         //cv::waitKey();
     }
 
@@ -263,6 +357,7 @@ int main(int argc, char **argv) {
         std::cout << "No measurements found." << std::endl;
     else{
         config_to_file(parsed_conf, model_name, output_dir);
+        odu_learner.build_database(output_dir);
     }
 
 
