@@ -47,7 +47,7 @@ public:
 
     double timestamp() const;
 
-    inline tue::Configuration getResult() const { return result_; }
+    inline tue::config::DataConstPointer getResult() const { return result_; }
 
     double t_last_processing;
 
@@ -61,7 +61,7 @@ protected:
 
     std::vector<PerceptionModuleConstPtr> modules_;
 
-    tue::Configuration result_;
+    tue::config::DataPointer result_;
 
     void run();
 
