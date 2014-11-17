@@ -200,6 +200,11 @@ add_library(color_matcher
 )
 target_link_libraries(color_matcher ed_perception)
 
+add_library(odu_finder_learner
+    tools/odu_finder_learner.cpp
+)
+target_link_libraries(odu_finder_learner ed_perception /usr/local/lib/libsiftfast.so)
+
 #rosbuild_add_library(model_fitter
 #    perception/model_fitter.cpp
 #    perception/model_fitter.h
@@ -259,7 +264,7 @@ target_link_libraries(odu-finder-db-builder ${OpenCV_LIBRARIES} /usr/local/lib/l
 add_dependencies(odu-finder-db-builder ${PROJECT_NAME}_gencpp)
 
 add_executable(ed-learning-tool tools/ed_learning_tool.cpp)
-target_link_libraries(ed-learning-tool ed_core ed_perception ed_io ${OpenCV_LIBRARIES})
+target_link_libraries(ed-learning-tool ed_core ed_perception ed_io odu_finder_learner ${OpenCV_LIBRARIES})
 add_dependencies(ed-learning-tool ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
