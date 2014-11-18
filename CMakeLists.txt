@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   nav_msgs
   ann2
+  tue_config
 )
 
 find_package(PCL REQUIRED)
@@ -143,76 +144,6 @@ target_link_libraries(ed_visualization tue_config)
 add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
-#                                          PERCEPTION MODULES
-# ------------------------------------------------------------------------------------------------
-
-add_library(type_aggregator
-    perception/type_aggregator.cpp
-    perception/type_aggregator.h
-)
-target_link_libraries(type_aggregator ed_perception)
-
-add_library(size_matcher
-    perception/size_matcher.cpp
-    perception/size_matcher.h
-)
-target_link_libraries(size_matcher ed_perception)
-
-add_library(human_contour_matcher
-    perception/human_contour_matcher.cpp
-    perception/human_contour_matcher.h
-    perception/human_classifier.cpp
-    perception/human_classifier.h
-    perception/human_classifier_structs.h
-#    perception/opencl_toolbox.cpp
-#    perception/opencl_toolbox.h
-)
-target_link_libraries(human_contour_matcher ed_perception)
-
-add_library(face_detector
-    perception/face_detector.cpp
-    perception/face_detector.h
-)
-target_link_libraries(face_detector ed_perception)
-
-add_library(ed_odu_finder
-    perception/odu_finder/odu_finder_module.cpp
-    perception/odu_finder/odu_finder_module.h
-    perception/odu_finder/odu_finder.cpp
-    perception/odu_finder/odu_finder.h
-)
-target_link_libraries(ed_odu_finder ed_perception /usr/local/lib/libsiftfast.so)
-
-add_library(qr_detector
-    perception/qr_detector.cpp
-    perception/qr_detector.h
-    perception/qr_detector_zbar/qr_detector_zbar.cpp
-    perception/qr_detector_zbar/qr_detector_zbar.h
-)
-target_link_libraries(qr_detector ed_perception)
-target_link_libraries(qr_detector /usr/lib/libzbar.so)
-
-
-add_library(color_matcher
-    perception/color_matcher/color_matcher.cpp
-    perception/color_matcher/color_matcher.h
-    perception/color_matcher/color_name_table.cpp
-    perception/color_matcher/color_name_table.h
-)
-target_link_libraries(color_matcher ed_perception)
-
-add_library(odu_finder_learner
-    tools/odu_finder_learner.cpp
-)
-target_link_libraries(odu_finder_learner ed_perception /usr/local/lib/libsiftfast.so)
-
-#rosbuild_add_library(model_fitter
-#    perception/model_fitter.cpp
-#    perception/model_fitter.h
-#)
-#target_link_libraries(model_fitter ed)
-
-# ------------------------------------------------------------------------------------------------
 #                                               SERVER
 # ------------------------------------------------------------------------------------------------
 
@@ -245,30 +176,6 @@ add_dependencies(ed_gui_plugin ${PROJECT_NAME}_gencpp)
 #add_dependencies(ed_builder_plugin ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
-#                                                TOOLS
-# ------------------------------------------------------------------------------------------------
-
-add_executable(view-measurement tools/view_measurement.cpp)
-target_link_libraries(view-measurement ed_core ed_io ${OpenCV_LIBRARIES})
-add_dependencies(view-measurement ${PROJECT_NAME}_gencpp)
-
-add_executable(test-perception tools/test_perception.cpp)
-target_link_libraries(test-perception ed_core ed_perception ed_io ${OpenCV_LIBRARIES})
-add_dependencies(test-perception ${PROJECT_NAME}_gencpp)
-
-add_executable(create-rgbd-measurement tools/create_rgbd_measurement.cpp)
-target_link_libraries(create-rgbd-measurement ed_core ed_io ${OpenCV_LIBRARIES})
-add_dependencies(create-rgbd-measurement ${PROJECT_NAME}_gencpp)
-
-add_executable(odu-finder-db-builder tools/odu_finder_db_builder.cpp)
-target_link_libraries(odu-finder-db-builder ${OpenCV_LIBRARIES} /usr/local/lib/libsiftfast.so ${catkin_LIBRARIES})
-add_dependencies(odu-finder-db-builder ${PROJECT_NAME}_gencpp)
-
-add_executable(ed-learning-tool tools/ed_learning_tool.cpp)
-target_link_libraries(ed-learning-tool ed_core ed_perception ed_io odu_finder_learner ${OpenCV_LIBRARIES})
-add_dependencies(ed-learning-tool ${PROJECT_NAME}_gencpp)
-
-# ------------------------------------------------------------------------------------------------
 #                                                TESTS
 # ------------------------------------------------------------------------------------------------
 
@@ -280,10 +187,10 @@ add_executable(test_sampling test/test_sampling.cpp)
 target_link_libraries(test_sampling ed_core ed_visualization ${OpenCV_LIBRARIES})
 add_dependencies(test_sampling ${PROJECT_NAME}_gencpp)
 
-add_executable(test_human_classifier test/test_human_classifier.cpp)
-target_link_libraries(test_human_classifier human_contour_matcher ${OpenCV_LIBRARIES})
-target_link_libraries(test_human_classifier face_detector ${OpenCV_LIBRARIES})
-add_dependencies(test_human_classifier ${PROJECT_NAME}_gencpp)
+#add_executable(test_human_classifier test/test_human_classifier.cpp)
+#target_link_libraries(test_human_classifier human_contour_matcher ${OpenCV_LIBRARIES})
+#target_link_libraries(test_human_classifier face_detector ${OpenCV_LIBRARIES})
+#add_dependencies(test_human_classifier ${PROJECT_NAME}_gencpp)
 
 add_executable(test_service_speed test/test_service_speed.cpp)
 target_link_libraries(test_service_speed ed_core)
