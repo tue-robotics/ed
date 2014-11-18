@@ -46,21 +46,21 @@ std_msgs::ColorRGBA getColor(unsigned int id)
     float colors[8][3] = { {1,0,0} , {0,1,0} , {0,0,1} , {1,1,0} , {1,0,1} , {0,1,1} , {1,1,1} , {0,0,0} };
     unsigned int color_id = id % 8;
 
-    float red_id = (id % 100)/100.0;
-    float green_id = ((id/2) % 100)/100.0;
-    float blue_id = ((id/3) % 100)/100.0;
+    //float red_id = (id % 100)/100.0;
+    //float green_id = ((id/2) % 100)/100.0;
+    //float blue_id = ((id/3) % 100)/100.0;
 
     std_msgs::ColorRGBA c;
 
     c.a = 1.0;
 
-    c.r = red_id;
-    c.g = green_id;
-    c.b = blue_id;
+    //c.r = red_id;
+    //c.g = green_id;
+    //c.b = blue_id;
 
-//        c.r = colors[color_id][0];
-//        c.g = colors[color_id][1];
-//        c.b = colors[color_id][2];
+    c.r = colors[color_id][0];
+    c.g = colors[color_id][1];
+    c.b = colors[color_id][2];
 
     return c;
 }
