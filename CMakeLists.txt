@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   ed_object_models
   geolib2
   geometry_msgs
-  #libsiftfast
   rgbd
   pcl_conversions
   roscpp
@@ -17,11 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
   tue_config
   tue_filesystem
   tue_serialization
-  vocabulary_tree
   message_generation
   visualization_msgs
   nav_msgs
-  ann2
   tue_config
 )
 
