@@ -12,6 +12,8 @@ namespace ed
 namespace models
 {
 
+// ----------------------------------------------------------------------------------------------------
+
 bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& entities, NewEntityPtr new_parent)
 {
     EntityPtr e = EntityPtr(new Entity(new_e->id, new_e->type));
@@ -35,6 +37,8 @@ bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& enti
 
 }
 
+// ----------------------------------------------------------------------------------------------------
+
 Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size, double creation_time) :
     id_(id),
     type_(type),
@@ -50,10 +54,14 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
     convex_hull_.center_point = geo::Vector3(0,0,0);
 }
 
+// ----------------------------------------------------------------------------------------------------
+
 Entity::~Entity()
 {
 //    std::cout << "Removing entity with ID: " << id_ << std::endl;
 }
+
+// ----------------------------------------------------------------------------------------------------
 
 void Entity::setShape(const geo::ShapeConstPtr& shape)
 {
@@ -61,8 +69,41 @@ void Entity::setShape(const geo::ShapeConstPtr& shape)
     {
         ++shape_revision_;
         shape_ = shape;
+
+        // ----- Calculate convex hull -----
+
+        geo::Vector3 p_total(0, 0, 0);
+
+        const std::vector<geo::Vector3>& vertices = shape->getMesh().getPoints();
+
+        cv::Mat_<cv::Vec2f> pointMat(1, vertices.size());
+        pcl::PointCloud<pcl::PointXYZ> point_cloud;
+        point_cloud.resize(vertices.size());
+
+        for(unsigned int i = 0; i < vertices.size(); ++i)
+        {
+            geo::Vector3 p_MAP = pose_ * vertices[i];
+            convex_hull_.min_z = std::min(convex_hull_.min_z, p_MAP.z);
+            convex_hull_.max_z = std::max(convex_hull_.max_z, p_MAP.z);
+
+            pointMat(0, i) = cv::Vec2f(p_MAP.x, p_MAP.y);
+            point_cloud.points[i] = pcl::PointXYZ(p_MAP.x, p_MAP.y, p_MAP.z);
+
+            p_total += p_MAP;
+        }
+
+        std::vector<int> chull_mask_indices;
+        cv::convexHull(pointMat, chull_mask_indices);
+
+        convex_hull_.chull.resize(chull_mask_indices.size());
+        for(unsigned int i = 0; i < chull_mask_indices.size(); ++i)
+            convex_hull_.chull[i] = point_cloud.points[chull_mask_indices[i]];
+
+        convex_hull_.center_point = p_total / vertices.size();
     }
 }
+
+// ----------------------------------------------------------------------------------------------------
 
 void Entity::addMeasurement(MeasurementConstPtr measurement)
 {
@@ -85,6 +126,8 @@ void Entity::addMeasurement(MeasurementConstPtr measurement)
     updateEntityState(measurement);
 }
 
+// ----------------------------------------------------------------------------------------------------
+
 void Entity::updateEntityState(MeasurementConstPtr m)
 {
     // Update the chull
@@ -97,6 +140,8 @@ void Entity::updateEntityState(MeasurementConstPtr m)
     // Calculate velocity
     calculateVelocity();
 }
+
+// ----------------------------------------------------------------------------------------------------
 
 void Entity::calculateVelocity()
 {
@@ -156,6 +201,8 @@ MeasurementConstPtr Entity::lastMeasurement() const
 
     return measurements_.front();
 }
+
+// ----------------------------------------------------------------------------------------------------
 
 UUID Entity::generateID() {
     static const char alphanum[] =
