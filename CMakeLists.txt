@@ -137,7 +137,7 @@ add_dependencies(ed_kinect ${PROJECT_NAME}_gencpp)
 add_library(ed_visualization
     src/helpers/visualization.cpp
 )
-target_link_libraries(ed_visualization tue_config)
+target_link_libraries(ed_visualization ${catkin_LIBRARIES})
 add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
