@@ -59,7 +59,6 @@ private:
     //! Plugins
     std::vector<std::string> plugin_paths_;
     std::vector<PluginContainerPtr> plugin_containers_;
-    std::vector<class_loader::ClassLoader*> plugin_loaders_;
 
     //! Profiling
     tue::ProfilePublisher pub_profile_;

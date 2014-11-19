@@ -184,61 +184,18 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
         return PluginContainerPtr();
     }
 
-    PluginContainerPtr container;
+    // Create a plugin container
+    PluginContainerPtr container(new PluginContainer());
 
-    // Load the library
-    class_loader::ClassLoader* class_loader = new class_loader::ClassLoader(full_lib_file);
-    plugin_loaders_.push_back(class_loader);
+    // Load the plugin
+    if (!container->loadPlugin(plugin_name, full_lib_file, config))
+        return PluginContainerPtr();
 
-    // Create plugin
-    class_loader->loadLibrary();
-    std::vector<std::string> classes = class_loader->getAvailableClasses<ed::Plugin>();
+    // Add the plugin container
+    plugin_containers_.push_back(container);
 
-    if (classes.empty())
-    {
-        config.addError("Could not find any plugins in '" + class_loader->getLibraryPath() + "'.");
-    } else if (classes.size() > 1)
-    {
-        config.addError("Multiple plugins registered in '" + class_loader->getLibraryPath() + "'.");
-    } else
-    {
-        PluginPtr plugin = class_loader->createInstance<Plugin>(classes.front());
-        if (plugin)
-        {
-            double freq = 10; // default
-
-            if (config.readGroup("parameters"))
-            {
-                // Configure plugin
-                plugin->configure(config.limitScope());
-
-                // Read optional frequency
-                config.value("frequency", freq, tue::OPTIONAL);
-
-                config.endGroup();
-            }
-
-            // If there was an error during configuration, do not start plugin
-            if (config.hasError())
-                return container;
-
-            // Initialize the plugin
-            plugin->initialize();
-
-            // Create a plugin container
-            container = PluginContainerPtr(new PluginContainer());
-            container->setPlugin(plugin, plugin_name);
-
-            // Set plugin loop frequency
-            container->setLoopFrequency(freq);
-
-            // Add the plugin container
-            plugin_containers_.push_back(container);
-
-            // Start the plugin
-            container->runThreaded();
-        }
-    }
+    // Start the plugin
+    container->runThreaded();
 
     return container;
 }

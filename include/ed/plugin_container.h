@@ -5,10 +5,13 @@
 #include "ed/update_request.h"
 
 #include <tue/profiling/timer.h>
+#include <tue/config/configuration.h>
 
 #include <boost/thread.hpp>
 
 #include <queue>
+
+namespace class_loader { class ClassLoader; }
 
 namespace ed
 {
@@ -22,7 +25,7 @@ public:
 
     virtual ~PluginContainer();
 
-    void setPlugin(PluginPtr plugin, const std::string& name);
+    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, tue::Configuration config);
 
     PluginPtr plugin() const { return plugin_; }
 
@@ -53,6 +56,8 @@ public:
     void setLoopFrequency(double freq) { loop_frequency_ = freq; }
 
 protected:
+
+    class_loader::ClassLoader*  class_loader_;
 
     PluginPtr plugin_;
 
