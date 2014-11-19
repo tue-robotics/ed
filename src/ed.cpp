@@ -139,35 +139,24 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 
 bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response& res)
 {
-    std::string error;
-    ed::PluginContainerPtr container = ed_wm->loadPlugin(req.plugin_name, req.library_path, error);
-    if (!container)
+    tue::Configuration cfg;
+    if (!req.configuration.empty())
     {
-        res.error_msg = error;
-    }
-    else
-    {
-        if (!req.configuration.empty())
+        cfg.writeGroup("parameters");
+
+        if (!tue::config::loadFromYAMLString(req.configuration, cfg))
         {
-            tue::Configuration cfg;
-            if (tue::config::loadFromYAMLString(req.configuration, cfg))
-            {
-                container->plugin()->configure(cfg);
-
-                double loop_frequency;
-                if (cfg.value("loop_frequency", loop_frequency, tue::OPTIONAL))
-                {
-                    container->setLoopFrequency(loop_frequency);
-                }
-            }
-
-            if (cfg.hasError())
-                res.error_msg = cfg.error();
+            res.error_msg = cfg.error();
+            return true;
         }
 
-        container->plugin()->initialize();
-        container->runThreaded();
+        cfg.endGroup();
     }
+
+    ed_wm->loadPlugin(req.plugin_name, req.library_path, cfg);
+
+    if (cfg.hasError())
+        res.error_msg = cfg.error();
 
     return true;
 }

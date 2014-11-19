@@ -114,29 +114,8 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
             if (!config.value("lib", lib))
                 continue;
 
-            double freq = 10; // default
+            loadPlugin(name, lib, config);
 
-            std::string error;
-            PluginContainerPtr container = loadPlugin(name, lib, error);
-            if (container)
-            {
-                // Configure the module if there is a 'parameters' group in the config
-                if (config.readGroup("parameters"))
-                {
-                    config.value("frequency", freq, tue::OPTIONAL);
-
-                    container->plugin()->configure(config.limitScope());
-                    config.endGroup();
-                }
-
-                container->plugin()->initialize();
-                container->setLoopFrequency(freq);
-                container->runThreaded();
-            }
-            else
-            {
-                config.addError(error);
-            }
         } // end iterate plugins
 
         config.endArray();
@@ -148,7 +127,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
 
-    std::string world_name;
     if (config.value("world_name", world_name_))
         initializeWorld();
     else
@@ -178,11 +156,13 @@ void Server::reset()
 
 // ----------------------------------------------------------------------------------------------------
 
-PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, std::string& error)
-{
+PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, tue::Configuration config)
+{    
+    config.setErrorContext("While loading plugin '" + plugin_name + "': ");
+
     if (lib_file.empty())
     {
-        error += "Empty library file given.";
+        config.addError("Empty library file given.");
         return PluginContainerPtr();
     }
 
@@ -193,14 +173,14 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
         full_lib_file = getFullLibraryPath(lib_file);
         if (full_lib_file.empty())
         {
-            error += "Could not find plugin '" + lib_file + "'.";
+            config.addError("Could not find plugin '" + lib_file + "'.");
             return PluginContainerPtr();
         }
     }
 
     if (!tue::filesystem::Path(full_lib_file).exists())
     {
-        error += "Could not find plugin '" + full_lib_file + "'.";
+        config.addError("Could not find plugin '" + full_lib_file + "'.");
         return PluginContainerPtr();
     }
 
@@ -216,18 +196,47 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
 
     if (classes.empty())
     {
-        error += "Could not find any plugins in '" + class_loader->getLibraryPath() + "'.";
+        config.addError("Could not find any plugins in '" + class_loader->getLibraryPath() + "'.");
     } else if (classes.size() > 1)
     {
-        error += "Multiple plugins registered in '" + class_loader->getLibraryPath() + "'.";
+        config.addError("Multiple plugins registered in '" + class_loader->getLibraryPath() + "'.");
     } else
     {
         PluginPtr plugin = class_loader->createInstance<Plugin>(classes.front());
         if (plugin)
         {
+            double freq = 10; // default
+
+            if (config.readGroup("parameters"))
+            {
+                // Configure plugin
+                plugin->configure(config.limitScope());
+
+                // Read optional frequency
+                config.value("frequency", freq, tue::OPTIONAL);
+
+                config.endGroup();
+            }
+
+            // If there was an error during configuration, do not start plugin
+            if (config.hasError())
+                return container;
+
+            // Initialize the plugin
+            plugin->initialize();
+
+            // Create a plugin container
             container = PluginContainerPtr(new PluginContainer());
             container->setPlugin(plugin, plugin_name);
+
+            // Set plugin loop frequency
+            container->setLoopFrequency(freq);
+
+            // Add the plugin container
             plugin_containers_.push_back(container);
+
+            // Start the plugin
+            container->runThreaded();
         }
     }
 
