@@ -25,7 +25,11 @@ public:
 
     const_iterator end() const { return entities_.end(); }
 
+    void setEntity(const UUID& id, const EntityConstPtr& e) { entities_[id] = e; }
+
     void setEntities(const std::map<UUID, EntityConstPtr>& entities) { entities_ = entities; }
+
+    void removeEntity(const UUID& id) { entities_.erase(id); }
 
     EntityConstPtr getEntity(const ed::UUID& id) const
     {
@@ -37,6 +41,8 @@ public:
     }
 
     size_t numEntities() const { return entities_.size(); }
+
+    void update(const UpdateRequest& req);
 
 private:
 

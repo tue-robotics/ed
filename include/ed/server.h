@@ -31,13 +31,13 @@ public:
 
     void update();
 
-    void update(const UpdateRequest& update_req);
-
     void storeEntityMeasurements(const std::string& path) const;
 
-    int size() const { return entities_.size(); }
+//    int size() const { return entities_.size(); }
 
-    const std::map<UUID, EntityConstPtr>& entities() const { return entities_; }
+//    const std::map<UUID, EntityConstPtr>& entities() const { return entities_; }
+
+    WorldModelConstPtr world_model() const { return world_model_; }
 
     void addPluginPath(const std::string& path) { plugin_paths_.push_back(path); }
 
@@ -46,8 +46,14 @@ public:
     void stepPlugins();
 
 private:
+
+    // World model datastructure
+    WorldModelConstPtr world_model_;
+
     //! World name
     std::string world_name_;
+
+    void initializeWorld();
 
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;
@@ -68,12 +74,8 @@ private:
     ros::Publisher vis_pub_;
     bool visualize_;
 
-    //! Entities
-    std::map<UUID, EntityConstPtr> entities_;
-    void initializeWorld();
-
     //! Merge the entities!
-    void mergeEntities(double not_updated_time, double overlap_fraction);
+    void mergeEntities(const WorldModelPtr& world_model, double not_updated_time, double overlap_fraction);
 
     std::string getFullLibraryPath(const std::string& lib);
 };

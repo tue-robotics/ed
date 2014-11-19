@@ -2,6 +2,7 @@
 #include "ed/mask.h"
 #include "ed/entity.h"
 #include "ed/measurement.h"
+#include "ed/world_model.h"
 
 #include <rgbd/Image.h>
 #include <rgbd/View.h>
@@ -247,14 +248,14 @@ void getConvexHullVisualizationMarker(visualization_msgs::Marker& m, const Conve
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void publishWorldModelVisualizationMarkerArray(std::map<UUID, EntityConstPtr>& entities, const ros::Publisher& pub)
+void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, const ros::Publisher& pub)
 {
 //    std::cout << "Entities in world model: " << entities.size() << std::endl;
 
     visualization_msgs::MarkerArray m_array;
 
     unsigned int i = 0;
-    for ( std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it )
+    for (WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it )
     {
         const EntityConstPtr& e = it->second;
 
@@ -543,10 +544,10 @@ void showMeasurement(MeasurementConstPtr measurement, const std::string& id)
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::ImageConstPtr rgbd_image)
+void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_image)
 {
     cv::Mat color_img = rgbd_image->getRGBImage().clone() * 0.2;
-    for (std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    for (WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
     {
         const EntityConstPtr& e = it->second;
 

@@ -7,6 +7,8 @@
 
 #include "ed/measurement.h"
 #include "ed/entity.h"
+#include "ed/world_model.h"
+#include "ed/update_request.h"
 
 #include "ed/helpers/depth_data_processing.h"
 #include "ed/helpers/visualization.h"
@@ -24,7 +26,7 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-void addNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, std::map<UUID, EntityConstPtr>& entities)
+EntityPtr createNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask)
 {
     // Create the measurement
     MeasurementConstPtr m(new Measurement(rgbd_data, mask));
@@ -35,13 +37,12 @@ void addNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, std:
     // Add the measurement to the entity
     e->addMeasurement(m);
 
-    // Add entity to ed
-    entities[e->id()] = e;
+    return e;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void filterPointsBehindWorldModel(const std::map<UUID, EntityConstPtr>& entities, const geo::Pose3D& sensor_pose, rgbd::ImagePtr rgbd_image, const ros::Publisher& pub)
+void filterPointsBehindWorldModel(const WorldModelConstPtr& world_model, const geo::Pose3D& sensor_pose, rgbd::ImagePtr rgbd_image, const ros::Publisher& pub)
 {
     rgbd::View view(*rgbd_image, 160);
 
@@ -54,7 +55,7 @@ void filterPointsBehindWorldModel(const std::map<UUID, EntityConstPtr>& entities
     geo::TriangleMap triangle_map;  // TODO: GET RID OF THIS
     geo::DefaultRenderResult res(wm_depth_image, 0, pointer_map, triangle_map);
 
-    for(std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
         const EntityConstPtr& e = it->second;
 
@@ -180,7 +181,7 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
     config.value("visualize", visualize_);
 }
 
-void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
+void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
 {
 
     tue::ScopedTimer timer_total(profiler_, "total");
@@ -218,7 +219,7 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
     //! 2) Preprocess image: remove all data points that are behind world model entities
     {
         tue::ScopedTimer t(profiler_, "2) filter points behind wm");
-        filterPointsBehindWorldModel(entities, sensor_pose, rgbd_image, vis_marker_pub_);
+        filterPointsBehindWorldModel(world_model, sensor_pose, rgbd_image, vis_marker_pub_);
     }
 
     // Construct RGBD Data
@@ -252,12 +253,33 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
     {
         tue::ScopedTimer t(profiler_, "6) association and localisation");
 
+        ALMResult alm_result;
+
         for (std::map<std::string, RGBDALModulePtr>::const_iterator it = al_modules_.begin(); it != al_modules_.end(); ++it) {
             if (pc_mask->empty())
                 break;
             profiler_.startTimer(it->second->getType());
-            it->second->process(rgbd_data, pc_mask, entities);
+            it->second->process(rgbd_data, pc_mask, world_model, alm_result);
             profiler_.stopTimer();
+        }
+
+
+        // Process ALM result
+        for(std::map<UUID, std::vector<MeasurementConstPtr> >::const_iterator it = alm_result.associations.begin();
+            it != alm_result.associations.end(); ++it)
+        {
+            // Make a copy of the entity such that we can add the associated measurements
+            EntityPtr e_updated(new Entity(*world_model->getEntity(it->first)));
+
+            const std::vector<MeasurementConstPtr>& measurements = it->second;
+            for(std::vector<MeasurementConstPtr>::const_iterator it_m = measurements.begin(); it_m != measurements.end(); ++it_m)
+            {
+                // Add measurement to entity
+                e_updated->addMeasurement(*it_m);
+            }
+
+            // Add updated entity to the map
+            req.setEntity(e_updated);
         }
     }
 
@@ -280,7 +302,7 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
         //! 8) Add the segments as new entities
         for (std::vector<PointCloudMaskPtr>::const_iterator it = segments.begin(); it != segments.end(); ++it)
         {
-            addNewEntity(rgbd_data, *it, entities);
+            req.setEntity(createNewEntity(rgbd_data, *it));
         }
 
         profiler_.stopTimer();
@@ -291,7 +313,7 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
         tue::ScopedTimer t(profiler_, "8) clearing");
 
         std::vector<UUID> entities_in_view_not_associated;
-        for (std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+        for (WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
         {
             const EntityConstPtr& e = it->second;
 
@@ -311,13 +333,15 @@ void Kinect::update(std::map<UUID, EntityConstPtr>& entities)
         }
 
         for (std::vector<UUID>::const_iterator it = entities_in_view_not_associated.begin(); it != entities_in_view_not_associated.end(); ++it)
-            entities.erase(*it);
+            req.removeEntity(*it);
     }
 
     //! 8) Visualization
     if (visualize_)
     {
-        helpers::visualization::showMeasurements(entities, rgbd_data.image);
+        WorldModel wm_new(*world_model);
+        wm_new.update(req);
+        helpers::visualization::showMeasurements(wm_new, rgbd_data.image);
     }
 
     pub_profile_.publish();

@@ -54,7 +54,8 @@ void PointNormalALM::configure(tue::Configuration config)
 
 void PointNormalALM::process(const RGBDData& sensor_data,
                              PointCloudMaskPtr& not_associated_mask,
-                             std::map<UUID, EntityConstPtr>& entities)
+                             const WorldModelConstPtr& world_model,
+                             ALMResult& result)
 {
 
     //! 1) Get the world model point cloud
@@ -72,7 +73,7 @@ void PointNormalALM::process(const RGBDData& sensor_data,
         WorldModelRenderer wmr;
         cv::Mat wm_depth_img = cv::Mat::zeros(sensor_view.getHeight(), sensor_view.getWidth(), CV_32F);
         pcl::PointCloud<pcl::PointXYZ>::Ptr world_model_pcl(new pcl::PointCloud<pcl::PointXYZ>);
-        wmr.render(sensor_data.sensor_pose, entities, render_max_range_, sensor_view, wm_depth_img, *world_model_pcl, world_model_pc_entity_ptrs);
+        wmr.render(sensor_data.sensor_pose, world_model, render_max_range_, sensor_view, wm_depth_img, *world_model_pcl, world_model_pc_entity_ptrs);
 
         profiler_.stopTimer();
 

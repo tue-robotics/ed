@@ -20,7 +20,7 @@ namespace helpers
 namespace visualization
 {
 
-void publishWorldModelVisualizationMarkerArray(std::map<UUID, EntityConstPtr>& entities, const ros::Publisher& pub);
+void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, const ros::Publisher& pub);
 
 void publishPclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns);
 
@@ -41,7 +41,7 @@ void publishRGBDViewFrustrumVisualizationMarker(const rgbd::View& view, const ge
 
 
 
-void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::ImageConstPtr rgbd_image);
+void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_image);
 
 void showMeasurement(MeasurementConstPtr measurement, const std::string& id);
 

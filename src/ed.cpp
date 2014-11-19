@@ -6,6 +6,7 @@
 #include <ed/entity.h>
 #include <ed/SimpleQuery.h>
 #include <geolib/ros/msg_conversions.h>
+#include <ed/world_model.h>
 
 // Publish TF
 #include <tf/transform_broadcaster.h>
@@ -85,9 +86,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
     geo::Vector3 center_point;
     geo::convert(req.center_point, center_point);
 
-    const std::map<ed::UUID, ed::EntityConstPtr>& entities = ed_wm->entities();
-
-    for(std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
     {
 //        std::cout << it->first << std::endl;
 
@@ -165,9 +164,7 @@ bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response&
 
 void publishTFs(tf::TransformBroadcaster& tf_broadcaster)
 {
-    const std::map<ed::UUID, ed::EntityConstPtr>& entities = ed_wm->entities();
-
-    for(std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
     {
         const ed::EntityConstPtr& e = it->second;
 

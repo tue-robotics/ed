@@ -45,7 +45,8 @@ public:
 
     void process(const RGBDData& rgbd_data,
                  PointCloudMaskPtr& not_associated_mask,
-                 std::map<UUID, EntityConstPtr>& entities);
+                 const WorldModelConstPtr& world_model,
+                 ALMResult& result);
 
     void configure(tue::Configuration config);
 

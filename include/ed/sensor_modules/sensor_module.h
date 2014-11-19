@@ -25,7 +25,7 @@ public:
 
     virtual void configure(tue::Configuration config, bool reconfigure = false) = 0;
 
-    virtual void update(std::map<UUID, EntityConstPtr>& entities) = 0;
+    virtual void update(const WorldModelConstPtr& world_model, UpdateRequest& req) = 0;
 
 protected:
     UUID source_, frame_;

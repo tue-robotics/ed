@@ -4,6 +4,7 @@
 #include "ed/helpers/depth_data_processing.h"
 
 #include "ed/entity.h"
+#include "ed/world_model.h"
 #include "ed/measurement.h"
 
 #include <rgbd/Image.h>
@@ -36,7 +37,8 @@ void PolygonHeightALM::configure(tue::Configuration config)
 
 void PolygonHeightALM::process(const RGBDData& rgbd_data,
                                PointCloudMaskPtr& not_associated_mask,
-                               std::map<UUID, EntityConstPtr>& entities)
+                               const WorldModelConstPtr& world_model,
+                               ALMResult& result)
 {
     // First find the clusters
     profiler_.startTimer("find_euclidean_clusters");
@@ -64,7 +66,7 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
         bool associated = false;
         UUID associated_id = "";
 
-        for(std::map<UUID, EntityConstPtr>::const_iterator e_it = entities.begin(); e_it != entities.end(); ++e_it)
+        for(WorldModel::const_iterator e_it = world_model->begin(); e_it != world_model->end(); ++it)
         {
             const EntityConstPtr& e = e_it->second;
             if (e->shape())
@@ -105,14 +107,7 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
         // Create the measurement (For now based on one found convex hull, other info gets rejected)
         MeasurementPtr m(new Measurement(rgbd_data, pcl_mask, polygon));
 
-        // Make a copy of the entity such that we can add the associated measurement
-        EntityPtr e_updated(new Entity(*entities[it->first]));
-
-        // Add measurement to entity
-        e_updated->addMeasurement(m);
-
-        // Add updated entity to the map
-        entities[it->first] = e_updated;
+        result.addAssociation(it->first, m);
     }
 
     pub_profile_.publish();

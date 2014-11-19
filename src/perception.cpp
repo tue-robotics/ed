@@ -1,6 +1,8 @@
 #include "ed/perception.h"
 #include "ed/entity.h"
 #include "ed/measurement.h"
+#include "ed/world_model.h"
+#include "ed/update_request.h"
 
 #include "ed/models/models.h"
 
@@ -138,13 +140,13 @@ void Perception::configure(tue::Configuration config)
 
 // ----------------------------------------------------------------------------------------------------
 
-void Perception::update(std::map<UUID, EntityConstPtr>& entities)
+void Perception::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
 {
     // Don't update if there are no perception modules
     if (perception_modules_.empty())
         return;
 
-    for(std::map<UUID, EntityConstPtr>::iterator it = entities.begin(); it != entities.end(); ++it)
+    for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
         const UUID& id = it->first;
         const EntityConstPtr& e = it->second;
@@ -204,7 +206,7 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
             {
                 // Update the entity with the results from the worker
                 if (worker->getResult().valid())
-                    it->second = updateEntityType(e, worker->getResult());
+                    req.setEntity(updateEntityType(e, worker->getResult()));
 
                 // Set worker to idle. This way, the result is not checked again on the next iteration
                 worker->setIdle();

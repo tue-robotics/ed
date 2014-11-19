@@ -20,7 +20,7 @@ public:
     virtual ~WorldModelRenderer();
 
     void render(const geo::Pose3D& camera_pose,
-                const std::map<UUID, EntityConstPtr>& entities,
+                const WorldModelConstPtr& world_model,
                 float max_range,
                 const rgbd::View& view,
                 cv::Mat& img,
