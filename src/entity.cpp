@@ -72,34 +72,40 @@ void Entity::setShape(const geo::ShapeConstPtr& shape)
 
         // ----- Calculate convex hull -----
 
-        geo::Vector3 p_total(0, 0, 0);
-
         const std::vector<geo::Vector3>& vertices = shape->getMesh().getPoints();
 
-        cv::Mat_<cv::Vec2f> pointMat(1, vertices.size());
-        pcl::PointCloud<pcl::PointXYZ> point_cloud;
-        point_cloud.resize(vertices.size());
-
-        for(unsigned int i = 0; i < vertices.size(); ++i)
+        if (!vertices.empty())
         {
-            geo::Vector3 p_MAP = pose_ * vertices[i];
-            convex_hull_.min_z = std::min(convex_hull_.min_z, p_MAP.z);
-            convex_hull_.max_z = std::max(convex_hull_.max_z, p_MAP.z);
+            geo::Vector3 p_total(0, 0, 0);
 
-            pointMat(0, i) = cv::Vec2f(p_MAP.x, p_MAP.y);
-            point_cloud.points[i] = pcl::PointXYZ(p_MAP.x, p_MAP.y, p_MAP.z);
+            cv::Mat_<cv::Vec2f> pointMat(1, vertices.size());
+            pcl::PointCloud<pcl::PointXYZ> point_cloud;
+            point_cloud.resize(vertices.size());
 
-            p_total += p_MAP;
+            convex_hull_.min_z = vertices[0].z;
+            convex_hull_.max_z = vertices[0].z;
+
+            for(unsigned int i = 0; i < vertices.size(); ++i)
+            {
+                geo::Vector3 p_MAP = pose_ * vertices[i];
+                convex_hull_.min_z = std::min(convex_hull_.min_z, p_MAP.z);
+                convex_hull_.max_z = std::max(convex_hull_.max_z, p_MAP.z);
+
+                pointMat(0, i) = cv::Vec2f(p_MAP.x, p_MAP.y);
+                point_cloud.points[i] = pcl::PointXYZ(p_MAP.x, p_MAP.y, p_MAP.z);
+
+                p_total += p_MAP;
+            }
+
+            std::vector<int> chull_mask_indices;
+            cv::convexHull(pointMat, chull_mask_indices);
+
+            convex_hull_.chull.resize(chull_mask_indices.size());
+            for(unsigned int i = 0; i < chull_mask_indices.size(); ++i)
+                convex_hull_.chull[i] = point_cloud.points[chull_mask_indices[i]];
+
+            convex_hull_.center_point = p_total / vertices.size();
         }
-
-        std::vector<int> chull_mask_indices;
-        cv::convexHull(pointMat, chull_mask_indices);
-
-        convex_hull_.chull.resize(chull_mask_indices.size());
-        for(unsigned int i = 0; i < chull_mask_indices.size(); ++i)
-            convex_hull_.chull[i] = point_cloud.points[chull_mask_indices[i]];
-
-        convex_hull_.center_point = p_total / vertices.size();
     }
 }
 
