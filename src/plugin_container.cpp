@@ -54,6 +54,9 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
         {
             double freq = 10; // default
 
+            name_ = plugin_name;
+            plugin_->name_ = plugin_name;
+
             if (config.readGroup("parameters"))
             {
                 // Configure plugin
@@ -74,9 +77,6 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
 
             // Set plugin loop frequency
             setLoopFrequency(freq);
-
-            name_ = plugin_name;
-            plugin_->name_ = plugin_name;
 
             return plugin_;
         }
