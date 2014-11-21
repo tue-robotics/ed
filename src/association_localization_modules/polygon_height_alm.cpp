@@ -66,7 +66,7 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
         bool associated = false;
         UUID associated_id = "";
 
-        for(WorldModel::const_iterator e_it = world_model->begin(); e_it != world_model->end(); ++it)
+        for(WorldModel::const_iterator e_it = world_model->begin(); e_it != world_model->end(); ++e_it)
         {
             const EntityConstPtr& e = e_it->second;
             if (e->shape())
