@@ -13,6 +13,9 @@
 namespace ed
 {
 
+typedef unsigned int Idx;
+static const unsigned int INVALID_IDX = -1;
+
 class Measurement;
 typedef boost::shared_ptr<Measurement> MeasurementPtr;
 typedef boost::shared_ptr<const Measurement> MeasurementConstPtr;
@@ -52,6 +55,10 @@ typedef boost::shared_ptr<const RGBDSegModule> RGBDSegModuleConstPtr;
 class PerceptionModule;
 typedef boost::shared_ptr<PerceptionModule> PerceptionModulePtr;
 typedef boost::shared_ptr<const PerceptionModule> PerceptionModuleConstPtr;
+
+class Relation;
+typedef boost::shared_ptr<Relation> RelationPtr;
+typedef boost::shared_ptr<const Relation> RelationConstPtr;
 
 typedef std::string UUID;
 typedef std::string TYPE;

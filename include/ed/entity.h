@@ -68,7 +68,28 @@ public:
 
     inline double creationTime() const { return creation_time_; }
 
+    inline void setRelationTo(Idx child_idx, Idx r_idx) { relations_to_[child_idx] = r_idx; }
+
+    inline void setRelationFrom(Idx parent_idx, Idx r_idx) { relations_from_[parent_idx] = r_idx; }
+
+    inline Idx relationTo(Idx child_idx) const
+    {
+        std::map<Idx, Idx>::const_iterator it = relations_to_.find(child_idx);
+        if (it == relations_to_.end())
+            return INVALID_IDX;
+        return it->second;
+    }
+
+    inline Idx relationFrom(Idx parent_idx) const
+    {
+        std::map<Idx, Idx>::const_iterator it = relations_from_.find(parent_idx);
+        if (it == relations_from_.end())
+            return INVALID_IDX;
+        return it->second;
+    }
+
 private:
+
     UUID id_;
 
     TYPE type_;
@@ -93,6 +114,9 @@ private:
     double creation_time_;
 
     tue::config::DataConstPointer config_;
+
+    std::map<Idx, Idx> relations_from_;
+    std::map<Idx, Idx> relations_to_;
 
 };
 
