@@ -29,13 +29,55 @@ public:
     }
 
 
+    // SHAPES
+
+    std::map<UUID, geo::ShapeConstPtr> shapes;
+
+    void setShape(const UUID& id, const geo::ShapeConstPtr& shape)
+    {
+        shapes[id] = shape;
+    }
+
+
+    // TYPES
+
+    std::map<UUID, std::string> types;
+
+    void setType(const UUID& id, const std::string& type)
+    {
+        types[id] = type;
+    }
+
+
+    // POSES
+
+    std::map<UUID, geo::Pose3D> poses;
+
+    void setPose(const UUID& id, const geo::Pose3D& pose)
+    {
+        poses[id] = pose;
+    }
+
+
     // DATA
 
     std::map<UUID, tue::config::DataConstPointer> datas;
 
     void addData(const UUID& id, const tue::config::DataConstPointer& data)
     {
-        datas[id] = data;
+        std::map<UUID, tue::config::DataConstPointer>::iterator it = datas.find(id);
+        if (it == datas.end())
+        {
+            datas[id] = data;
+        }
+        else
+        {
+            tue::config::DataPointer data_total;
+            data_total.add(it->second);
+            data_total.add(data);
+
+            it->second = data_total;
+        }
     }
 
 
@@ -50,6 +92,8 @@ public:
     bool empty() const
     {
         return measurements.empty() &&
+               shapes.empty() &&
+               types.empty() &&
                removed_entities.empty() &&
                datas.empty();
     }

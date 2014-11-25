@@ -28,6 +28,27 @@ void WorldModel::update(const UpdateRequest& req)
         }
     }
 
+    // Update shapes
+    for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.shapes.begin(); it != req.shapes.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setShape(it->second);
+    }
+
+    // Update types
+    for(std::map<UUID, std::string>::const_iterator it = req.types.begin(); it != req.types.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setType(it->second);
+    }
+
+    // Update poses
+    for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setPose(it->second);
+    }
+
     // Update additional info (data)
     for(std::map<UUID, tue::config::DataConstPointer>::const_iterator it = req.datas.begin(); it != req.datas.end(); ++it)
     {
