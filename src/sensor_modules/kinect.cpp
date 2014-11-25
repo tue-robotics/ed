@@ -26,18 +26,12 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-EntityPtr createNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask)
+void createNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, UpdateRequest& req)
 {
     // Create the measurement
     MeasurementConstPtr m(new Measurement(rgbd_data, mask));
 
-    // Create new entity
-    EntityPtr e(new Entity);
-
-    // Add the measurement to the entity
-    e->addMeasurement(m);
-
-    return e;
+    req.addMeasurement(ed::Entity::generateID(), m);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -57,7 +51,7 @@ void filterPointsBehindWorldModel(const WorldModelConstPtr& world_model, const g
 
     for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
 
         if (e->shape())
         {
@@ -268,18 +262,8 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         for(std::map<UUID, std::vector<MeasurementConstPtr> >::const_iterator it = alm_result.associations.begin();
             it != alm_result.associations.end(); ++it)
         {
-            // Make a copy of the entity such that we can add the associated measurements
-            EntityPtr e_updated(new Entity(*world_model->getEntity(it->first)));
-
             const std::vector<MeasurementConstPtr>& measurements = it->second;
-            for(std::vector<MeasurementConstPtr>::const_iterator it_m = measurements.begin(); it_m != measurements.end(); ++it_m)
-            {
-                // Add measurement to entity
-                e_updated->addMeasurement(*it_m);
-            }
-
-            // Add updated entity to the map
-            req.setEntity(e_updated);
+            req.addMeasurements(it->first, measurements);
         }
     }
 
@@ -302,7 +286,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         //! 8) Add the segments as new entities
         for (std::vector<PointCloudMaskPtr>::const_iterator it = segments.begin(); it != segments.end(); ++it)
         {
-            req.setEntity(createNewEntity(rgbd_data, *it));
+            createNewEntity(rgbd_data, *it, req);
         }
 
         profiler_.stopTimer();
@@ -315,7 +299,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         std::vector<UUID> entities_in_view_not_associated;
         for (WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
         {
-            const EntityConstPtr& e = it->second;
+            const EntityConstPtr& e = *it;
 
             if (!e->shape()) //! if it has no shape
             {
@@ -326,7 +310,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
 
                     if (m && ros::Time::now().toSec() - m->timestamp() > 1.0)
                     {
-                        entities_in_view_not_associated.push_back(it->first);
+                        entities_in_view_not_associated.push_back(e->id());
                     }
                 }
             }

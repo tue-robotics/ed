@@ -257,7 +257,7 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
     unsigned int i = 0;
     for (WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it )
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
 
         if (e->lastMeasurement()) {
 //            helpers::visualization::showMeasurement(e->getBestMeasurement(), it->second->getType() + "-" + it->first);
@@ -549,7 +549,7 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
     cv::Mat color_img = rgbd_image->getRGBImage().clone() * 0.2;
     for (WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
 
         if (!e->shape()) //! if it has no shape
         {

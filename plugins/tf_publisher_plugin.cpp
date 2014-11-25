@@ -38,7 +38,7 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
 {
     for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
     {
-        const ed::EntityConstPtr& e = it->second;
+        const ed::EntityConstPtr& e = *it;
 
         geo::Pose3D pose_MAP;
 

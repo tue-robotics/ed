@@ -90,7 +90,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
     {
 //        std::cout << it->first << std::endl;
 
-        const ed::EntityConstPtr& e = it->second;
+        const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != req.id)
             continue;
 
@@ -166,7 +166,7 @@ void publishTFs(tf::TransformBroadcaster& tf_broadcaster)
 {
     for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
     {
-        const ed::EntityConstPtr& e = it->second;
+        const ed::EntityConstPtr& e = *it;
 
         geo::Pose3D pose_MAP;
 

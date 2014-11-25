@@ -5,6 +5,8 @@
 
 #include "types.h"
 
+#include <queue>
+
 namespace ed
 {
 
@@ -38,17 +40,43 @@ class WorldModel
 
 public:
 
-    typedef std::map<UUID, EntityConstPtr>::iterator iterator;
+    class EntityIterator : public std::iterator<std::forward_iterator_tag, EntityConstPtr>
+    {
 
-    typedef std::map<UUID, EntityConstPtr>::const_iterator const_iterator;
+    public:
 
-    iterator begin() { return entity_map_.begin(); }
+        EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end()) {}
 
-    const_iterator begin() const { return entity_map_.begin(); }
+        EntityIterator(const EntityIterator& it) : it_(it.it_) {}
 
-    iterator end() { return entity_map_.end(); }
+        EntityIterator(const std::vector<EntityConstPtr>::const_iterator& it) : it_(it) {}
 
-    const_iterator end() const { return entity_map_.end(); }
+        EntityIterator& operator++()
+        {
+            do { ++it_; if (it_ == it_end_) break; } while (!(*it_));
+            return *this;
+        }
+
+        EntityIterator operator++(int) { EntityIterator tmp(*this); operator++(); return tmp; }
+
+        bool operator==(const EntityIterator& rhs) { return it_ == rhs.it_; }
+
+        bool operator!=(const EntityIterator& rhs) { return it_ != rhs.it_; }
+
+        const EntityConstPtr& operator*() { return *it_; }
+
+    private:
+
+        std::vector<EntityConstPtr>::const_iterator it_;
+        std::vector<EntityConstPtr>::const_iterator it_end_;
+
+    };
+
+    typedef EntityIterator const_iterator;
+
+    const_iterator begin() const { return const_iterator(entities_); }
+
+    const_iterator end() const { return const_iterator(entities_.end()); }
 
     void setEntity(const UUID& id, const EntityConstPtr& e);
 
@@ -56,11 +84,11 @@ public:
 
     EntityConstPtr getEntity(const ed::UUID& id) const
     {
-        std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = entity_map_.find(id);
+        std::map<ed::UUID, Idx>::const_iterator it = entity_map_.find(id);
         if (it == entity_map_.end())
             return EntityConstPtr();
         else
-            return it->second;
+            return entities_[it->second];
     }
 
     size_t numEntities() const { return entity_map_.size(); }
@@ -71,13 +99,20 @@ public:
 
 private:
 
-    std::map<UUID, EntityConstPtr> entity_map_;
+    std::map<UUID, Idx> entity_map_;
 
     std::vector<EntityConstPtr> entities_;
+
+    std::queue<Idx> entity_empty_spots_;
 
     std::vector<RelationConstPtr> relations_;
 
     Idx addRelation(const RelationPtr& r);
+
+    EntityPtr getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& new_entities);
+
+    void addNewEntity(const EntityConstPtr& e);
+
 
 };
 

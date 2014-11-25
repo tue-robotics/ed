@@ -72,7 +72,7 @@ void WorldModelRenderer::render(const geo::Pose3D& camera_pose, const WorldModel
 {
     for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
         if (e->shape())
         {
             geo::Pose3D pose = camera_pose.inverse() * e->pose();

@@ -68,7 +68,7 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
 
         for(WorldModel::const_iterator e_it = world_model->begin(); e_it != world_model->end(); ++e_it)
         {
-            const EntityConstPtr& e = e_it->second;
+            const EntityConstPtr& e = *e_it;
             if (e->shape())
                 continue;
 

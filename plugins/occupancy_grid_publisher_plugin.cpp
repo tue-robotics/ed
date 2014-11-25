@@ -71,9 +71,9 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
 {
     geo::Vector3 min(1e6,1e6,0);
     geo::Vector3 max(-1e6,-1e6,0);
-    for(std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = world.begin(); it != world.end(); ++it)
+    for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
     {
-        ed::EntityConstPtr e = it->second;
+        ed::EntityConstPtr e = *it;
 
 		//! Only entities with measurementSeq() >= 10 or 0 (known)
 		if (e->measurementSeq() > 0 && e->measurementSeq() < 10)
@@ -88,7 +88,7 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
         }
 
         //! Push back the entity
-        entities_to_be_projected.push_back(it->second);
+        entities_to_be_projected.push_back(e);
 
         //! Update the map bounds
         geo::ShapeConstPtr shape = e->shape();

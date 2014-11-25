@@ -330,7 +330,7 @@ void Server::storeEntityMeasurements(const std::string& path) const
 {
     for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
         MeasurementConstPtr msr = e->lastMeasurement();
         if (!msr)
             continue;
@@ -353,7 +353,7 @@ void Server::mergeEntities(const WorldModelPtr& world_model, double not_updated_
     // Iter over all entities and check if the current_time - last_update_time > not_updated_time
     for (WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
 
         if (!e->lastMeasurement())
             continue;
@@ -364,13 +364,15 @@ void Server::mergeEntities(const WorldModelPtr& world_model, double not_updated_
         if ( ros::Time::now().toSec() - e->lastMeasurement()->timestamp() > not_updated_time )
         {
             // Try to merge with other polygons (except for itself)
-            for (WorldModel::iterator e_it = world_model->begin(); e_it != world_model->end(); ++e_it)
+            for (WorldModel::const_iterator e_it = world_model->begin(); e_it != world_model->end(); ++e_it)
             {
+                const EntityConstPtr& e_target = *e_it;
+                const UUID& id2 = e_target->id();
+
                 // Skip self
-                if (e_it->first == e->id())
+                if (id2 == e->id())
                     continue;
 
-                const EntityConstPtr& e_target = e_it->second;
                 MeasurementConstPtr last_m = e_target->lastMeasurement();
 
                 if (!last_m)

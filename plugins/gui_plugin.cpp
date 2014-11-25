@@ -269,7 +269,7 @@ ed::UUID GUIPlugin::getEntityFromClick(const cv::Point2i& p) const
 {
     for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
     {
-        const ed::EntityConstPtr& e = it_entity->second;
+        const ed::EntityConstPtr& e = *it_entity;
         if (!e->shape())
         {
             const pcl::PointCloud<pcl::PointXYZ>& chull_points = e->convexHull().chull;
@@ -302,7 +302,7 @@ void GUIPlugin::publishMapImage()
 
     for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
     {
-        const ed::EntityConstPtr& e = it_entity->second;
+        const ed::EntityConstPtr& e = *it_entity;
 
         if (e->shape() && e->id() != "floor")
         {
@@ -322,7 +322,7 @@ void GUIPlugin::publishMapImage()
 
     for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
     {
-        const ed::EntityConstPtr& e = it_entity->second;
+        const ed::EntityConstPtr& e = *it_entity;
 
         const pcl::PointCloud<pcl::PointXYZ>& chull_points = e->convexHull().chull;
 
@@ -385,7 +385,7 @@ void GUIPlugin::publishMapImage()
     ed::MeasurementConstPtr last_measurement;
     for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
     {
-        const ed::EntityConstPtr& e = it_entity->second;
+        const ed::EntityConstPtr& e = *it_entity;
         if (e->lastMeasurement() && (!last_measurement || e->lastMeasurement()->timestamp() > e->lastMeasurement()->timestamp()))
             last_measurement = e->lastMeasurement();
     }
