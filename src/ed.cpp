@@ -6,6 +6,7 @@
 #include <ed/entity.h>
 #include <ed/SimpleQuery.h>
 #include <geolib/ros/msg_conversions.h>
+#include <tue/config/yaml_emitter.h>
 
 // Publish TF
 #include <tf/transform_broadcaster.h>
@@ -67,6 +68,15 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
     ed::MeasurementConstPtr m = e.lastMeasurement();
     if (m)
         msg.last_update_time =  ros::Time(m->timestamp());
+
+    if (e.data().valid())
+    {
+        std::stringstream ss;
+        tue::config::YAMLEmitter emitter;
+        emitter.emit(e.data(), ss);
+
+        msg.data = ss.str();
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------

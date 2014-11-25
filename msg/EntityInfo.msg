@@ -8,6 +8,9 @@ time creation_time
 bool has_shape
 geometry_msgs/Pose pose
 
+# Custom data
+string data
+
 # Convex Hull
 geometry_msgs/Point[] convex_hull
 geometry_msgs/Point center_point
