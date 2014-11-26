@@ -45,7 +45,7 @@ PerceptionModulePtr loadPerceptionModule(class_loader::ClassLoader* loader)
     while(model_crawler.nextPath(model_path))
     {
         std::string model_name = model_path.filename();
-        tue::filesystem::Path full_model_path = model_path.join(perception_mod->name());
+        tue::filesystem::Path full_model_path = model_path ; //.join(perception_mod->name());
 
         if (full_model_path.isDirectory() && full_model_path.exists())
         {
