@@ -589,7 +589,7 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                     tue::config::Reader config(e->data());
                     std::string type;
                     std::string info ;//= e->id().substr(0,4);
-                    float certainty = 0;
+                    float score = 0;
 
                     // update perception type and certainty if possible
                     if (config.readGroup("perception_result", tue::config::OPTIONAL))
@@ -597,8 +597,8 @@ void showMeasurements(const std::map<UUID, EntityConstPtr>& entities, rgbd::Imag
                         if (config.readGroup("type_aggregator", tue::config::OPTIONAL))
                         {
                             if (config.value("type", type, tue::config::OPTIONAL) &&
-                                config.value("certainty", certainty, tue::config::OPTIONAL)){
-                                info.append(" " + boost::lexical_cast<std::string>((int)(certainty*100)) + "%");
+                                config.value("score", score, tue::config::OPTIONAL)){
+                                info.append(" " + boost::str(boost::format("%.2f") % score));
                             }
                         }
                     }
