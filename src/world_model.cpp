@@ -2,6 +2,7 @@
 
 #include "ed/update_request.h"
 #include "ed/entity.h"
+#include "ed/relation.h"
 
 #include <tue/config/reader.h>
 
@@ -76,6 +77,102 @@ void WorldModel::update(const UpdateRequest& req)
     {
         removeEntity(*it);
     }
+}
+
+// --------------------------------------------------------------------------------
+
+struct SearchNode
+{
+    SearchNode() {}
+
+    SearchNode(Idx parent_, Idx relation_, bool inverse_)
+        : parent(parent_), relation(relation_), inverse(inverse_) {}
+
+    Idx parent;
+    Idx relation;
+    bool inverse;
+};
+
+// --------------------------------------------------------------------------------
+
+bool WorldModel::calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const
+{
+    Idx s, t;
+    if (!findEntityIdx(source, s) || !findEntityIdx(target, t))
+        return false;
+
+    std::queue<Idx> Q;
+    std::map<Idx, SearchNode> visited;
+
+    Q.push(s);
+    visited[s] = SearchNode(INVALID_IDX, INVALID_IDX, true);
+
+    while(!Q.empty())
+    {
+        Idx n = Q.front();
+        Q.pop();
+
+        if (n == t)
+        {
+            // Calculate transformation
+            tf = geo::Pose3D::identity();
+
+            Idx u = n;
+
+            while (true)
+            {
+                std::map<Idx, SearchNode>::const_iterator it = visited.find(u);
+                const SearchNode& sn = it->second;
+
+                if (u == s)
+                    break;
+
+                const RelationConstPtr& r = relations_[sn.relation];
+
+                geo::Pose3D tr;
+                if (!r->calculateTransform(time, tr))
+                {
+                    std::cout << "WorldModel::calculateTransform: transform could not be calculated. THIS SHOULD NEVER HAPPEN!" << std::endl;
+                    return false;
+                }
+
+                if (sn.inverse)
+                    tf = tf * tr.inverse();
+                else
+                    tf = tf * tr;
+
+                u = sn.parent;
+            }
+
+            return true;
+        }
+
+        // Push all nodes that point to this node
+        const std::map<Idx, Idx>& transforms_to = entities_[n]->relationsTo();
+        for(std::map<Idx, Idx>::const_iterator it = transforms_to.begin(); it != transforms_to.end(); ++it)
+        {
+            Idx n2 = it->first;
+            if (visited.find(n2) == visited.end())
+            {
+                visited[n2] = SearchNode(n, it->second, false);
+                Q.push(n2);
+            }
+        }
+
+        // Push all nodes that point to this node
+        const std::map<Idx, Idx>& transforms_from = entities_[n]->relationsFrom();
+        for(std::map<Idx, Idx>::const_iterator it = transforms_from.begin(); it != transforms_from.end(); ++it)
+        {
+            Idx n2 = it->first;
+            if (visited.find(n2) == visited.end())
+            {
+                visited[n2] = SearchNode(n, it->second, true);
+                Q.push(n2);
+            }
+        }
+    }
+
+    return false;
 }
 
 // --------------------------------------------------------------------------------

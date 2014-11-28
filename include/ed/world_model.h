@@ -1,9 +1,8 @@
 #ifndef ED_WORLD_MODEL_H_
 #define ED_WORLD_MODEL_H_
 
-// Struct holding the world model data
-
-#include "types.h"
+#include "ed/types.h"
+#include "ed/time.h"
 
 #include <queue>
 
@@ -73,6 +72,18 @@ public:
     void update(const UpdateRequest& req);
 
     void setRelation(Idx parent, Idx child, const RelationPtr& r);
+
+    bool findEntityIdx(const UUID& id, Idx& idx) const
+    {
+        std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
+        if (it == entity_map_.end())
+            return false;
+
+        idx = it->second;
+        return true;
+    }
+
+    bool calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const;
 
 private:
 

@@ -88,6 +88,10 @@ public:
         return it->second;
     }
 
+    const std::map<Idx, Idx>& relationsFrom() const { return relations_from_; }
+
+    const std::map<Idx, Idx>& relationsTo() const { return relations_to_; }
+
 private:
 
     UUID id_;
