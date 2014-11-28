@@ -262,7 +262,6 @@ bool getEnvironmentVariable(const std::string& var, std::string& value)
 
 int main(int argc, char** argv)
 {
-
     ros::init(argc, argv, "ed");
 
     ed_wm = new ed::Server();

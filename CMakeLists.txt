@@ -86,6 +86,7 @@ add_library(ed_core
     src/measurement.cpp
     src/update_request.cpp
     src/world_model.cpp
+    src/transform_cache.cpp
 
     # DDP is used by measurement.cpp, so put here
     src/helpers/depth_data_processing.cpp
