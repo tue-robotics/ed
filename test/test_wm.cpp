@@ -4,12 +4,13 @@
 
 #include <ros/time.h>    // Why do we need this?
 
-int main(int argc, char **argv)
+// Profiling
+#include <tue/profiling/timer.h>
+
+// ----------------------------------------------------------------------------------------------------
+
+void buildWorldModel(ed::WorldModel& wm)
 {
-    ros::Time::init();                      // Why do we need this?
-
-    ed::WorldModel wm;
-
     ed::UpdateRequest req;
 
     req.setType("map", "waypoint");
@@ -25,7 +26,33 @@ int main(int argc, char **argv)
     req.setRelation("bottle", "table", t2);
 
     wm.update(req);
+}
 
+// ----------------------------------------------------------------------------------------------------
+
+void profile(const ed::WorldModel& wm)
+{
+    unsigned int N = 1000000;
+
+    ed::UUID id1 = "map";
+    ed::UUID id2 = "bottle";
+
+    tue::Timer timer;
+    timer.start();
+
+    geo::Pose3D tr;
+    for(unsigned int i = 0; i < N; ++i)
+    {
+        wm.calculateTransform(id1, id2, 0, tr);
+    }
+
+    std::cout << timer.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void testCorrectness(const ed::WorldModel& wm)
+{
     ed::UUID id1 = "map";
     ed::UUID id2 = "bottle";
 
@@ -34,6 +61,25 @@ int main(int argc, char **argv)
     {
         std::cout << tr << std::endl;
     }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+int main(int argc, char **argv)
+{
+    ros::Time::init();                      // Why do we need this?
+
+    ed::WorldModel wm;
+    buildWorldModel(wm);
+
+    std::string cmd;
+    if (argc > 1)
+        cmd = argv[1];
+
+    if (cmd == "profile")
+        profile(wm);
+    else
+        testCorrectness(wm);
 
     return 0;
 }
