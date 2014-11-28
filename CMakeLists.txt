@@ -180,6 +180,9 @@ add_dependencies(ed_gui_plugin ${PROJECT_NAME}_gencpp)
 #                                                TESTS
 # ------------------------------------------------------------------------------------------------
 
+add_executable(ed_test_wm test/test_wm.cpp)
+target_link_libraries(ed_test_wm ed_core ${OpenCV_LIBRARIES})
+
 add_executable(test_mask test/test_mask.cpp)
 target_link_libraries(test_mask ed_core ${OpenCV_LIBRARIES})
 add_dependencies(test_mask ${PROJECT_NAME}_gencpp)

@@ -71,7 +71,7 @@ public:
 
     void update(const UpdateRequest& req);
 
-    void setRelation(Idx parent, Idx child, const RelationPtr& r);
+    void setRelation(Idx parent, Idx child, const RelationConstPtr& r);
 
     bool findEntityIdx(const UUID& id, Idx& idx) const
     {
@@ -95,7 +95,7 @@ private:
 
     std::vector<RelationConstPtr> relations_;
 
-    Idx addRelation(const RelationPtr& r);
+    Idx addRelation(const RelationConstPtr& r);
 
     EntityPtr getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& new_entities);
 

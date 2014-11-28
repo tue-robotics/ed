@@ -50,6 +50,26 @@ void WorldModel::update(const UpdateRequest& req)
         e->setPose(it->second);
     }
 
+    // Update relations
+    for(std::map<UUID, std::map<UUID, RelationConstPtr> >::const_iterator it = req.relations.begin(); it != req.relations.end(); ++it)
+    {
+        Idx idx1;
+        if (findEntityIdx(it->first, idx1))
+        {
+            const std::map<UUID, RelationConstPtr>& rels = it->second;
+            for(std::map<UUID, RelationConstPtr>::const_iterator it2 = rels.begin(); it2 != rels.end(); ++it2)
+            {
+                Idx idx2;
+                if (findEntityIdx(it2->first, idx2))
+                    setRelation(idx1, idx2, it2->second);
+                else
+                    std::cout << "WorldModel::update: unknown entity: '" << it2->first << "'." << std::endl;
+            }
+        }
+        else
+            std::cout << "WorldModel::update: unknown entity: '" << it->first << "'." << std::endl;
+    }
+
     // Update additional info (data)
     for(std::map<UUID, tue::config::DataConstPointer>::const_iterator it = req.datas.begin(); it != req.datas.end(); ++it)
     {
@@ -119,13 +139,10 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
 
             Idx u = n;
 
-            while (true)
+            while (u != s)
             {
                 std::map<Idx, SearchNode>::const_iterator it = visited.find(u);
                 const SearchNode& sn = it->second;
-
-                if (u == s)
-                    break;
 
                 const RelationConstPtr& r = relations_[sn.relation];
 
@@ -137,9 +154,9 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
                 }
 
                 if (sn.inverse)
-                    tf = tf * tr.inverse();
+                    tf = tr.inverse() * tf;
                 else
-                    tf = tf * tr;
+                    tf = tr * tf;
 
                 u = sn.parent;
             }
@@ -159,7 +176,7 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
             }
         }
 
-        // Push all nodes that point to this node
+        // Push all nodes this node points to
         const std::map<Idx, Idx>& transforms_from = entities_[n]->relationsFrom();
         for(std::map<Idx, Idx>::const_iterator it = transforms_from.begin(); it != transforms_from.end(); ++it)
         {
@@ -177,7 +194,7 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
 
 // --------------------------------------------------------------------------------
 
-void WorldModel::setRelation(Idx parent, Idx child, const RelationPtr& r)
+void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
 {
     const EntityConstPtr& p = entities_[parent];
     const EntityConstPtr& c = entities_[child];
@@ -210,7 +227,7 @@ void WorldModel::setRelation(Idx parent, Idx child, const RelationPtr& r)
 
 // --------------------------------------------------------------------------------
 
-Idx WorldModel::addRelation(const RelationPtr& r)
+Idx WorldModel::addRelation(const RelationConstPtr& r)
 {
     Idx r_idx = relations_.size();
     relations_.push_back(r);

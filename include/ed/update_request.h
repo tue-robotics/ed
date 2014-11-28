@@ -59,6 +59,16 @@ public:
     }
 
 
+    // RELATIONS
+
+    std::map<UUID, std::map<UUID, RelationConstPtr> > relations;
+
+    void setRelation(const UUID& id1, const UUID& id2, const RelationConstPtr& r)
+    {
+        relations[id1][id2] = r;
+    }
+
+
     // DATA
 
     std::map<UUID, tue::config::DataConstPointer> datas;
@@ -94,6 +104,8 @@ public:
         return measurements.empty() &&
                shapes.empty() &&
                types.empty() &&
+               poses.empty() &&
+               relations.empty() &&
                removed_entities.empty() &&
                datas.empty();
     }
