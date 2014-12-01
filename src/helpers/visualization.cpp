@@ -93,7 +93,7 @@ void getNameAndTypeVisualizationMarker(const geo::Vector3& center_point, const U
     geo::convert(center_point,m.pose.position);
     m.pose.position.z += 0.1;
 
-    m.text = type + "(" + name.substr(0,4) +  ")";
+    m.text = type + "(" + name.str().substr(0,4) +  ")";
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -271,7 +271,7 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
         m.header.frame_id = "/map";
         m.header.stamp = ros::Time::now();
         m.lifetime = ros::Duration(0.5);
-        m.color = getColor(e->id());
+        m.color = getColor(e->id().str());
 
         geo::ShapeConstPtr shape = e->shape();
 
@@ -280,7 +280,7 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
             m.type = visualization_msgs::Marker::TRIANGLE_LIST;
             m.scale.x = m.scale.y = m.scale.z = 1.0;
             m.color.a = 0.4;
-            m.id = getHash(e->id());
+            m.id = getHash(e->id().str());
 
             const geo::Mesh& mesh = shape->getMesh();
             const std::vector<geo::Vector3>& points = mesh.getPoints();
@@ -308,7 +308,7 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
 
         } else { // Do the convex hull
 
-            getConvexHullVisualizationMarker(m, e->convexHull(), getHash(e->id()), "ns");            
+            getConvexHullVisualizationMarker(m, e->convexHull(), getHash(e->id().str()), "ns");
             m_array.markers.push_back(m);
 
             // ARROW
@@ -570,7 +570,7 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
                     cv::Rect bounding_rect = cv::boundingRect(pnts);
 
                     // calculate color components
-                    std_msgs::ColorRGBA c_rgba = getColor(e->id());
+                    std_msgs::ColorRGBA c_rgba = getColor(e->id().str());
                     int red = c_rgba.r * 255;
                     int green = c_rgba.g * 255;
                     int blue = c_rgba.b * 255;
@@ -607,7 +607,7 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
                     // if no type was read, use the default and the UID
                     if (type.empty()){
                         type = e->type();
-                        info = e->id().substr(0,4);
+                        info = e->id().str().substr(0,4);
                     }
 
                     // draw name background rectangle

@@ -50,9 +50,9 @@ public:
 
     typedef EntityIterator const_iterator;
 
-    const_iterator begin() const { return const_iterator(entities_); }
+    inline const_iterator begin() const { return const_iterator(entities_); }
 
-    const_iterator end() const { return const_iterator(entities_.end()); }
+    inline const_iterator end() const { return const_iterator(entities_.end()); }
 
     void setEntity(const UUID& id, const EntityConstPtr& e);
 
@@ -60,11 +60,11 @@ public:
 
     EntityConstPtr getEntity(const ed::UUID& id) const
     {
-        std::map<ed::UUID, Idx>::const_iterator it = entity_map_.find(id);
-        if (it == entity_map_.end())
-            return EntityConstPtr();
+        Idx idx;
+        if (findEntityIdx(id, idx))
+            return entities_[idx];
         else
-            return entities_[it->second];
+            return EntityConstPtr();
     }
 
     size_t numEntities() const { return entity_map_.size(); }
@@ -73,15 +73,7 @@ public:
 
     void setRelation(Idx parent, Idx child, const RelationConstPtr& r);
 
-    bool findEntityIdx(const UUID& id, Idx& idx) const
-    {
-        std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
-        if (it == entity_map_.end())
-            return false;
-
-        idx = it->second;
-        return true;
-    }
+    bool findEntityIdx(const UUID& id, Idx& idx) const;
 
     bool calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const;
 

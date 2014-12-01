@@ -34,7 +34,7 @@ protected:
     {
         try {
             tf::StampedTransform t_sensor_pose;
-            tf_listener_.lookupTransform("map", frame_, ros::Time(time_stamp), t_sensor_pose);
+            tf_listener_.lookupTransform("map", frame_.str(), ros::Time(time_stamp), t_sensor_pose);
             geo::convert(t_sensor_pose, sensor_pose);
         } catch(tf::TransformException& ex) {
             return false;

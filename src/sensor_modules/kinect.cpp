@@ -157,14 +157,18 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
     }
 
     // get sensor config
-    if (config.value("source", source_) && config.value("frame_id", frame_))
+    std::string source_str, frame_str;
+    if (config.value("source", source_str) && config.value("frame_id", frame_str))
     {
+        source_ = source_str;
+        frame_ = frame_str;
+
         // Initialize profiler
         profiler_.setName("kinect_sensor");
         pub_profile_.initialize(profiler_);
 
         // Initialize kinect sensor
-        rgbd_client_.intialize(source_);
+        rgbd_client_.intialize(source_str);
     }
 
     // Get tunable params

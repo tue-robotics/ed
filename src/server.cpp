@@ -335,7 +335,7 @@ void Server::storeEntityMeasurements(const std::string& path) const
         if (!msr)
             continue;
 
-        std::string filename = path + "/" + e->id();
+        std::string filename = path + "/" + e->id().str();
         if (!write(filename, *msr))
         {
             std::cout << "Saving measurement failed." << std::endl;

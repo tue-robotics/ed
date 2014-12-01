@@ -60,7 +60,42 @@ class Relation;
 typedef boost::shared_ptr<Relation> RelationPtr;
 typedef boost::shared_ptr<const Relation> RelationConstPtr;
 
-typedef std::string UUID;
+class UUID
+{
+
+public:
+
+    UUID() : idx(INVALID_IDX) {}
+    UUID(const char* s) : id_(s), idx(INVALID_IDX) {}
+    UUID(const std::string& s) : id_(s), idx(INVALID_IDX) {}
+
+    inline bool operator<(const UUID& rhs) const { return id_ < rhs.id_; }
+
+    inline bool operator==(const UUID& rhs) const { return id_ == rhs.id_; }
+
+    inline bool operator!=(const UUID& rhs) const { return id_ != rhs.id_; }
+
+    inline const char* c_str() const { return id_.c_str(); }
+
+    inline const std::string& str() const { return id_; }
+
+    friend std::ostream& operator<< (std::ostream& out, const UUID& d)
+    {
+        out << d.id_;
+        return out;
+    }
+
+private:
+
+    std::string id_;
+
+public:
+
+    mutable Idx idx;
+
+};
+
+//typedef std::string UUID;
 typedef std::string TYPE;
 
 typedef std::vector< std::vector<cv::Point2i> > IndexMap;

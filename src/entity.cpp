@@ -209,13 +209,13 @@ UUID Entity::generateID() {
         "0123456789"
         "abcdef";
 
-    UUID ID;
+    std::string s;
     for (int i = 0; i < 32; ++i) {
         int n = rand() / (RAND_MAX / (sizeof(alphanum) - 1) + 1);
-        ID += alphanum[n];
+        s += alphanum[n];
     }
 
-    return ID;
+    return UUID(s);
 }
 
 }

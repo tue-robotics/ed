@@ -32,7 +32,7 @@ ed::Server* ed_wm;
 
 void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 {
-    msg.id = e.id();
+    msg.id = e.id().str();
     msg.type = e.type();
     msg.creation_time = ros::Time(e.creationTime());
 
@@ -91,7 +91,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 //        std::cout << it->first << std::endl;
 
         const ed::EntityConstPtr& e = *it;
-        if (!req.id.empty() && e->id() != req.id)
+        if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;
 
         if (!req.type.empty())
@@ -184,7 +184,7 @@ void publishTFs(tf::TransformBroadcaster& tf_broadcaster)
         tf::StampedTransform t;
         geo::convert(pose_MAP, t);
         t.frame_id_ = "/map";
-        t.child_frame_id_ = e->id();
+        t.child_frame_id_ = e->id().str();
         t.stamp_ = ros::Time::now();
 
         tf_broadcaster.sendTransform(t);

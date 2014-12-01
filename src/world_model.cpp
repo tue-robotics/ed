@@ -273,18 +273,9 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
 
     EntityPtr e;
 
-    std::map<UUID, Idx>::const_iterator it_idx = entity_map_.find(id);
-    if (it_idx == entity_map_.end())
+    Idx idx;
+    if (findEntityIdx(id, idx))
     {
-        // Does not yet exist
-        e = boost::make_shared<Entity>(id);
-        addNewEntity(e);
-    }
-    else
-    {
-        // Already exists
-        Idx idx = it_idx->second;
-
         // Create a copy of the existing entity
         e = boost::make_shared<Entity>(*entities_[idx]);
 
@@ -293,8 +284,31 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
 
         new_entities[id] = e;
     }
+    else
+    {
+        // Does not yet exist
+        e = boost::make_shared<Entity>(id);
+        addNewEntity(e);
+    }
 
     return e;
+}
+
+// --------------------------------------------------------------------------------
+
+bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
+{
+    idx = id.idx;
+    if (idx != INVALID_IDX && entities_[idx] && entities_[idx]->id() == id.str())
+        return true;
+
+    std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
+    if (it == entity_map_.end())
+        return false;
+
+    idx = it->second;
+    id.idx = idx;
+    return true;
 }
 
 // --------------------------------------------------------------------------------

@@ -52,7 +52,7 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
         tf::StampedTransform t;
         geo::convert(pose_MAP, t);
         t.frame_id_ = root_frame_id_;
-        t.child_frame_id_ = e->id();
+        t.child_frame_id_ = e->id().str();
         t.stamp_ = ros::Time::now();
 
         tf_broadcaster_->sendTransform(t);
