@@ -2,6 +2,9 @@
 #define ED_ROBOT_PLUGIN_H_
 
 #include <ed/plugin.h>
+#include <ed/relation.h>
+#include <ed/time_cache.h>
+#include <ed/uuid.h>
 
 #include <ros/subscriber.h>
 #include <ros/callback_queue.h>
@@ -10,20 +13,42 @@
 #include <kdl/tree.hpp>
 #include <geolib/datatypes.h>
 
-struct Joint
+// ----------------------------------------------------------------------------------------------------
+
+class JointRelation : public ed::Relation
 {
-    std::string name;
-    unsigned int parent_idx;
-    unsigned int child_idx;
-    double position;
-    KDL::Segment segment; // calculates the joint pose
-    geo::Pose3D transform;
+
+public:
+
+    JointRelation(const KDL::Segment& segment) : segment_(segment) {}
+
+    bool calculateTransform(const ed::Time& t, geo::Pose3D& tf) const;
+
+    void insert(const ed::Time& t, float joint_pos) { joint_pos_cache_.insert(t, joint_pos); }
+
+    inline unsigned int size() const { return joint_pos_cache_.size(); }
+
+    void setCacheSize(unsigned int n) { joint_pos_cache_.setMaxSize(n); }
+
+private:
+
+    ed::TimeCache<float> joint_pos_cache_;
+    KDL::Segment segment_; // calculates the joint pose
+
 };
 
-struct Link
+
+// ----------------------------------------------------------------------------------------------------
+
+struct RelationInfo
 {
-    std::string name;
+    ed::UUID parent_id;
+    ed::UUID child_id;
+    ed::Idx r_idx;
+    boost::shared_ptr<const JointRelation> last_rel;
 };
+
+// ----------------------------------------------------------------------------------------------------
 
 class RobotPlugin : public ed::Plugin
 {
@@ -42,26 +67,19 @@ public:
 
 private:
 
-    // Joint and link info
+    std::string robot_name_;
 
-    std::map<std::string, Joint*> joints_;
+    bool model_initialized_;
 
-    std::map<std::string, Link*> links_;
+    KDL::Tree tree_;
 
+    std::map<std::string, RelationInfo> joint_name_to_rel_info_;
 
-    // Transform graph
+    ed::UpdateRequest* update_req_;
 
-    Link* root_;
+    unsigned int joint_cache_size_;
 
-    std::vector<Link*> nodes_;
-
-    std::vector<std::vector<Joint*> > edges_;
-
-    void constructRobot(unsigned int parent_idx, const KDL::SegmentMap::const_iterator& it_segment);
-
-    unsigned int addLink(Link* link);
-
-    unsigned int addJoint(Joint* joint);
+    void constructRobot(const ed::UUID& parent_id, const KDL::SegmentMap::const_iterator& it_segment, ed::UpdateRequest& req);
 
 
     // ROS Communication

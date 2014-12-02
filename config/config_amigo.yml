@@ -73,12 +73,15 @@ plugins:
   lib: libed_tf_publisher_plugin.so
   parameters:
       root_frame_id: /map
-#- name: amigo_plugin
-#  lib: libed_robot_plugin.so
-#  parameters:
-#      frequency: 100
-#      robot_name: amigo
-#      urdf_rosparam: /amigo/robot_description
-#      joint_topics:
-#          - topic: /amigo/torso/measurements
+- name: amigo_plugin
+  lib: libed_robot_plugin.so
+  parameters:
+      frequency: 100
+      robot_name: amigo
+      urdf_rosparam: /amigo/robot_description
+      joint_topics:
+          - topic: /amigo/torso/measurements
+          - topic: /amigo/left_arm/measurements
+          - topic: /amigo/right_arm/measurements
+          - topic: /amigo/neck/measurements
 

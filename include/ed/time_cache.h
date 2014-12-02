@@ -15,12 +15,14 @@ public:
 
     typedef typename std::map<Time, T>::const_iterator const_iterator;
 
-    TimeCache() {}
+    TimeCache() : max_size_(0) {}
 
     ~TimeCache() {}
 
     void insert(const Time& t, const T& value)
     {
+        if (max_size_ > 0 && cache_.size() == max_size_)
+            cache_.erase(cache_.begin());
         cache_[t] = value;
     }
 
@@ -50,10 +52,16 @@ public:
     inline const_iterator begin() const { return cache_.begin(); }
     inline const_iterator end() const { return cache_.end(); }
 
+    inline unsigned int size() const { return cache_.size(); }
+
+    void setMaxSize(unsigned int n) { max_size_ = n; }
+
 private:
 
     // Cache with items ordered in time
     std::map<Time, T> cache_;
+
+    unsigned int max_size_;
 
 };
 

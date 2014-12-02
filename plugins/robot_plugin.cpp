@@ -4,10 +4,61 @@
 
 #include <ros/node_handle.h>
 
+#include <ed/update_request.h>
+#include <ed/world_model.h>
+#include <ed/entity.h>
 
 // ----------------------------------------------------------------------------------------------------
 
-RobotPlugin::RobotPlugin()
+bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
+{
+    ed::TimeCache<float>::const_iterator it_low, it_up;
+    joint_pos_cache_.getLowerUpper(t, it_low, it_up);
+
+    float joint_pos;
+
+    if (it_low == joint_pos_cache_.end())
+    {
+        if (it_up == joint_pos_cache_.end())
+            // No upper or lower bound (cache is empty)
+            return false;
+
+        // Requested time is in the past
+        joint_pos = it_up->second;
+    }
+    else
+    {
+        if (it_up == joint_pos_cache_.end())
+        {
+            // Requested time is in the future
+            joint_pos = it_low->second;
+        }
+        else
+        {
+            // Interpolate
+            float p1 = it_low->second;
+            float p2 = it_up->second;
+
+            float dt1 = t.seconds() - it_low->first.seconds();
+            float dt2 = it_up->first.seconds() - t.seconds();
+
+            // Linearly interpolate joint positions
+            joint_pos = (p1 * dt2 + p2 * dt1) / (dt1 + dt2);
+        }
+    }
+
+    // Calculate joint pose for this joint position
+    KDL::Frame pose_kdl = segment_.pose(joint_pos);
+
+    // Convert to geolib transform
+    tf.R = geo::Matrix3(pose_kdl.M.data);
+    tf.t = geo::Vector3(pose_kdl.p.data);
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+
+RobotPlugin::RobotPlugin() : model_initialized_(true)
 {
 }
 
@@ -15,76 +66,76 @@ RobotPlugin::RobotPlugin()
 
 RobotPlugin::~RobotPlugin()
 {
-    for(std::map<std::string, Joint*>::iterator it = joints_.begin(); it != joints_.end(); ++it)
-        delete it->second;
-
-    for(std::map<std::string, Link*>::iterator it = links_.begin(); it != links_.end(); ++it)
-        delete it->second;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void RobotPlugin::constructRobot(unsigned int parent_idx, const KDL::SegmentMap::const_iterator& it_segment)
+void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMap::const_iterator& it_segment, ed::UpdateRequest& req)
 {
     const KDL::Segment& segment = it_segment->second.segment;
 
-    // Create link
-    Link* link(new Link);
-    link->name = segment.getName();
+    // Child ID is the segment (link) name
+    ed::UUID child_id = segment.getName();
 
-    // Add link
-    unsigned int child_idx = addLink(link);
+    // Set the entity type (robot_link)
+    req.setType(child_id, "robot_link");
 
-    // Create joint
-    Joint* joint(new Joint);
-    joint->position = 0;
-    joint->segment = segment;
-    joint->parent_idx = parent_idx;
-    joint->child_idx = child_idx;
-    joint->name = segment.getJoint().getName();
+    // Create a joint relation and add id
+    boost::shared_ptr<JointRelation> r(new JointRelation(segment));
+    r->setCacheSize(joint_cache_size_);
+    req.setRelation(parent_id, child_id, r);
 
-    // Add joint
-    addJoint(joint);
+    // Generate relation info that will be used to update the relation
+    RelationInfo& rel_info = joint_name_to_rel_info_[segment.getJoint().getName()];
+    rel_info.parent_id = parent_id;
+    rel_info.child_id = child_id;
+    rel_info.r_idx = ed::INVALID_IDX;
+    rel_info.last_rel = r;
 
-    // Calculate pose with default joint position (0)
-    KDL::Frame pose_kdl = segment.pose(joint->position);
-    joint->transform.R = geo::Matrix3(pose_kdl.M.data);
-    joint->transform.t = geo::Vector3(pose_kdl.p.data);
 
     // Recursively add all children
     const std::vector<KDL::SegmentMap::const_iterator>& children = it_segment->second.children;
     for (unsigned int i = 0; i < children.size(); i++)
-        constructRobot(child_idx, children[i]);
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-unsigned int RobotPlugin::addLink(Link* link)
-{
-    unsigned int idx = nodes_.size();
-    nodes_.push_back(link);
-    links_[link->name] = link;
-    return idx;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-unsigned int RobotPlugin::addJoint(Joint* joint)
-{
-    joints_[joint->name] = joint;
-
-    unsigned int idx = joint->parent_idx;
-    if (idx >= edges_.size())
-        edges_.resize(idx + 1);
-
-    edges_[idx].push_back(joint);
+        constructRobot(child_id, children[i], req);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void RobotPlugin::jointCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
-    std::cout << *msg << std::endl;
+    if (msg->name.size() != msg->position.size())
+    {
+        std::cout << "[ED RobotPlugin] On joint callback: name and position vector must be of equal length." << std::endl;
+        return;
+    }
+
+    for(unsigned int i = 0; i < msg->name.size(); ++i)
+    {
+        const std::string& name = msg->name[i];
+        double pos = msg->position[i];
+
+        std::map<std::string, RelationInfo>::iterator it_r = joint_name_to_rel_info_.find(name);
+        if (it_r != joint_name_to_rel_info_.end())
+        {
+            RelationInfo& info = it_r->second;
+
+            // Make a copy of the last relation
+            boost::shared_ptr<JointRelation> r(new JointRelation(*info.last_rel));
+            r->setCacheSize(joint_cache_size_);
+
+            r->insert(msg->header.stamp.toSec(), pos);
+
+            std::cout << name << ": " << r->size() << std::endl;
+
+            update_req_->setRelation(info.parent_id, info.child_id, r);
+
+            info.last_rel = r;
+        }
+        else
+        {
+            std::cout << "[ED RobotPlugin] On joint callback: unknown joint name '" << name << "'." << std::endl;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -94,8 +145,7 @@ void RobotPlugin::configure(tue::Configuration config)
     std::string urdf_rosparam;
     config.value("urdf_rosparam", urdf_rosparam);
 
-    std::string robot_name;
-    config.value("robot_name", robot_name);
+    config.value("robot_name", robot_name_);
 
     ros::NodeHandle nh;
 
@@ -108,7 +158,7 @@ void RobotPlugin::configure(tue::Configuration config)
             std::cout << "[RobotPlugin] Topic: " << topic << std::endl;
 
             ros::SubscribeOptions sub_options = ros::SubscribeOptions::create<sensor_msgs::JointState>
-                    (topic, 1, boost::bind(&RobotPlugin::jointCallback, this, _1), ros::VoidPtr(), &cb_queue_);
+                    (topic, 10, boost::bind(&RobotPlugin::jointCallback, this, _1), ros::VoidPtr(), &cb_queue_);
 
             joint_subscribers_[topic] = nh.subscribe(sub_options);
         }
@@ -126,21 +176,16 @@ void RobotPlugin::configure(tue::Configuration config)
         return;
     }
 
-    KDL::Tree tree;
-    if (!kdl_parser::treeFromString(urdf_xml, tree))
+    if (!kdl_parser::treeFromString(urdf_xml, tree_))
     {
         config.addError("Could not initialize KDL tree object.");
         return;
     }
 
-    std::cout << "OK" << std::endl;
+    joint_cache_size_ = 100; // TODO: remove magic number
 
-    // Add root link
-    root_ = new Link;
-    root_->name = "robot";
-    unsigned int root_idx = addLink(root_);
+    model_initialized_ = false;
 
-    constructRobot(root_idx, tree.getRootSegment());
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -153,6 +198,14 @@ void RobotPlugin::initialize()
 
 void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {
+    if (!model_initialized_)
+    {
+        constructRobot(robot_name_, tree_.getRootSegment(), req);
+        model_initialized_ = true;
+        return;
+    }
+
+    update_req_ = &req;
     cb_queue_.callAvailable();
 }
 
