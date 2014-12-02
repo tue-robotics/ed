@@ -2,13 +2,15 @@
 #define entity_h_
 
 #include "ed/types.h"
-
-#include <boost/circular_buffer.hpp>
-#include <ros/ros.h>
+#include "ed/convex_hull_2d.h"
+#include "ed/uuid.h"
 
 #include <ed/models/entity.h>
 
 #include <tue/config/data.h>
+
+#include <boost/circular_buffer.hpp>
+#include <ros/time.h>
 
 namespace ed
 {

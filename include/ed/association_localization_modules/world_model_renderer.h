@@ -3,7 +3,9 @@
 
 #include "ed/types.h"
 #include <geolib/sensors/DepthCamera.h>
+
 #include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 #include <rgbd/View.h>
 

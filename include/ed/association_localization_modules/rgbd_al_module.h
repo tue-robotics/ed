@@ -3,6 +3,7 @@
 
 #include "ed/types.h"
 #include "ed/rgbd_data.h"
+#include "ed/uuid.h"
 
 #include <tue/config/configuration.h>
 

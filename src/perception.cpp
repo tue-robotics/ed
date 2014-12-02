@@ -3,19 +3,12 @@
 #include "ed/measurement.h"
 #include "ed/world_model.h"
 #include "ed/update_request.h"
+#include "ed/perception_worker.h"
+#include "ed/perception_modules/perception_module.h"
 
 #include "ed/models/models.h"
 
-//#include "ed/perception/aggregator.h"
-
-#include <ros/package.h>
-
-#include <ed/perception/model_fitter.h>
-
 #include <tue/filesystem/path.h>
-
-// Visualization
-#include <opencv2/highgui/highgui.hpp>
 
 namespace ed
 {

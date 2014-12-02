@@ -2,8 +2,13 @@
 #define ED_UPDATE_REQUEST_H_
 
 #include "ed/types.h"
+#include "ed/uuid.h"
 
 #include <tue/config/data_pointer.h>
+
+#include <map>
+#include <vector>
+#include <geolib/datatypes.h>
 
 namespace ed
 {

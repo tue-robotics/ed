@@ -4,6 +4,8 @@
 #include "ed/types.h"
 #include "ed/time.h"
 
+#include <geolib/datatypes.h>
+
 #include <queue>
 
 namespace ed

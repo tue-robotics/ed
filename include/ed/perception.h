@@ -2,12 +2,15 @@
 #define ED_PERCEPTION_H_
 
 #include "ed/types.h"
-#include "ed/perception_worker.h"
 
 #include <tue/config/configuration.h>
 
+#include <class_loader/class_loader.h>
+
 namespace ed
 {
+
+class PerceptionWorker;
 
 class Perception
 {

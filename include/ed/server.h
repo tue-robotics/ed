@@ -1,17 +1,13 @@
-#ifndef environment_description_h_
-#define environment_description_h_
+#ifndef ED_SERVER_H_
+#define ED_SERVER_H_
 
 #include "ed/types.h"
-
-#include <rgbd/Client.h>
-#include <tf/transform_listener.h>
-
 #include "ed/perception.h"
-
-#include <tue/config/configuration.h>
 
 #include <tue/profiling/profiler.h>
 #include <tue/profiling/ros/profile_publisher.h>
+
+#include <tf/transform_listener.h>
 
 namespace ed
 {

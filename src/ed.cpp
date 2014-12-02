@@ -1,30 +1,24 @@
 #include "ed/server.h"
 
-#include <ros/package.h>
-
 // Query
 #include <ed/entity.h>
 #include <ed/SimpleQuery.h>
 #include <geolib/ros/msg_conversions.h>
 #include <ed/world_model.h>
-
-// Publish TF
-#include <tf/transform_broadcaster.h>
-#include <geolib/ros/tf_conversions.h>
-
-// Visualization
 #include <ed/measurement.h>
-#include <rgbd/Image.h>
-#include <opencv2/highgui/highgui.hpp>
 
-#include <ed/event_clock.h>
+// Reset
 #include <std_srvs/Empty.h>
+
+// Loop
+#include <ed/event_clock.h>
 
 // Plugin loading
 #include <ed/plugin.h>
-#include <ed/plugin_container.h>
 #include <ed/LoadPlugin.h>
 #include <tue/config/loaders/yaml.h>
+
+#include <ros/package.h>
 
 ed::Server* ed_wm;
 
@@ -162,92 +156,6 @@ bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response&
 
 // ----------------------------------------------------------------------------------------------------
 
-void publishTFs(tf::TransformBroadcaster& tf_broadcaster)
-{
-    for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
-    {
-        const ed::EntityConstPtr& e = *it;
-
-        geo::Pose3D pose_MAP;
-
-        if (!e->shape())
-        {
-            // determine pose based on convex hull
-            pose_MAP.t = e->convexHull().center_point;
-            pose_MAP.R = geo::Matrix3::identity();
-        }
-        else
-        {
-            pose_MAP = e->pose();
-        }
-
-        tf::StampedTransform t;
-        geo::convert(pose_MAP, t);
-        t.frame_id_ = "/map";
-        t.child_frame_id_ = e->id().str();
-        t.stamp_ = ros::Time::now();
-
-        tf_broadcaster.sendTransform(t);
-    }
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-cv::Mat visualize()
-{
-    cv::Mat rgb_image;
-
-//    double t_latest_image = 0;
-//    rgbd::ImageConstPtr latest_image;
-
-//    // determine latest image
-//    const std::map<ed::UUID, ed::EntityPtr>& entities = ed_wm->entities();
-//    for(std::map<ed::UUID, ed::EntityPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
-//    {
-//        const ed::EntityPtr& e = it->second;
-//        ed::MeasurementConstPtr msr = e->getLastMeasurement();
-
-//        if (msr && msr->image()->getTimestamp() > t_latest_image)
-//        {
-//            t_latest_image = msr->image()->getTimestamp();
-//            latest_image = msr->image();
-//        }
-//    }
-
-//    if (!latest_image)
-//        return rgb_image;
-
-//    // Get RGB image
-//    rgb_image = latest_image->getRGBImage().clone();
-
-//    // Draw masks
-//    for(std::map<ed::UUID, ed::EntityPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
-//    {
-//        const ed::EntityPtr& e = it->second;
-//        ed::MeasurementConstPtr msr = e->getLastMeasurement();
-//        if (msr)
-//        {
-//            cv::Mat contour_img = cv::Mat::zeros(rgb_image.rows, rgb_image.cols, CV_8UC1);
-//            for(ed::Mask::const_iterator it = msr->mask().begin(rgb_image.rows); it != msr->mask().end(); ++it)
-//            {
-////                std::cout << *it << std::endl;
-//                contour_img.at<unsigned char>(*it) = 255;
-//            }
-
-//            std::vector<std::vector<cv::Point> > contours;
-//            cv::findContours(contour_img, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-//            drawContours(rgb_image, contours, -1, cv::Scalar(255, 255, 255), 5);
-//        }
-//    }
-
-
-
-    return rgb_image;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
 bool getEnvironmentVariable(const std::string& var, std::string& value)
 {
      const char * val = ::getenv(var.c_str());
@@ -332,9 +240,6 @@ int main(int argc, char** argv)
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    // Init tf broadcaster
-    tf::TransformBroadcaster tf_broadcaster;
-
     // Init ED
     ed_wm->initialize();
 
@@ -352,27 +257,11 @@ int main(int argc, char** argv)
         if (trigger_config.triggers() && config.sync())
             ed_wm->configure(config, true);
 
-////        std::cout << "CycleTime: " << r.cycleTime() << " seconds. - " << ed_wm->size() << " entities in world model." << std::endl;
-
         if (trigger_ed.triggers())
             ed_wm->update();
-//        ed.storeEntityMeasurements("/tmp/ed_measurements");
-
-//        if (trigger_tf.triggers())
-//            publishTFs(tf_broadcaster);
-
-//        if (trigger_gui.triggers())
-//            ed_wm->updateGUI();
 
         if (trigger_plugins.triggers())
             ed_wm->stepPlugins();
-
-//        cv::Mat visualization = visualize();
-//        if (visualization.data)
-//        {
-//            cv::imshow("visualization", visualization);
-//            cv::waitKey(3);
-//        }
 
         r.sleep();
 

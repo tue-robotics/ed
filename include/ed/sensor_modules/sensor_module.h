@@ -2,6 +2,7 @@
 #define sensor_module_h_
 
 #include "ed/types.h"
+#include "ed/uuid.h"
 
 #include <tf/transform_listener.h>
 #include <geolib/ros/tf_conversions.h>
@@ -28,6 +29,7 @@ public:
     virtual void update(const WorldModelConstPtr& world_model, UpdateRequest& req) = 0;
 
 protected:
+
     UUID source_, frame_;
 
     bool getSensorPoseMap(const double time_stamp, geo::Pose3D& sensor_pose)
