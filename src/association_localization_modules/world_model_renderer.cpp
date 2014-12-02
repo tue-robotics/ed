@@ -1,5 +1,6 @@
 #include "ed/association_localization_modules/world_model_renderer.h"
 #include "ed/entity.h"
+#include "ed/world_model.h"
 
 #include <geolib/Shape.h>
 
@@ -67,11 +68,11 @@ WorldModelRenderer::~WorldModelRenderer()
 
 // ----------------------------------------------------------------------------------------------------
 
-void WorldModelRenderer::render(const geo::Pose3D& camera_pose, const std::map<UUID, EntityConstPtr>& entities, float max_range, const rgbd::View& view, cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>& pc, std::vector<const Entity*>& pc_entity_ptrs)
+void WorldModelRenderer::render(const geo::Pose3D& camera_pose, const WorldModelConstPtr& world_model, float max_range, const rgbd::View& view, cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>& pc, std::vector<const Entity*>& pc_entity_ptrs)
 {
-    for(std::map<UUID, EntityConstPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+    for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
         if (e->shape())
         {
             geo::Pose3D pose = camera_pose.inverse() * e->pose();

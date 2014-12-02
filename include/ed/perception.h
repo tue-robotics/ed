@@ -2,12 +2,15 @@
 #define ED_PERCEPTION_H_
 
 #include "ed/types.h"
-#include "ed/perception_worker.h"
 
 #include <tue/config/configuration.h>
 
+#include <class_loader/class_loader.h>
+
 namespace ed
 {
+
+class PerceptionWorker;
 
 class Perception
 {
@@ -20,7 +23,7 @@ public:
 
     void configure(tue::Configuration config);
 
-    void update(std::map<UUID, EntityConstPtr>& entities);
+    void update(const WorldModelConstPtr& world_model, UpdateRequest& req);
 
     bool getEnvironmentVariable(const std::string& var, std::string& value);
 

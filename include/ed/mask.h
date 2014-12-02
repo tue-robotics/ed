@@ -2,7 +2,7 @@
 #define ED_MASK_H_
 
 #include <rgbd/types.h>
-#include <opencv/cv.h>
+#include <opencv2/core/core.hpp>
 
 #include <iostream>
 #include <vector>

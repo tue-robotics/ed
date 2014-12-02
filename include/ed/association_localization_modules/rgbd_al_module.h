@@ -3,6 +3,7 @@
 
 #include "ed/types.h"
 #include "ed/rgbd_data.h"
+#include "ed/uuid.h"
 
 #include <tue/config/configuration.h>
 
@@ -15,6 +16,20 @@
 
 namespace ed
 {
+
+class ALMResult
+{
+
+public:
+
+    void addAssociation(const UUID& id, const MeasurementConstPtr& m)
+    {
+        associations[id].push_back(m);
+    }
+
+    std::map<UUID, std::vector<MeasurementConstPtr> > associations;
+
+};
 
 class RGBDALModule
 {
@@ -34,7 +49,8 @@ public:
 
     virtual void process(const RGBDData& rgbd_data,
                          PointCloudMaskPtr& not_associated_mask,
-                         std::map<UUID, EntityConstPtr>& entities) = 0;
+                         const WorldModelConstPtr& world_model,
+                         ALMResult& result) = 0;
 
     virtual void configure(tue::Configuration config) = 0;
 

@@ -2,7 +2,10 @@
 #define depth_data_processing_h_
 
 #include "ed/types.h"
+#include "ed/convex_hull_2d.h"
 #include "ed/rgbd_data.h"
+
+#include "ed/mask.h"
 
 #include "pcl/point_types.h"
 

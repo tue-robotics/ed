@@ -3,7 +3,9 @@
 
 #include "ed/types.h"
 #include <geolib/sensors/DepthCamera.h>
+
 #include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 #include <rgbd/View.h>
 
@@ -20,7 +22,7 @@ public:
     virtual ~WorldModelRenderer();
 
     void render(const geo::Pose3D& camera_pose,
-                const std::map<UUID, EntityConstPtr>& entities,
+                const WorldModelConstPtr& world_model,
                 float max_range,
                 const rgbd::View& view,
                 cv::Mat& img,

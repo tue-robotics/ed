@@ -74,33 +74,11 @@ plugins:
   parameters:
       root_frame_id: /map
 #- name: amigo_plugin
-#  lib: ed_robot_plugin
+#  lib: libed_robot_plugin.so
 #  parameters:
+#      frequency: 100
 #      robot_name: amigo
 #      urdf_rosparam: /amigo/robot_description
 #      joint_topics:
 #          - topic: /amigo/torso/measurements
-#- name: hello_world2
-#  lib: libed_hello_world_plugin.so
-#  parameters:
-#      text: "Hello world! 2"
-#- name: hello_world3
-#  lib: libed_hello_world_plugin.so
-#  parameters:
-#      text: "Hello world! 3"
-
-gui:
-    enabled: 1
-    srv_get_measurements: /ed/gui/get_measurements
-    srv_set_label: /ed/gui/set_label
-    srv_raise_event: /ed/gui/raise_event
-    srv_get_command: /ed/gui/get_gui_command
-    map_image_topic: /ed/gui/map_image
-    map_image_width: 500
-    map_image_height: 500
-    world_width: 11.0
-    world_height: 11.0
-    cam_x: 4.5
-    cam_y: 4.4
-    cam_z: 10.0
 

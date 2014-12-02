@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include <boost/thread.hpp>
-#include "ed/perception_modules/perception_module.h"
+#include <tue/config/data_pointer.h>
 
 namespace ed
 {

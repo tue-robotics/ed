@@ -19,7 +19,7 @@ public:
 
     void configure(tue::Configuration config, bool reconfigure = false);
 
-    void update(std::map<UUID, EntityConstPtr>& entities);
+    void update(const WorldModelConstPtr& world_model, UpdateRequest& req);
 
 private:
     //! Profiling

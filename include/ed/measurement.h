@@ -2,9 +2,9 @@
 #define measurement_h_
 
 #include "ed/types.h"
-#include "mask.h"
-
+#include "ed/mask.h"
 #include "ed/rgbd_data.h"
+#include "ed/convex_hull_2d.h"
 
 namespace ed
 {

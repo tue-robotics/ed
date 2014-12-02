@@ -1,17 +1,16 @@
 #ifndef ED_TYPES_H_
 #define ED_TYPES_H_
 
-#include <rgbd/types.h>
-#include <geolib/datatypes.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
+//#include <rgbd/types.h>
+//#include <geolib/datatypes.h>
 
-#include <opencv/cv.h>
-
-#include "ed/mask.h"
+#include <boost/shared_ptr.hpp>
 
 namespace ed
 {
+
+typedef unsigned int Idx;
+static const unsigned int INVALID_IDX = -1;
 
 class Measurement;
 typedef boost::shared_ptr<Measurement> MeasurementPtr;
@@ -53,22 +52,16 @@ class PerceptionModule;
 typedef boost::shared_ptr<PerceptionModule> PerceptionModulePtr;
 typedef boost::shared_ptr<const PerceptionModule> PerceptionModuleConstPtr;
 
-typedef std::string UUID;
+class Relation;
+typedef boost::shared_ptr<Relation> RelationPtr;
+typedef boost::shared_ptr<const Relation> RelationConstPtr;
+
+class ConvexHull2D;
+class ImageMask;
+
+class UUID;
+
 typedef std::string TYPE;
-
-typedef std::vector< std::vector<cv::Point2i> > IndexMap;
-
-struct ConvexHull2D {
-    ConvexHull2D() : center_point(geo::Vector3(0,0,0)) {}
-    pcl::PointCloud<pcl::PointXYZ> chull; // Convex hull point w.r.t. center
-    double min_z, max_z; // min and max z of convex hull
-    geo::Vector3 center_point; // Center of the convex hull
-};
-
-struct ConvexHull2DWithIndices {
-    std::vector<cv::Point2i> indices;
-    ConvexHull2D convex_hull_2d;
-};
 
 }
 

@@ -3,6 +3,8 @@
 
 #include "ed/segmentation_modules/rgbd_seg_module.h"
 
+#include <opencv2/core/core.hpp>
+
 namespace ed
 {
 

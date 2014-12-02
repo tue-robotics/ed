@@ -85,6 +85,8 @@ add_library(ed_core
     src/entity.cpp
     src/measurement.cpp
     src/update_request.cpp
+    src/world_model.cpp
+    src/transform_cache.cpp
 
     # DDP is used by measurement.cpp, so put here
     src/helpers/depth_data_processing.cpp
@@ -98,8 +100,7 @@ add_library(ed_perception
     src/perception_modules/perception_module.cpp
     src/perception.cpp
     src/perception_worker.cpp
-    # src/perception/aggregator.cpp
-    src/perception/model_fitter.cpp
+#    src/perception/model_fitter.cpp
 )
 target_link_libraries(ed_perception ed_core)
 add_dependencies(ed_perception ${PROJECT_NAME}_gencpp)
@@ -168,15 +169,12 @@ find_package(kdl_parser REQUIRED)
 add_library(ed_robot_plugin plugins/robot_plugin.cpp)
 target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES})
 
-add_library(ed_gui_plugin plugins/gui_plugin.cpp)
-add_dependencies(ed_gui_plugin ${PROJECT_NAME}_gencpp)
-
-#add_library(ed_builder_plugin plugins/builder_plugin.cpp)
-#add_dependencies(ed_builder_plugin ${PROJECT_NAME}_gencpp)
-
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS
 # ------------------------------------------------------------------------------------------------
+
+add_executable(ed_test_wm test/test_wm.cpp)
+target_link_libraries(ed_test_wm ed_core ${OpenCV_LIBRARIES})
 
 add_executable(test_mask test/test_mask.cpp)
 target_link_libraries(test_mask ed_core ${OpenCV_LIBRARIES})
@@ -185,11 +183,6 @@ add_dependencies(test_mask ${PROJECT_NAME}_gencpp)
 add_executable(test_sampling test/test_sampling.cpp)
 target_link_libraries(test_sampling ed_core ed_visualization ${OpenCV_LIBRARIES})
 add_dependencies(test_sampling ${PROJECT_NAME}_gencpp)
-
-#add_executable(test_human_classifier test/test_human_classifier.cpp)
-#target_link_libraries(test_human_classifier human_contour_matcher ${OpenCV_LIBRARIES})
-#target_link_libraries(test_human_classifier face_detector ${OpenCV_LIBRARIES})
-#add_dependencies(test_human_classifier ${PROJECT_NAME}_gencpp)
 
 add_executable(test_service_speed test/test_service_speed.cpp)
 target_link_libraries(test_service_speed ed_core)

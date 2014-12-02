@@ -1,6 +1,7 @@
 #include "ed/perception_worker.h"
 #include "ed/entity.h"
 #include "ed/measurement.h"
+#include "ed/perception_modules/perception_module.h"
 
 namespace ed
 {

@@ -21,12 +21,14 @@
 #include "ed/plugin_container.h"
 #include "ed/world_model.h"
 
+#include <boost/make_shared.hpp>
+
 namespace ed
 {
 
 // ----------------------------------------------------------------------------------------------------
 
-Server::Server()
+Server::Server() : world_model_(new WorldModel)
 {
 }
 
@@ -149,7 +151,7 @@ void Server::initialize()
 
 void Server::reset()
 {
-    entities_.clear();
+    world_model_.reset(new WorldModel);
 
     initializeWorld();
 }
@@ -204,7 +206,9 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
 
 void Server::stepPlugins()
 {   
-    // collect all update requests
+    WorldModelPtr new_world_model;
+
+    // collect and apply all update requests
     std::vector<PluginContainerPtr> plugins_with_requests;
     for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
@@ -212,27 +216,34 @@ void Server::stepPlugins()
 
         if (c->updateRequest())
         {
-            update(*c->updateRequest());
+            if (!new_world_model)
+            {
+                // Create world model copy (shallow)
+                new_world_model = boost::make_shared<WorldModel>(*world_model_);
+            }
+
+            new_world_model->update(*c->updateRequest());
             plugins_with_requests.push_back(c);
         }
     }
 
-    // Create world model copy (shallow)
-    WorldModelPtr world_model(new WorldModel());
-    world_model->setEntities(entities_);
-
-    // Set the new (updated) world
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    if (new_world_model)
     {
-        PluginContainerPtr c = *it;
-        c->setWorld(world_model);
-    }
+        // Set the new (updated) world
+        for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+        {
+            PluginContainerPtr c = *it;
+            c->setWorld(new_world_model);
+        }
 
-    // Clear the requests of all plugins that had requests (which flags them to continue processing)
-    for(std::vector<PluginContainerPtr>::iterator it = plugins_with_requests.begin(); it != plugins_with_requests.end(); ++it)
-    {
-        PluginContainerPtr c = *it;
-        c->clearUpdateRequest();
+        world_model_ = new_world_model;
+
+        // Clear the requests of all plugins that had requests (which flags them to continue processing)
+        for(std::vector<PluginContainerPtr>::iterator it = plugins_with_requests.begin(); it != plugins_with_requests.end(); ++it)
+        {
+            PluginContainerPtr c = *it;
+            c->clearUpdateRequest();
+        }
     }
 }
 
@@ -242,11 +253,16 @@ void Server::update()
 {
     tue::ScopedTimer t(profiler_, "ed");
 
+    // Create world model copy (shallow)
+    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+
     // Sensor Measurements integration (Loop over all sensors and integrate the measurements)
     {
         tue::ScopedTimer t(profiler_, "sensor integration");
         for (std::map<std::string, SensorModulePtr>::const_iterator it = sensors_.begin(); it != sensors_.end(); ++it) {
-            it->second->update(entities_);
+            UpdateRequest req;
+            it->second->update(new_world_model, req);
+            new_world_model->update(req);
         }
     }
 
@@ -254,39 +270,35 @@ void Server::update()
     if (visualize_)
     {
         tue::ScopedTimer t(profiler_, "visualization");
-        helpers::visualization::publishWorldModelVisualizationMarkerArray(entities_, vis_pub_);
+        helpers::visualization::publishWorldModelVisualizationMarkerArray(*world_model_, vis_pub_);
     }
 
     // Perception update (make soup of the entity measurements)
     {
         tue::ScopedTimer t(profiler_, "perception");
-        perception_.update(entities_);
+
+        UpdateRequest req;
+        perception_.update(new_world_model, req);
+        new_world_model->update(req);
     }
 
     // Look if we can merge some not updates entities
     {
         tue::ScopedTimer t(profiler_, "merge entities");
-        mergeEntities(5.0, 0.5);
+        mergeEntities(new_world_model, 5.0, 0.5);
     }
+
+    // Notify all plugins of the updated world model
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
+        PluginContainerPtr c = *it;
+        c->setWorld(new_world_model);
+    }
+
+    // Set the new (updated) world
+    world_model_ = new_world_model;
 
     pub_profile_.publish();
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void Server::update(const UpdateRequest& update_req)
-{
-    // Update entities
-    for(std::map<UUID, EntityConstPtr>::const_iterator it = update_req.entities.begin(); it != update_req.entities.end(); ++it)
-    {
-        entities_[it->first] = it->second;
-    }
-
-    // Remove entities
-    for(std::set<UUID>::const_iterator it = update_req.removed_entities.begin(); it != update_req.removed_entities.end(); ++it)
-    {
-        entities_.erase(*it);
-    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -298,8 +310,13 @@ void Server::initializeWorld()
     std::vector<EntityPtr> entities;
     if (ed::models::convertNewEntityToEntities(e, entities))
     {
+        // Create world model copy (shallow)
+        WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+
         for (std::vector<EntityPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
-            entities_[(*it)->id()] = *it;
+            new_world_model->setEntity((*it)->id(), *it);
+
+        world_model_ = new_world_model;
     }
     else
     {
@@ -311,14 +328,14 @@ void Server::initializeWorld()
 
 void Server::storeEntityMeasurements(const std::string& path) const
 {
-    for(std::map<UUID, EntityConstPtr>::const_iterator it = entities_.begin(); it != entities_.end(); ++it)
+    for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
         MeasurementConstPtr msr = e->lastMeasurement();
         if (!msr)
             continue;
 
-        std::string filename = path + "/" + e->id();
+        std::string filename = path + "/" + e->id().str();
         if (!write(filename, *msr))
         {
             std::cout << "Saving measurement failed." << std::endl;
@@ -326,15 +343,17 @@ void Server::storeEntityMeasurements(const std::string& path) const
     }
 }
 
-void Server::mergeEntities(double not_updated_time, double overlap_fraction)
+// ----------------------------------------------------------------------------------------------------
+
+void Server::mergeEntities(const WorldModelPtr& world_model, double not_updated_time, double overlap_fraction)
 {
     std::vector<UUID> ids_to_be_removed;
     std::vector<UUID> merge_target_ids;
 
     // Iter over all entities and check if the current_time - last_update_time > not_updated_time
-    for (std::map<UUID, EntityConstPtr>::const_iterator it = entities_.begin(); it != entities_.end(); ++it)
+    for (WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
-        const EntityConstPtr& e = it->second;
+        const EntityConstPtr& e = *it;
 
         if (!e->lastMeasurement())
             continue;
@@ -345,13 +364,15 @@ void Server::mergeEntities(double not_updated_time, double overlap_fraction)
         if ( ros::Time::now().toSec() - e->lastMeasurement()->timestamp() > not_updated_time )
         {
             // Try to merge with other polygons (except for itself)
-            for (std::map<UUID, EntityConstPtr>::iterator e_it = entities_.begin(); e_it != entities_.end(); ++e_it)
+            for (WorldModel::const_iterator e_it = world_model->begin(); e_it != world_model->end(); ++e_it)
             {
+                const EntityConstPtr& e_target = *e_it;
+                const UUID& id2 = e_target->id();
+
                 // Skip self
-                if (e_it->first == e->id())
+                if (id2 == e->id())
                     continue;
 
-                const EntityConstPtr& e_target = e_it->second;
                 MeasurementConstPtr last_m = e_target->lastMeasurement();
 
                 if (!last_m)
@@ -382,7 +403,7 @@ void Server::mergeEntities(double not_updated_time, double overlap_fraction)
                         e_target_updated->addMeasurement(best_measurement);
 
                     // Set updated entity
-                    entities_[e_target->id()] = e_target_updated;
+                    world_model->setEntity(e_target->id(), e_target_updated);
 
                     merge_target_ids.push_back(e_target->id());
                     break;
@@ -393,7 +414,7 @@ void Server::mergeEntities(double not_updated_time, double overlap_fraction)
 
     for (std::vector<UUID>::const_iterator it = ids_to_be_removed.begin(); it != ids_to_be_removed.end(); ++it)
     {
-        entities_.erase(*it);
+        world_model->removeEntity(*it);
     }
 }
 

@@ -1,43 +1,24 @@
 #include "ed/perception.h"
 #include "ed/entity.h"
 #include "ed/measurement.h"
+#include "ed/world_model.h"
+#include "ed/update_request.h"
+#include "ed/perception_worker.h"
+#include "ed/perception_modules/perception_module.h"
 
 #include "ed/models/models.h"
 
-//#include "ed/perception/aggregator.h"
-
-#include <ros/package.h>
-
-#include <ed/perception/model_fitter.h>
-
 #include <tue/filesystem/path.h>
-
-// Visualization
-#include <opencv2/highgui/highgui.hpp>
-
-#include <tue/config/reader.h>
 
 namespace ed
 {
 
 // ----------------------------------------------------------------------------------------------------
 
-EntityPtr updateEntityType(const EntityConstPtr& e, const tue::config::DataConstPointer& perception_result)
+void updateEntityType(const EntityConstPtr& e, const tue::config::DataConstPointer& perception_result,
+                      UpdateRequest& req)
 {
-    EntityPtr e_updated(new Entity(*e));
-
-    tue::config::DataPointer params;
-    params.add(e->data());
-    params.add(perception_result);
-
-    tue::config::Reader r(params);
-    std::string type;
-    if (r.value("type", type, tue::config::OPTIONAL))
-        e_updated->setType(type);
-
-    e_updated->setData(params);
-
-    return e_updated;
+    req.addData(e->id(), perception_result);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -138,16 +119,16 @@ void Perception::configure(tue::Configuration config)
 
 // ----------------------------------------------------------------------------------------------------
 
-void Perception::update(std::map<UUID, EntityConstPtr>& entities)
+void Perception::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
 {
     // Don't update if there are no perception modules
     if (perception_modules_.empty())
         return;
 
-    for(std::map<UUID, EntityConstPtr>::iterator it = entities.begin(); it != entities.end(); ++it)
-    {
-        const UUID& id = it->first;
-        const EntityConstPtr& e = it->second;
+    for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
+    {        
+        const EntityConstPtr& e = *it;
+        const UUID& id = e->id();
 
 //        if (e->type() != "")
 //        {
@@ -165,7 +146,7 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
 //            }
 //        }
 
-        std::map<UUID, PerceptionWorker*>::iterator it_worker = workers_.find(it->first);
+        std::map<UUID, PerceptionWorker*>::iterator it_worker = workers_.find(id);
         if (it_worker == workers_.end())
         {
             // No worker active for this entity, so create one
@@ -204,7 +185,7 @@ void Perception::update(std::map<UUID, EntityConstPtr>& entities)
             {
                 // Update the entity with the results from the worker
                 if (worker->getResult().valid())
-                    it->second = updateEntityType(e, worker->getResult());
+                    updateEntityType(e, worker->getResult(), req);
 
                 // Set worker to idle. This way, the result is not checked again on the next iteration
                 worker->setIdle();

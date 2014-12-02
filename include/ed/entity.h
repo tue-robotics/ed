@@ -2,13 +2,15 @@
 #define entity_h_
 
 #include "ed/types.h"
-
-#include <boost/circular_buffer.hpp>
-#include <ros/ros.h>
+#include "ed/convex_hull_2d.h"
+#include "ed/uuid.h"
 
 #include <ed/models/entity.h>
 
 #include <tue/config/data.h>
+
+#include <boost/circular_buffer.hpp>
+#include <ros/time.h>
 
 namespace ed
 {
@@ -68,7 +70,32 @@ public:
 
     inline double creationTime() const { return creation_time_; }
 
+    inline void setRelationTo(Idx child_idx, Idx r_idx) { relations_to_[child_idx] = r_idx; }
+
+    inline void setRelationFrom(Idx parent_idx, Idx r_idx) { relations_from_[parent_idx] = r_idx; }
+
+    inline Idx relationTo(Idx child_idx) const
+    {
+        std::map<Idx, Idx>::const_iterator it = relations_to_.find(child_idx);
+        if (it == relations_to_.end())
+            return INVALID_IDX;
+        return it->second;
+    }
+
+    inline Idx relationFrom(Idx parent_idx) const
+    {
+        std::map<Idx, Idx>::const_iterator it = relations_from_.find(parent_idx);
+        if (it == relations_from_.end())
+            return INVALID_IDX;
+        return it->second;
+    }
+
+    const std::map<Idx, Idx>& relationsFrom() const { return relations_from_; }
+
+    const std::map<Idx, Idx>& relationsTo() const { return relations_to_; }
+
 private:
+
     UUID id_;
 
     TYPE type_;
@@ -93,6 +120,9 @@ private:
     double creation_time_;
 
     tue::config::DataConstPointer config_;
+
+    std::map<Idx, Idx> relations_from_;
+    std::map<Idx, Idx> relations_to_;
 
 };
 

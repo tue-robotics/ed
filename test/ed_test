@@ -1,0 +1,36 @@
+#! /bin/bash
+
+OUTPUT_DIR=`rospack find ed`/test/output
+mkdir -p $OUTPUT_DIR
+
+# args: PROGRAM OUTPUT-DIR
+function check-output
+{
+    output_file=$OUTPUT_DIR/$1-output.txt
+
+    rosrun ed $1 > /tmp/test-output.txt
+
+    echo -en "$1: "
+
+    if [ -f $output_file ]
+    then
+        diff=$(diff /tmp/test-output.txt $OUTPUT_DIR/$1-output.txt)
+
+        if [ -z "$diff" ]
+        then
+	        echo "OK"
+        else
+	        echo "DIFFERENCE!"
+            echo "------------------------------------------------------------"
+	        echo ""
+	        echo "$diff" | colordiff
+            echo "------------------------------------------------------------"
+        fi
+    else
+        mv /tmp/test-output.txt $output_file
+        echo "output written to '$output_file'"
+    fi
+}
+
+
+check-output ed_test_wm $output_dir

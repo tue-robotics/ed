@@ -1,46 +1,100 @@
 #ifndef ED_WORLD_MODEL_H_
 #define ED_WORLD_MODEL_H_
 
-// Struct holding the world model data
+#include "ed/types.h"
+#include "ed/time.h"
 
-#include "types.h"
+#include <geolib/datatypes.h>
+
+#include <queue>
 
 namespace ed
 {
+
+// ----------------------------------------------------------------------------------------------------
 
 class WorldModel
 {
 
 public:
 
-    typedef std::map<UUID, EntityConstPtr>::iterator iterator;
+    class EntityIterator : public std::iterator<std::forward_iterator_tag, EntityConstPtr>
+    {
 
-    typedef std::map<UUID, EntityConstPtr>::const_iterator const_iterator;
+    public:
 
-    iterator begin() { return entities_.begin(); }
+        EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end()) {}
 
-    const_iterator begin() const { return entities_.begin(); }
+        EntityIterator(const EntityIterator& it) : it_(it.it_) {}
 
-    iterator end() { return entities_.end(); }
+        EntityIterator(const std::vector<EntityConstPtr>::const_iterator& it) : it_(it) {}
 
-    const_iterator end() const { return entities_.end(); }
+        EntityIterator& operator++()
+        {
+            do { ++it_; if (it_ == it_end_) break; } while (!(*it_));
+            return *this;
+        }
 
-    void setEntities(const std::map<UUID, EntityConstPtr>& entities) { entities_ = entities; }
+        EntityIterator operator++(int) { EntityIterator tmp(*this); operator++(); return tmp; }
+
+        bool operator==(const EntityIterator& rhs) { return it_ == rhs.it_; }
+
+        bool operator!=(const EntityIterator& rhs) { return it_ != rhs.it_; }
+
+        const EntityConstPtr& operator*() { return *it_; }
+
+    private:
+
+        std::vector<EntityConstPtr>::const_iterator it_;
+        std::vector<EntityConstPtr>::const_iterator it_end_;
+
+    };
+
+    typedef EntityIterator const_iterator;
+
+    inline const_iterator begin() const { return const_iterator(entities_); }
+
+    inline const_iterator end() const { return const_iterator(entities_.end()); }
+
+    void setEntity(const UUID& id, const EntityConstPtr& e);
+
+    void removeEntity(const UUID& id);
 
     EntityConstPtr getEntity(const ed::UUID& id) const
     {
-        std::map<ed::UUID, ed::EntityConstPtr>::const_iterator it = entities_.find(id);
-        if (it == entities_.end())
-            return EntityConstPtr();
+        Idx idx;
+        if (findEntityIdx(id, idx))
+            return entities_[idx];
         else
-            return it->second;
+            return EntityConstPtr();
     }
 
-    size_t numEntities() const { return entities_.size(); }
+    size_t numEntities() const { return entity_map_.size(); }
+
+    void update(const UpdateRequest& req);
+
+    void setRelation(Idx parent, Idx child, const RelationConstPtr& r);
+
+    bool findEntityIdx(const UUID& id, Idx& idx) const;
+
+    bool calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const;
 
 private:
 
-    std::map<UUID, EntityConstPtr> entities_;
+    std::map<UUID, Idx> entity_map_;
+
+    std::vector<EntityConstPtr> entities_;
+
+    std::queue<Idx> entity_empty_spots_;
+
+    std::vector<RelationConstPtr> relations_;
+
+    Idx addRelation(const RelationConstPtr& r);
+
+    EntityPtr getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& new_entities);
+
+    void addNewEntity(const EntityConstPtr& e);
+
 
 };
 
