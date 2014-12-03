@@ -50,7 +50,7 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
     }
 
     msg.has_shape = e.shape() ? true : false;
-    if (msg.has_shape)
+    if (msg.has_shape || e.convexHull().chull.empty())
     {
         // If the entity has a shape, use the pose of this shape
         geo::convert(e.pose(), msg.pose);
@@ -117,7 +117,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
         if (radius > 0)
         {
             geo::Vector3 p_entity;
-            if (e->shape())
+            if (e->shape() || e->convexHull().chull.empty())
                 p_entity = e->pose().getOrigin();
             else
             {
