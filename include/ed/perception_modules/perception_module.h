@@ -84,7 +84,9 @@ private:
 
 };
 
-PerceptionModulePtr loadPerceptionModule(class_loader::ClassLoader* loader);
+PerceptionModulePtr loadPerceptionModule(class_loader::ClassLoader* loader, const std::string& model_list_name = std::string());
+
+bool loadModelList(std::string& model_list_path, std::vector<std::string>& model_list);
 
 }
 

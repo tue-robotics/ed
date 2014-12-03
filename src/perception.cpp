@@ -52,6 +52,8 @@ Perception::~Perception()
 
 void Perception::configure(tue::Configuration config)
 {
+    std::string model_list_name = "";
+
     // Get the plugin paths
     std::string ed_plugin_paths;
     if (getEnvironmentVariable("ED_PLUGIN_PATH", ed_plugin_paths))
@@ -66,6 +68,10 @@ void Perception::configure(tue::Configuration config)
         config.addError("Environment variable ED_PLUGIN_PATH not set.");
         return;
     }
+
+    // read model list name to be used
+    if(!config.value("model_list", model_list_name))
+        std::cout << "Could not find model list name. Using all models." << std::endl;
 
     if (config.readArray("modules"))
     {
@@ -96,7 +102,7 @@ void Perception::configure(tue::Configuration config)
                 perception_loaders_.push_back(class_loader);
 
                 // Create perception module
-                PerceptionModulePtr perception_module = ed::loadPerceptionModule(class_loader);
+                PerceptionModulePtr perception_module = ed::loadPerceptionModule(class_loader, model_list_name);
 
                 if (perception_module)
                 {
