@@ -34,6 +34,8 @@ PerceptionModulePtr loadPerceptionModule(class_loader::ClassLoader* loader, cons
 
     PerceptionModulePtr perception_mod = loader->createInstance<PerceptionModule>(classes.front());
 
+    std::cout << "[" << module_name_ << "] " << "Loading perception module: " << perception_mod->name() << std::endl;
+
     std::string object_models_path = ros::package::getPath("ed_object_models");
 
     std::string config_path = object_models_path + "/configs/" + perception_mod->name();
@@ -42,8 +44,12 @@ PerceptionModulePtr loadPerceptionModule(class_loader::ClassLoader* loader, cons
 
     perception_mod->loadConfig(config_path);
 
-    if(!loadModelList(model_list_path, model_list))
-        std::cout << "[" << module_name_ << "] " << "Could not find model list at " << model_list_path << std::endl;
+    if(!model_list_name.empty()){
+        if(!loadModelList(model_list_path, model_list))
+            std::cout << "[" << module_name_ << "] " << "Could not find model list at " << model_list_path << std::endl;
+    }else{
+        std::cout << "[" << module_name_ << "] " << "No model list specified, loading all models" << std::endl;
+    }
 
     tue::filesystem::Crawler model_crawler(object_models_path + "/models");
     model_crawler.setRecursive(false);
