@@ -1,39 +1,39 @@
 sensors:
-- name: top_kinect
-  type: kinect
-  source: /sergio/top_kinect/rgbd
-  frame_id: /sergio/top_kinect/openni_rgb_optical_frame
-  visualize: 0
-  voxel_size: 0.02
-  max_range: 3.0
-  clearing_padding_fraction: 0.05
-  normal_k_search: 15
-  association_modules:
-  - type: PointNormal
-    parameters:
-        association_correspondence_distance: 0.3
-        position_weight: 2.0
-        normal_weight: 1.0
-        render_width: 320
-        render_max_range: 3.2
-        render_voxel_size: 0.02
-        normal_k_search: 15
-        visualize: 0
-  - type: PolygonHeight
-    parameters:
-        max_range: 3.0
-        tolerance: 0.035
-        min_cluster_size: 20
-        visualize: 0
-  segmentation_modules:
-  - type: EuclideanClustering
-    parameters:
-        tolerance: 0.035
-        min_cluster_size: 20
-        visualize: 0
+#- name: top_kinect
+#  type: kinect
+#  source: /sergio/top_kinect/rgbd
+#  frame_id: /sergio/top_kinect/openni_rgb_optical_frame
+#  visualize: 0
+#  voxel_size: 0.02
+#  max_range: 3.0
+#  clearing_padding_fraction: 0.05
+#  normal_k_search: 15
+#  association_modules:
+#  - type: PointNormal
+#    parameters:
+#        association_correspondence_distance: 0.3
+#        position_weight: 2.0
+#        normal_weight: 1.0
+#        render_width: 320
+#        render_max_range: 3.2
+#        render_voxel_size: 0.02
+#        normal_k_search: 15
+#        visualize: 0
+#  - type: PolygonHeight
+#    parameters:
+#        max_range: 3.0
+#        tolerance: 0.035
+#        min_cluster_size: 20
+#        visualize: 0
+#  segmentation_modules:
+#  - type: EuclideanClustering
+#    parameters:
+#        tolerance: 0.035
+#        min_cluster_size: 20
+#        visualize: 0
 
 visualize: 1
-world_name: robotics_testlab_B
+world_name: robotics_testlabs
 
 perception:
     fit_shapes: 1
@@ -45,10 +45,10 @@ perception:
 #    -  lib: libtype_aggregator.so
 
 plugins:
-- name: gui_server
-  lib: libed_gui_server_plugin.so
-  parameters:
-      robot_name: sergio
+#- name: gui_server
+#  lib: libed_gui_server_plugin.so
+#  parameters:
+#      robot_name: sergio
 #- name: builder
 #  lib: libed_builder_plugin.so
 - name: obstacle_grid_publisher
