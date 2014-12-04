@@ -11,7 +11,8 @@ namespace ed
 // --------------------------------------------------------------------------------
 
 PluginContainer::PluginContainer()
-    : class_loader_(0), cycle_duration_(0.1), loop_frequency_(10), stop_(false), step_finished_(true), t_last_update_(0)
+    : class_loader_(0), cycle_duration_(0.1), loop_frequency_(10), stop_(false), step_finished_(true), t_last_update_(0),
+      total_process_time_sec_(0)
 {
     timer_.start();
 }
@@ -96,6 +97,8 @@ void PluginContainer::runThreaded()
 
 void PluginContainer::run()
 {
+    total_timer_.start();
+
     ros::Rate r(loop_frequency_);
     while(!stop_)
     {
@@ -130,7 +133,13 @@ void PluginContainer::step()
     {        
         UpdateRequestPtr update_request(new UpdateRequest);
 
+        tue::Timer timer;
+        timer.start();
+
         plugin_->process(*world_current_, *update_request);
+
+        timer.stop();
+        total_process_time_sec_ += timer.getElapsedTimeInSec();
 
         // If the received update_request was not empty, set it
         if (!update_request->empty())

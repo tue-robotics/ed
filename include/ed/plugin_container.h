@@ -55,6 +55,12 @@ public:
 
     void setLoopFrequency(double freq) { loop_frequency_ = freq; }
 
+    double loopFrequency() const { return loop_frequency_; }
+
+    double totalRunningTime() const { return total_timer_.getElapsedTimeInSec(); }
+
+    double totalProcessingTime() const { return total_process_time_sec_; }
+
 protected:
 
     class_loader::ClassLoader*  class_loader_;
@@ -87,6 +93,10 @@ protected:
     WorldModelConstPtr world_new_;
 
     WorldModelConstPtr world_current_;
+
+    double total_process_time_sec_;
+
+    tue::Timer total_timer_;
 
     void step();
 

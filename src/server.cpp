@@ -21,7 +21,11 @@
 #include "ed/plugin_container.h"
 #include "ed/world_model.h"
 
+#include <tue/config/loaders/yaml.h>
+
 #include <boost/make_shared.hpp>
+
+#include <std_msgs/String.h>
 
 namespace ed
 {
@@ -133,6 +137,12 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         initializeWorld();
     else
         std::cout << "No world specified in parameter file, cannot initialize world" << std::endl;
+
+    if (pub_stats_.getTopic() == "")
+    {
+        ros::NodeHandle nh;
+        pub_stats_ = nh.advertise<std_msgs::String>("/ed/stats", 10);
+    }
 
 }
 
@@ -303,6 +313,47 @@ void Server::update()
 
 // ----------------------------------------------------------------------------------------------------
 
+void Server::update(const std::string& update_str, std::string& error)
+{
+    tue::ScopedTimer t(profiler_, "ed");
+
+
+    // convert update string to update request
+    tue::Configuration cfg;
+
+    tue::config::loadFromYAMLString(update_str, cfg);
+
+    if (cfg.hasError())
+    {
+        error = cfg.error();
+        return;
+    }
+
+    std::cout << cfg << std::endl;
+
+    // Create world model copy (shallow)
+    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+
+    UpdateRequest req;
+
+
+    // Update the world model
+    new_world_model->update(req);
+
+    // Notify all plugins of the updated world model
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
+        PluginContainerPtr c = *it;
+        c->setWorld(new_world_model);
+    }
+
+    // Set the new (updated) world
+    world_model_ = new_world_model;
+
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void Server::initializeWorld()
 {
     models::NewEntityPtr e = ed::models::create(world_name_);
@@ -415,7 +466,32 @@ void Server::mergeEntities(const WorldModelPtr& world_model, double not_updated_
     for (std::vector<UUID>::const_iterator it = ids_to_be_removed.begin(); it != ids_to_be_removed.end(); ++it)
     {
         world_model->removeEntity(*it);
+    }    
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+
+void Server::publishStatistics() const
+{
+    std::stringstream s;
+
+    s << "[plugins]" << std::endl;
+    for(std::vector<PluginContainerPtr>::const_iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
+        const PluginContainerPtr& p = *it;
+
+        // Calculate CPU usage percentage
+        double cpu_perc = p->totalProcessingTime() * 100 / p->totalRunningTime();
+
+        s << "    " << p->name() << ": " << cpu_perc << " % (" << p->loopFrequency() << " hz)" << std::endl;
     }
+
+
+    std_msgs::String msg;
+    msg.data = s.str();
+
+    pub_stats_.publish(msg);
 }
 
 }

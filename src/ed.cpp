@@ -9,6 +9,9 @@
 #include <geolib/ros/msg_conversions.h>
 #include <tue/config/yaml_emitter.h>
 
+// Update
+#include <ed/UpdateSrv.h>
+
 // Reset
 #include <std_srvs/Empty.h>
 
@@ -23,6 +26,7 @@
 #include <ros/package.h>
 
 ed::Server* ed_wm;
+std::string update_request_;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -80,6 +84,17 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 bool srvReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
     ed_wm->reset();
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
+{
+    // Check if the update_request is filled. Is so, update the world model
+    if (!req.request.empty())
+        ed_wm->update(req.request, res.response);
+
     return true;
 }
 
@@ -256,13 +271,15 @@ int main(int argc, char** argv)
 
     ed::EventClock trigger_config(10);
     ed::EventClock trigger_ed(10);
-    ed::EventClock trigger_gui(100);
-    ed::EventClock trigger_tf(10);
+    ed::EventClock trigger_stats(2);
     ed::EventClock trigger_plugins(1000);
+    ed::EventClock trigger_cb(100);
 
     ros::Rate r(1000);
     while(ros::ok()) {
-        cb_queue.callAvailable();
+
+        if (trigger_cb.triggers())
+            cb_queue.callAvailable();
 
         // Check if configuration has changed. If so, call reconfigure
         if (trigger_config.triggers() && config.sync())
@@ -274,8 +291,10 @@ int main(int argc, char** argv)
         if (trigger_plugins.triggers())
             ed_wm->stepPlugins();
 
-        r.sleep();
+        if (trigger_stats.triggers())
+            ed_wm->publishStatistics();
 
+        r.sleep();
     }
 
     delete ed_wm;

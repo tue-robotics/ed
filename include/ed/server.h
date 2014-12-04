@@ -9,6 +9,8 @@
 
 #include <tf/transform_listener.h>
 
+#include <ros/publisher.h>
+
 namespace ed
 {
 
@@ -27,6 +29,8 @@ public:
 
     void update();
 
+    void update(const std::string& update_str, std::string& error);
+
     void storeEntityMeasurements(const std::string& path) const;
 
 //    int size() const { return entities_.size(); }
@@ -40,6 +44,8 @@ public:
     PluginContainerPtr loadPlugin(const std::string& plugin_name, const std::string& lib_file, tue::Configuration config);
 
     void stepPlugins();
+
+    void publishStatistics() const;
 
 private:
 
@@ -65,6 +71,7 @@ private:
     //! Profiling
     tue::ProfilePublisher pub_profile_;
     tue::Profiler profiler_;
+    ros::Publisher pub_stats_;
 
     //! Visualization
     ros::Publisher vis_pub_;

@@ -41,6 +41,7 @@ add_service_files(
    SetLabel.srv
    SimpleQuery.srv
    LoadPlugin.srv
+   UpdateSrv.srv
 
    # For builder plugin
    SetEntity.srv
@@ -172,6 +173,8 @@ target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES})
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
 # ------------------------------------------------------------------------------------------------
+
+add_executable(ed-list-ids tools/list_ids.cpp)
 
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)
