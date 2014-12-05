@@ -264,6 +264,11 @@ int main(int argc, char** argv)
                 "/ed/load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_load_plugin = nh.advertiseService(opt_load_plugin);
 
+    ros::AdvertiseServiceOptions opt_update =
+            ros::AdvertiseServiceOptions::create<ed::UpdateSrv>(
+                "/ed/update", srvUpdate, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_update = nh.advertiseService(opt_update);
+
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     // Init ED

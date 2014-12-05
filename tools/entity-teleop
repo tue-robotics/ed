@@ -1,0 +1,121 @@
+#!/usr/bin/env python
+import rospy
+
+from ed.srv import UpdateSrv
+
+import sys, select, termios, tty
+
+msg = """
+Reading from the keyboard  and Publishing to Twist!
+---------------------------
+Moving around:
+   7    8    9
+   4    5    6
+   1    2    3
+
+/   : rotate counterclockwise
+*   : rotate clockwise
+
+f/v : increase/decrease altitude
+
+q/z : increase/decrease max speeds by 10%
+w/x : increase/decrease only linear speed by 10%
+e/c : increase/decrease only angular speed by 10%
+anything else : stop
+
+CTRL-C to quit
+"""
+
+moveBindings = {
+        '1':(-0.7,0.7,0),
+        '2':(-1,0,0),
+        '3':(-0.7,-0.7,0),
+        '4':(0,1,0),
+        '6':(0,-1,0),
+        '7':(0.7,0.7,0),
+        '8':(1,0,0),
+        '9':(0.7,-0.7,0),
+        '/':(0,0,1),
+        '*':(0,0,-1)
+           }
+
+speedBindings={
+        'q':(1.1,1.1),
+        'z':(.9,.9),
+        'w':(1.1,1),
+        'x':(.9,1),
+        'e':(1,1.1),
+        'c':(1,.9),
+          }
+
+def getKey():
+    tty.setraw(sys.stdin.fileno())
+    select.select([sys.stdin], [], [], 0)
+    key = sys.stdin.read(1)
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+    return key
+
+speed = .01
+turn = .02
+
+def vels(speed,turn):
+    return "currently:\tspeed %s\tturn %s " % (speed,turn)
+
+if __name__=="__main__":
+
+    if len(sys.argv) < 2:
+        print "Please specify entity id"
+        exit(1)
+
+    entity_id = sys.argv[1]
+
+    settings = termios.tcgetattr(sys.stdin)
+    
+    rospy.init_node('teleop_twist_keyboard')
+
+    rospy.wait_for_service('/ed/update')
+    update = rospy.ServiceProxy('/ed/update', UpdateSrv)
+
+    status = 0
+
+    x = 0
+    y = 0
+    th = 0
+
+    print msg
+    
+    while(1):
+        key = getKey()
+        if key in speedBindings.keys():
+            speed = speed * speedBindings[key][0]
+            turn = turn * speedBindings[key][1]
+
+            print vels(speed,turn)
+            if (status == 14):
+                print msg
+            status = (status + 1) % 15
+        else:
+            if key in moveBindings.keys():
+                dx = moveBindings[key][0]
+                dy = moveBindings[key][1]
+                dth = moveBindings[key][2]
+            else:
+                dx = 0
+                dy = 0
+                dth = 0
+                if (key == '\x03'):
+                    break
+
+            x += dx * speed
+            y += dy * speed
+            th += dth * turn
+
+            try:
+                s = '{entities: [ { id: ' + entity_id + ', pose: { x: ' + str(x) + ', y: ' + str(y) + ', z: 0, rz: ' + str(th) + ' } } ] }'
+
+                resp = update(s)
+                if resp.response:
+                    print resp.response
+            except rospy.ServiceException, e:
+                print "Service call failed: %s"%e
+
