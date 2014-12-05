@@ -1,10 +1,57 @@
 #include "ed/serialization/serialization.h"
 #include "ed/mask.h"
 
+#include <tue/config/reader.h>
+#include <tue/config/writer.h>
+
+#include "ed/world_model.h"
+#include "ed/update_request.h"
+#include "ed/entity.h"
+
+#include <tf/transform_datatypes.h>
+
 namespace ed
 {
 
 const static int MASK_SERIALIZATION_VERSION = 0;
+
+// ----------------------------------------------------------------------------------------------------
+//
+//                                          HELPER METHODS
+//
+// ----------------------------------------------------------------------------------------------------
+
+
+// Taken directly from the TF ROS package (https://github.com/ros/geometry.git)
+void getEulerYPR(const geo::Matrix3& m, double& yaw, double& pitch, double& roll)
+{
+    // Check that pitch is not at a singularity
+    if (fabs(m.xz >= 1))
+    {
+        yaw = 0;
+
+        // From difference of angles formula
+        if (m.xz < 0)  //gimbal locked down
+        {
+            pitch = M_PI / 2.0;
+            roll = atan2(m.yx, m.zx);
+        }
+        else // gimbal locked up
+        {
+            pitch = -M_PI / 2.0;
+            roll = atan2(-m.yx, -m.zx);
+        }
+    }
+    else
+    {
+        pitch = -sin(m.xz);
+
+        roll = atan2(m.yz / cos(pitch),
+                                 m.zz/cos(pitch));
+        yaw = atan2(m.xy/cos(pitch),
+                                m.xx/cos(pitch));
+    }
+}
 
 // ----------------------------------------------------------------------------------------------------
 //
@@ -28,6 +75,39 @@ void serialize(const ImageMask& mask, tue::serialization::OutputArchive& m)
 
     for(ImageMask::const_iterator it = mask.begin(); it != mask.end(); ++it)
         m << it->y * mask.width() + it->x;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void serialize(const WorldModel& wm, tue::config::Writer& w)
+{
+    w.writeArray("entities");
+
+    for(WorldModel::const_iterator it = wm.begin(); it != wm.end(); ++it)
+    {
+        const EntityConstPtr& e = *it;
+
+        w.addArrayItem();
+
+        w.setValue("id", e->id().str());
+        w.setValue("type", e->type());
+
+        w.writeGroup("pose");
+        w.setValue("x", e->pose().t.x);
+        w.setValue("y", e->pose().t.y);
+        w.setValue("z", e->pose().t.z);
+
+        double X, Y, Z;
+        getEulerYPR(e->pose().R, Z, Y, X);
+        w.setValue("X", X);
+        w.setValue("Y", Y);
+        w.setValue("Z", Z);
+        w.endGroup();
+
+        w.endArrayItem();
+    }
+
+    w.endArray();
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -55,6 +135,42 @@ void deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
         m >> idx;
 
         mask.addPoint(idx % width, idx / width);
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void deserialize(tue::config::Reader& r, UpdateRequest& req)
+{
+    if (r.readArray("entities"))
+    {
+        while(r.nextArrayItem())
+        {
+            std::string id;
+            if (!r.value("id", id))
+                continue;
+
+            if (r.readGroup("pose"))
+            {
+                geo::Pose3D pose;
+
+                if (!r.value("x", pose.t.x) || !r.value("y", pose.t.y) || !r.value("z", pose.t.z))
+                    continue;
+
+                double rx = 0, ry = 0, rz = 0;
+                r.value("rx", rx, tue::config::OPTIONAL);
+                r.value("ry", ry, tue::config::OPTIONAL);
+                r.value("rz", rz, tue::config::OPTIONAL);
+
+                pose.R.setRPY(rx, ry, rz);
+
+                req.setPose(id, pose);
+
+                r.endGroup();
+            }
+        }
+
+        r.endArray();
     }
 }
 

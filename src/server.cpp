@@ -27,6 +27,9 @@
 
 #include <std_msgs/String.h>
 
+#include "ed/serialization/serialization.h"
+#include <tue/config/writer.h>
+
 namespace ed
 {
 
@@ -531,6 +534,13 @@ void Server::publishStatistics() const
     msg.data = s.str();
 
     pub_stats_.publish(msg);
+
+//    // TEMP
+//    tue::config::DataPointer data;
+//    tue::config::Writer w(data);
+//    ed::serialize(*world_model_, w);
+
+//    std::cout << data << std::endl;
 }
 
 }
