@@ -231,7 +231,7 @@ int main(int argc, char** argv)
         std::string ed_dir = ros::package::getPath("ed");
 
         // Load the default AMIGO YAML config file
-        config.loadFromYAMLFile(ed_dir + "/config/config_amigo.yml");
+        config.loadFromYAMLFile(ed_dir + "/config/simple.yaml");
     }
 
     // Configure ED

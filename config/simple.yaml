@@ -1,0 +1,30 @@
+visualize: 1
+world_name: robotics_testlabs
+
+plugins:
+- name: gui_server
+  lib: libed_gui_server_plugin.so
+  parameters:
+      robot_name: amigo
+- name: obstacle_grid_publisher
+  lib: libed_occupancy_grid_publisher_plugin.so
+  parameters:
+      frequency: 10
+      resolution: 0.05
+      topic: /ed_map
+      frame_id: /map
+      sim_time: 1.0
+      object_persistence_time: 10
+- name: loc_grid_publisher
+  lib: libed_occupancy_grid_publisher_plugin.so
+  parameters:
+      frequency: 1
+      resolution: 0.025
+      topic: /ed_loc_map
+      frame_id: /map
+      specifier: localizable
+      sim_time: 0.0
+- name: tf_publisher
+  lib: libed_tf_publisher_plugin.so
+  parameters:
+      root_frame_id: /map
