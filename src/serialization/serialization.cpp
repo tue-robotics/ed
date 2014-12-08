@@ -8,8 +8,6 @@
 #include "ed/update_request.h"
 #include "ed/entity.h"
 
-#include <tf/transform_datatypes.h>
-
 namespace ed
 {
 
@@ -21,35 +19,31 @@ const static int MASK_SERIALIZATION_VERSION = 0;
 //
 // ----------------------------------------------------------------------------------------------------
 
-
 // Taken directly from the TF ROS package (https://github.com/ros/geometry.git)
 void getEulerYPR(const geo::Matrix3& m, double& yaw, double& pitch, double& roll)
 {
     // Check that pitch is not at a singularity
-    if (fabs(m.xz >= 1))
+    if (fabs(m.zx >= 1))
     {
         yaw = 0;
 
         // From difference of angles formula
-        if (m.xz < 0)  //gimbal locked down
+        if (m.zx < 0)  //gimbal locked down
         {
             pitch = M_PI / 2.0;
-            roll = atan2(m.yx, m.zx);
+            roll = atan2(m.xy, m.xz);
         }
         else // gimbal locked up
         {
             pitch = -M_PI / 2.0;
-            roll = atan2(-m.yx, -m.zx);
+            roll = atan2(-m.yx, -m.xz);
         }
     }
     else
     {
-        pitch = -sin(m.xz);
-
-        roll = atan2(m.yz / cos(pitch),
-                                 m.zz/cos(pitch));
-        yaw = atan2(m.xy/cos(pitch),
-                                m.xx/cos(pitch));
+        pitch = -asin(m.zx);
+        roll = atan2(m.zy / cos(pitch), m.zz / cos(pitch));
+        yaw  = atan2(m.yx / cos(pitch), m.xx / cos(pitch));
     }
 }
 
@@ -86,6 +80,8 @@ void serialize(const WorldModel& wm, tue::config::Writer& w)
     for(WorldModel::const_iterator it = wm.begin(); it != wm.end(); ++it)
     {
         const EntityConstPtr& e = *it;
+
+        std::cout << e->id() << std::endl;
 
         w.addArrayItem();
 
