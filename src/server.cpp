@@ -535,12 +535,12 @@ void Server::publishStatistics() const
 
     pub_stats_.publish(msg);
 
-    // TEMP
-    tue::config::DataPointer data;
-    tue::config::Writer w(data);
-    ed::serialize(*world_model_, w);
+//    // TEMP
+//    tue::config::DataPointer data;
+//    tue::config::Writer w(data);
+//    ed::serialize(*world_model_, w);
 
-    std::cout << data << std::endl;
+//    std::cout << data << std::endl;
 }
 
 }
