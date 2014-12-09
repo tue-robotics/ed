@@ -55,11 +55,11 @@ bool create(UpdateRequest& req, const UUID& id, const TYPE& type, tue::Configura
             {
                 create(req, child_id, child_type, model_cfg.limitScope());
 
+                geo::Pose3D pose;
+
                 //! Set pose
                 if (model_cfg.readGroup("pose"))
                 {
-                    geo::Pose3D pose;
-
                     if (model_cfg.value("x", pose.t.x) && model_cfg.value("y", pose.t.y) && model_cfg.value("z", pose.t.z))
                     {
                         double rx = 0, ry = 0, rz = 0;
@@ -68,16 +68,20 @@ bool create(UpdateRequest& req, const UUID& id, const TYPE& type, tue::Configura
                         model_cfg.value("Z", rz, tue::OPTIONAL);
 
                         pose.R.setRPY(rx, ry, rz);
-
-                        boost::shared_ptr<ed::TransformCache> t1(new ed::TransformCache());
-
-                        // TODO: choose proper time
-                        t1->insert(Time(-1), pose);
-                        req.setRelation(id, child_id, t1);
                     }
 
                     model_cfg.endGroup();
                 }
+                else
+                {
+                    pose = geo::Pose3D::identity();
+                }
+
+                boost::shared_ptr<ed::TransformCache> t1(new ed::TransformCache());
+
+                // TODO: choose proper time
+                t1->insert(Time(-1), pose);
+                req.setRelation(id, child_id, t1);
             }
         }
 

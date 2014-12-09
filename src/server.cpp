@@ -9,6 +9,7 @@
 #include <geolib/Box.h>
 
 #include "ed/models/models.h"
+#include "ed/relations/transform_cache.h"
 
 // Storing measurements to disk
 #include "ed/io/filesystem/write.h"
@@ -365,6 +366,14 @@ void Server::initializeWorld()
     ed::UpdateRequest req;
     if (!ed::models::create(req, world_name_, world_name_))
         return;
+
+    req.setType("map", "virtual");
+
+    boost::shared_ptr<ed::TransformCache> t1(new ed::TransformCache());
+
+    // TODO: choose proper time
+    t1->insert(Time(-1), geo::Pose3D::identity());
+    req.setRelation("map", world_name_, t1);
 
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
