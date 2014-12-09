@@ -14,13 +14,13 @@ We assume you have successfully installed ROS and set-up a Catkin workspace. Che
     cd <your_catkin_workspace>/src
 
     git clone https://github.com/tue-robotics/ed.git
-    svn co https://roboticssrv.wtb.tue.nl/svn/ros/trunk/tue_filesystem
-    svn co https://roboticssrv.wtb.tue.nl/svn/ros/trunk/geolib2
-    svn co https://roboticssrv.wtb.tue.nl/svn/ros/trunk/code_profiler
+    git clone https://github.com/tue-robotics/tue_filesystem
+    git clone https://github.com/tue-robotics/geolib2
+    git clone https://github.com/tue-robotics/code_profiler
     git clone https://github.com/tue-robotics/tue_config.git
     git clone https://github.com/tue-robotics/ed_object_models.git
-    svn co https://roboticssrv.wtb.tue.nl/svn/ros/trunk/tue_serialization
-    svn co https://roboticssrv.wtb.tue.nl/svn/ros/trunk/rgbd
+    git clone https://github.com/tue-robotics/tue_serialization
+    git clone https://github.com/tue-robotics/rgbd
     
 You will also need the following system dependencies:
 
