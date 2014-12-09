@@ -8,6 +8,11 @@
 #include <ed/world_model.h>
 #include <ed/entity.h>
 
+// URDF shape loading
+#include <ros/package.h>
+#include <geolib/Importer.h>
+#include <geolib/Box.h>
+
 // ----------------------------------------------------------------------------------------------------
 
 bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
@@ -53,8 +58,105 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
     // Convert to geolib transform
     tf.R = geo::Matrix3(pose_kdl.M.data);
     tf.t = geo::Vector3(pose_kdl.p.data);
+
+    return true;
 }
 
+// ----------------------------------------------------------------------------------------------------
+
+geo::ShapePtr linkToShape(const boost::shared_ptr<urdf::Link>& link)
+{
+    geo::ShapePtr shape;
+
+    if (!link->visual || !link->visual->geometry)
+        return shape;
+
+    geo::Pose3D offset;
+    const urdf::Pose& o = link->visual->origin;
+    offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
+    offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
+
+    //            std::cout << link->name << ": " << offset << std::endl;
+    //            std::cout << "    " << o.rotation.x << ", " << o.rotation.y<< ", " << o.rotation.z<< ", " << o.rotation.w << std::endl;
+
+    if (link->visual->geometry->type == urdf::Geometry::MESH)
+    {
+        urdf::Mesh* mesh = static_cast<urdf::Mesh*>(link->visual->geometry.get());
+        if (!mesh)
+            return shape;
+
+        std::string pkg_prefix = "package://";
+        if (mesh->filename.substr(0, pkg_prefix.size()) == pkg_prefix)
+        {
+            std::string str = mesh->filename.substr(pkg_prefix.size());
+            size_t i_slash = str.find("/");
+
+            std::string pkg = str.substr(0, i_slash);
+            std::string rel_filename = str.substr(i_slash + 1);
+            std::string pkg_path = ros::package::getPath(pkg);
+            std::string abs_filename = pkg_path + "/" + rel_filename;
+
+            geo::Importer importer;
+            shape = importer.readMeshFile(abs_filename, mesh->scale.x);
+
+            if (!shape)
+                std::cout << "RobotPlugin: Could not load shape" << std::endl;
+        }
+    }
+    else if (link->visual->geometry->type == urdf::Geometry::BOX)
+    {
+        urdf::Box* box = static_cast<urdf::Box*>(link->visual->geometry.get());
+        if (box)
+        {
+            double hx = box->dim.x / 2;
+            double hy = box->dim.y / 2;
+            double hz = box->dim.z / 2;
+
+            shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
+        }
+    }
+    else if (link->visual->geometry->type == urdf::Geometry::CYLINDER)
+    {
+        urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(link->visual->geometry.get());
+        if (!cyl)
+            return shape;
+
+        geo::Mesh mesh;
+
+        int N = 20;
+
+        // Calculate vertices
+        for(int i = 0; i < N; ++i)
+        {
+            double a = 6.283 * i / N;
+            double x = sin(a) * cyl->radius;
+            double y = cos(a) * cyl->radius;
+
+            mesh.addPoint(x, y, -cyl->length / 2);
+            mesh.addPoint(x, y, cyl->length / 2);
+        }
+
+        // Calculate triangles
+        for(int i = 1; i < N - 1; ++i)
+        {
+            int i2 = 2 * i;
+            mesh.addTriangle(0, i2, i2 + 2);
+            mesh.addTriangle(1, i2 + 1, i2 + 3);
+        }
+
+        for(int i = 0; i < N; ++i)
+        {
+            int j = (i + 1) % N;
+            mesh.addTriangle(i * 2, j * 2, i * 2 + 1);
+            mesh.addTriangle(i * 2 + 1, j * 2, j * 2 + 1);
+        }
+
+        shape.reset(new geo::Shape());
+        shape->setMesh(mesh);
+    }
+
+    return shape;
+}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -75,7 +177,7 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMa
     const KDL::Segment& segment = it_segment->second.segment;
 
     // Child ID is the segment (link) name
-    ed::UUID child_id = segment.getName();
+    ed::UUID child_id = robot_name_ + "/" + segment.getName();
 
     // Set the entity type (robot_link)
     req.setType(child_id, "robot_link");
@@ -83,6 +185,7 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMa
     // Create a joint relation and add id
     boost::shared_ptr<JointRelation> r(new JointRelation(segment));
     r->setCacheSize(joint_cache_size_);
+    r->insert(0, 0);
     req.setRelation(parent_id, child_id, r);
 
     // Generate relation info that will be used to update the relation
@@ -91,7 +194,6 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMa
     rel_info.child_id = child_id;
     rel_info.r_idx = ed::INVALID_IDX;
     rel_info.last_rel = r;
-
 
     // Recursively add all children
     const std::vector<KDL::SegmentMap::const_iterator>& children = it_segment->second.children;
@@ -124,8 +226,6 @@ void RobotPlugin::jointCallback(const sensor_msgs::JointState::ConstPtr& msg)
             r->setCacheSize(joint_cache_size_);
 
             r->insert(msg->header.stamp.toSec(), pos);
-
-            std::cout << name << ": " << r->size() << std::endl;
 
             update_req_->setRelation(info.parent_id, info.child_id, r);
 
@@ -182,10 +282,15 @@ void RobotPlugin::configure(tue::Configuration config)
         return;
     }
 
+    if (!robot_model_.initString(urdf_xml))
+    {
+        std::cout << "Could not load robot model." << std::endl;
+        return;
+    }
+
     joint_cache_size_ = 100; // TODO: remove magic number
 
     model_initialized_ = false;
-
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -200,6 +305,19 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {
     if (!model_initialized_)
     {
+        // Create the links
+        std::vector<boost::shared_ptr<urdf::Link> > links;
+        robot_model_.getLinks(links);
+
+        for(std::vector<boost::shared_ptr<urdf::Link> >::const_iterator it = links.begin(); it != links.end(); ++it)
+        {
+            const boost::shared_ptr<urdf::Link>& link = *it;
+            geo::ShapePtr shape = linkToShape(link);
+            if (shape)
+                req.setShape(robot_name_ + "/" + link->name, shape);
+        }
+
+        // Create the joints
         constructRobot(robot_name_, tree_.getRootSegment(), req);
         model_initialized_ = true;
         return;

@@ -13,6 +13,8 @@
 #include <kdl/tree.hpp>
 #include <geolib/datatypes.h>
 
+#include <urdf/model.h>
+
 // ----------------------------------------------------------------------------------------------------
 
 class JointRelation : public ed::Relation
@@ -72,6 +74,8 @@ private:
     bool model_initialized_;
 
     KDL::Tree tree_;
+
+    urdf::Model robot_model_;
 
     std::map<std::string, RelationInfo> joint_name_to_rel_info_;
 
