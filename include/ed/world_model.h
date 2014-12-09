@@ -60,6 +60,8 @@ public:
 
     void removeEntity(const UUID& id);
 
+    const EntityConstPtr& getEntity(Idx idx) const { return entities_[idx]; }
+
     EntityConstPtr getEntity(const ed::UUID& id) const
     {
         Idx idx;
@@ -74,6 +76,8 @@ public:
     void update(const UpdateRequest& req);
 
     void setRelation(Idx parent, Idx child, const RelationConstPtr& r);
+
+    RelationConstPtr getRelation(Idx idx) const { return relations_[idx]; }
 
     bool findEntityIdx(const UUID& id, Idx& idx) const;
 

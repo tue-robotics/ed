@@ -10,7 +10,7 @@ function check-output
 
     rosrun ed $1 > /tmp/test-output.txt
 
-    echo -en "$1: "
+    echo -en "\e[1;37m$1\e[0m: "
 
     if [ -f $output_file ]
     then
@@ -18,9 +18,9 @@ function check-output
 
         if [ -z "$diff" ]
         then
-	        echo "OK"
+	        echo -e "\e[0;32mOK\033[0m"
         else
-	        echo "DIFFERENCE!"
+	        echo -e "\e[0;31mDIFFERENCE!\e[0m"
             echo "------------------------------------------------------------"
 	        echo ""
 	        echo "$diff" | colordiff

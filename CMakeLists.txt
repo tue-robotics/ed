@@ -89,6 +89,9 @@ add_library(ed_core
     src/world_model.cpp
     src/transform_cache.cpp
 
+	# World model querying
+	src/world_model/transform_crawler.cpp
+
     # DDP is used by measurement.cpp, so put here
     src/helpers/depth_data_processing.cpp
     src/helpers/clipper/clipper.cpp
