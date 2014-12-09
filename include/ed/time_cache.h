@@ -49,6 +49,8 @@ public:
         }
     }
 
+    inline Time latestTime() const { cache_.empty() ? 0 : cache_.rbegin()->first; }
+
     inline const_iterator begin() const { return cache_.begin(); }
     inline const_iterator end() const { return cache_.end(); }
 

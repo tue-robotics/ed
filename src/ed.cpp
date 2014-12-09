@@ -1,6 +1,7 @@
 #include "ed/server.h"
 
 #include <ed/world_model.h>
+#include <ed/world_model/transform_crawler.h>
 #include <ed/measurement.h>
 
 // Query
@@ -30,7 +31,7 @@ std::string update_request_;
 
 // ----------------------------------------------------------------------------------------------------
 
-void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
+void entityToMsg(const ed::Entity& e, const geo::Pose3D& e_pose, ed::EntityInfo& msg)
 {
     msg.id = e.id().str();
     msg.type = e.type();
@@ -57,7 +58,7 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
     if (msg.has_shape || e.convexHull().chull.empty())
     {
         // If the entity has a shape, use the pose of this shape
-        geo::convert(e.pose(), msg.pose);
+        geo::convert(e_pose, msg.pose);
     }
     else
     {
@@ -106,11 +107,11 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
     geo::Vector3 center_point;
     geo::convert(req.center_point, center_point);
 
-    for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
+    for(ed::world_model::TransformCrawler tc(*ed_wm->world_model(), "map", ed_wm->world_model()->latestTime()); tc.hasNext(); tc.next())
     {
-//        std::cout << it->first << std::endl;
+        const ed::EntityConstPtr& e = tc.entity();
+        const geo::Pose3D& e_pose = tc.transform();
 
-        const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;
 
@@ -133,7 +134,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
         {
             geo::Vector3 p_entity;
             if (e->shape() || e->convexHull().chull.empty())
-                p_entity = e->pose().getOrigin();
+                p_entity = e_pose.getOrigin();
             else
             {
                 p_entity.x = e->convexHull().center_point.x;
@@ -147,7 +148,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
         if (geom_ok)
         {
             res.entities.push_back(ed::EntityInfo());
-            entityToMsg(*e, res.entities.back());
+            entityToMsg(*e, e_pose, res.entities.back());
         }
     }
 

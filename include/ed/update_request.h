@@ -54,14 +54,14 @@ public:
     }
 
 
-    // POSES
+//    // POSES
 
-    std::map<UUID, geo::Pose3D> poses;
+//    std::map<UUID, geo::Pose3D> poses;
 
-    void setPose(const UUID& id, const geo::Pose3D& pose)
-    {
-        poses[id] = pose;
-    }
+//    void setPose(const UUID& id, const geo::Pose3D& pose)
+//    {
+//        poses[id] = pose;
+//    }
 
 
     // RELATIONS
@@ -109,7 +109,7 @@ public:
         return measurements.empty() &&
                shapes.empty() &&
                types.empty() &&
-               poses.empty() &&
+//               poses.empty() &&
                relations.empty() &&
                removed_entities.empty() &&
                datas.empty();

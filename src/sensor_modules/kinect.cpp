@@ -21,6 +21,8 @@
 
 #include <geolib/Shape.h>
 
+#include "ed/world_model/transform_crawler.h"
+
 namespace ed
 {
 
@@ -36,12 +38,13 @@ void createNewEntity(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, U
 
 // ----------------------------------------------------------------------------------------------------
 
-void filterPointsBehindWorldModel(const WorldModelConstPtr& world_model, const geo::Pose3D& sensor_pose, rgbd::ImagePtr rgbd_image, const ros::Publisher& pub)
+void filterPointsBehindWorldModel(const WorldModelConstPtr& world_model, rgbd::ImagePtr rgbd_image, const ros::Publisher& pub)
 {
     rgbd::View view(*rgbd_image, 160);
 
     // Visualize the frustrum
-    helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(view, sensor_pose, pub, 0, "frustrum_top_kinect");
+    // TODO: rel-poses
+    // helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(view, sensor_pose, pub, 0, "frustrum_top_kinect");
 
     cv::Mat wm_depth_image(view.getHeight(), view.getWidth(), CV_32FC1, 0.0);
 
@@ -49,15 +52,14 @@ void filterPointsBehindWorldModel(const WorldModelConstPtr& world_model, const g
     geo::TriangleMap triangle_map;  // TODO: GET RID OF THIS
     geo::DefaultRenderResult res(wm_depth_image, 0, pointer_map, triangle_map);
 
-    for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
+    for(world_model::TransformCrawler tc(*world_model, rgbd_image->getFrameId(), rgbd_image->getTimestamp()); tc.hasNext(); tc.next())
     {
-        const EntityConstPtr& e = *it;
+        const EntityConstPtr& e = tc.entity();
 
         if (e->shape())
         {
-            geo::Pose3D pose = sensor_pose.inverse() * e->pose();
             geo::RenderOptions opt;
-            opt.setMesh(e->shape()->getMesh(), pose);
+            opt.setMesh(e->shape()->getMesh(), tc.transform());
 
             // Render
             view.getRasterizer().render(opt, res);
@@ -217,7 +219,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
     //! 2) Preprocess image: remove all data points that are behind world model entities
     {
         tue::ScopedTimer t(profiler_, "2) filter points behind wm");
-        filterPointsBehindWorldModel(world_model, sensor_pose, rgbd_image, vis_marker_pub_);
+        filterPointsBehindWorldModel(world_model, rgbd_image, vis_marker_pub_);
     }
 
     // Construct RGBD Data

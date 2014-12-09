@@ -5,8 +5,6 @@
 #include "ed/convex_hull_2d.h"
 #include "ed/uuid.h"
 
-#include <ed/models/entity.h>
-
 #include <tue/config/data.h>
 
 #include <boost/circular_buffer.hpp>
@@ -14,13 +12,6 @@
 
 namespace ed
 {
-
-namespace models
-{
-
-bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& entities, NewEntityPtr new_parent = NewEntityPtr());
-
-}
 
 class Entity
 {
@@ -52,8 +43,8 @@ public:
 
     void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
 
-    inline const geo::Pose3D& pose() const { return pose_; }
-    inline void setPose(const geo::Pose3D& pose) { pose_ = pose; }
+//    inline const geo::Pose3D& pose() const { return pose_; }
+//    inline void setPose(const geo::Pose3D& pose) { pose_ = pose; }
 
     inline const geo::Pose3D& velocity() const { return velocity_; }
     inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }

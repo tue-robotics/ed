@@ -3,6 +3,7 @@
 #include "ed/entity.h"
 #include "ed/measurement.h"
 #include "ed/world_model.h"
+#include "ed/world_model/transform_crawler.h"
 
 #include <rgbd/Image.h>
 #include <rgbd/View.h>
@@ -255,9 +256,11 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
     visualization_msgs::MarkerArray m_array;
 
     unsigned int i = 0;
-    for (WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it )
+
+    for(ed::world_model::TransformCrawler tc(world_model, "map", world_model.latestTime()); tc.hasNext(); tc.next())
     {
-        const EntityConstPtr& e = *it;
+        const EntityConstPtr& e = tc.entity();
+        const geo::Pose3D& e_pose = tc.transform();
 
         if (e->lastMeasurement()) {
 //            helpers::visualization::showMeasurement(e->getBestMeasurement(), it->second->getType() + "-" + it->first);
@@ -289,17 +292,17 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
             m.points.resize(triangles.size()*3);
             for( unsigned int j = 0; j < triangles.size(); ++j )
             {
-                geo::Vector3 p = e->pose() * points[triangles[j].i1_];
+                geo::Vector3 p = e_pose * points[triangles[j].i1_];
                 m.points[3*j].x = p.x;
                 m.points[3*j].y = p.y;
                 m.points[3*j].z = p.z;
 
-                p = e->pose() * points[triangles[j].i2_];
+                p = e_pose * points[triangles[j].i2_];
                 m.points[3*j+1].x = p.x;
                 m.points[3*j+1].y = p.y;
                 m.points[3*j+1].z = p.z;
 
-                p = e->pose() * points[triangles[j].i3_];
+                p = e_pose * points[triangles[j].i3_];
                 m.points[3*j+2].x = p.x;
                 m.points[3*j+2].y = p.y;
                 m.points[3*j+2].z = p.z;

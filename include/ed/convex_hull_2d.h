@@ -17,6 +17,8 @@ struct ConvexHull2D {
     ConvexHull2D() : center_point(geo::Vector3(0, 0, 0)) {}
     pcl::PointCloud<pcl::PointXYZ> chull; // Convex hull point w.r.t. center
     double min_z, max_z; // min and max z of convex hull
+
+    // TODO: rel-pose : remove center_point
     geo::Vector3 center_point; // Center of the convex hull
 };
 

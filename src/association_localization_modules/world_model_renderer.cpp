@@ -1,6 +1,6 @@
 #include "ed/association_localization_modules/world_model_renderer.h"
 #include "ed/entity.h"
-#include "ed/world_model.h"
+#include "ed/world_model/transform_crawler.h"
 
 #include <geolib/Shape.h>
 
@@ -68,16 +68,16 @@ WorldModelRenderer::~WorldModelRenderer()
 
 // ----------------------------------------------------------------------------------------------------
 
-void WorldModelRenderer::render(const geo::Pose3D& camera_pose, const WorldModelConstPtr& world_model, float max_range, const rgbd::View& view, cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>& pc, std::vector<const Entity*>& pc_entity_ptrs)
+void WorldModelRenderer::render(const UUID& camera_id, const Time& time, const WorldModelConstPtr& world_model, float max_range, const rgbd::View& view, cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>& pc, std::vector<const Entity*>& pc_entity_ptrs)
 {
-    for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
+    for(ed::world_model::TransformCrawler tc(*world_model, camera_id, time); tc.hasNext(); tc.next())
     {
-        const EntityConstPtr& e = *it;
+        const ed::EntityConstPtr& e = tc.entity();
+
         if (e->shape())
         {
-            geo::Pose3D pose = camera_pose.inverse() * e->pose();
             geo::RenderOptions opt;
-            opt.setMesh(e->shape()->getMesh(), pose);
+            opt.setMesh(e->shape()->getMesh(), tc.transform());
 
             std::vector<int> triangle_indices;
             SampleRenderResult res(img, view.getWidth(), view.getHeight(), e.get(), view.getRasterizer(), pc, pc_entity_ptrs, triangle_indices, max_range);

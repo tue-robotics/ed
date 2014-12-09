@@ -8,7 +8,7 @@
 
 #include <geolib/Box.h>
 
-#include <ed/models/models.h>
+#include "ed/models/models.h"
 
 // Storing measurements to disk
 #include "ed/io/filesystem/write.h"
@@ -336,43 +336,7 @@ void Server::update(const std::string& update_str, std::string& error)
 
     UpdateRequest req;
 
-    if (cfg.readArray("entities"))
-    {
-        while(cfg.nextArrayItem())
-        {
-            std::string id;
-            if (!cfg.value("id", id))
-                continue;
-
-            if (cfg.readGroup("pose"))
-            {
-                geo::Pose3D pose;
-
-                if (!cfg.value("x", pose.t.x) || !cfg.value("y", pose.t.y) || !cfg.value("z", pose.t.z))
-                    continue;
-
-                double rx = 0, ry = 0, rz = 0;
-                cfg.value("rx", rx, tue::OPTIONAL);
-                cfg.value("ry", ry, tue::OPTIONAL);
-                cfg.value("rz", rz, tue::OPTIONAL);
-
-                pose.R.setRPY(rx, ry, rz);
-
-                req.setPose(id, pose);
-
-                cfg.endGroup();
-            }
-        }
-
-        cfg.endArray();
-    }
-
-    // Check for errors
-    if (cfg.hasError())
-    {
-        error = cfg.error();
-        return;
-    }
+    // TODO: use serialization methods
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -398,23 +362,16 @@ void Server::update(const std::string& update_str, std::string& error)
 
 void Server::initializeWorld()
 {
-    models::NewEntityPtr e = ed::models::create(world_name_);
+    ed::UpdateRequest req;
+    if (!ed::models::create(req, world_name_, world_name_))
+        return;
 
-    std::vector<EntityPtr> entities;
-    if (ed::models::convertNewEntityToEntities(e, entities))
-    {
-        // Create world model copy (shallow)
-        WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    // Create world model copy (shallow)
+    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
-        for (std::vector<EntityPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
-            new_world_model->setEntity((*it)->id(), *it);
+    new_world_model->update(req);
 
-        world_model_ = new_world_model;
-    }
-    else
-    {
-        std::cout << "initializeWorld() : Failed to convert new type to old type" << std::endl;
-    }
+    world_model_ = new_world_model;
 }
 
 // ----------------------------------------------------------------------------------------------------

@@ -12,7 +12,6 @@
 
   <build_depend>class_loader</build_depend>
   <build_depend>cv_bridge</build_depend>
-  <build_depend>ed_object_models</build_depend>
   <build_depend>geolib2</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>rgbd</build_depend> 
@@ -32,7 +31,6 @@
 
   <run_depend>class_loader</run_depend>
   <run_depend>cv_bridge</run_depend>
-  <run_depend>ed_object_models</run_depend>
   <run_depend>geolib2</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>rgbd</run_depend>

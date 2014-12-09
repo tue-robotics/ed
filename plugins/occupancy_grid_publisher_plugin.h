@@ -25,9 +25,10 @@ public:
 
 private:
 
-    bool getMapData(const ed::WorldModel& world, std::vector<ed::EntityConstPtr>& entities_to_be_projected);
+    bool getMapData(const ed::WorldModel& world, std::vector<ed::EntityConstPtr>& entities_to_be_projected,
+                    std::vector<geo::Pose3D>& entity_poses);
 
-    void updateMap(const ed::EntityConstPtr& e, cv::Mat& map);
+    void updateMap(const ed::EntityConstPtr& e, const geo::Pose3D& e_pose, cv::Mat& map);
 
     void publishMapMsg (const cv::Mat& map);
 

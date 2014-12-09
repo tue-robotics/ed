@@ -3,11 +3,18 @@
 #include "ed/update_request.h"
 #include "ed/entity.h"
 #include "ed/relation.h"
+#include "ed/measurement.h"
 
 #include <tue/config/reader.h>
 
+#include <boost/make_shared.hpp>
+
 namespace ed
 {
+
+WorldModel::WorldModel() : latest_time_(0)
+{
+}
 
 // --------------------------------------------------------------------------------
 
@@ -23,9 +30,11 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         const std::vector<MeasurementConstPtr>& measurements = it->second;
-        for(std::vector<MeasurementConstPtr>::const_iterator it2 = measurements.begin(); it2 != measurements.end(); ++it2)
+        for(std::vector<MeasurementConstPtr>::const_iterator it_m = measurements.begin(); it_m != measurements.end(); ++it_m)
         {
-            e->addMeasurement(*it2);
+            const MeasurementConstPtr& m = *it_m;
+            latest_time_ = std::max<Time>(m->timestamp(), latest_time_);
+            e->addMeasurement(m);
         }
     }
 
@@ -43,12 +52,12 @@ void WorldModel::update(const UpdateRequest& req)
         e->setType(it->second);
     }
 
-    // Update poses
-    for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
-    {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setPose(it->second);
-    }
+//    // Update poses
+//    for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
+//    {
+//        EntityPtr e = getOrAddEntity(it->first, new_entities);
+//        e->setPose(it->second);
+//    }
 
     // Update relations
     for(std::map<UUID, std::map<UUID, RelationConstPtr> >::const_iterator it = req.relations.begin(); it != req.relations.end(); ++it)
@@ -204,6 +213,8 @@ void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
         std::cout << "[ED] ERROR: Invalid relation addition: parent or child does not exit." << std::endl;
         return;
     }
+
+    latest_time_ = std::max<Time>(r->latestTime(), latest_time_);
 
     Idx r_idx = p->relationTo(child);
     if (r_idx == INVALID_IDX)

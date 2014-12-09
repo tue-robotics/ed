@@ -50,6 +50,8 @@ public:
 
     };
 
+    WorldModel();
+
     typedef EntityIterator const_iterator;
 
     inline const_iterator begin() const { return const_iterator(entities_); }
@@ -83,7 +85,12 @@ public:
 
     bool calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const;
 
+    const Time& latestTime() const { return latest_time_; }
+
 private:
+
+    // Timestamp of most recent update
+    Time latest_time_;
 
     std::map<UUID, Idx> entity_map_;
 

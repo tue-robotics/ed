@@ -24,6 +24,8 @@ public:
 
     JointRelation(const KDL::Segment& segment) : segment_(segment) {}
 
+    ed::Time latestTime() const { return joint_pos_cache_.latestTime(); }
+
     bool calculateTransform(const ed::Time& t, geo::Pose3D& tf) const;
 
     void insert(const ed::Time& t, float joint_pos) { joint_pos_cache_.insert(t, joint_pos); }

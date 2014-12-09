@@ -21,7 +21,8 @@ public:
 
     virtual ~WorldModelRenderer();
 
-    void render(const geo::Pose3D& camera_pose,
+    void render(const UUID& camera_id,
+                const Time& time,
                 const WorldModelConstPtr& world_model,
                 float max_range,
                 const rgbd::View& view,

@@ -9,6 +9,7 @@
 #include <ed/world_model.h>
 #include <ed/entity.h>
 #include <ed/measurement.h>
+#include <ed/world_model/transform_crawler.h>
 
 #include <tue/config/reader.h>
 
@@ -47,12 +48,14 @@ void OccupancyGridPublisherPlugin::initialize()
 void OccupancyGridPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {
     std::vector<ed::EntityConstPtr> entities_to_be_projected;
-    if (getMapData(world, entities_to_be_projected))
+    std::vector<geo::Pose3D> entity_poses;
+
+    if (getMapData(world, entities_to_be_projected, entity_poses))
     {
         cv::Mat map = cv::Mat::zeros(height_, width_, CV_8U);
 
-        for(std::vector<ed::EntityConstPtr>::const_iterator it = entities_to_be_projected.begin(); it != entities_to_be_projected.end(); ++it)
-            updateMap(*it, map);
+        for(unsigned int i = 0; i < entities_to_be_projected.size(); ++i)
+            updateMap(entities_to_be_projected[i], entity_poses[i], map);
 
         publishMapMsg(map);
     }
@@ -67,13 +70,16 @@ void OccupancyGridPublisherPlugin::process(const ed::WorldModel& world, ed::Upda
 
 // ----------------------------------------------------------------------------------------------------
 
-bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::vector<ed::EntityConstPtr>& entities_to_be_projected)
+bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::vector<ed::EntityConstPtr>& entities_to_be_projected,
+                                              std::vector<geo::Pose3D>& entity_poses)
 {
     geo::Vector3 min(1e6,1e6,0);
     geo::Vector3 max(-1e6,-1e6,0);
-    for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
+
+    for(ed::world_model::TransformCrawler tc(world, "map", world.latestTime()); tc.hasNext(); tc.next())
     {
-        ed::EntityConstPtr e = *it;
+        const ed::EntityConstPtr& e = tc.entity();
+        const geo::Pose3D& e_pose = tc.transform();
 
 		//! Only entities with measurementSeq() >= 10 or 0 (known)
 		if (e->measurementSeq() > 0 && e->measurementSeq() < 10)
@@ -89,6 +95,7 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
 
         //! Push back the entity
         entities_to_be_projected.push_back(e);
+        entity_poses.push_back(e_pose);
 
         //! Update the map bounds
         geo::ShapeConstPtr shape = e->shape();
@@ -98,9 +105,9 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
 
             for(std::vector<geo::Triangle>::const_iterator it = triangles.begin(); it != triangles.end(); ++it) {
 
-                geo::Vector3 p1w = e->pose() * it->p1_;
-                geo::Vector3 p2w = e->pose() * it->p2_;
-                geo::Vector3 p3w = e->pose() * it->p3_;
+                geo::Vector3 p1w = e_pose * it->p1_;
+                geo::Vector3 p2w = e_pose * it->p2_;
+                geo::Vector3 p3w = e_pose * it->p3_;
 
                 // Filter the ground
                 if (p1w.getZ() > 0.05001 && p2w.getZ() > 0.050001 && p3w.getZ() > 0.05001)
@@ -132,7 +139,7 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
 
 // ----------------------------------------------------------------------------------------------------
 
-void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Mat& map)
+void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, const geo::Pose3D& e_pose, cv::Mat& map)
 {
     int value = 100;
 
@@ -152,9 +159,9 @@ void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, cv::Ma
 
         for(std::vector<geo::Triangle>::const_iterator it = triangles.begin(); it != triangles.end(); ++it) {
 
-            geo::Vector3 p1w = e->pose() * it->p1_;
-            geo::Vector3 p2w = e->pose() * it->p2_;
-            geo::Vector3 p3w = e->pose() * it->p3_;
+            geo::Vector3 p1w = e_pose * it->p1_;
+            geo::Vector3 p2w = e_pose * it->p2_;
+            geo::Vector3 p3w = e_pose * it->p3_;
 
             // Filter the ground
             if (p1w.getZ() > 0.05001 && p2w.getZ() > 0.050001 && p3w.getZ() > 0.05001) {

@@ -12,6 +12,13 @@ namespace ed
 namespace world_model
 {
 
+/**
+ * @brief The TransformCrawler class
+ *
+ * Starting with the given entity ID, this class crawls the world model transformation graph in a breadth-first manner.
+ * Each node (world model entity) is only visited once. For each visited entity, the transformation from the root entity
+ * (i.e., the given entity) is calculated.
+ */
 class TransformCrawler
 {
 

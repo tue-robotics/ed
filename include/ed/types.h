@@ -60,6 +60,7 @@ class ConvexHull2D;
 class ImageMask;
 
 class UUID;
+class Time;
 
 typedef std::string TYPE;
 

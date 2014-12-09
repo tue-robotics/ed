@@ -14,6 +14,8 @@ class Relation
 
 public:
 
+    virtual Time latestTime() const = 0;
+
     virtual bool calculateTransform(const Time& t, geo::Pose3D& tf) const { return false; }
 
 private:

@@ -16,6 +16,8 @@ public:
 
     ~TransformCache();
 
+    ed::Time latestTime() const { return cache_.latestTime(); }
+
     bool calculateTransform(const Time& t, geo::Pose3D& tf) const;
 
     void insert(const Time& t, const geo::Pose3D& tf) { cache_.insert(t, tf); }

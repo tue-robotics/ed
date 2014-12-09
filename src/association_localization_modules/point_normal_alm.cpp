@@ -8,6 +8,7 @@
 #include "ed/helpers/visualization.h"
 #include "ed/association_localization_modules/world_model_renderer.h"
 #include "ed/entity.h"
+#include "ed/time.h"
 
 #include <tue/profiling/scoped_timer.h>
 
@@ -73,7 +74,7 @@ void PointNormalALM::process(const RGBDData& sensor_data,
         WorldModelRenderer wmr;
         cv::Mat wm_depth_img = cv::Mat::zeros(sensor_view.getHeight(), sensor_view.getWidth(), CV_32F);
         pcl::PointCloud<pcl::PointXYZ>::Ptr world_model_pcl(new pcl::PointCloud<pcl::PointXYZ>);
-        wmr.render(sensor_data.sensor_pose, world_model, render_max_range_, sensor_view, wm_depth_img, *world_model_pcl, world_model_pc_entity_ptrs);
+        wmr.render(sensor_data.image->getFrameId(), sensor_data.image->getTimestamp(), world_model, render_max_range_, sensor_view, wm_depth_img, *world_model_pcl, world_model_pc_entity_ptrs);
 
         profiler_.stopTimer();
 

@@ -12,28 +12,28 @@ namespace ed
 namespace models
 {
 
-// ----------------------------------------------------------------------------------------------------
+//// ----------------------------------------------------------------------------------------------------
 
-bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& entities, NewEntityPtr new_parent)
-{
-    EntityPtr e = EntityPtr(new Entity(new_e->id, new_e->type));
-    if (new_parent)
-        e->setPose(new_parent->pose * new_e->pose);
-    else
-        e->setPose(new_e->pose);
+//bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& entities, NewEntityPtr new_parent)
+//{
+//    EntityPtr e = EntityPtr(new Entity(new_e->id, new_e->type));
+//    if (new_parent)
+//        e->setPose(new_parent->pose * new_e->pose);
+//    else
+//        e->setPose(new_e->pose);
 
-    e->setShape(new_e->shape);
-    e->setData(new_e->config);
+//    e->setShape(new_e->shape);
+//    e->setData(new_e->config);
 
-    entities.push_back(e);
+//    entities.push_back(e);
 
-    for (std::vector<ed::models::NewEntityPtr>::const_iterator it = new_e->children.begin(); it != new_e->children.end(); ++it)
-    {
-        convertNewEntityToEntities(*it, entities, new_e);
-    }
+//    for (std::vector<ed::models::NewEntityPtr>::const_iterator it = new_e->children.begin(); it != new_e->children.end(); ++it)
+//    {
+//        convertNewEntityToEntities(*it, entities, new_e);
+//    }
 
-    return true;
-}
+//    return true;
+//}
 
 }
 

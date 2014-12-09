@@ -5,7 +5,6 @@ project(ed)
 find_package(catkin REQUIRED COMPONENTS
   class_loader
   cv_bridge
-  ed_object_models
   geolib2
   geometry_msgs
   rgbd
@@ -60,7 +59,7 @@ generate_messages(
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ed_core ed_io ed_perception
-    CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
+    CATKIN_DEPENDS tue_config tue_serialization rgbd
 #  DEPENDS system_lib
 )
 
@@ -89,8 +88,13 @@ add_library(ed_core
     src/world_model.cpp
     src/transform_cache.cpp
 
-	# World model querying
-	src/world_model/transform_crawler.cpp
+    # World model querying
+    src/world_model/transform_crawler.cpp
+
+    # Model loading
+    src/models/models.cpp
+    src/models/shape_loader.cpp
+    src/models/xml_shape_parser.cpp
 
     # DDP is used by measurement.cpp, so put here
     src/helpers/depth_data_processing.cpp
@@ -167,7 +171,7 @@ add_dependencies(ed_occupancy_grid_publisher_plugin ${PROJECT_NAME}_gencpp)
 
 add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
 
-add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
+#add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
 
 find_package(kdl_parser REQUIRED)
 add_library(ed_robot_plugin plugins/robot_plugin.cpp)
