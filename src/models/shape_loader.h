@@ -2,7 +2,7 @@
 #define WIRE_VOLUME_MODEL_DB_LOADER_H_
 
 #include <geolib/datatypes.h>
-#include <tue/config/configuration.h>
+#include <tue/config/reader.h>
 
 namespace ed
 {
@@ -10,7 +10,7 @@ namespace ed
 namespace models
 {
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::Configuration cfg);
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg);
 
 } // end models namespace
 

@@ -11,6 +11,8 @@
 
 #include <ros/publisher.h>
 
+#include <queue>
+
 namespace ed
 {
 
@@ -54,6 +56,8 @@ private:
 
     //! World name
     std::string world_name_;
+
+    std::queue<UpdateRequest> update_requests_;
 
     void initializeWorld();
 

@@ -137,7 +137,20 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
 
-    if (config.value("world_name", world_name_))
+    if (config.readArray("entities"))
+    {
+        while(config.nextArrayItem())
+        {
+            update_requests_.push(UpdateRequest());
+            UpdateRequest& req = update_requests_.back();
+            ed::models::create(config.data(), "", "map", req);
+            req.setType("map", "virtual");
+        }
+
+        config.endArray();
+    }
+
+    if (config.value("world_name", world_name_, tue::OPTIONAL))
         initializeWorld();
     else
         std::cout << "No world specified in parameter file, cannot initialize world" << std::endl;
@@ -270,6 +283,13 @@ void Server::update()
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
+    // Integrate update requests
+    while(!update_requests_.empty())
+    {
+        new_world_model->update(update_requests_.front());
+        update_requests_.pop();
+    }
+
     // Sensor Measurements integration (Loop over all sensors and integrate the measurements)
     {
         tue::ScopedTimer t(profiler_, "sensor integration");
@@ -364,7 +384,7 @@ void Server::update(const std::string& update_str, std::string& error)
 void Server::initializeWorld()
 {
     ed::UpdateRequest req;
-    if (!ed::models::create(req, world_name_, world_name_))
+    if (!ed::models::create(world_name_, world_name_, req))
         return;
 
     req.setType("map", "virtual");

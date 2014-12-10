@@ -10,7 +10,9 @@ namespace ed
 namespace models
 {
 
-bool create(UpdateRequest& req, const UUID& id, const TYPE& type, tue::Configuration cfg = tue::Configuration());
+bool create(const UUID& id, const std::string& type, UpdateRequest& req);
+
+bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id, UpdateRequest& req, const std::string& model_path = "");
 
 }
 
