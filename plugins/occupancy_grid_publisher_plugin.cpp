@@ -196,18 +196,20 @@ void OccupancyGridPublisherPlugin::updateMap(const ed::EntityConstPtr& e, const 
             if ( worldToMap(p1w.x, p1w.y, p1.x, p1.y) && worldToMap(p2w.x, p2w.y, p2.x, p2.y) )
                 cv::line(map, p1, p2, value);
 
-            // Velocity
-            ed::MeasurementConstPtr m = e->lastMeasurement();
-            if (m && (ros::Time::now().toSec() - m->timestamp()) < sim_time_)
-            {
-                if (sim_time_ > 0 && e->velocity().t.length2() > 1e-6)
-                {
-                    p1w += sim_time_ * e->velocity().t;
-                    p2w += sim_time_ * e->velocity().t;
-                    if ( worldToMap(p1w.x, p1w.y, p1.x, p1.y) && worldToMap(p2w.x, p2w.y, p2.x, p2.y) )
-                        cv::line(map, p1, p2, 100);
-                }
-            }
+            // TODO rel-pose : use velocity vector
+
+//            // Velocity
+//            ed::MeasurementConstPtr m = e->lastMeasurement();
+//            if (m && (ros::Time::now().toSec() - m->timestamp()) < sim_time_)
+//            {
+//                if (sim_time_ > 0 && e->velocity().t.length2() > 1e-6)
+//                {
+//                    p1w += sim_time_ * e->velocity().t;
+//                    p2w += sim_time_ * e->velocity().t;
+//                    if ( worldToMap(p1w.x, p1w.y, p1.x, p1.y) && worldToMap(p2w.x, p2w.y, p2.x, p2.y) )
+//                        cv::line(map, p1, p2, 100);
+//                }
+//            }
         }
     }
 }

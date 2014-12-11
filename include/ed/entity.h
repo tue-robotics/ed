@@ -46,8 +46,8 @@ public:
 //    inline const geo::Pose3D& pose() const { return pose_; }
 //    inline void setPose(const geo::Pose3D& pose) { pose_ = pose; }
 
-    inline const geo::Pose3D& velocity() const { return velocity_; }
-    inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }
+//    inline const geo::Pose3D& velocity() const { return velocity_; }
+//    inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }
 
 //    inline void setConfig(const tue::Configuration& config) { config_ = config; }
 //    inline tue::Configuration getConfig() const { return config_.limitScope(); }
@@ -101,12 +101,12 @@ private:
     int shape_revision_;
     ConvexHull2D convex_hull_;
 
-    geo::Pose3D pose_;
-    geo::Pose3D velocity_;
-    geo::Vector3 average_displacement_vector_;
+//    geo::Pose3D pose_;
+//    geo::Pose3D velocity_;
+//    geo::Vector3 average_displacement_vector_;
 
     void updateEntityState(MeasurementConstPtr m);
-    void calculateVelocity();
+//    void calculateVelocity();
 
     double creation_time_;
 

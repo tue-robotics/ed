@@ -314,21 +314,21 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
             getConvexHullVisualizationMarker(m, e->convexHull(), getHash(e->id().str()), "ns");
             m_array.markers.push_back(m);
 
-            // ARROW
-            geometry_msgs::Point p1, p2;
-            geo::convert(e->convexHull().center_point, p1);
-            geo::convert(e->convexHull().center_point + e->velocity().getOrigin(), p2);
+//            // ARROW
+//            geometry_msgs::Point p1, p2;
+//            geo::convert(e->convexHull().center_point, p1);
+//            geo::convert(e->convexHull().center_point + e->velocity().getOrigin(), p2);
 
-            m.scale.x = 0.02;
-            m.scale.y = 0.05;
-            m.scale.z = 0.05;
-            m.color.a = m.color.r =  m.color.g = m.color.b = 1.0;
-            m.type = visualization_msgs::Marker::ARROW;
-            m.points.clear();
-            m.points.push_back(p1);
-            m.points.push_back(p2);
+//            m.scale.x = 0.02;
+//            m.scale.y = 0.05;
+//            m.scale.z = 0.05;
+//            m.color.a = m.color.r =  m.color.g = m.color.b = 1.0;
+//            m.type = visualization_msgs::Marker::ARROW;
+//            m.points.clear();
+//            m.points.push_back(p1);
+//            m.points.push_back(p2);
 
-            m_array.markers.push_back(m);
+//            m_array.markers.push_back(m);
         }
 
 //        getCenterPointVisualizationMarker(e->in_frustrum, e->object_in_front, e->convexHull().center_point,m,m.id,"pose");

@@ -46,10 +46,7 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
     measurements_(measurement_buffer_size),
     convex_hull_buffer_(20),
     measurements_seq_(0),
-    creation_time_(creation_time),
-    pose_(geo::Pose3D::identity()),
-    velocity_(geo::Pose3D::identity()),
-    average_displacement_vector_(geo::Vector3(0,0,0))
+    creation_time_(creation_time)
 {
     convex_hull_.center_point = geo::Vector3(0,0,0);
 }
@@ -70,42 +67,44 @@ void Entity::setShape(const geo::ShapeConstPtr& shape)
         ++shape_revision_;
         shape_ = shape;
 
-        // ----- Calculate convex hull -----
+        // TODO: rel-pose  Calculate convex hull from mesh
 
-        const std::vector<geo::Vector3>& vertices = shape->getMesh().getPoints();
+//        // ----- Calculate convex hull -----
 
-        if (!vertices.empty())
-        {
-            geo::Vector3 p_total(0, 0, 0);
+//        const std::vector<geo::Vector3>& vertices = shape->getMesh().getPoints();
 
-            cv::Mat_<cv::Vec2f> pointMat(1, vertices.size());
-            pcl::PointCloud<pcl::PointXYZ> point_cloud;
-            point_cloud.resize(vertices.size());
+//        if (!vertices.empty())
+//        {
+//            geo::Vector3 p_total(0, 0, 0);
 
-            convex_hull_.min_z = vertices[0].z;
-            convex_hull_.max_z = vertices[0].z;
+//            cv::Mat_<cv::Vec2f> pointMat(1, vertices.size());
+//            pcl::PointCloud<pcl::PointXYZ> point_cloud;
+//            point_cloud.resize(vertices.size());
 
-            for(unsigned int i = 0; i < vertices.size(); ++i)
-            {
-                geo::Vector3 p_MAP = pose_ * vertices[i];
-                convex_hull_.min_z = std::min(convex_hull_.min_z, p_MAP.z);
-                convex_hull_.max_z = std::max(convex_hull_.max_z, p_MAP.z);
+//            convex_hull_.min_z = vertices[0].z;
+//            convex_hull_.max_z = vertices[0].z;
 
-                pointMat(0, i) = cv::Vec2f(p_MAP.x, p_MAP.y);
-                point_cloud.points[i] = pcl::PointXYZ(p_MAP.x, p_MAP.y, p_MAP.z);
+//            for(unsigned int i = 0; i < vertices.size(); ++i)
+//            {
+//                geo::Vector3 p_MAP = pose_ * vertices[i];
+//                convex_hull_.min_z = std::min(convex_hull_.min_z, p_MAP.z);
+//                convex_hull_.max_z = std::max(convex_hull_.max_z, p_MAP.z);
 
-                p_total += p_MAP;
-            }
+//                pointMat(0, i) = cv::Vec2f(p_MAP.x, p_MAP.y);
+//                point_cloud.points[i] = pcl::PointXYZ(p_MAP.x, p_MAP.y, p_MAP.z);
 
-            std::vector<int> chull_mask_indices;
-            cv::convexHull(pointMat, chull_mask_indices);
+//                p_total += p_MAP;
+//            }
 
-            convex_hull_.chull.resize(chull_mask_indices.size());
-            for(unsigned int i = 0; i < chull_mask_indices.size(); ++i)
-                convex_hull_.chull[i] = point_cloud.points[chull_mask_indices[i]];
+//            std::vector<int> chull_mask_indices;
+//            cv::convexHull(pointMat, chull_mask_indices);
 
-            convex_hull_.center_point = p_total / vertices.size();
-        }
+//            convex_hull_.chull.resize(chull_mask_indices.size());
+//            for(unsigned int i = 0; i < chull_mask_indices.size(); ++i)
+//                convex_hull_.chull[i] = point_cloud.points[chull_mask_indices[i]];
+
+//            convex_hull_.center_point = p_total / vertices.size();
+//        }
     }
 }
 
@@ -144,36 +143,36 @@ void Entity::updateEntityState(MeasurementConstPtr m)
     convex_hull_buffer_.push_front(std::make_pair(convex_hull_, m->timestamp())); // Store the convex hulls over time for velocity calculation
 
     // Calculate velocity
-    calculateVelocity();
+//    calculateVelocity();
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void Entity::calculateVelocity()
-{
-    velocity_ = geo::Pose3D::identity();
+//void Entity::calculateVelocity()
+//{
+//    velocity_ = geo::Pose3D::identity();
 
-    double current = convex_hull_buffer_[0].second;
-    for (boost::circular_buffer<std::pair<ConvexHull2D, double> >::iterator it = convex_hull_buffer_.begin(); it != convex_hull_buffer_.end(); ++it)
-    {
-        double dt = current - it->second;
-        if (dt > 0.5)
-        {
-            if (dt < 1.0)
-            {
-                geo::Vector3 dv;
+//    double current = convex_hull_buffer_[0].second;
+//    for (boost::circular_buffer<std::pair<ConvexHull2D, double> >::iterator it = convex_hull_buffer_.begin(); it != convex_hull_buffer_.end(); ++it)
+//    {
+//        double dt = current - it->second;
+//        if (dt > 0.5)
+//        {
+//            if (dt < 1.0)
+//            {
+//                geo::Vector3 dv;
 
-                helpers::ddp::getDisplacementVector(convex_hull_buffer_[0].first, it->first, dv);
+//                helpers::ddp::getDisplacementVector(convex_hull_buffer_[0].first, it->first, dv);
 
-                // Set velocity
-                velocity_.t = dv / dt;
+//                // Set velocity
+//                velocity_.t = dv / dt;
 
-                average_displacement_vector_ = (average_displacement_vector_ + dv) / 2;
-            }
-            return;
-        }
-    }
-}
+//                average_displacement_vector_ = (average_displacement_vector_ + dv) / 2;
+//            }
+//            return;
+//        }
+//    }
+//}
 
 // ----------------------------------------------------------------------------------------------------
 
