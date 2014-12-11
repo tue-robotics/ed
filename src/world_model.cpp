@@ -300,6 +300,8 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
         // Does not yet exist
         e = boost::make_shared<Entity>(id);
         addNewEntity(e);
+
+        new_entities[id] = e;
     }
 
     return e;
