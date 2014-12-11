@@ -6,8 +6,9 @@ python:
 compiler:
   - gcc
 env:
-# - ROS_DISTRO=groovy
   - ROS_DISTRO=hydro
+notifications:
+  - email: false
 
 before_install:
   - export CI_SOURCE_PATH=$(pwd)
@@ -15,8 +16,8 @@ before_install:
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
 
 install:
-  - export TUE_ROS_DISTRO=$ROS_DISTRO
-  - source <(curl -k https://roboticssrv.wtb.tue.nl/svn/ros/tue_env/installer/scripts/bootstrap)
+  - export TUE_ENV=$ROS_DISTRO
+  - source <(wget -O- https://raw.githubusercontent.com/tue-robotics/tue-env/master/installer/scripts/bootstrap)
   - tue-get install ros-${REPOSITORY_NAME}
 
 before_script:
@@ -25,7 +26,7 @@ before_script:
 
   # Link the repo we are testing to the new workspace
   - rm -rf $REPOSITORY_NAME
-  - ln -s $CI_SOURCE_PATH . 
+  - ln -s $CI_SOURCE_PATH .
   - ls -l
   - cd .. # go to the catkin workspace
 
