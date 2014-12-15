@@ -599,7 +599,7 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
                         {
                             if (config.value("type", type, tue::config::OPTIONAL) &&
                                 config.value("score", score, tue::config::OPTIONAL)){
-                                info.append(" " + boost::str(boost::format("%.2f") % score));
+                                info.append(boost::str(boost::format("%.2f") % score));
                             }
                         }
                     }
