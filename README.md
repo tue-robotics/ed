@@ -21,6 +21,7 @@ We assume you have successfully installed ROS and set-up a Catkin workspace. Che
     git clone https://github.com/tue-robotics/ed_object_models.git
     git clone https://github.com/tue-robotics/tue_serialization
     git clone https://github.com/tue-robotics/rgbd
+    git clone https://github.com/tue-robotics/ed_gui_server.git
     
 You will also need the following system dependencies:
 
