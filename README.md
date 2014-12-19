@@ -43,3 +43,5 @@ You can provide multiple paths by seperating them using ':'.
 You can then start ED by running:
 
     rosrun ed ed_server
+    
+You can specify a configuration file for ED as a command line argument. Some example configuration files are in ed/config. 
