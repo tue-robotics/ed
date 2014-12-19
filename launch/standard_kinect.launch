@@ -2,7 +2,8 @@
 <launch>
 
 <arg name="launch_kinect" default="true"/>
-<arg name="ed_config" default="$(find ed)/config/$(optenv ED_CONFIG amigo).yaml"/>
+<arg name="launch_rgbd" default="true"/>
+<arg name="ed_config" default="$(find ed)/config/$(optenv ED_CONFIG standard_kinect).yaml"/>
 
 <node name="ed_server" pkg="ed" type="ed_server" args="$(arg ed_config)" output="screen" />
 
@@ -12,13 +13,8 @@
 </group>
 
 <!-- RGBD SERVER -->
-<node name="rgbd" pkg="rgbd" type="rgbd_server" output="screen">
-    <remap from="cam_info" to="/camera/rgb/camera_info"/>
-    <remap from="rgb_image" to="/camera/rgb/image_color"/>
-    <remap from="depth_image" to="/camera/depth_registered/image_raw"/>
-    <remap from="output" to="/camera/rgbd"/>
-    
-    <param name="max_fps" value="30" />
-</node>
+<group if="$(arg launch_rgbd)">
+    <include file="$(find rgbd)/launch/standard_kinect.launch"/>
+</group>
 
 </launch>
