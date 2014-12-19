@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+<arg name="launch_kinect" default="true"/>
+<arg name="ed_config" default="$(find ed)/config/$(optenv ED_CONFIG amigo).yaml"/>
+
+<node name="ed_server" pkg="ed" type="ed_server" args="$(arg ed_config)" output="screen" />
+
+<!-- KINECT -->
+<group if="$(arg launch_kinect)">
+    <include file="$(find openni_launch)/launch/openni.launch"/>
+</group>
+
+<!-- RGBD SERVER -->
+<node name="rgbd" pkg="rgbd" type="rgbd_server" output="screen">
+    <remap from="cam_info" to="/camera/rgb/camera_info"/>
+    <remap from="rgb_image" to="/camera/rgb/image_color"/>
+    <remap from="depth_image" to="/camera/depth_registered/image_raw"/>
+    <remap from="output" to="/camera/rgbd"/>
+    
+    <param name="max_fps" value="30" />
+</node>
+
+</launch>
