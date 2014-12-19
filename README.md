@@ -45,3 +45,7 @@ You can then start ED by running:
     rosrun ed ed_server
     
 You can specify a configuration file for ED as a command line argument. Some example configuration files are in ed/config. 
+
+If you are not running ED on the Amigo or Sergio robots but you have a standard kinect config, then:
+    
+    roslaunch ed standard_kinect.launch
