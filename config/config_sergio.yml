@@ -45,10 +45,10 @@ perception:
 #    -  lib: libtype_aggregator.so
 
 plugins:
-#- name: gui_server
-#  lib: libed_gui_server_plugin.so
-#  parameters:
-#      robot_name: sergio
+- name: gui_server
+  lib: libed_gui_server_plugin.so
+  parameters:
+      robot_name: sergio
 #- name: builder
 #  lib: libed_builder_plugin.so
 - name: obstacle_grid_publisher
