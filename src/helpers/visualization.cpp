@@ -93,7 +93,10 @@ void getNameAndTypeVisualizationMarker(const geo::Vector3& center_point, const U
     geo::convert(center_point,m.pose.position);
     m.pose.position.z += 0.1;
 
-    m.text = type + "(" + name.str().substr(0,4) +  ")";
+    if (type=="")
+        m.text = type + "(" + name.str().substr(0,4) +  ")";
+    else
+        m.text = name.str() + "(" + type.substr(0,4) +  ")";
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -128,7 +131,7 @@ void getCenterPointVisualizationMarker(bool in_frustrum, bool object_in_front, c
 
     geo::convert(center_point,m.pose.position);
 
-    m.scale.x = m.scale.y = m.scale.z = 0.15;
+    m.scale.x = m.scale.y = m.scale.z = 0.05;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -331,8 +334,20 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
 //        getCenterPointVisualizationMarker(e->in_frustrum, e->object_in_front, e->convexHull().center_point,m,m.id,"pose");
 //        m_array.markers.push_back(m);
 
-        getNameAndTypeVisualizationMarker(e->convexHull().center_point,e->id(),e->type(),m,m.id,"name_and_type");
-        m_array.markers.push_back(m);
+        if (e->lastMeasurement())
+        {
+            getNameAndTypeVisualizationMarker(e->convexHull().center_point,e->id(),e->type(),m,m.id,"name_and_type");
+            m_array.markers.push_back(m);
+            getCenterPointVisualizationMarker(false, false, e->convexHull().center_point, m, m.id, "center_point" );
+            m_array.markers.push_back(m);
+        }
+        else
+        {
+            getNameAndTypeVisualizationMarker(e->pose().getOrigin(),e->id(),e->type(),m,m.id,"name_and_type");
+            m_array.markers.push_back(m);
+            getCenterPointVisualizationMarker(false, false, e->pose().getOrigin(), m, m.id, "center_point" );
+            m_array.markers.push_back(m);
+        }
 
         // If human
 
