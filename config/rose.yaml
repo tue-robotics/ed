@@ -33,7 +33,7 @@ sensors:
         visualize: 0
 
 visualize: 1
-world_name: robotics_testlabs
+world_name: rosebv
 
 perception:
     fit_shapes: 1
