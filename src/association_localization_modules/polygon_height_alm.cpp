@@ -50,6 +50,16 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
     //! 2) Association
     unsigned int i = 0;
     profiler_.startTimer("association");
+
+    // Calculate sensor pose in MAP frame (TODO rel-poses : get rid of MAP frame!)
+    // (We need the map frame, because the polygons are aligned parallel with the ground floor / map frame)
+    geo::Pose3D sensor_pose_MAP;
+    if (!world_model->calculateTransform("map", rgbd_data.image->getFrameId(), rgbd_data.image->getTimestamp(), sensor_pose_MAP))
+    {
+        std::cout << "PolygonHeightALM: transform from 'map' to sensor (" << rgbd_data.image->getFrameId() << ") cannot be found." << std::endl;
+        return;
+    }
+
     // Keep track of the entities that have an association
     std::map<UUID, std::vector<std::pair<PointCloudMaskPtr,ConvexHull2D> > > associated_entities;
     for(std::vector<PointCloudMaskPtr>::const_iterator it = clusters.begin(); it != clusters.end(); ++it )
@@ -58,7 +68,7 @@ void PolygonHeightALM::process(const RGBDData& rgbd_data,
 
         //! Create the Polygon with Height
         ConvexHull2D polygon;
-        helpers::ddp::get2DConvexHull(rgbd_data.point_cloud, *cluster, rgbd_data.sensor_pose, polygon);
+        helpers::ddp::get2DConvexHull(rgbd_data.point_cloud, *cluster, sensor_pose_MAP, polygon);
 
         helpers::visualization::publishConvexHull2DVisualizationMarker(polygon, vis_marker_pub_, i, "bla");
         ++i;

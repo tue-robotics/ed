@@ -89,8 +89,9 @@ void PointNormalALM::process(const RGBDData& sensor_data,
         profiler_.stopTimer();
     }
 
-    if (visualize_)
-        helpers::visualization::publishNpclVisualizationMarker(sensor_data.sensor_pose, world_model_npcl, vis_marker_pub_, 1, "world_model_npcl");
+    // TODO rel-poses : visualize Normal point clouds
+//    if (visualize_)
+//        helpers::visualization::publishNpclVisualizationMarker(sensor_data.sensor_pose, world_model_npcl, vis_marker_pub_, 1, "world_model_npcl");
 
     //! 2) Perform the point normal association
     std::vector<const ed::Entity*> associations(sensor_data.point_cloud_with_normals->size());
@@ -134,15 +135,16 @@ void PointNormalALM::process(const RGBDData& sensor_data,
             if (!associations[i])
                 not_associated_mask->push_back(i);
 
-        if (visualize_)
-        {
-            pcl::PointCloud<pcl::PointNormal>::Ptr residual_npcl(new pcl::PointCloud<pcl::PointNormal>);
-            for(unsigned int i = 0; i < associations.size(); ++i)
-                if (!associations[i])
-                    residual_npcl->push_back(sensor_data.point_cloud_with_normals->points[i]);
+        // TODO rel-poses : visualize
+//        if (visualize_)
+//        {
+//            pcl::PointCloud<pcl::PointNormal>::Ptr residual_npcl(new pcl::PointCloud<pcl::PointNormal>);
+//            for(unsigned int i = 0; i < associations.size(); ++i)
+//                if (!associations[i])
+//                    residual_npcl->push_back(sensor_data.point_cloud_with_normals->points[i]);
 
-            helpers::visualization::publishNpclVisualizationMarker(sensor_data.sensor_pose, residual_npcl, vis_marker_pub_, 2, "residual_npcl");
-        }
+//            helpers::visualization::publishNpclVisualizationMarker(sensor_data.sensor_pose, residual_npcl, vis_marker_pub_, 2, "residual_npcl");
+//        }
     }
 
     pub_profile_.publish();

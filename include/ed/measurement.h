@@ -20,7 +20,7 @@ public:
 
     Measurement(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, const ConvexHull2D& convex_hull = ConvexHull2D(), unsigned int seq = 0);
 
-    const geo::Pose3D& sensorPose() const { return rgbd_data_.sensor_pose; }
+//    const geo::Pose3D& sensorPose() const { return rgbd_data_.sensor_pose; }
     rgbd::ImageConstPtr image() const { return rgbd_data_.image; }
     PointCloudMaskConstPtr mask() const { return mask_; }
     const ImageMask& imageMask() const { return image_mask_; }
