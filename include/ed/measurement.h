@@ -20,7 +20,9 @@ public:
 
     Measurement(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, const ConvexHull2D& convex_hull = ConvexHull2D(), unsigned int seq = 0);
 
-//    const geo::Pose3D& sensorPose() const { return rgbd_data_.sensor_pose; }
+    // TODO rel-poses: Get rid of this method:
+    const geo::Pose3D& sensorPoseMAP() const { return rgbd_data_.sensor_pose_MAP; }
+
     rgbd::ImageConstPtr image() const { return rgbd_data_.image; }
     PointCloudMaskConstPtr mask() const { return mask_; }
     const ImageMask& imageMask() const { return image_mask_; }

@@ -57,7 +57,7 @@ bool write(const std::string& filename, const Measurement& msr)
         f_out.open(filename_pose.c_str(), std::ifstream::binary);
         if (f_out.is_open())
         {
-            f_out << msr.sensorPose();
+            f_out << msr.sensorPoseMAP();
         }
         else
         {

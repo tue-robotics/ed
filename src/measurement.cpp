@@ -32,7 +32,7 @@ Measurement::Measurement(const RGBDData& rgbd_data, const PointCloudMaskPtr& mas
 {
     // Calculate if not set
     if ( convex_hull_.chull.size() == 0 )
-        helpers::ddp::get2DConvexHull(rgbd_data.point_cloud, *mask,rgbd_data.sensor_pose, convex_hull_);
+        helpers::ddp::get2DConvexHull(rgbd_data.point_cloud, *mask, rgbd_data.sensor_pose_MAP, convex_hull_);
 
     // Calculate image mask
     image_mask_.setSize(rgbd_data.image->getDepthImage().cols, rgbd_data.image->getDepthImage().rows);

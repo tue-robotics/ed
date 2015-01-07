@@ -225,7 +225,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
     // Construct RGBD Data
     RGBDData rgbd_data;
     rgbd_data.image = rgbd_image;
-    rgbd_data.sensor_pose = sensor_pose;
+    rgbd_data.sensor_pose_MAP = sensor_pose;
 
     //! 3) Convert rgbd data to voxelized point cloud
     {
@@ -241,7 +241,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
     }
 
     if (visualize_)
-        helpers::visualization::publishNpclVisualizationMarker(rgbd_data.sensor_pose, rgbd_data.point_cloud_with_normals,
+        helpers::visualization::publishNpclVisualizationMarker(rgbd_data.sensor_pose_MAP, rgbd_data.point_cloud_with_normals,
                                                                vis_marker_pub_, 0, "sensor_npcl");
 
     //! 5) Create point cloud mask: put all point cloud indices in the mask
@@ -310,7 +310,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
             if (!e->shape()) //! if it has no shape
             {
                 bool in_frustrum, object_in_front;
-                if (helpers::ddp::inView(rgbd_data.image, rgbd_data.sensor_pose, e->convexHull().center_point, max_range_, clearing_padding_fraction_, in_frustrum, object_in_front))
+                if (helpers::ddp::inView(rgbd_data.image, rgbd_data.sensor_pose_MAP, e->convexHull().center_point, max_range_, clearing_padding_fraction_, in_frustrum, object_in_front))
                 {
                     MeasurementConstPtr m = e->lastMeasurement();
 

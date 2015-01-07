@@ -23,7 +23,8 @@ struct RGBDData
     /// Original RGBD image received from the sensor
     rgbd::ImageConstPtr image;
 
-//    geo::Pose3D sensor_pose;
+    // TODO: rel-poses: get rid of this field:
+    geo::Pose3D sensor_pose_MAP;
 
     /// Point cloud constructed from the image (possibly voxelized)
     pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud;
