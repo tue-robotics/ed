@@ -2,6 +2,7 @@
 #define ED_UUID_H_
 
 #include "ed/types.h"
+#include <string>
 
 namespace ed
 {
