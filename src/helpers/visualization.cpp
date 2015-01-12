@@ -617,7 +617,26 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
                                 info.append(boost::str(boost::format("%.2f") % score));
                             }
                         }
+                        config.endGroup(); // close type_aggregator group
                     }
+                    config.endGroup();  // close perception_result group
+
+                    // in case its a human, add real name
+                    if (config.readGroup("perception_result", tue::config::OPTIONAL))
+                    {
+                        if (config.readGroup("face_recognizer", tue::config::OPTIONAL))
+                        {
+                            std::string person_name;
+                            if (config.value("label", person_name, tue::config::OPTIONAL) &&
+                                config.value("score", score, tue::config::OPTIONAL)){
+                                if (score > 0 )
+                                    type = person_name;
+                            }
+                        }
+                        config.endGroup(); // close type_aggregator group
+                    }
+                    config.endGroup();  // close perception_result group
+
 
                     // if no type was read, use the default and the UID
                     if (type.empty()){
