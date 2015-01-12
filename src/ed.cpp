@@ -35,7 +35,7 @@ void entityToMsg(const ed::Entity& e, const geo::Pose3D& e_pose, ed::EntityInfo&
 {
     msg.id = e.id().str();
     msg.type = e.type();
-    msg.creation_time = ros::Time(e.creationTime());
+//    msg.creation_time = ros::Time(e.creationTime());
 
     // Convex hull
     const ed::ConvexHull2D& convex_hull = e.convexHull();
