@@ -50,8 +50,6 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setType(it->second);
-
-        std::cout << "Set type: " << it->first << ": TYPE = " << it->second << std::endl;
     }
 
     // Update relations
