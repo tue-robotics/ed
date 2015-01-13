@@ -12,6 +12,8 @@ namespace models
 
 bool create(const UUID& id, const std::string& type, UpdateRequest& req);
 
+bool create(const tue::config::DataConstPointer& data, UpdateRequest& req);
+
 bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id, UpdateRequest& req, const std::string& model_path = "");
 
 }
