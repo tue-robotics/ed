@@ -67,7 +67,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg)
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg, std::map<std::string, geo::ShapePtr>& shape_cache)
 {
     geo::ShapePtr shape;
 
@@ -75,6 +75,14 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg)
     if (cfg.value("path", path))
     {
         tue::filesystem::Path shape_path(model_path + "/" + path);
+
+        // Check cache first
+        std::map<std::string, geo::ShapePtr>::const_iterator it = shape_cache.find(shape_path.string());
+        if (it != shape_cache.end())
+        {
+            std::cout << "Use shape cache: " << shape_path.string() << std::endl;
+            return it->second;
+        }
 
         if (shape_path.exists())
         {
@@ -100,6 +108,9 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg)
 
             if (!shape)
                 std::cout << "ed::models::loadShape() : ERROR while loading shape at " << shape_path.string() << std::endl;
+            else
+                // Add to cache
+                shape_cache[shape_path.string()] = shape;
         }
         else
         {

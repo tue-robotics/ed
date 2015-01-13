@@ -93,6 +93,7 @@ add_library(ed_core
 
     # Model loading
     src/models/models.cpp
+    src/models/model_loader.cpp
     src/models/shape_loader.cpp
     src/models/xml_shape_parser.cpp
 

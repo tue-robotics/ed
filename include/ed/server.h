@@ -3,6 +3,7 @@
 
 #include "ed/types.h"
 #include "ed/perception.h"
+#include "ed/models/model_loader.h"
 
 #include <tue/profiling/profiler.h>
 #include <tue/profiling/ros/profile_publisher.h>
@@ -60,6 +61,9 @@ private:
     std::queue<UpdateRequest> update_requests_;
 
     void initializeWorld();
+
+    //! Model loading
+    models::ModelLoader model_loader_;
 
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;

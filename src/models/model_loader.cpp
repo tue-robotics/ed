@@ -1,4 +1,5 @@
-#include "ed/models/models.h"
+#include "ed/models/model_loader.h"
+
 #include "ed/update_request.h"
 #include "ed/relations/transform_cache.h"
 
@@ -9,12 +10,25 @@
 
 #include <tue/config/reader.h>
 #include <tue/config/writer.h>
+#include <tue/config/configuration.h>
 
 namespace ed
 {
 
 namespace models
 {
+
+// ----------------------------------------------------------------------------------------------------
+
+ModelLoader::ModelLoader()
+{
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+ModelLoader::~ModelLoader()
+{
+}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -25,8 +39,20 @@ tue::filesystem::Path getModelPath(const std::string& type)
 
 // ----------------------------------------------------------------------------------------------------
 
-tue::config::DataPointer loadModelData(const std::string& type, std::string& model_path_str)
+tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::string& model_path_str)
 {
+    std::map<std::string, tue::config::DataConstPointer>::iterator it = model_cache_.find(type);
+    if (it != model_cache_.end())
+    {
+        const tue::config::DataConstPointer& data = it->second;
+
+        // Extract model path
+        tue::config::Reader r(data);
+        r.value("__model_path__", model_path_str);
+
+        return data;
+    }
+
     tue::config::DataPointer data;
 
     tue::filesystem::Path model_path = getModelPath(type);
@@ -51,15 +77,25 @@ tue::config::DataPointer loadModelData(const std::string& type, std::string& mod
     }
 
     model_path_str = model_path.string();
-    return model_cfg.data();
+
+    data = model_cfg.data();
+
+    // Set model path in data
+    tue::config::Writer w(data);
+    w.setValue("__model_path__", model_path_str);
+
+    // Store data in cache
+    model_cache_[type] = data;
+
+    return data;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-bool create(const UUID& id, const std::string& type, UpdateRequest& req)
+bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest& req)
 {
     std::string model_path;
-    tue::config::DataPointer data = loadModelData(type, model_path);
+    tue::config::DataConstPointer data = loadModelData(type, model_path);
     if (!data.valid())
         return false;
 
@@ -71,7 +107,7 @@ bool create(const UUID& id, const std::string& type, UpdateRequest& req)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool create(const tue::config::DataConstPointer& data, UpdateRequest& req)
+bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateRequest& req)
 {
     if (!create(data, "", "", req, ""))
         return false;
@@ -81,7 +117,7 @@ bool create(const tue::config::DataConstPointer& data, UpdateRequest& req)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id, UpdateRequest& req, const std::string& model_path)
+bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id, UpdateRequest& req, const std::string& model_path)
 {
     tue::config::Reader r(data);
 
@@ -103,7 +139,7 @@ bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const
     if (r.value("type", type, tue::config::OPTIONAL))
     {
         std::string super_model_path;
-        tue::config::DataPointer super_data = loadModelData(type, super_model_path);
+        tue::config::DataConstPointer super_data = loadModelData(type, super_model_path);
         if (super_data.valid())
             create(super_data, id, parent_id, req, super_model_path);
     }
@@ -157,7 +193,7 @@ bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const
     {
         if (!model_path.empty() && tue::filesystem::Path(model_path).exists())
         {
-            geo::ShapePtr shape = loadShape(model_path, r);
+            geo::ShapePtr shape = loadShape(model_path, r, shape_cache_);
             if (shape)
                 req.setShape(id, shape);
         }
@@ -169,6 +205,7 @@ bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const
     req.addData(id, data);
 }
 
-} // namespace models
+} // end namespace models
 
-} // namespace ed
+} // end namespace ed
+

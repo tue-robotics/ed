@@ -143,7 +143,7 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         {
             update_requests_.push(UpdateRequest());
             UpdateRequest& req = update_requests_.back();
-            ed::models::create(config.data(), "", "map", req);
+            model_loader_.create(config.data(), "", "map", req);
             req.setType("map", "virtual");
         }
 
@@ -384,7 +384,7 @@ void Server::update(const std::string& update_str, std::string& error)
 void Server::initializeWorld()
 {
     ed::UpdateRequest req;
-    if (!ed::models::create(world_name_, world_name_, req))
+    if (!model_loader_.create(world_name_, world_name_, req))
         return;
 
     req.setType("map", "virtual");

@@ -10,7 +10,7 @@ namespace ed
 namespace models
 {
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg);
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg, std::map<std::string, geo::ShapePtr>& shape_cache);
 
 } // end models namespace
 
