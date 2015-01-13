@@ -52,18 +52,11 @@ bool TransformCrawler::next()
 
 void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transform)
 {
-    std::cout << "--------" << std::endl;
-
-    std::cout << e.id() << std::endl;
-
     // Push all nodes that point to this node
     const std::map<Idx, Idx>& transforms_to = e.relationsTo();
     for(std::map<Idx, Idx>::const_iterator it = transforms_to.begin(); it != transforms_to.end(); ++it)
     {
         Idx n2 = it->first;
-
-        std::cout << "    from: " << wm_.getEntity(n2)->id() << " (" << n2 << ")" << std::endl;
-
         if (visited_.find(n2) == visited_.end())
         {
             geo::Pose3D rel_transform;
@@ -80,9 +73,6 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
     for(std::map<Idx, Idx>::const_iterator it = transforms_from.begin(); it != transforms_from.end(); ++it)
     {
         Idx n2 = it->first;
-
-        std::cout << "    to: " << wm_.getEntity(n2)->id() << " (" << n2 << ")" << std::endl;
-
         if (visited_.find(n2) == visited_.end())
         {
             geo::Pose3D rel_transform;
@@ -93,8 +83,6 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
             visited_.insert(n2);
         }
     }
-
-    std::cout << "--------" << std::endl;
 }
 
 // ----------------------------------------------------------------------------------------------------
