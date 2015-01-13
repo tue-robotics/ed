@@ -50,33 +50,21 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setType(it->second);
-    }
 
-//    // Update poses
-//    for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
-//    {
-//        EntityPtr e = getOrAddEntity(it->first, new_entities);
-//        e->setPose(it->second);
-//    }
+        std::cout << "Set type: " << it->first << ": TYPE = " << it->second << std::endl;
+    }
 
     // Update relations
     for(std::map<UUID, std::map<UUID, RelationConstPtr> >::const_iterator it = req.relations.begin(); it != req.relations.end(); ++it)
     {
-        Idx idx1;
-        if (findEntityIdx(it->first, idx1))
+        EntityPtr p = getOrAddEntity(it->first, new_entities);
+
+        const std::map<UUID, RelationConstPtr>& rels = it->second;
+        for(std::map<UUID, RelationConstPtr>::const_iterator it2 = rels.begin(); it2 != rels.end(); ++it2)
         {
-            const std::map<UUID, RelationConstPtr>& rels = it->second;
-            for(std::map<UUID, RelationConstPtr>::const_iterator it2 = rels.begin(); it2 != rels.end(); ++it2)
-            {
-                Idx idx2;
-                if (findEntityIdx(it2->first, idx2))
-                    setRelation(idx1, idx2, it2->second);
-                else
-                    std::cout << "WorldModel::update: unknown entity: '" << it2->first << "'." << std::endl;
-            }
+            EntityPtr c = getOrAddEntity(it2->first, new_entities);
+            setRelation(p, c, it2->second);
         }
-        else
-            std::cout << "WorldModel::update: unknown entity: '" << it->first << "'." << std::endl;
     }
 
     // Update additional info (data)
@@ -84,21 +72,20 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
 
-            EntityPtr e_updated(new Entity(*e));
+        EntityPtr e_updated(new Entity(*e));
 
-            tue::config::DataPointer params;
-            params.add(e->data());
-            params.add(it->second);
+        tue::config::DataPointer params;
+        params.add(e->data());
+        params.add(it->second);
 
-            tue::config::Reader r(params);
-            std::string type;
-            if (r.value("type", type, tue::config::OPTIONAL))
-                e_updated->setType(type);
+        tue::config::Reader r(params);
+        std::string type;
+        if (r.value("type", type, tue::config::OPTIONAL))
+            e_updated->setType(type);
 
-            e_updated->setData(params);
+        e_updated->setData(params);
 
-            setEntity(it->first, e_updated);
-
+        setEntity(it->first, e_updated);
     }
 
     // Remove entities
@@ -203,32 +190,22 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
 
 // --------------------------------------------------------------------------------
 
-void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
+void WorldModel::setRelation(const EntityPtr& p, const EntityPtr& c, const RelationConstPtr& r)
 {
-    const EntityConstPtr& p = entities_[parent];
-    const EntityConstPtr& c = entities_[child];
-
-    if (!p || !c)
-    {
-        std::cout << "[ED] ERROR: Invalid relation addition: parent or child does not exit." << std::endl;
-        return;
-    }
-
     latest_time_ = std::max<Time>(r->latestTime(), latest_time_);
 
-    Idx r_idx = p->relationTo(child);
+    // TODO: can be more efficient: idxes should already be known when this function is called
+    Idx p_idx, c_idx;
+    findEntityIdx(p->id(), p_idx);
+    findEntityIdx(c->id(), c_idx);
+
+    Idx r_idx = p->relationTo(c_idx);
     if (r_idx == INVALID_IDX)
     {
         r_idx = addRelation(r);
 
-        EntityPtr p_new(new Entity(*entities_[parent]));
-        EntityPtr c_new(new Entity(*entities_[child]));
-
-        p_new->setRelationTo(child, r_idx);
-        c_new->setRelationFrom(parent, r_idx);
-
-        entities_[parent] = p_new;
-        entities_[child] = c_new;
+        p->setRelationTo(c_idx, r_idx);
+        c->setRelationFrom(p_idx, r_idx);
     }
     else
     {
@@ -344,7 +321,6 @@ void WorldModel::addNewEntity(const EntityConstPtr& e)
 }
 
 // --------------------------------------------------------------------------------
-
 
 }
 

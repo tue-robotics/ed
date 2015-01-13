@@ -77,8 +77,6 @@ public:
 
     void update(const UpdateRequest& req);
 
-    void setRelation(Idx parent, Idx child, const RelationConstPtr& r);
-
     RelationConstPtr getRelation(Idx idx) const { return relations_[idx]; }
 
     bool findEntityIdx(const UUID& id, Idx& idx) const;
@@ -106,6 +104,7 @@ private:
 
     void addNewEntity(const EntityConstPtr& e);
 
+    void setRelation(const EntityPtr& p, const EntityPtr& c, const RelationConstPtr& r);
 
 };
 
