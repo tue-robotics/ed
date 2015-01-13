@@ -71,6 +71,16 @@ bool create(const UUID& id, const std::string& type, UpdateRequest& req)
 
 // ----------------------------------------------------------------------------------------------------
 
+bool create(const tue::config::DataConstPointer& data, UpdateRequest& req)
+{
+    if (!create(data, "", "", req, ""))
+        return false;
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id, UpdateRequest& req, const std::string& model_path)
 {
     tue::config::Reader r(data);
@@ -120,9 +130,12 @@ bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const
             if (!r.value("parent", parent_id_str, tue::config::OPTIONAL))
                 parent_id_str = parent_id.str();
 
-            boost::shared_ptr<ed::TransformCache> transform(new ed::TransformCache());
-            transform->insert(Time(-1), pose);  // TODO: choose proper time
-            req.setRelation(parent_id_str, id, transform);
+            if (!parent_id_str.empty())
+            {
+                boost::shared_ptr<ed::TransformCache> transform(new ed::TransformCache());
+                transform->insert(Time(-1), pose);  // TODO: choose proper time
+                req.setRelation(parent_id_str, id, transform);
+            }
         }
 
         r.endGroup();
