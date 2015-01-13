@@ -79,10 +79,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg, 
         // Check cache first
         std::map<std::string, geo::ShapePtr>::const_iterator it = shape_cache.find(shape_path.string());
         if (it != shape_cache.end())
-        {
-            std::cout << "Use shape cache: " << shape_path.string() << std::endl;
             return it->second;
-        }
 
         if (shape_path.exists())
         {
