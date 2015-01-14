@@ -171,7 +171,7 @@ add_dependencies(ed_occupancy_grid_publisher_plugin ${PROJECT_NAME}_gencpp)
 
 add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
 
-#add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
+add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
 
 find_package(kdl_parser REQUIRED)
 add_library(ed_robot_plugin plugins/robot_plugin.cpp)

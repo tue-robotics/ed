@@ -2,6 +2,7 @@
 
 #include <ed/world_model.h>
 #include <ed/entity.h>
+#include <ed/world_model/transform_crawler.h>
 
 #include <geolib/ros/tf_conversions.h>
 
@@ -36,13 +37,11 @@ void TFPublisherPlugin::initialize()
 
 void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {
-    for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
+    for(ed::world_model::TransformCrawler tc(world, root_frame_id_, world.latestTime()); tc.hasNext(); tc.next())
     {
-        const ed::EntityConstPtr& e = *it;
+        const ed::EntityConstPtr& e = tc.entity();
 
-        geo::Pose3D pose_MAP;
-
-        pose_MAP = e->pose();
+        geo::Pose3D pose_MAP = tc.transform();
 
 		if (e->bestMeasurement())
 		{
@@ -58,5 +57,7 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
         tf_broadcaster_->sendTransform(t);
     }
 }
+
+// ----------------------------------------------------------------------------------------------------
 
 ED_REGISTER_PLUGIN(TFPublisherPlugin)
