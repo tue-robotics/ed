@@ -402,7 +402,7 @@ void publishPclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointClou
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void publishNpclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointCloud<pcl::PointNormal>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns)
+void publishNpclVisualizationMarker(const std::string& frame_id, const pcl::PointCloud<pcl::PointNormal>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns)
 {
     visualization_msgs::Marker m;
 
@@ -412,13 +412,18 @@ void publishNpclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointClo
     m.id = id;
     m.ns = ns;
 
-    m.header.frame_id = "/map";
+    m.header.frame_id = frame_id;
     m.header.stamp = ros::Time::now();
 
     m.scale.x = 0.01;
 
     m.color.a = 1;
     double length = 0.1;
+
+    // Correction matrix for from geolib frame to ROS frame
+    geo::Matrix3 mat_corr(1, 0, 0, 0, -1, 0, 0, 0, -1);
+
+//    std::cout << pub.getTopic() << " " << ns << ": " << pc->size() << std::endl;
 
     std_msgs::ColorRGBA color = getColor(id);
     m.colors.resize(2 * pc->size());
@@ -429,8 +434,10 @@ void publishNpclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointClo
 
         geo::Vector3 v(p.x, p.y, p.z);
         geo::Vector3 n(p.normal_x, p.normal_y, p.normal_z);
-        v = pose * v; // to the map frame
-        n = pose.getBasis() * n;
+
+        // From geolib to ROS frame
+        v = mat_corr * v;
+        n = mat_corr * n;
 
         m.points[2*i].x = v.x;
         m.points[2*i].y = v.y;

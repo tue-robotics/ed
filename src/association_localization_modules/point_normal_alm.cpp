@@ -89,9 +89,8 @@ void PointNormalALM::process(const RGBDData& sensor_data,
         profiler_.stopTimer();
     }
 
-    // TODO rel-poses : visualize Normal point clouds
-//    if (visualize_)
-//        helpers::visualization::publishNpclVisualizationMarker(sensor_data.sensor_pose, world_model_npcl, vis_marker_pub_, 1, "world_model_npcl");
+    if (visualize_)
+        helpers::visualization::publishNpclVisualizationMarker(sensor_data.image->getFrameId(), world_model_npcl, vis_marker_pub_, 1, "world_model_npcl");
 
     //! 2) Perform the point normal association
     std::vector<const ed::Entity*> associations(sensor_data.point_cloud_with_normals->size());

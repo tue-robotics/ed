@@ -43,7 +43,7 @@ void filterPointsBehindWorldModel(const WorldModelConstPtr& world_model, rgbd::I
     rgbd::View view(*rgbd_image, 160);
 
     // Visualize the frustrum
-    // TODO: rel-poses
+    // TODO: rel-poses: Visualize the frustrum
     // helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(view, sensor_pose, pub, 0, "frustrum_top_kinect");
 
     cv::Mat wm_depth_image(view.getHeight(), view.getWidth(), CV_32FC1, 0.0);
@@ -241,7 +241,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
     }
 
     if (visualize_)
-        helpers::visualization::publishNpclVisualizationMarker(rgbd_data.sensor_pose_MAP, rgbd_data.point_cloud_with_normals,
+        helpers::visualization::publishNpclVisualizationMarker(rgbd_data.image->getFrameId(), rgbd_data.point_cloud_with_normals,
                                                                vis_marker_pub_, 0, "sensor_npcl");
 
     //! 5) Create point cloud mask: put all point cloud indices in the mask
