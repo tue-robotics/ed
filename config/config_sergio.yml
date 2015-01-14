@@ -37,6 +37,7 @@ world_name: robotics_testlabs
 
 perception:
     fit_shapes: 1
+    model_list: all_models.yml
     modules:
 #    -  lib: libsize_matcher.so
 #    -  lib: libodu_finder.so
