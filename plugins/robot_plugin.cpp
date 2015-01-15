@@ -177,7 +177,7 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMa
     const KDL::Segment& segment = it_segment->second.segment;
 
     // Child ID is the segment (link) name
-    ed::UUID child_id = robot_name_ + "/" + segment.getName();
+    ed::UUID child_id = + "/" + robot_name_ + "/" + segment.getName();
 
     // Set the entity type (robot_link)
     req.setType(child_id, "robot_link");

@@ -70,6 +70,8 @@ WorldModelRenderer::~WorldModelRenderer()
 
 void WorldModelRenderer::render(const UUID& camera_id, const Time& time, const WorldModelConstPtr& world_model, float max_range, const rgbd::View& view, cv::Mat& img, pcl::PointCloud<pcl::PointXYZ>& pc, std::vector<const Entity*>& pc_entity_ptrs)
 {
+    geo::Pose3D p_corr(geo::Matrix3(1, 0, 0, 0, -1, 0, 0, 0, -1), geo::Vector3(0, 0, 0));
+
     for(ed::world_model::TransformCrawler tc(*world_model, camera_id, time); tc.hasNext(); tc.next())
     {
         const ed::EntityConstPtr& e = tc.entity();
@@ -77,7 +79,7 @@ void WorldModelRenderer::render(const UUID& camera_id, const Time& time, const W
         if (e->shape())
         {
             geo::RenderOptions opt;
-            opt.setMesh(e->shape()->getMesh(), tc.transform());
+            opt.setMesh(e->shape()->getMesh(), p_corr * tc.transform());
 
             std::vector<int> triangle_indices;
             SampleRenderResult res(img, view.getWidth(), view.getHeight(), e.get(), view.getRasterizer(), pc, pc_entity_ptrs, triangle_indices, max_range);

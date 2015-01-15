@@ -3,9 +3,11 @@
 
 #include <ed/plugin.h>
 #include <ed/uuid.h>
+#include <ed/relations/transform_cache.h>
 
 #include <tf2_msgs/TFMessage.h>
 #include <ros/callback_queue.h>
+#include <ros/subscriber.h>
 
 struct TFLink
 {
@@ -13,6 +15,7 @@ struct TFLink
     std::string tf_child_id;
     ed::UUID ed_parent_id;
     ed::UUID ed_child_id;
+    boost::shared_ptr<ed::TransformCache> relation;
 };
 
 class TFListenerPlugin : public ed::Plugin
@@ -32,10 +35,14 @@ private:
 
     std::map<std::string, TFLink> links_;
 
-    // TF listening
-//    ros::CallbackQueue cb_queue_;
+    ed::UpdateRequest* update_req_;
 
-//    void tfCallback(const tf2_msgs::TFMessage::ConstPtr& tf_msg);
+    // TF listening
+    ros::CallbackQueue cb_queue_;
+
+    ros::Subscriber sub_tf_;
+
+    void tfCallback(const tf2_msgs::TFMessage::ConstPtr& tf_msg);
 
 };
 
