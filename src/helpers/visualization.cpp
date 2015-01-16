@@ -607,51 +607,54 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
                     std::string info ;//= e->id().substr(0,4);
                     float score = 0;
 
-                    // update perception type and certainty if possible
+                    // update type given by perception modules type and certainty
                     if (config.readGroup("perception_result", tue::config::OPTIONAL))
                     {
                         if (config.readGroup("type_aggregator", tue::config::OPTIONAL))
                         {
                             if (config.value("type", type, tue::config::OPTIONAL) &&
                                 config.value("score", score, tue::config::OPTIONAL)){
-                                info.append(boost::str(boost::format("%.2f") % score));
+                                info = boost::str(boost::format("%.2f") % score);
                             }
                         }
                         config.endGroup(); // close type_aggregator group
                     }
                     config.endGroup();  // close perception_result group
-
-                    // in case its a human, add real name
-                    if (config.readGroup("perception_result", tue::config::OPTIONAL))
-                    {
-                        if (config.readGroup("face_recognizer", tue::config::OPTIONAL))
-                        {
-                            std::string person_name;
-                            if (config.value("label", person_name, tue::config::OPTIONAL) &&
-                                config.value("score", score, tue::config::OPTIONAL)){
-                                if (score > 0 )
-                                    type = person_name;
-                            }
-                        }
-                        config.endGroup(); // close type_aggregator group
-                    }
-                    config.endGroup();  // close perception_result group
-
 
                     // if no type was read, use the default and the UID
                     if (type.empty()){
                         type = e->type();
                         info = e->id().str().substr(0,4);
+                    }else if (type.compare("unknown") == 0){
+                        type = "";
+                        info = e->id().str().substr(0,4);
+                    }else if (type.compare("human") == 0){
+                        // in case type is human, replace by name
+                        if (config.readGroup("perception_result", tue::config::OPTIONAL)){
+                            if (config.readGroup("face_recognizer", tue::config::OPTIONAL))
+                            {
+                                std::string person_name;
+                                if (config.value("label", person_name, tue::config::OPTIONAL) &&
+                                    config.value("score", score, tue::config::OPTIONAL)){
+                                    if (score > 0 && score < 0.9){
+                                        type = person_name;
+                                        info = boost::str(boost::format("%.2f") % score);
+                                    }
+                                }
+                            }
+                            config.endGroup(); // close type_aggregator group
+                        }
+                        config.endGroup();  // close perception_result group
                     }
 
                     // draw name background rectangle
-                    cv::rectangle(color_img, cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(0, -30),
-                                  cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(((type.size() + 6) * 10), -10),
+                    cv::rectangle(color_img, cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(0, -22),
+                                  cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(((type.size() + 6) * 10), -2),
                                   color - cv::Scalar(140, 140, 140), CV_FILLED);
 
                     // draw name and ID
                     cv::putText(color_img, type + "(" + info + ")",
-                                cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(5, -15),
+                                cv::Point(bounding_rect.x, bounding_rect.y) + cv::Point(5, -8),
                                 1, 1.0, color, 1, CV_AA);
                 }
             }
