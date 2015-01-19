@@ -61,6 +61,8 @@ public:
 
     double totalProcessingTime() const { return total_process_time_sec_; }
 
+    unsigned long totalNumCalled() const { return num_called_; }
+
 protected:
 
     class_loader::ClassLoader*  class_loader_;
@@ -97,6 +99,8 @@ protected:
     double total_process_time_sec_;
 
     tue::Timer total_timer_;
+
+    unsigned long num_called_;
 
     void step();
 
