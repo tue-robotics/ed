@@ -1,4 +1,0 @@
-<deps ros_distro="groovy">
-    <package name="zbar-dev" type="system" source="libzbar-dev"/>
-</deps>
-
