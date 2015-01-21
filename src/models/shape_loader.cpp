@@ -23,16 +23,16 @@ namespace models
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::Configuration cfg)
+geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::Reader r)
 {
     geo::ShapePtr shape;
 
     double resolution, origin_x, origin_y, origin_z, blockheight;
-    if (cfg.value("origin_x", origin_x) &&
-            cfg.value("origin_y", origin_y) &&
-            cfg.value("origin_z", origin_z) &&
-            cfg.value("resolution", resolution) &&
-            cfg.value("blockheight", blockheight))
+    if (r.value("origin_x", origin_x) &&
+            r.value("origin_y", origin_y) &&
+            r.value("origin_z", origin_z) &&
+            r.value("resolution", resolution) &&
+            r.value("blockheight", blockheight))
     {
         cv::Mat image = cv::imread(path.string(), CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
 
@@ -67,7 +67,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::Configur
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::Configuration cfg)
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg)
 {
     geo::ShapePtr shape;
 
