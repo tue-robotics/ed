@@ -3,7 +3,7 @@ sensors:
   type: kinect
   source: /amigo/top_kinect/rgbd
   frame_id: /amigo/top_kinect/openni_rgb_optical_frame
-  visualize: 1
+  visualize: 0
   voxel_size: 0.02
   max_range: 2.0
   clearing_padding_fraction: 0.05
@@ -36,30 +36,45 @@ visualize: 1
 world_name: tue.library
 
 plugins:
-- name: gui_server
-  lib: libed_gui_server_plugin.so
-  parameters:
-      robot_name: amigo
-- name: obstacle_grid_publisher
-  lib: libed_occupancy_grid_publisher_plugin.so
-  parameters:
-      frequency: 10
-      resolution: 0.05
-      topic: /ed_map
-      frame_id: /map
-      sim_time: 1.0
-      object_persistence_time: 10
-- name: loc_grid_publisher
-  lib: libed_occupancy_grid_publisher_plugin.so
-  parameters:
-      frequency: 1
-      resolution: 0.025
-      topic: /ed_loc_map
-      frame_id: /map
-      specifier: localizable
-      sim_time: 0.0
-- name: tf_publisher
-  lib: libed_tf_publisher_plugin.so
-  parameters:
-      root_frame_id: /map
+  - name: localization
+    lib: libed_localization_plugin.so
+    parameters:
+        initial_pose_topic: /amigo/initialpose
+        laser_model:
+            topic: /amigo/base_front_laser
+            num_beams: 100
+            z_hit: 0.95
+            sigma_hit: 0.2
+            z_short: 0.1
+            z_max: 0.05
+            z_rand: 0.05
+            lambda_short: 0.1
+            range_max: 10
+            laser_pose: {x: 0.3, y: 0, z: 0.3, rz: 0}
+        odom_model:
+            map_frame: map
+            odom_frame: /amigo/odom
+            base_link_frame: /amigo/base_link
+            alpha1: 0.5
+            alpha2: 0.5
+            alpha3: 0.5
+            alpha4: 0.5
+            alpha5: 0.5
+  - name: gui_server
+    lib: libed_gui_server_plugin.so
+    parameters:
+        robot_name: amigo
+  - name: obstacle_grid_publisher
+    lib: libed_occupancy_grid_publisher_plugin.so
+    parameters:
+        frequency: 10
+        resolution: 0.05
+        topic: /ed_map
+        frame_id: /map
+        sim_time: 1.0
+        object_persistence_time: 10
+  - name: tf_publisher
+    lib: libed_tf_publisher_plugin.so
+    parameters:
+        root_frame_id: /map
 
