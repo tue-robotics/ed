@@ -5,8 +5,6 @@
 #include "ed/convex_hull_2d.h"
 #include "ed/uuid.h"
 
-#include <ed/models/entity.h>
-
 #include <tue/config/data.h>
 
 #include <boost/circular_buffer.hpp>
@@ -14,13 +12,6 @@
 
 namespace ed
 {
-
-namespace models
-{
-
-bool convertNewEntityToEntities(NewEntityPtr new_e, std::vector<EntityPtr>& entities, NewEntityPtr new_parent = NewEntityPtr());
-
-}
 
 class Entity
 {

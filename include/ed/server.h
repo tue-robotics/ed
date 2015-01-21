@@ -11,6 +11,8 @@
 
 #include <ros/publisher.h>
 
+#include <ed/models/model_loader.h>
+
 #include <queue>
 
 namespace ed
@@ -60,6 +62,9 @@ private:
     std::queue<UpdateRequest> update_requests_;
 
     void initializeWorld();
+
+    //! Model loading
+    models::ModelLoader model_loader_;
 
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;

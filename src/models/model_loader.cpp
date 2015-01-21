@@ -147,35 +147,27 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Set type
     req.setType(id, type);
 
+    geo::Pose3D pose = geo::Pose3D::identity();
+
     // Get pose
     if (r.readGroup("pose"))
     {
-        geo::Pose3D pose;
+        r.value("x", pose.t.x);
+        r.value("y", pose.t.y);
+        r.value("z", pose.t.z);
 
-        if (r.value("x", pose.t.x) && r.value("y", pose.t.y) && r.value("z", pose.t.z))
-        {
-            double rx = 0, ry = 0, rz = 0;
-            r.value("X", rx, tue::config::OPTIONAL);
-            r.value("Y", ry, tue::config::OPTIONAL);
-            r.value("Z", rz, tue::config::OPTIONAL);
+        double rx = 0, ry = 0, rz = 0;
+        r.value("X", rx, tue::config::OPTIONAL);
+        r.value("Y", ry, tue::config::OPTIONAL);
+        r.value("Z", rz, tue::config::OPTIONAL);
 
-            // Set rotation
-            pose.R.setRPY(rx, ry, rz);
-
-            std::string parent_id_str;
-            if (!r.value("parent", parent_id_str, tue::config::OPTIONAL))
-                parent_id_str = parent_id.str();
-
-            if (!parent_id_str.empty())
-            {
-                boost::shared_ptr<ed::TransformCache> transform(new ed::TransformCache());
-                transform->insert(Time(-1), pose);  // TODO: choose proper time
-                req.setRelation(parent_id_str, id, transform);
-            }
-        }
+        // Set rotation
+        pose.R.setRPY(rx, ry, rz);
 
         r.endGroup();
     }
+
+    req.setPose(id, pose);
 
     // Check the composition
     if (r.readArray("composition"))

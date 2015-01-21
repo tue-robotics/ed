@@ -398,23 +398,16 @@ void Server::update(const std::string& update_str, std::string& error)
 
 void Server::initializeWorld()
 {
-    models::NewEntityPtr e = ed::models::create(world_name_);
+    ed::UpdateRequest req;
+    if (!model_loader_.create(world_name_, world_name_, req))
+        return;
 
-    std::vector<EntityPtr> entities;
-    if (ed::models::convertNewEntityToEntities(e, entities))
-    {
-        // Create world model copy (shallow)
-        WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    // Create world model copy (shallow)
+    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
-        for (std::vector<EntityPtr>::const_iterator it = entities.begin(); it != entities.end(); ++it)
-            new_world_model->setEntity((*it)->id(), *it);
+    new_world_model->update(req);
 
-        world_model_ = new_world_model;
-    }
-    else
-    {
-        std::cout << "initializeWorld() : Failed to convert new type to old type" << std::endl;
-    }
+    world_model_ = new_world_model;
 }
 
 // ----------------------------------------------------------------------------------------------------

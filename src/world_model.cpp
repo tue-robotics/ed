@@ -5,6 +5,7 @@
 #include "ed/relation.h"
 
 #include <tue/config/reader.h>
+#include <boost/make_shared.hpp>
 
 namespace ed
 {
