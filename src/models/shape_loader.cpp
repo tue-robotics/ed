@@ -35,22 +35,28 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, std::vector<geo::Ve
 
     unsigned char v = image.at<unsigned char>(p.y, p.x);
 
-    int d_current = 0;
+    int d_current = 0; // Current direction
     int x2 = p.x;
     int y2 = p.y;
 
+    int line_piece_min = 1e9; // minimum line piece length of current line
+    int line_piece_max = 0; // maximum line piece length of current line
+
+    int d_main = d_current; // The main direction in which we're heading. If we follow a line
+                            // that gradually changes to the side (1-cell side steps), this direction
+                            // denotes the principle axis of the line
+
     points.push_back(p);
 
-    int n_uninterrupted = 0;
-    int segment_length = 0;
-    geo::Vec2i p_uninterrupted = p;
+    int n_uninterrupted = 1;
+    geo::Vec2i p_corner = p;
 
     while (true)
     {
         bool found = false;
         int d = (d_current + 3) % 4; // check going left first
 
-        for(int i = 0; i < 4; ++i)
+        for(int i = -1; i < 3; ++i)
         {
             if (image.at<unsigned char>(y2 + dy[d], x2 + dx[d]) == v)
             {
@@ -64,45 +70,76 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, std::vector<geo::Ve
         if (!found)
             return;
 
-        if (d_current != d)
+        geo::Vec2i p_current(x2, y2);
+
+        if ((d + 2) % 4 == d_current)
         {
-            if (n_uninterrupted >= 3)
-            {
-                if (p_uninterrupted.x != points.back().x || p_uninterrupted.y != points.back().y)
-                    points.push_back(p_uninterrupted);
+            // 180 degree turn
 
-                points.push_back(geo::Vec2i(x2, y2));
-                segment_length = 0;
-            }
-            else if (segment_length > 10)
-            {
-                points.push_back(geo::Vec2i(x2, y2));
-                segment_length = 0;
-            }
+            if (x2 == p.x && y2 == p.y) // Edge case: if we returned to the start point and
+                                        // this is a 180 degree angle, return without adding it
+                return;
 
-            p_uninterrupted = geo::Vec2i(x2, y2);
-            n_uninterrupted = 0;
+            points.push_back(p_current);
+            d_main = d;
+            line_piece_min = 1e9;
+            line_piece_max = 0;
+
+        }
+        else if (d_current != d_main)
+        {
+            // Not moving in main direction (side step)
+
+            if (d != d_main)
+            {
+                // We are not moving back in the main direction
+                // Add the corner to the list and make this our main direction
+
+                points.push_back(p_corner);
+                d_main = d_current;
+                line_piece_min = 1e9;
+                line_piece_max = 0;
+            }
         }
         else
         {
-            ++n_uninterrupted;
+            // Moving in main direction (no side step)
+
+            if (d_current != d)
+            {
+                // Turning 90 degrees
+
+                // Check if the length of the last line piece is OK w.r.t. the other pieces in this line. If it differs to much,
+                // (i.e., the contour has taken a different angle), add the last corner to the list. This way, we introduce a
+                // bend in the contour
+                if (line_piece_max > 0 && (n_uninterrupted < line_piece_max - 2 || n_uninterrupted > line_piece_min + 2))
+                {
+                    // Line is broken, add the corner as bend
+                    points.push_back(p_corner);
+
+                    line_piece_min = 1e9;
+                    line_piece_max = 0;
+                }
+
+                // Update the line piece lenth boundaries with the current found piece
+                line_piece_min = std::min(line_piece_min, n_uninterrupted);
+                line_piece_max = std::max(line_piece_max, n_uninterrupted);
+            }
         }
 
-        ++segment_length;
+        if (d_current != d)
+        {
+            p_corner = p_current;
+            n_uninterrupted = 0;
+        }
+
+        ++n_uninterrupted;
+
+        if (points.size() > 1 && x2 == p.x && y2 == p.y)
+            return;
 
         x2 = x2 + dx[d];
         y2 = y2 + dy[d];
-
-        if (x2 == p.x && y2 == p.y)
-        {
-            if (n_uninterrupted >= 3)
-            {
-                if (p_uninterrupted.x != points.back().x || p_uninterrupted.y != points.back().y)
-                    points.push_back(p_uninterrupted);
-            }
-
-            return;
-        }
 
         d_current = d;
     }
@@ -212,6 +249,9 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
             }
         }
     }
+
+//    std::cout << shape->getMesh().getPoints().size() << " vertices" << std::endl;
+//    std::cout << shape->getMesh().getTriangleIs().size() << " triangles" << std::endl;
 
     return shape;
 }
