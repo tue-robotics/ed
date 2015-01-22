@@ -46,7 +46,7 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, std::vector<geo::Ve
                             // that gradually changes to the side (1-cell side steps), this direction
                             // denotes the principle axis of the line
 
-    points.push_back(p);
+    points.push_back(p - geo::Vec2i(1, 1));
 
     int n_uninterrupted = 1;
     geo::Vec2i p_corner = p;
@@ -80,7 +80,14 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, std::vector<geo::Ve
                                         // this is a 180 degree angle, return without adding it
                 return;
 
-            points.push_back(p_current);
+
+            geo::Vec2i q = p_current;
+            if (d == 0 || d_current == 0) // right
+                --q.y;
+            if (d == 3 || d_current == 3) // up
+                --q.x;
+
+            points.push_back(q);
             d_main = d;
             line_piece_min = 1e9;
             line_piece_max = 0;
@@ -129,7 +136,13 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, std::vector<geo::Ve
 
         if (d_current != d)
         {
-            p_corner = p_current;
+            geo::Vec2i q = p_current;
+            if (d == 0 || d_current == 0) // right
+                --q.y;
+            if (d == 3 || d_current == 3) // up
+                --q.x;
+
+            p_corner = q;
             n_uninterrupted = 0;
         }
 
