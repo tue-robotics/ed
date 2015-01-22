@@ -68,7 +68,7 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, std::vector<geo::Ve
         {
             if (n_uninterrupted >= 3)
             {
-                if (p_uninterrupted.x != points.back().x && p_uninterrupted.y != points.back().y)
+                if (p_uninterrupted.x != points.back().x || p_uninterrupted.y != points.back().y)
                     points.push_back(p_uninterrupted);
 
                 points.push_back(geo::Vec2i(x2, y2));
@@ -94,7 +94,15 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, std::vector<geo::Ve
         y2 = y2 + dy[d];
 
         if (x2 == p.x && y2 == p.y)
+        {
+            if (n_uninterrupted >= 3)
+            {
+                if (p_uninterrupted.x != points.back().x || p_uninterrupted.y != points.back().y)
+                    points.push_back(p_uninterrupted);
+            }
+
             return;
+        }
 
         d_current = d;
     }
@@ -133,7 +141,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
         {
             unsigned char v = image.at<unsigned char>(y, x);
 
-            if (v != 255)
+            if (v < 255)
             {
                 std::vector<geo::Vec2i> points;
                 findContours(image, geo::Vec2i(x, y), points);
@@ -148,7 +156,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                     geo::Mesh mesh;
 
                     double min_z = origin_z;
-                    double max_z = origin_z + blockheight - ((double)v / 255 * blockheight);
+                    double max_z = origin_z + (double)(255 - v) / 255 * blockheight;
 
                     for(unsigned int i = 0; i < num_points; ++i)
                     {
