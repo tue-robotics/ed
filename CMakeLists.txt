@@ -209,3 +209,10 @@ add_executable(show_gui test/show_gui.cpp)
 target_link_libraries(show_gui ed_core ${OpenCV_LIBRARIES})
 add_dependencies(show_gui ${PROJECT_NAME}_gencpp)
 
+add_executable(ed_test_heightmap_triangulation
+	test/test_heightmap_triangulation.cpp
+	3rdparty/polypartition/polypartition.cpp
+)
+target_link_libraries(ed_test_heightmap_triangulation ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES})
+
+
