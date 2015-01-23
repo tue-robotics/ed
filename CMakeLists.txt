@@ -213,6 +213,6 @@ add_executable(ed_test_heightmap_triangulation
 	test/test_heightmap_triangulation.cpp
 	3rdparty/polypartition/polypartition.cpp
 )
-target_link_libraries(ed_test_heightmap_triangulation ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES})
+target_link_libraries(ed_test_heightmap_triangulation ed_core ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES} ${tue_config_LIBRARIES})
 
 

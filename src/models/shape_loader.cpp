@@ -337,7 +337,12 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg, 
     std::string path;
     if (cfg.value("path", path))
     {
-        tue::filesystem::Path shape_path(model_path + "/" + path);
+        tue::filesystem::Path shape_path;
+
+        if (model_path.empty())
+            shape_path = path;
+        else
+            shape_path = model_path + "/" + path;
 
         // Check cache first
         std::map<std::string, geo::ShapePtr>::const_iterator it = shape_cache.find(shape_path.string());
