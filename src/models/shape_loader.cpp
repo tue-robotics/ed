@@ -237,8 +237,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                     for(int i = 0; i < num_points; ++i)
                     {
                         int j = (i + 1) % num_points;
-                        mesh.addTriangle(i * 2, j * 2, i * 2 + 1);
-                        mesh.addTriangle(i * 2 + 1, j * 2, j * 2 + 1);
+                        mesh.addTriangle(i * 2, i * 2 + 1, j * 2);
+                        mesh.addTriangle(i * 2 + 1, j * 2 + 1, j * 2);
                     }
 
                     for(unsigned int i = 0; i < line_starts.size(); ++i)
@@ -284,8 +284,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                                     int i1 = vertex_index_map.at<int>(hp1.y, hp1.x);
                                     int i2 = vertex_index_map.at<int>(hp2.y, hp2.x);
 
-                                    mesh.addTriangle(i1, i2, i1 + 1);
-                                    mesh.addTriangle(i2, i2 + 1, i1 + 1);
+                                    mesh.addTriangle(i1, i1 + 1, i2);
+                                    mesh.addTriangle(i2, i1 + 1, i2 + 1);
                                 }
                             }
                         }
@@ -308,7 +308,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                         int i2 = vertex_index_map.at<int>(cp[1].y, cp[1].x) + 1;
                         int i3 = vertex_index_map.at<int>(cp[2].y, cp[2].x) + 1;
 
-                        mesh.addTriangle(i1, i2, i3);
+                        mesh.addTriangle(i1, i3, i2);
                     }
 
                     geo::Shape sub_shape;

@@ -6,8 +6,6 @@
 #include "ed/perception_worker.h"
 #include "ed/perception_modules/perception_module.h"
 
-#include "ed/models/models.h"
-
 #include <tue/filesystem/path.h>
 
 namespace ed

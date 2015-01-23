@@ -8,8 +8,6 @@
 
 #include <geolib/Box.h>
 
-#include <ed/models/models.h>
-
 // Storing measurements to disk
 #include "ed/io/filesystem/write.h"
 
