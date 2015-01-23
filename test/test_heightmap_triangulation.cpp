@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 {
     if (argc <= 1)
     {
-        std::cout << "Please provide an heightmap image file (e.g., pgm)" << std::endl;
+        std::cout << "Please provide a heightmap image file (e.g., pgm)" << std::endl;
         return 0;
     }
 
