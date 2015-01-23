@@ -274,6 +274,19 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                                     mesh.addPoint(geo::Vector3(wx, wy, max_z));
                                 }
                                 testpolys.push_back(poly_hole);
+
+                                // Calculate side triangles
+                                for(int j = 0; j < hole_points.size(); ++j)
+                                {
+                                    const geo::Vec2i& hp1 = hole_points[j];
+                                    const geo::Vec2i& hp2 = hole_points[(j + 1) % hole_points.size()];
+
+                                    int i1 = vertex_index_map.at<int>(hp1.y, hp1.x);
+                                    int i2 = vertex_index_map.at<int>(hp2.y, hp2.x);
+
+                                    mesh.addTriangle(i1, i2, i1 + 1);
+                                    mesh.addTriangle(i2, i2 + 1, i1 + 1);
+                                }
                             }
                         }
                     }
@@ -309,8 +322,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
         }
     }
 
-    std::cout << shape->getMesh().getPoints().size() << " vertices" << std::endl;
-    std::cout << shape->getMesh().getTriangleIs().size() << " triangles" << std::endl;
+//    std::cout << shape->getMesh().getPoints().size() << " vertices" << std::endl;
+//    std::cout << shape->getMesh().getTriangleIs().size() << " triangles" << std::endl;
 
     return shape;
 }
