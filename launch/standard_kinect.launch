@@ -9,7 +9,9 @@
 
 <!-- KINECT -->
 <group if="$(arg launch_kinect)">
-    <include file="$(find openni_launch)/launch/openni.launch"/>
+    <include file="$(find openni_launch)/launch/openni.launch">
+	<arg name="depth_registration" value="true" />
+    </include>
 </group>
 
 <!-- RGBD SERVER -->

@@ -128,6 +128,7 @@ add_library(ed_association
     src/association_localization_modules/point_normal_alm.cpp
     src/association_localization_modules/polygon_height_alm.cpp
     src/association_localization_modules/world_model_renderer.cpp
+    src/association_localization_modules/relative_alm.cpp
 )
 add_dependencies(ed_association ${PROJECT_NAME}_gencpp)
 
