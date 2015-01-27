@@ -50,6 +50,9 @@ int main(int argc, char **argv)
     geo::Vector3 p_min(1e9, 1e9, 1e9);
     geo::Vector3 p_max(-1e9, -1e9, -1e9);
 
+    int n_vertices = 0;
+    int n_triangles = 0;
+
     for(ed::WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
     {
         const ed::EntityConstPtr& e = *it;
@@ -74,12 +77,18 @@ int main(int argc, char **argv)
                     p_max.z = std::max(p.z, p_max.z);
                 }
             }
+
+            n_vertices += e->shape()->getMesh().getPoints().size();
+            n_triangles += e->shape()->getMesh().getTriangleIs().size();
         }
     }
 
     double dist = std::max(p_max.z - p_min.z, std::max(p_max.x - p_min.x, p_max.y - p_min.y));
     double h = (p_max.z - p_min.z) / 2;
     double angle = 0;
+
+    std::cout << n_vertices << " vertices" << std::endl;
+    std::cout << n_triangles << " triangles" << std::endl;
 
     while (ros::ok())
     {
