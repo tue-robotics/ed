@@ -183,6 +183,10 @@ target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES})
 
 add_executable(ed-list-ids tools/list_ids.cpp)
 
+add_executable(ed_view_model tools/view_model.cpp)
+target_link_libraries(ed_view_model ed_core)
+
+
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)
 
