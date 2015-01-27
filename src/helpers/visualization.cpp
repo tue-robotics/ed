@@ -267,7 +267,9 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
         }
 
         // No floor, that sucks
-        if (e->id() == "floor") continue;
+        const std::string& id = e->id().str();
+        if (id.size() >= 5 && id.substr(id.size() - 5) == "floor")
+            continue;
 
         visualization_msgs::Marker m;// = m_array.markers[i];
         m.action = visualization_msgs::Marker::ADD;
