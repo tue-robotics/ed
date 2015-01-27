@@ -43,7 +43,7 @@ sensors:
         visualize: 0
 
 visualize: 1
-world_name: empty
+world_name: kinect_loc_test
 
 perception:
     fit_shapes: 1
