@@ -83,10 +83,27 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
 
         std::string shape_type = shape_xml->Value();
         if (shape_type == "box") {
-            if (!size.empty()) {
+            const TiXmlElement* min_xml = shape_xml->FirstChildElement("min");
+            const TiXmlElement* max_xml = shape_xml->FirstChildElement("max");
+
+            if (min_xml && max_xml)
+            {
+                std::vector<double> min = parseArray(min_xml);
+                std::vector<double> max = parseArray(max_xml);
+
+                if (min.size() == 3 && max.size() == 3)
+                {
+                    shape->addShape(geo::Box(geo::Vector3(min[0], min[1], min[2]),
+                                             geo::Vector3(max[0], max[1], max[2])), pose);
+                }
+            }
+            else if (!size.empty())
+            {
                 geo::Vector3 v_size(size[0], size[1], size[2]);
                 shape->addShape(geo::Box(-v_size / 2, v_size / 2), pose);
-            } else {
+            }
+            else
+            {
                 s_error << "In definition '" << filename << "': shape '" << shape_type << "' has no size property" << std::endl;
             }
 
