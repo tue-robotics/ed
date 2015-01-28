@@ -55,6 +55,7 @@ plugins:
     lib: libed_localization_plugin.so
     parameters:
         initial_pose_topic: /amigo/initialpose
+        num_particles: 500
         laser_model:
             topic: /amigo/base_front_laser
             num_beams: 100
@@ -70,11 +71,11 @@ plugins:
             map_frame: map
             odom_frame: /amigo/odom
             base_link_frame: /amigo/base_link
-            alpha1: 0.5
-            alpha2: 0.5
-            alpha3: 0.5
-            alpha4: 0.5
-            alpha5: 0.5
+            alpha1: 23.5
+            alpha2: 23.5
+            alpha3: 10.5
+            alpha4: 10.5
+            alpha5: 10.5
 - name: obstacle_grid_publisher
   lib: libed_occupancy_grid_publisher_plugin.so
   parameters:
