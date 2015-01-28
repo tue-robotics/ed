@@ -17,7 +17,7 @@ class Entity
 {
 
 public:
-    Entity(const UUID& id = generateID(), const TYPE& type = "", const unsigned int& measurement_buffer_size = 5, double creation_time = ros::Time::now().toSec());
+    Entity(const UUID& id = generateID(), const TYPE& type = "", const unsigned int& measurement_buffer_size = 5);
     ~Entity();
 
     static UUID generateID();
@@ -59,7 +59,7 @@ public:
     bool in_frustrum;
     bool object_in_front;
 
-    inline double creationTime() const { return creation_time_; }
+//    inline double creationTime() const { return creation_time_; }
 
     inline void setRelationTo(Idx child_idx, Idx r_idx) { relations_to_[child_idx] = r_idx; }
 
@@ -108,7 +108,7 @@ private:
     void updateEntityState(MeasurementConstPtr m);
     void calculateVelocity();
 
-    double creation_time_;
+//    double creation_time_;
 
     tue::config::DataConstPointer config_;
 

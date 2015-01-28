@@ -11,14 +11,14 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size, double creation_time) :
+Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size) :
     id_(id),
     type_(type),
     shape_revision_(0),
     measurements_(measurement_buffer_size),
     convex_hull_buffer_(20),
     measurements_seq_(0),
-    creation_time_(creation_time),
+//    creation_time_(creation_time),
     pose_(geo::Pose3D::identity()),
     velocity_(geo::Pose3D::identity()),
     average_displacement_vector_(geo::Vector3(0,0,0))
