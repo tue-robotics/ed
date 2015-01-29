@@ -80,6 +80,10 @@ plugins:
   parameters:
       initial_pose_topic: /amigo/initialpose
       num_particles: 500
+      initial_pose:
+          x: $(env ROBOT_INIT_X)
+          y: $(env ROBOT_INIT_Y)
+          rz: $(env ROBOT_INIT_PHI)    
       laser_model:
           topic: /amigo/base_front_laser
           num_beams: 100
