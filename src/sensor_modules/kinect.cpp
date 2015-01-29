@@ -266,6 +266,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         ALMResult alm_result;
 
         for (std::map<std::string, RGBDALModulePtr>::const_iterator it = al_modules_.begin(); it != al_modules_.end(); ++it) {
+
             if (pc_mask->empty())
                 break;
             profiler_.startTimer(it->second->getType());
@@ -273,18 +274,16 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
             profiler_.stopTimer();
         }
 
-        std::cout << "step1" << std::endl;
         // Process ALM result
         for(std::map<UUID, std::vector<MeasurementConstPtr> >::const_iterator it = alm_result.associations.begin();
             it != alm_result.associations.end(); ++it)
         {
-            std::cout << "step2" << std::endl;
             const std::vector<MeasurementConstPtr>& measurements = it->second;
             req.addMeasurements(it->first, measurements);
         }
     }
 
-    std::cout << "step3" << std::endl;
+
     //! 7) Segment the residual sensor data
     if (!pc_mask->empty())
     {
@@ -309,6 +308,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
 
         profiler_.stopTimer();
     }
+
 
     //! 8) Clearing
     {
@@ -337,6 +337,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         for (std::vector<UUID>::const_iterator it = entities_in_view_not_associated.begin(); it != entities_in_view_not_associated.end(); ++it)
             req.removeEntity(*it);
     }
+
 
     //! 8) Visualization
     if (visualize_)

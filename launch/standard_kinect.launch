@@ -5,8 +5,15 @@
 <arg name="launch_rgbd" default="true"/>
 <arg name="ed_config" default="$(find ed)/config/$(optenv ED_CONFIG standard_kinect).yaml"/>
 
+
+<!-- Static tranform publisher (For testing, is to be removed) -->
 <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args="0 0 1 0 0 0 1 map camera_link 100" />
+
+
+<!-- ED -->
 <node name="ed_server" pkg="ed" type="ed_server" args="$(arg ed_config)" output="screen" />
+<!-- launch-prefix="valgrind" -->
+
 
 <!-- KINECT -->
 <group if="$(arg launch_kinect)">
@@ -14,6 +21,7 @@
 	<arg name="depth_registration" value="true" />
     </include>
 </group>
+
 
 <!-- RGBD SERVER -->
 <group if="$(arg launch_rgbd)">
