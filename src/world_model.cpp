@@ -30,6 +30,13 @@ void WorldModel::update(const UpdateRequest& req)
         }
     }
 
+    // Update poses
+    for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setPose(it->second);
+    }
+
     // Update shapes
     for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.shapes.begin(); it != req.shapes.end(); ++it)
     {
@@ -42,13 +49,6 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setType(it->second);
-    }
-
-    // Update poses
-    for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
-    {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setPose(it->second);
     }
 
     // Update relations

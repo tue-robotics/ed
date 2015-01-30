@@ -1,6 +1,7 @@
 #include "ed/models/model_loader.h"
 
 #include "ed/update_request.h"
+#include "ed/entity.h"
 #include "ed/relations/transform_cache.h"
 
 #include <tue/filesystem/path.h>
@@ -126,13 +127,19 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     std::string id_str;
     if (r.value("id", id_str, tue::config::OPTIONAL))
     {
-        if (id_opt.str().empty())
+//        if (parent_id.str().empty())
             id = id_str;
-        else
-            id = id_opt.str() + "/" + id_str;
+//        else
+//            id = parent_id.str() + "/" + id_str;
+    }
+    else if (!id_opt.str().empty())
+    {
+        id = id_opt;
     }
     else
-        id = id_opt;
+    {
+        id = ed::Entity::generateID();
+    }
 
     // Get type. If it exists, first construct an entity based on the given type.
     std::string type;
@@ -174,7 +181,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     {
         while (r.nextArrayItem())
         {
-            create(r.data(), id, id, req);
+            create(r.data(), "", id, req);
         }
 
         r.endArray();
