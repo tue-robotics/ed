@@ -147,8 +147,6 @@ void RelativeLocalizationModule::process(const RGBDData& sensor_data,
     //! 3) Match scan data with their respective entities in the world model and get transforms from that
         for (std::map<const ed::Entity*, pcl::PointCloud<pcl::PointNormal>::Ptr >::iterator it = sensor_association_map.begin(); it != sensor_association_map.end(); it++) {
             const ed::Entity* entity = it->first;
-            std::cout << "Associated sensor point cloud origin = " << it->second->sensor_origin_ << std::endl;
-            std::cout << "Associated world model point cloud origin = " << wm_association_map[entity]->sensor_origin_ << "\n" << std::endl;
 
 //            pcl::IterativeClosestPoint<pcl::PointNormal, pcl::PointNormal> icp;
 //            icp.setInputSource(it->second);
