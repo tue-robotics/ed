@@ -13,14 +13,6 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-void updateEntityType(const EntityConstPtr& e, const tue::config::DataConstPointer& perception_result,
-                      UpdateRequest& req)
-{
-    req.addData(e->id(), perception_result);
-}
-
-// ----------------------------------------------------------------------------------------------------
-
 Perception::Perception()
 {
 }
@@ -188,8 +180,8 @@ void Perception::update(const WorldModelConstPtr& world_model, UpdateRequest& re
             else if (worker->isDone())
             {
                 // Update the entity with the results from the worker
-                if (worker->getResult().valid())
-                    updateEntityType(e, worker->getResult(), req);
+                if (!worker->getResult().empty())
+                    req.addData(e->id(), worker->getResult());
 
                 // Set worker to idle. This way, the result is not checked again on the next iteration
                 worker->setIdle();
