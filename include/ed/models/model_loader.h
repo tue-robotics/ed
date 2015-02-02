@@ -38,6 +38,8 @@ private:
 
     tue::config::DataConstPointer loadModelData(const std::string& type, std::string& model_path_str);
 
+    tue::config::DataConstPointer loadModelData(const std::string& type, std::string& model_path_str, std::stringstream& error);
+
 };
 
 } // end namespace models

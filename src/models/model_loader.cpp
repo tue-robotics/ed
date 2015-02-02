@@ -13,6 +13,8 @@
 #include <tue/config/writer.h>
 #include <tue/config/configuration.h>
 
+#include <sstream>
+
 namespace ed
 {
 
@@ -42,6 +44,14 @@ tue::filesystem::Path getModelPath(const std::string& type)
 
 tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::string& model_path_str)
 {
+    std::stringstream error;
+    return loadModelData(type, model_path_str, error);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::string& model_path_str, std::stringstream& error)
+{
     std::map<std::string, tue::config::DataConstPointer>::iterator it = model_cache_.find(type);
     if (it != model_cache_.end())
     {
@@ -59,21 +69,21 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     tue::filesystem::Path model_path = getModelPath(type);
     if (!model_path.exists())
     {
-        std::cout << "ed::models::create() : ERROR loading model '" << type << "'; '" << model_path.string() << "' does not exist." << std::endl;
+        error << "ed::models::create() : ERROR loading model '" << type << "'; '" << model_path.string() << "' does not exist." << std::endl;
         return data;
     }
 
     tue::filesystem::Path model_cfg_path(model_path.string() + "/model.yaml");
     if (!model_cfg_path.exists())
     {
-        std::cout << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' file does not exist." << std::endl;
+        error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' file does not exist." << std::endl;
         return data;
     }
 
     tue::Configuration model_cfg;
     if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
     {
-        std::cout << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse yaml file." << std::endl;
+        error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse yaml file." << std::endl;
         return data;
     }
 
@@ -97,7 +107,7 @@ bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest&
 {
     std::string model_path;
     tue::config::DataConstPointer data = loadModelData(type, model_path);
-    if (!data.valid())
+    if (data.empty())
         return false;
 
     if (!create(data, id, "", req, model_path))
@@ -147,7 +157,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     {
         std::string super_model_path;
         tue::config::DataConstPointer super_data = loadModelData(type, super_model_path);
-        if (super_data.valid())
+        if (!super_data.empty())
             create(super_data, id, parent_id, req, super_model_path);
     }
 
