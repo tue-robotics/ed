@@ -638,10 +638,10 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
                                 std::string person_name;
                                 if (config.value("label", person_name, tue::config::OPTIONAL) &&
                                     config.value("score", score, tue::config::OPTIONAL)){
-                                    if (score > 0 && score < 0.9){
+//                                    if (score > 0 && score < 1.2){
                                         type = person_name;
                                         info = boost::str(boost::format("%.2f") % score);
-                                    }
+//                                    }
                                 }
                             }
                             config.endGroup(); // close type_aggregator group
