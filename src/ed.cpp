@@ -69,7 +69,7 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
     if (m)
         msg.last_update_time =  ros::Time(m->timestamp());
 
-    if (e.data().valid())
+    if (!e.data().empty())
     {
         std::stringstream ss;
         tue::config::YAMLEmitter emitter;

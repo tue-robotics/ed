@@ -54,7 +54,7 @@ void PerceptionWorker::stop()
 void PerceptionWorker::run()
 {
     // Reset from possible previous time
-    result_.reset();
+    result_ = tue::config::DataPointer();
 
     tue::Configuration rw(result_);
 
