@@ -9,7 +9,7 @@ sensors:
   clearing_padding_fraction: 0.05
   normal_k_search: 15
   association_modules:
-#  - type: PointNormal
+#  - type: RelativeLocalization
 #    parameters:
 #        association_correspondence_distance: 0.3
 #        position_weight: 2.0
@@ -19,7 +19,7 @@ sensors:
 #        render_voxel_size: 0.02
 #        normal_k_search: 15
 #        visualize: 0
-  - type: RelativeLocalization
+  - type: PointNormal
     parameters:
         association_correspondence_distance: 0.3
         position_weight: 2.0
