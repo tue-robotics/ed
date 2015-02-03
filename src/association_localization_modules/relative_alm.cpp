@@ -53,6 +53,27 @@ void RelativeLocalizationModule::configure(tue::Configuration config)
     tree_ = pcl::KdTreeFLANN<pcl::PointNormal>::Ptr(new pcl::KdTreeFLANN<pcl::PointNormal>);
 }
 
+geo::Transform RelativeLocalizationModule::eigenMat2geoTransform(Eigen::Matrix<float,4,4> T) {
+    geo::Transform Transformation;
+
+    Transformation.R.xx = T(0,0);
+    Transformation.R.xy = T(0,1);
+    Transformation.R.xz = T(0,2);
+
+    Transformation.R.yx = T(1,0);
+    Transformation.R.yy = T(1,1);
+    Transformation.R.yz = T(1,2);
+
+    Transformation.R.zx = T(2,0);
+    Transformation.R.zy = T(2,1);
+    Transformation.R.zz = T(2,2);
+
+    Transformation.t.x = T(0,3);
+    Transformation.t.y = T(1,3);
+    Transformation.t.z = T(2,3);
+    return Transformation;
+}
+
 void RelativeLocalizationModule::process(const RGBDData& sensor_data,
                                          PointCloudMaskPtr& not_associated_mask,
                                          const WorldModelConstPtr& world_model,
@@ -91,6 +112,19 @@ void RelativeLocalizationModule::process(const RGBDData& sensor_data,
 
     if (visualize_)
         helpers::visualization::publishNpclVisualizationMarker(sensor_data.sensor_pose, world_model_npcl, vis_marker_pub_, 1, "world_model_npcl");
+
+    //! 3.1) Match all depth data with world model render to update sensor pose
+    pcl::PointCloud<pcl::PointNormal> final_pc;
+    {
+        pcl::IterativeClosestPoint<pcl::PointNormal, pcl::PointNormal> icp;
+        icp.setInputSource(world_model_npcl);
+        icp.setInputTarget(sensor_data.point_cloud_with_normals);
+        icp.align(final_pc);
+
+        Eigen::Matrix<float, 4, 4> T = icp.getFinalTransformation();
+
+        // sensor_data.sensor_pose = sensor_data.sensor_pose * RelativeLocalizationModule::eigenMat2geoTransform(T);
+    }
 
     //! 2) Perform point normal association
     // Create vector of pointers to entities with which the data points are associated.
@@ -145,18 +179,21 @@ void RelativeLocalizationModule::process(const RGBDData& sensor_data,
     }
 
     //! 3) Match scan data with their respective entities in the world model and get transforms from that
-        for (std::map<const ed::Entity*, pcl::PointCloud<pcl::PointNormal>::Ptr >::iterator it = sensor_association_map.begin(); it != sensor_association_map.end(); it++) {
-            const ed::Entity* entity = it->first;
 
-//            pcl::IterativeClosestPoint<pcl::PointNormal, pcl::PointNormal> icp;
-//            icp.setInputSource(it->second);
-//            icp.setInputTarget(wm_association_map[entity]);
-//            pcl::PointCloud<pcl::PointNormal> final_pc;
-//            icp.align(final_pc);
 
-//            Eigen::Matrix<float, 4, 4> T = icp.getFinalTransformation();
-//            std::cout << "Transformation matrix T = \n" << T << std::endl;
-        }
+    //! 3.2) Match separte entity point cloud data with associated world model points to update entity poses
+    for (std::map<const ed::Entity*, pcl::PointCloud<pcl::PointNormal>::Ptr >::iterator it = sensor_association_map.begin(); it != sensor_association_map.end(); it++) {
+        const ed::Entity* entity = it->first;
+
+//        pcl::IterativeClosestPoint<pcl::PointNormal, pcl::PointNormal> icp;
+//        icp.setInputSource(it->second);
+//        icp.setInputTarget(wm_association_map[entity]);
+//        pcl::PointCloud<pcl::PointNormal> final_pc;
+//        icp.align(final_pc);
+
+//        Eigen::Matrix<float, 4, 4> T = icp.getFinalTransformation();
+//        std::cout << "Transformation matrix T = \n" << T << std::endl;
+    }
 
     //! 4) Update the mask
     {

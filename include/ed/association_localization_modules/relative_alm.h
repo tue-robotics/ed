@@ -50,6 +50,8 @@ public:
                  const WorldModelConstPtr& world_model,
                  ALMResult& result);
 
+    geo::Transform eigenMat2geoTransform(Eigen::Matrix<float,4,4> T);
+
     void configure(tue::Configuration config);
 
 protected:
