@@ -3,6 +3,7 @@
 #include <rgbd/Image.h>
 #include <rgbd/View.h>
 #include <opencv/highgui.h>
+#include <pcl/registration/icp.h>
 
 #include "ed/helpers/depth_data_processing.h"
 #include "ed/helpers/visualization.h"
@@ -32,14 +33,14 @@ void PointNormalALM::configure(tue::Configuration config)
         config.value("normal_k_search", normal_k_search_);
 
         std::cout << "Parameters point normal association: \n" <<
-            "- association_correspondence_distance: " << association_correspondence_distance_ << "\n" <<
-            "- position_weight: " << position_weight_ << "\n" <<
-            "- normal_weight: " << normal_weight_ << "\n" <<
-            "- render_width: " << render_width_ << "\n" <<
-            "- render_max_range: " << render_max_range_ << "\n" <<
-            "- render_voxel_size_: " << render_voxel_size_ << "\n" <<
-            "- normal_k_search: " << normal_k_search_ << "\n" <<
-            "- visualize: " << visualize_ << std::endl;
+                     "- association_correspondence_distance: " << association_correspondence_distance_ << "\n" <<
+                     "- position_weight: " << position_weight_ << "\n" <<
+                     "- normal_weight: " << normal_weight_ << "\n" <<
+                     "- render_width: " << render_width_ << "\n" <<
+                     "- render_max_range: " << render_max_range_ << "\n" <<
+                     "- render_voxel_size_: " << render_voxel_size_ << "\n" <<
+                     "- normal_k_search: " << normal_k_search_ << "\n" <<
+                     "- visualize: " << visualize_ << std::endl;
 
         config.endGroup();
     }
@@ -93,11 +94,15 @@ void PointNormalALM::process(const RGBDData& sensor_data,
 
     //! 2) Perform the point normal association
     std::vector<const ed::Entity*> associations(sensor_data.point_cloud_with_normals->size());
+    pcl::PointCloud<pcl::PointNormal> aligned_sensor_cloud;
     {
         tue::ScopedTimer t(profiler_, "2) association");
 
         //    associate(rgbd_data.point_cloud_with_normals, world_model_npcl, world_model_pc_entity_ptrs, associations);
-
+        pcl::IterativeClosestPoint<pcl::PointNormal, pcl::PointNormal> icp;
+        icp.setInputSource(sensor_data.point_cloud_with_normals);
+        icp.setInputTarget(world_model_npcl);
+        icp.align(aligned_sensor_cloud);
 
         if (world_model_npcl->size() == 0 || !tree_)
             return;
@@ -116,7 +121,7 @@ void PointNormalALM::process(const RGBDData& sensor_data,
             std::vector<float> k_sqr_distances(1);
 
             // Set pointers
-            if (tree_->radiusSearch(*sensor_data.point_cloud_with_normals, i, association_correspondence_distance_, k_indices, k_sqr_distances, 1))
+            if (tree_->radiusSearch(aligned_sensor_cloud, i, association_correspondence_distance_, k_indices, k_sqr_distances, 1))
                 associations[i] = world_model_pc_entity_ptrs[k_indices[0]];
             else
                 associations[i] = 0;
@@ -138,7 +143,7 @@ void PointNormalALM::process(const RGBDData& sensor_data,
             pcl::PointCloud<pcl::PointNormal>::Ptr residual_npcl(new pcl::PointCloud<pcl::PointNormal>);
             for(unsigned int i = 0; i < associations.size(); ++i)
                 if (!associations[i])
-                    residual_npcl->push_back(sensor_data.point_cloud_with_normals->points[i]);
+                    residual_npcl->push_back(aligned_sensor_cloud.points[i]);
 
             helpers::visualization::publishNpclVisualizationMarker(sensor_data.sensor_pose, residual_npcl, vis_marker_pub_, 2, "residual_npcl");
         }
