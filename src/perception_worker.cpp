@@ -16,6 +16,7 @@ PerceptionWorker::PerceptionWorker() : t_last_processing(0), state_(IDLE)
 
 PerceptionWorker::~PerceptionWorker()
 {
+    processing_thread_.join(); // Warning: this will block
 }
 
 // ----------------------------------------------------------------------------------------------------

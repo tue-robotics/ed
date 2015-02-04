@@ -27,6 +27,8 @@ public:
 
     void stop();
 
+    void join() { processing_thread_.join(); }
+
     bool isRunning() const { return state_ == RUNNING; }
 
     bool isDone() const { return state_ == DONE; }
