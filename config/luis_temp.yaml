@@ -1,0 +1,158 @@
+sensors:
+- name: top_kinect
+  type: kinect
+  source: /amigo/top_kinect/rgbd
+  frame_id: /amigo/top_kinect/openni_rgb_optical_frame
+  visualize: 1
+  voxel_size: 0.02
+  max_range: 3.0
+  clearing_padding_fraction: 0.05
+  normal_k_search: 15
+  association_modules:
+  - type: PointNormal
+    parameters:
+        association_correspondence_distance: 0.3
+        position_weight: 2.0
+        normal_weight: 1.0
+        render_width: 320
+        render_max_range: 2.2
+        render_voxel_size: 0.02
+        normal_k_search: 15
+        visualize: 0
+  - type: PolygonHeight
+    parameters:
+        max_range: 2.0
+        tolerance: 0.035
+        min_cluster_size: 20
+        visualize: 0
+  segmentation_modules:
+  - type: EuclideanClustering
+    parameters:
+        tolerance: 0.035
+        min_cluster_size: 20
+        visualize: 0
+
+visualize: 1
+world_name: robotics_testlabs
+
+perception:
+    fit_shapes: 1
+    model_list: all_models.yml
+    modules:
+    - lib: libsize_matcher.so
+      parameters:
+          size_diff_threshold: 0.8
+          small_size_treshold: 0.5
+          medium_size_treshold: 0.7
+    - lib: libed_odu_finder.so
+      parameters:
+          database_path: /database
+          debug_mode: 0
+    - lib: libcolor_matcher.so
+      parameters:
+          color_table: /color_names.txt
+          debug_folder: /tmp/color_matcher/
+          debug_mode: 0
+    - lib: libhuman_contour_matcher.so
+      parameters:
+          head_template_front_path: /head_templates/template_front_4_trimmed.png
+          head_template_left_path: /head_templates/left_close.png
+          head_template_right_path: /head_templates/right_close.png
+          debug_folder: /tmp/human_classifier/
+          debug_mode: 0
+          max_match_iterations: 30
+          dt_line_width: 1
+          dt_border_size: 20
+          max_template_err: 15
+          dt_slices_num: 7
+    - lib: libface_detector.so
+      parameters:
+          debug_mode: 0
+          debug_folder: /tmp/face_detector/
+          cascade_front_files_path: /cascade_classifiers/haarcascade_frontalface_alt_tree.xml
+          cascade_profile_front_path: /cascade_classifiers/haarcascade_profileface.xml
+          classifier_front_scale_factor: 1.2
+          classifier_front_min_neighbours: 3
+          classifier_profile_scale_factor: 1.2
+          classif_profile_min_neighbours: 3
+    - lib: libface_recognition_ed.so
+      parameters:
+        debug_mode: 0
+        save_learned_faces: 0
+        faces_save_dir:(std::string)getenv("HOME") + /faces_learned/
+        using_Eigen: 0
+        using_Fisher: 1
+        using_LBPH: 1
+        using_histogram: 1
+        enable_learning_service: 1
+        eigen_treshold: 3500
+        fisher_treshold: 800
+        lbph_treshold: 45
+        recognition_treshold: 0.95
+        face_target_size: 150
+        face_vert_offset: 0.35
+        face_horiz_offset: 0.25
+        learning_mode: 0
+        max_faces_learn: 10
+    - lib: libtype_aggregator.so
+
+
+plugins:
+- name: gui_server
+  lib: libed_gui_server_plugin.so
+  parameters:
+      robot_name: amigo
+#- name: builder
+#  lib: libed_builder_plugin.so
+- name: obstacle_grid_publisher
+  lib: libed_occupancy_grid_publisher_plugin.so
+  parameters:
+      frequency: 10
+      resolution: 0.05
+      topic: /ed_map
+      frame_id: /map
+      sim_time: 1.0
+      object_persistence_time: 10
+- name: loc_grid_publisher
+  lib: libed_occupancy_grid_publisher_plugin.so
+  parameters:
+      frequency: 1
+      resolution: 0.025
+      topic: /ed_loc_map
+      frame_id: /map
+      specifier: localizable
+      sim_time: 0.0
+- name: tf_publisher
+  lib: libed_tf_publisher_plugin.so
+  parameters:
+      root_frame_id: /map
+- name: localization
+  lib: libed_localization_plugin.so
+  parameters:
+      initial_pose_topic: /amigo/initialpose
+      num_particles: 500
+      initial_pose:
+          x: $(env ROBOT_INIT_X)
+          y: $(env ROBOT_INIT_Y)
+          rz: $(env ROBOT_INIT_PHI)    
+      laser_model:
+          topic: /amigo/base_front_laser
+          num_beams: 100
+          z_hit: 0.95
+          sigma_hit: 0.2
+          z_short: 0.1
+          z_max: 0.05
+          z_rand: 0.05
+          lambda_short: 0.1
+          range_max: 10
+          min_particle_distance: 0.01
+          min_particle_rotation_distance: 0.02
+      odom_model:
+          map_frame: map
+          odom_frame: /amigo/odom
+          base_link_frame: /amigo/base_link
+          alpha1: 0.05   # rot -> trans + strafe
+          alpha2: 0.5    # trans -> rot
+          alpha3: 0.5    # trans -> trans
+          alpha4: 0.5    # rot -> rot
+          alpha5: 0.5    # trans -> strafe
