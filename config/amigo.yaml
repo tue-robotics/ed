@@ -39,12 +39,63 @@ perception:
     fit_shapes: 1
     model_list: all_models.yml
     modules:
-#    -  lib: libsize_matcher.so
-#    -  lib: libed_odu_finder.so
-#    -  lib: libcolor_matcher.so
-    -  lib: libhuman_contour_matcher.so
-    -  lib: libface_detector.so
-    -  lib: libtype_aggregator.so
+    - lib: libsize_matcher.so
+      parameters:
+          size_diff_threshold: 0.8
+          small_size_treshold: 0.5
+          medium_size_treshold: 0.7
+    - lib: libed_odu_finder.so
+      parameters:
+          database_path: /database
+          debug_mode: 0
+    - lib: libcolor_matcher.so
+      parameters:
+          debug_mode: 0
+          debug_folder: /tmp/color_matcher/
+          color_table: /color_names.txt
+    - lib: libhuman_contour_matcher.so
+      parameters:
+          debug_mode: 0
+          debug_folder: /tmp/human_classifier/
+          head_template_front_path: /head_templates/template_front_4_trimmed.png
+          head_template_left_path: /head_templates/left_close.png
+          head_template_right_path: /head_templates/right_close.png
+          max_match_iterations: 30
+          dt_line_width: 1
+          dt_border_size: 20
+          max_template_err: 15
+          dt_slices_num: 7
+    - lib: libface_detector.so
+      parameters:
+          debug_mode: 0
+          debug_folder: /tmp/face_detector/
+          cascade_front_files_path: /cascade_classifiers/haarcascade_frontalface_alt_tree.xml
+          cascade_profile_front_path: /cascade_classifiers/haarcascade_profileface.xml
+          classifier_front_scale_factor: 1.2
+          classifier_front_min_neighbours: 3
+          classifier_profile_scale_factor: 1.2
+          classif_profile_min_neighbours: 3
+    - lib: libface_recognition_ed.so
+      parameters:
+        debug_mode: 0
+        save_learned_faces: 0
+        saved_faces_dir: /faces_learned/
+        use_Eigen: 0
+        use_Fisher: 1
+        use_LBPH: 1
+        use_histogram: 1
+        enable_learning_service: 1
+        eigen_treshold: 3000
+        fisher_treshold: 800
+        lbph_treshold: 45
+        recognition_treshold: 0.95
+        face_target_size: 150
+        left_eye_vert_offset: 0.35
+        left_eye_horiz_offset: 0.25
+        max_faces_learn: 10
+    - lib: libtype_aggregator.so
+      parameters:
+        classification_threshold: 0.5
 
 plugins:
 - name: gui_server
