@@ -12,6 +12,8 @@
 
 #include <tue/profiling/scoped_timer.h>
 
+#include <geolib/ros/tf_conversions.h>
+
 namespace ed
 {
 
@@ -123,7 +125,11 @@ void RelativeLocalizationModule::process(RGBDData& sensor_data,
 
         Eigen::Matrix<float, 4, 4> T = icp.getFinalTransformation();
 
-        sensor_data.sensor_pose = sensor_data.sensor_pose * RelativeLocalizationModule::eigenMat2geoTransform(T);
+        geo::Pose3D pose_correction = RelativeLocalizationModule::eigenMat2geoTransform(T);
+        sensor_data.sensor_pose = sensor_data.sensor_pose * pose_correction;
+        // Publish transform from sensor pose to corrected sensor pose
+        geo::convert(pose_correction,transform_);
+        broadcaster_.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), "/camera_rgb_optical_frame", "/camera_rgb_optical_frame_improved")); // TODO: Get rid of ROS time and hard coded transform names!!!
     }
 
     //! 2) Perform point normal association

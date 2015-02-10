@@ -3,6 +3,7 @@ sensors:
   type: kinect
   source: /camera/rgbd #launch rgbd rose_server.launch for this to be provided
   frame_id: /camera_rgb_optical_frame
+  improved_frame_id: /camera_rgb_optical_frame_improved
   visualize: 0
   voxel_size: 0.02
   max_range: 3.0

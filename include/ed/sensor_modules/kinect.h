@@ -39,6 +39,9 @@ private:
     float clearing_padding_fraction_;
     int normal_k_search_;
 
+    //! Frame id
+    UUID improved_frame_;
+
 };
 
 }

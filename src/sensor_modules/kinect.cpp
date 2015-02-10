@@ -167,11 +167,12 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
     }
 
     // get sensor config
-    std::string source_str, frame_str;
-    if (config.value("source", source_str) && config.value("frame_id", frame_str))
+    std::string source_str, frame_str, improved_frame_str;
+    if (config.value("source", source_str) && config.value("frame_id", frame_str) && config.value("improved_frame_id", improved_frame_str))
     {
         source_ = source_str;
         frame_ = frame_str;
+        improved_frame_ = improved_frame_str;
 
         // Initialize profiler
         profiler_.setName("kinect_sensor");
@@ -207,11 +208,10 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
     }
 
     //! 1) Lookup sensor map transform
-    geo::Pose3D sensor_pose, sensor_pose_improved(0.0,0.0,0.0);
+    geo::Pose3D sensor_pose;
     {
         tue::ScopedTimer t(profiler_, "1) lookup sensor_tf");
 
-//        if(sensor_pose_improved)
         if(!getSensorPoseMap(rgbd_image->getTimestamp(), sensor_pose))
         {
             ROS_WARN_STREAM("No sensor pose available for sensor '" << source_ << "'");
@@ -272,6 +272,8 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
                 break;
             profiler_.startTimer(it->second->getType());
             it->second->process(rgbd_data, pc_mask, world_model, alm_result);
+            if( rgbd_data.sensor_pose != sensor_pose)
+                frame_ = improved_frame_;
             profiler_.stopTimer();
         }
 
