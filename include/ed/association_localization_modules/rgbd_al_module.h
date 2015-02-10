@@ -47,7 +47,7 @@ public:
         pub_profile_.initialize(profiler_);
     }
 
-    virtual void process(const RGBDData& rgbd_data,
+    virtual void process(RGBDData& rgbd_data,
                          PointCloudMaskPtr& not_associated_mask,
                          const WorldModelConstPtr& world_model,
                          ALMResult& result) = 0;

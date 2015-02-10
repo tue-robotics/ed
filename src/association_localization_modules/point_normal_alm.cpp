@@ -53,7 +53,7 @@ void PointNormalALM::configure(tue::Configuration config)
     tree_ = pcl::KdTreeFLANN<pcl::PointNormal>::Ptr(new pcl::KdTreeFLANN<pcl::PointNormal>);
 }
 
-void PointNormalALM::process(const RGBDData& sensor_data,
+void PointNormalALM::process(RGBDData& sensor_data,
                              PointCloudMaskPtr& not_associated_mask,
                              const WorldModelConstPtr& world_model,
                              ALMResult& result)

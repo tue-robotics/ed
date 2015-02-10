@@ -207,10 +207,11 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
     }
 
     //! 1) Lookup sensor map transform
-    geo::Pose3D sensor_pose;
+    geo::Pose3D sensor_pose, sensor_pose_improved(0.0,0.0,0.0);
     {
         tue::ScopedTimer t(profiler_, "1) lookup sensor_tf");
 
+//        if(sensor_pose_improved)
         if(!getSensorPoseMap(rgbd_image->getTimestamp(), sensor_pose))
         {
             ROS_WARN_STREAM("No sensor pose available for sensor '" << source_ << "'");

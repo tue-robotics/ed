@@ -74,7 +74,7 @@ geo::Transform RelativeLocalizationModule::eigenMat2geoTransform(Eigen::Matrix<f
     return Transformation;
 }
 
-void RelativeLocalizationModule::process(const RGBDData& sensor_data,
+void RelativeLocalizationModule::process(RGBDData& sensor_data,
                                          PointCloudMaskPtr& not_associated_mask,
                                          const WorldModelConstPtr& world_model,
                                          ALMResult& result)
@@ -123,7 +123,7 @@ void RelativeLocalizationModule::process(const RGBDData& sensor_data,
 
         Eigen::Matrix<float, 4, 4> T = icp.getFinalTransformation();
 
-        // sensor_data.sensor_pose = sensor_data.sensor_pose * RelativeLocalizationModule::eigenMat2geoTransform(T);
+        sensor_data.sensor_pose = sensor_data.sensor_pose * RelativeLocalizationModule::eigenMat2geoTransform(T);
     }
 
     //! 2) Perform point normal association
@@ -182,8 +182,8 @@ void RelativeLocalizationModule::process(const RGBDData& sensor_data,
 
 
     //! 3.2) Match separte entity point cloud data with associated world model points to update entity poses
-    for (std::map<const ed::Entity*, pcl::PointCloud<pcl::PointNormal>::Ptr >::iterator it = sensor_association_map.begin(); it != sensor_association_map.end(); it++) {
-        const ed::Entity* entity = it->first;
+//    for (std::map<const ed::Entity*, pcl::PointCloud<pcl::PointNormal>::Ptr >::iterator it = sensor_association_map.begin(); it != sensor_association_map.end(); it++) {
+//        const ed::Entity* entity = it->first;
 
 //        pcl::IterativeClosestPoint<pcl::PointNormal, pcl::PointNormal> icp;
 //        icp.setInputSource(it->second);
@@ -193,7 +193,7 @@ void RelativeLocalizationModule::process(const RGBDData& sensor_data,
 
 //        Eigen::Matrix<float, 4, 4> T = icp.getFinalTransformation();
 //        std::cout << "Transformation matrix T = \n" << T << std::endl;
-    }
+//    }
 
     //! 4) Update the mask
     {

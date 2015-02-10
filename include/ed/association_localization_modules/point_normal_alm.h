@@ -43,7 +43,7 @@ public:
 
     PointNormalALM();
 
-    void process(const RGBDData& rgbd_data,
+    void process(RGBDData &rgbd_data,
                  PointCloudMaskPtr& not_associated_mask,
                  const WorldModelConstPtr& world_model,
                  ALMResult& result);
