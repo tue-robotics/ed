@@ -38,7 +38,17 @@ protected:
             tf::StampedTransform t_sensor_pose;
             tf_listener_.lookupTransform("map", frame_.str(), ros::Time(time_stamp), t_sensor_pose);
             geo::convert(t_sensor_pose, sensor_pose);
+        } catch(tf::ConnectivityException& ex) {
+            ROS_ERROR("ConnectivityException");
+            return false;
+        } catch(tf::ExtrapolationException& ex) {
+            ROS_ERROR("ExtrapolationException");
+            return false;
+        } catch(tf::LookupException& ex) {
+            ROS_ERROR("LookupException");
+            return false;
         } catch(tf::TransformException& ex) {
+            ROS_ERROR("Some other transform exception");
             return false;
         }
         return true;

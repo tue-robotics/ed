@@ -22,12 +22,16 @@ class ALMResult
 
 public:
 
+    ALMResult(): sensor_pose_corrected(0.0,0.0,0.0,0.0,0.0,0.0){}
+
     void addAssociation(const UUID& id, const MeasurementConstPtr& m)
     {
         associations[id].push_back(m);
     }
 
     std::map<UUID, std::vector<MeasurementConstPtr> > associations;
+
+    geo::Pose3D sensor_pose_corrected; // A correction on the sensor pose (relative to the sensor pose)
 
 };
 
