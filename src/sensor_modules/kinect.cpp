@@ -219,11 +219,11 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         }
         else
         {
-            std::cout << sensor_pose << std::endl;
             geo::Pose3D corr;
             corr.setOrigin(geo::Vector3(0, 0, 0));
             corr.setRPY(3.1415, 0, 0);
-            sensor_pose = sensor_pose* corr; // geolib fix
+            sensor_pose = sensor_pose* corr; // geolib fix for what??
+            std::cout << sensor_pose << std::endl;
         }
     }
 
@@ -266,7 +266,7 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         tue::ScopedTimer t(profiler_, "6) association and localisation");
 
         ALMResult alm_result;
-        geo::Pose3D zero_pose(0.0,0.0,0.0,0.0,0.0,0.0);
+        alm_result.sensor_pose_corrected = rgbd_data.sensor_pose;
 
         for (std::map<std::string, RGBDALModulePtr>::const_iterator it = al_modules_.begin(); it != al_modules_.end(); ++it) {
 
@@ -274,12 +274,12 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
                 break;
             profiler_.startTimer(it->second->getType());
             it->second->process(rgbd_data, pc_mask, world_model, alm_result);
-            if( alm_result.sensor_pose_corrected != zero_pose)
+            if( alm_result.sensor_pose_corrected != rgbd_data.sensor_pose)
             {
-                frame_ = improved_frame_;
-                ROS_ERROR("Improved transform detected, updating sensor pose");
+//                frame_ = improved_frame_;
+//                ROS_ERROR("Improved transform detected, updating sensor pose");
                 req.setPose(improved_frame_, alm_result.sensor_pose_corrected);
-                std::cout << "Now listening to transform with name " << frame_ << std::endl;
+//                std::cout << "Now listening to transform with name " << frame_ << std::endl;
             }
 
             profiler_.stopTimer();

@@ -22,8 +22,6 @@ class ALMResult
 
 public:
 
-    ALMResult(): sensor_pose_corrected(0.0,0.0,0.0,0.0,0.0,0.0){}
-
     void addAssociation(const UUID& id, const MeasurementConstPtr& m)
     {
         associations[id].push_back(m);

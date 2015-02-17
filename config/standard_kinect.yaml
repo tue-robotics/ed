@@ -19,12 +19,12 @@ sensors:
 #        render_max_range: 2.2
 #        render_voxel_size: 0.02
 #        normal_k_search: 15
-#        visualize:0
+#        visualize: 1
   - type: RelativeLocalization
     parameters:
-        association_correspondence_distance: 0.5
-        position_weight: 5.0
-        normal_weight: 0.0
+        association_correspondence_distance: 1.0
+        position_weight: 2.0
+        normal_weight: 1.0
         render_width: 320
         render_max_range: 2.2
         render_voxel_size: 0.02

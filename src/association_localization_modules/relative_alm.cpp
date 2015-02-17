@@ -85,11 +85,12 @@ void RelativeLocalizationModule::process(RGBDData& sensor_data,
     //! 1) Get the world model point cloud
     pcl::PointCloud<pcl::PointNormal>::ConstPtr world_model_npcl;
     std::vector<const Entity*> world_model_pc_entity_ptrs;
+    // Create a render view
+    rgbd::View sensor_view(*sensor_data.image, render_width_);
     {
         tue::ScopedTimer t(profiler_, "1) get_world_model_pcl");
 
-        // Create a render view
-        rgbd::View sensor_view(*sensor_data.image, render_width_);
+
 
         profiler_.startTimer("render");
 
@@ -131,6 +132,10 @@ void RelativeLocalizationModule::process(RGBDData& sensor_data,
             geo::Pose3D pose_correction = RelativeLocalizationModule::eigenMat2geoTransform(T);
             result.sensor_pose_corrected = sensor_data.sensor_pose * pose_correction;
         }
+        if (visualize_)
+            helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(sensor_view, sensor_data.sensor_pose, vis_marker_pub_, 1, "original_pose");
+        if (visualize_)
+            helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(sensor_view, result.sensor_pose_corrected, vis_marker_pub_, 1, "corrected_pose");
     }
 
     //! 2) Perform point normal association
