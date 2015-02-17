@@ -32,70 +32,83 @@ sensors:
         min_cluster_size: 20
         visualize: 0
 
+# -----------------------------------------------------------------------------------------------------------------------------
+
 visualize: 1
 world_name: robotics_testlabs
+
+# -----------------------------------------------------------------------------------------------------------------------------
 
 perception:
     fit_shapes: 1
     model_list: all_models.yml
     modules:
+
     - lib: libsize_matcher.so
       parameters:
-          size_diff_threshold: 0.8
-          small_size_treshold: 0.5
-          medium_size_treshold: 0.7
+          size_diff_threshold: 0.8    # size similarity threshold between learned models and the detected object
+          small_size_treshold: 0.5    # objects smaller than this (height+witdth in meters) are considered small
+          medium_size_treshold: 0.7   # objects between this and the small size (height+witdth in meters) are considered medium
+
     - lib: libed_odu_finder.so
       parameters:
-          database_path: /database
-          debug_mode: 0
+          database_path: /database    # location of database (ed_object_models/configs/odu_finder + <this path>)
+          debug_mode: 0               # activate debug mode for extra output
+
     - lib: libcolor_matcher.so
       parameters:
-          debug_mode: 0
-          debug_folder: /tmp/color_matcher/
-          color_table: /color_names.txt
+          debug_mode: 0                     # activate debug mode for extra output
+          debug_folder: /tmp/color_matcher/ # folder for debug output images
+          color_table: /color_names.txt     # location of database (ed_object_models/configs/color_matcher + <this path>)
+
     - lib: libhuman_contour_matcher.so
       parameters:
-          debug_mode: 0
-          debug_folder: /tmp/human_classifier/
-          head_template_front_path: /head_templates/template_front_4_trimmed.png
-          head_template_left_path: /head_templates/left_close.png
-          head_template_right_path: /head_templates/right_close.png
-          max_match_iterations: 30
-          dt_line_width: 1
-          dt_border_size: 20
-          max_template_err: 15
-          dt_slices_num: 7
+          debug_mode: 0             # activate debug mode for extra output
+          max_template_err: 15      # maximum error for an object to be considered human (0 is perfect match)            
+          max_match_iterations: 30  # maximum number of iterations for the template matching
+          dt_line_width: 1          # line width used to generate the Distance Transform map
+          dt_border_size: 20        # border size used to generate the Distance Transform map
+          dt_slices_num: 7          # number of slices to split the Distance Transform map to find best starting point
+          debug_folder: /tmp/human_classifier/                                    # folder for debug output images
+          head_template_front_path: /head_templates/template_front_4_trimmed.png  # template for frontal head template matching
+          head_template_left_path: /head_templates/left_close.png                 # template for left head template matching
+          head_template_right_path: /head_templates/right_close.png               # template for right head template matching
+
     - lib: libface_detector.so
       parameters:
-          debug_mode: 0
-          debug_folder: /tmp/face_detector/
-          cascade_front_files_path: /cascade_classifiers/haarcascade_frontalface_alt_tree.xml
-          cascade_profile_front_path: /cascade_classifiers/haarcascade_profileface.xml
-          classifier_front_scale_factor: 1.2
-          classifier_front_min_neighbours: 3
-          classifier_profile_scale_factor: 1.2
-          classif_profile_min_neighbours: 3
+          debug_mode: 0                         # activate debug mode for extra output
+          debug_folder: /tmp/face_detector/     # folder for debug output images
+          cascade_front_files_path: /cascade_classifiers/haarcascade_frontalface_alt_tree.xml # cascade classifier for frontal face detection
+          cascade_profile_front_path: /cascade_classifiers/haarcascade_profileface.xml        # cascade classifier for profile face detection
+          classifier_front_scale_factor: 1.2    # scale factor used in the search for frontal faces
+          classifier_front_min_neighbours: 3    # minimum number of neighbour detections to consider a valid frontal detection
+          classifier_profile_scale_factor: 1.2  # scale factor used in the search for profile faces
+          classif_profile_min_neighbours: 3     # minimum number of neighbour detections to consider a valid profile detection
+
     - lib: libface_recognition_ed.so
       parameters:
-        debug_mode: 0
-        save_learned_faces: 0
-        saved_faces_dir: /faces_learned/
-        use_Eigen: 0
-        use_Fisher: 1
-        use_LBPH: 1
-        use_histogram: 1
-        enable_learning_service: 1
-        eigen_treshold: 3000
-        fisher_treshold: 800
-        lbph_treshold: 45
-        recognition_treshold: 0.95
-        face_target_size: 150
-        left_eye_vert_offset: 0.35
-        left_eye_horiz_offset: 0.25
-        max_faces_learn: 10
+        debug_mode: 0                     # activate debug mode for extra output
+        save_learned_faces: 0             # automatically save faces learned (boolean)
+        saved_faces_dir: /faces_learned/  # location of saved faces (<HOME FODLER> + <this path>)
+        use_Eigen: 0                      # enable Eingen Faces recognition (boolean)
+        use_Fisher: 1                     # enable Fisher Faces recognition (boolean)
+        use_LBPH: 1                       # enable LBPH Faces recognition (boolean) 
+        use_histogram: 1                  # enable color matching using histograms (boolean)
+        enable_learning_service: 1        # enable learning service (boolean). Topic '/face_recognition/learn <PERSON_NAME>'
+        eigen_treshold: 3000              # Eingen Faces error threshold (less is better)
+        fisher_treshold: 800              # Fisher Faces error threshold (less is better)
+        lbph_treshold: 45                 # LBPH Faces error threshold (less is better) 
+        recognition_treshold: 0.95        # final recognition threshold (less is better)
+        face_target_size: 150             # size of faces used in the recognition process (square, in pixels) 
+        left_eye_vert_offset: 0.35        # offset of the left eye from the top of the image
+        left_eye_horiz_offset: 0.25       # offset of the left eye from the left of the image
+        max_faces_learn: 10               # number of samples to be learned for each new face
+
     - lib: libtype_aggregator.so
       parameters:
-        classification_threshold: 0.5
+        classification_threshold: 0.5     # final classification threshold
+
+# -----------------------------------------------------------------------------------------------------------------------------
 
 plugins:
 - name: gui_server
