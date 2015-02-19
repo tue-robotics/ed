@@ -125,6 +125,10 @@ void Perception::update(const WorldModelConstPtr& world_model, UpdateRequest& re
     for(WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {        
         const EntityConstPtr& e = *it;
+
+        // skip if e is null, theres some bug somewhere
+        if (e == NULL) continue;
+
         const UUID& id = e->id();
 
 //        if (e->type() != "")

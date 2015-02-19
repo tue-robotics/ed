@@ -40,22 +40,25 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
     {
         const ed::EntityConstPtr& e = *it;
 
-        geo::Pose3D pose_MAP;
+        // check if its NULL, theres a bug somewhere
+        if (e){
+            geo::Pose3D pose_MAP;
 
-        pose_MAP = e->pose();
+            pose_MAP = e->pose();
 
-		if (e->bestMeasurement())
-		{
-			pose_MAP.t = e->convexHull().center_point;
-		}
+            if (e->bestMeasurement())
+            {
+                pose_MAP.t = e->convexHull().center_point;
+            }
 
-        tf::StampedTransform t;
-        geo::convert(pose_MAP, t);
-        t.frame_id_ = root_frame_id_;
-        t.child_frame_id_ = e->id().str();
-        t.stamp_ = ros::Time::now();
+            tf::StampedTransform t;
+            geo::convert(pose_MAP, t);
+            t.frame_id_ = root_frame_id_;
+            t.child_frame_id_ = e->id().str();
+            t.stamp_ = ros::Time::now();
 
-        tf_broadcaster_->sendTransform(t);
+            tf_broadcaster_->sendTransform(t);
+        }
     }
 }
 

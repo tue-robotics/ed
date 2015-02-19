@@ -53,7 +53,7 @@ void filterPointsBehindWorldModel(const WorldModelConstPtr& world_model, const g
     {
         const EntityConstPtr& e = *it;
 
-        if (e->shape())
+        if (e && e->shape())
         {
             geo::Pose3D pose = sensor_pose.inverse() * e->pose();
             geo::RenderOptions opt;
