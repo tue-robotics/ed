@@ -446,6 +446,9 @@ void Server::mergeEntities(const WorldModelPtr& world_model, double not_updated_
     {
         const EntityConstPtr& e = *it;
 
+        // skip if e is null, theres some bug somewhere
+        if (e == NULL) continue;
+
         if (!e->lastMeasurement())
             continue;
 
