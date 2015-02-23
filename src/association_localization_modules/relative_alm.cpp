@@ -126,16 +126,23 @@ void RelativeLocalizationModule::process(RGBDData& sensor_data,
         icp.setInputTarget(sensor_data.point_cloud_with_normals);
         icp.align(final_pc);
 
+//        std::cout << "Original pose = " << sensor_data.sensor_pose << std::endl;
         if (icp.hasConverged()) {
             Eigen::Matrix<float, 4, 4> T = icp.getFinalTransformation();
-//            std::cout << T << std::endl;
             geo::Pose3D pose_correction = RelativeLocalizationModule::eigenMat2geoTransform(T);
+//            std::cout << "Pose correction = " << pose_correction << std::endl;
             result.sensor_pose_corrected = sensor_data.sensor_pose * pose_correction;
+//            std::cout << "Corrected pose = " << result.sensor_pose_corrected << "\n" << std::endl;
+            if (visualize_)
+                helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(sensor_view, result.sensor_pose_corrected, vis_marker_pub_, 1, "corrected_pose");
+
+            // Convert back from Geolib to ROS
+            result.sensor_pose_corrected.R = result.sensor_pose_corrected.R * geo::Matrix3(1, 0, 0, 0, -1, 0, 0, 0, -1);
         }
+
+
         if (visualize_)
             helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(sensor_view, sensor_data.sensor_pose, vis_marker_pub_, 1, "original_pose");
-        if (visualize_)
-            helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(sensor_view, result.sensor_pose_corrected, vis_marker_pub_, 1, "corrected_pose");
     }
 
     //! 2) Perform point normal association

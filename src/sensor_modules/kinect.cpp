@@ -219,19 +219,16 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         }
         else
         {
-            geo::Pose3D corr;
-            corr.setOrigin(geo::Vector3(0, 0, 0));
-            corr.setRPY(3.1415, 0, 0);
-            sensor_pose = sensor_pose* corr; // geolib fix for what??
-            std::cout << sensor_pose << std::endl;
+            // Convert from ROS frame to Geolib frame
+            sensor_pose.R = sensor_pose.R * geo::Matrix3(1, 0, 0, 0, -1, 0, 0, 0, -1);
         }
     }
 
     //! 2) Preprocess image: remove all data points that are behind world model entities (Why?)
-    {
-        tue::ScopedTimer t(profiler_, "2) filter points behind wm");
-        filterPointsBehindWorldModel(world_model, sensor_pose, rgbd_image, vis_marker_pub_);
-    }
+//    {
+//        tue::ScopedTimer t(profiler_, "2) filter points behind wm");
+//        filterPointsBehindWorldModel(world_model, sensor_pose, rgbd_image, vis_marker_pub_);
+//    }
 
     // Construct RGBD Data
     RGBDData rgbd_data;
@@ -274,14 +271,6 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
                 break;
             profiler_.startTimer(it->second->getType());
             it->second->process(rgbd_data, pc_mask, world_model, alm_result);
-            if( alm_result.sensor_pose_corrected != rgbd_data.sensor_pose)
-            {
-//                frame_ = improved_frame_;
-//                ROS_ERROR("Improved transform detected, updating sensor pose");
-                req.setPose(improved_frame_, alm_result.sensor_pose_corrected);
-//                std::cout << "Now listening to transform with name " << frame_ << std::endl;
-            }
-
             profiler_.stopTimer();
         }
 
