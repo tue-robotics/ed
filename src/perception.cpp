@@ -21,9 +21,10 @@ Perception::Perception()
 
 Perception::~Perception()
 {
-    for(std::map<UUID, PerceptionWorker*>::iterator it = workers_.begin(); it != workers_.end(); ++it)
+    // Joint the processing threads of all perception workers
+    for(std::map<UUID, PerceptionWorkerPtr>::iterator it = workers_.begin(); it != workers_.end(); ++it)
     {
-        delete it->second;
+        it->second.reset();
     }
 
     // Make sure the perception modules are destroyed by resetting all shared pointers
@@ -142,13 +143,13 @@ void Perception::update(const WorldModelConstPtr& world_model, UpdateRequest& re
 //            }
 //        }
 
-        std::map<UUID, PerceptionWorker*>::iterator it_worker = workers_.find(id);
+        std::map<UUID, PerceptionWorkerPtr>::iterator it_worker = workers_.find(id);
         if (it_worker == workers_.end())
         {
             // No worker active for this entity, so create one
 
             // create worker and add measurements
-            PerceptionWorker* worker = new PerceptionWorker();
+            PerceptionWorkerPtr worker(new PerceptionWorker);
             worker->setEntity(e);
             worker->setPerceptionModules(perception_modules_);
 
@@ -158,7 +159,7 @@ void Perception::update(const WorldModelConstPtr& world_model, UpdateRequest& re
         else
         {
             // Already a worker active
-            PerceptionWorker* worker = it_worker->second;
+            PerceptionWorkerPtr worker = it_worker->second;
 
             // Check if it is idle, but has done work before
             if (worker->isIdle() && worker->t_last_processing > 0)
@@ -190,6 +191,21 @@ void Perception::update(const WorldModelConstPtr& world_model, UpdateRequest& re
             }
         }
 
+    }
+
+    // Filter idle workers of deleted entities
+    for(std::map<UUID, PerceptionWorkerPtr>::iterator it = workers_.begin(); it != workers_.end();)
+    {
+        const PerceptionWorkerPtr& worker = it->second;
+
+        if (worker->isIdle() && !world_model->getEntity(it->first))
+        {
+            workers_.erase(it++);
+        }
+        else
+        {
+            ++it;
+        }
     }
 }
 

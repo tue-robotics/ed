@@ -12,6 +12,8 @@ namespace ed
 
 class PerceptionWorker;
 
+typedef boost::shared_ptr<PerceptionWorker> PerceptionWorkerPtr;
+
 class Perception
 {
 
@@ -35,7 +37,7 @@ private:
 
     std::vector<PerceptionModuleConstPtr> perception_modules_;
 
-    std::map<UUID, PerceptionWorker*> workers_;
+    std::map<UUID, PerceptionWorkerPtr> workers_;
 
 //    std::map<ed::UUID, std::string> previous_entity_types_;
 
