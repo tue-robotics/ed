@@ -271,6 +271,8 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
                 break;
             profiler_.startTimer(it->second->getType());
             it->second->process(rgbd_data, pc_mask, world_model, alm_result);
+            req.setPose(improved_frame_, alm_result.sensor_pose_corrected);
+
             profiler_.stopTimer();
         }
 
