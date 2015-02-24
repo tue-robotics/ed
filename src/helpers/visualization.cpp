@@ -416,6 +416,42 @@ void publishPclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointClou
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+void publishPclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointCloud<pcl::PointNormal>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns)
+{
+    visualization_msgs::Marker m;
+
+    m.action =  visualization_msgs::Marker::ADD;
+
+    m.type = visualization_msgs::Marker::POINTS;
+    m.id = id;
+    m.ns = ns;
+
+    m.header.frame_id = "/map";
+    m.header.stamp = ros::Time::now();
+
+    m.scale.x = 0.01;
+
+    m.color = getColor(id);
+
+    m.points.resize(pc->size());
+    for (unsigned int i = 0; i < pc->size(); ++i)
+    {
+        const pcl::PointNormal& p = pc->points[i];
+
+        geo::Vector3 v(p.x, p.y, p.z);
+
+        v = pose * v; // to the map frame
+
+        m.points[i].x = v.x;
+        m.points[i].y = v.y;
+        m.points[i].z = v.z;
+    }
+
+    pub.publish(m);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 void publishNpclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointCloud<pcl::PointNormal>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns)
 {
     visualization_msgs::Marker m;
