@@ -25,6 +25,8 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
 
 void publishPclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns);
 
+void publishPclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointCloud<pcl::PointNormal>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns);
+
 void publishNpclVisualizationMarker(const geo::Pose3D& pose, const pcl::PointCloud<pcl::PointNormal>::ConstPtr& pc, const ros::Publisher& pub, int id, const std::string& ns);
 
 void publishConvexHull2DVisualizationMarker(const ConvexHull2D& polygon, const ros::Publisher& pub, int id, const std::string& ns);

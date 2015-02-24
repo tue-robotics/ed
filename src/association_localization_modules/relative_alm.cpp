@@ -122,8 +122,8 @@ void RelativeLocalizationModule::process(RGBDData& sensor_data,
         result.sensor_pose_corrected = sensor_data.sensor_pose * pose_correction;
         //        std::cout << "Corrected pose = " << result.sensor_pose_corrected << "\n" << std::endl;
         if (visualize_) {
-            helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(sensor_view, result.sensor_pose_corrected, vis_marker_pub_, 1, "corrected_pose");
-            helpers::visualization::publishNpclVisualizationMarker(result.sensor_pose_corrected, final_pc, vis_marker_pub_, 1, "corrected_pc");
+            helpers::visualization::publishRGBDViewFrustrumVisualizationMarker(sensor_view, result.sensor_pose_corrected, vis_marker_pub_, 2, "corrected_pose");
+            helpers::visualization::publishPclVisualizationMarker(result.sensor_pose_corrected, final_pc, vis_marker_pub_, 2, "corrected_pc");
         }
 
         // Convert back from Geolib frame to ROS frame
