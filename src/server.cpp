@@ -235,6 +235,13 @@ void Server::stepPlugins()
 
             new_world_model->update(*c->updateRequest());
             plugins_with_requests.push_back(c);
+
+            // Temporarily for Javier
+            for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+            {
+                PluginContainerPtr c = *it;
+                c->plugin()->updateRequestCallback(*c->updateRequest());
+            }
         }
     }
 
@@ -438,6 +445,9 @@ void Server::mergeEntities(const WorldModelPtr& world_model, double not_updated_
     for (WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
     {
         const EntityConstPtr& e = *it;
+
+        // skip if e is null, theres some bug somewhere
+        if (e == NULL) continue;
 
         if (!e->lastMeasurement())
             continue;

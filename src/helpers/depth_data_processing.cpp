@@ -329,6 +329,16 @@ pcl::PointCloud<pcl::PointNormal>::ConstPtr pclToNpcl(const pcl::PointCloud<pcl:
     return npcl;
 }
 
+pcl::PointCloud<pcl::PointXYZ>::ConstPtr npclToPcl(const pcl::PointCloud<pcl::PointNormal>::ConstPtr& npcl)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pcl(new pcl::PointCloud<pcl::PointXYZ>);
+
+    // Copy the points to the point cloud
+    pcl::copyPointCloud(*npcl, *pcl);
+
+    return pcl;
+}
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 pcl::PointCloud<pcl::PointXYZ>::ConstPtr downSamplePcl(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& pcl, double leaf_size)

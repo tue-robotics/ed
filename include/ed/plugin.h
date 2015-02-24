@@ -24,6 +24,9 @@ public:
 
     virtual void process(const WorldModel& world, UpdateRequest& req) {}
 
+    // Temporarily for Javier
+    virtual void updateRequestCallback(const UpdateRequest& req) {}
+
     const std::string& name() const { return name_; }
 
 private:

@@ -568,7 +568,7 @@ void showMeasurements(const WorldModel& world_model, rgbd::ImageConstPtr rgbd_im
     {
         const EntityConstPtr& e = *it;
 
-        if (!e->shape()) //! if it has no shape
+        if (e && !e->shape()) //! if it has no shape
         {
             if (e->lastMeasurement())
             {
