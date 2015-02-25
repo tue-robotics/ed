@@ -142,7 +142,7 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     if (pub_stats_.getTopic() == "")
     {
         ros::NodeHandle nh;
-        pub_stats_ = nh.advertise<std_msgs::String>("/ed/stats", 10);
+        pub_stats_ = nh.advertise<std_msgs::String>("ed/stats", 10);
     }
 
 }
