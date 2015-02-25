@@ -149,7 +149,7 @@ plugins:
           y: $(env ROBOT_INIT_Y)
           rz: $(env ROBOT_INIT_PHI)    
       laser_model:
-          topic: /amigo/base_front_laser
+          topic: /amigo/base_laser/scan
           num_beams: 100
           z_hit: 0.95
           sigma_hit: 0.2
