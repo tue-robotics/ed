@@ -251,22 +251,22 @@ int main(int argc, char** argv)
 
     ros::AdvertiseServiceOptions opt_simple_query =
             ros::AdvertiseServiceOptions::create<ed::SimpleQuery>(
-                "/ed/simple_query", srvSimpleQuery, ros::VoidPtr(), &cb_queue);
+                "ed/simple_query", srvSimpleQuery, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_simple_query = nh.advertiseService(opt_simple_query);
 
     ros::AdvertiseServiceOptions opt_reset =
             ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
-                "/ed/reset", srvReset, ros::VoidPtr(), &cb_queue);
+                "ed/reset", srvReset, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_reset = nh.advertiseService(opt_reset);
 
     ros::AdvertiseServiceOptions opt_load_plugin =
             ros::AdvertiseServiceOptions::create<ed::LoadPlugin>(
-                "/ed/load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
+                "ed/load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_load_plugin = nh.advertiseService(opt_load_plugin);
 
     ros::AdvertiseServiceOptions opt_update =
             ros::AdvertiseServiceOptions::create<ed::UpdateSrv>(
-                "/ed/update", srvUpdate, ros::VoidPtr(), &cb_queue);
+                "ed/update", srvUpdate, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_update = nh.advertiseService(opt_update);
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
