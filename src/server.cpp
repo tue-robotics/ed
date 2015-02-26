@@ -162,9 +162,32 @@ void Server::initialize()
 
 void Server::reset()
 {
-    world_model_.reset(new WorldModel);
+    // Prepare default world-addition request
+    UpdateRequest req_world;
+    if (!model_loader_.create(world_name_, world_name_, req_world))
+        return;
 
-    initializeWorld();
+    // Prepare deletion request
+    UpdateRequest req_delete;
+    for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
+        req_delete.removeEntity((*it)->id());
+
+    // Create world model copy
+    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+
+    // Apply the requests (first deletion, than default world creation)
+    new_world_model->update(req_delete);
+    new_world_model->update(req_world);
+
+    // Swap to new world model
+    world_model_ = new_world_model;
+
+    // Notify plugins
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
+        const PluginContainerPtr& c = *it;
+        c->setWorld(new_world_model);
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -250,7 +273,7 @@ void Server::stepPlugins()
         // Set the new (updated) world
         for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
         {
-            PluginContainerPtr c = *it;
+            const PluginContainerPtr& c = *it;
             c->setWorld(new_world_model);
         }
 
