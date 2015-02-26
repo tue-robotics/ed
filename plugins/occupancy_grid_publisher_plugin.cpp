@@ -71,52 +71,34 @@ bool OccupancyGridPublisherPlugin::getMapData(const ed::WorldModel& world, std::
 {
     geo::Vector3 min(1e6,1e6,0);
     geo::Vector3 max(-1e6,-1e6,0);
+
     for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
     {
-        ed::EntityConstPtr e = *it;
+        const ed::EntityConstPtr& e = *it;
 
-        // check if its NULL, theres a bug somewhere
-        if (e){
-            //! Only entities with measurementSeq() >= 10 or 0 (known)
-            if (e->measurementSeq() > 0 && e->measurementSeq() < 10)
-                continue;
+        //! Push back the entity
+        entities_to_be_projected.push_back(e);
 
-            //! Check the specifier, if set
-            if (specifier_ != "")
-            {
-                double val;
-                if (!tue::config::Reader(e->data()).value(specifier_, val, tue::config::OPTIONAL) || !val)
-                    continue;
-            }
+        //! Update the map bounds
+        geo::ShapeConstPtr shape = e->shape();
+        if (shape)  // Do shape
+        {
+            const std::vector<geo::Vector3>& vertices = shape->getMesh().getPoints();
+            for(std::vector<geo::Vector3>::const_iterator it = vertices.begin(); it != vertices.end(); ++it) {
 
-            //! Push back the entity
-            entities_to_be_projected.push_back(e);
+                geo::Vector3 p1w = e->pose() * (*it);
 
-            //! Update the map bounds
-            geo::ShapeConstPtr shape = e->shape();
-            if (shape)  // Do shape
-            {
-                const std::vector<geo::Triangle>& triangles = shape->getMesh().getTriangles();
+                // Filter the ground
+                if (p1w.getZ() > 0.05001)
+                {
+                    min.x = std::min(p1w.x, min.x);
+                    max.x = std::max(p1w.x, max.x);
 
-                for(std::vector<geo::Triangle>::const_iterator it = triangles.begin(); it != triangles.end(); ++it) {
-
-                    geo::Vector3 p1w = e->pose() * it->p1_;
-                    geo::Vector3 p2w = e->pose() * it->p2_;
-                    geo::Vector3 p3w = e->pose() * it->p3_;
-
-                    // Filter the ground
-                    if (p1w.getZ() > 0.05001 && p2w.getZ() > 0.050001 && p3w.getZ() > 0.05001)
-                    {
-                        min.x = std::min(std::min(std::min(p1w.x, min.x), p2w.x), p3w.x);
-                        max.x = std::max(std::max(std::max(p1w.x, max.x), p2w.x), p3w.x);
-
-                        min.y = std::min(std::min(std::min(p1w.y, min.y), p2w.y), p3w.y);
-                        max.y = std::max(std::max(std::max(p1w.y, max.y), p2w.y), p3w.y);
-                    }
+                    min.y = std::min(p1w.y, min.y);
+                    max.y = std::max(p1w.y, max.y);
                 }
             }
         }
-
     }
 
     // Bounds fix
