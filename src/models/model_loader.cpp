@@ -212,6 +212,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
     // Add additional data
     req.addData(id, data);
+
+    return true;
 }
 
 } // end namespace models
