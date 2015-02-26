@@ -270,6 +270,7 @@ int main(int argc, char** argv)
                 "update", srvUpdate, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_update = nh_private.advertiseService(opt_update);
 
+
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     // Init ED
