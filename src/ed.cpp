@@ -246,28 +246,29 @@ int main(int argc, char** argv)
     // - - - - - - - - - - - - service initialization - - - - - - - - - - - -
 
     ros::NodeHandle nh;
+    ros::NodeHandle nh_private("~");
 
     ros::CallbackQueue cb_queue;
 
     ros::AdvertiseServiceOptions opt_simple_query =
             ros::AdvertiseServiceOptions::create<ed::SimpleQuery>(
-                "/ed/simple_query", srvSimpleQuery, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_simple_query = nh.advertiseService(opt_simple_query);
+                "simple_query", srvSimpleQuery, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_simple_query = nh_private.advertiseService(opt_simple_query);
 
     ros::AdvertiseServiceOptions opt_reset =
             ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
-                "/ed/reset", srvReset, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_reset = nh.advertiseService(opt_reset);
+                "reset", srvReset, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_reset = nh_private.advertiseService(opt_reset);
 
     ros::AdvertiseServiceOptions opt_load_plugin =
             ros::AdvertiseServiceOptions::create<ed::LoadPlugin>(
-                "/ed/load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_load_plugin = nh.advertiseService(opt_load_plugin);
+                "load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_load_plugin = nh_private.advertiseService(opt_load_plugin);
 
     ros::AdvertiseServiceOptions opt_update =
             ros::AdvertiseServiceOptions::create<ed::UpdateSrv>(
-                "/ed/update", srvUpdate, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_update = nh.advertiseService(opt_update);
+                "update", srvUpdate, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_update = nh_private.advertiseService(opt_update);
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

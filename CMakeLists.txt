@@ -154,13 +154,13 @@ add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
 # ------------------------------------------------------------------------------------------------
 
 # Create executable
-add_executable(ed_server
+add_executable(ed
     src/ed.cpp
     src/server.cpp
     src/plugin_container.cpp
 )
-target_link_libraries(ed_server ed_core ed_perception ed_association ed_segmentation ed_io ed_kinect ed_visualization)
-add_dependencies(ed_server ${PROJECT_NAME}_gencpp)
+target_link_libraries(ed ed_core ed_perception ed_association ed_segmentation ed_io ed_kinect ed_visualization)
+add_dependencies(ed ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
