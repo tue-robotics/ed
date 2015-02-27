@@ -303,6 +303,32 @@ bool OccupancyGridPublisherPlugin::srvGetGoalArea(const ed::GetGoalArea::Request
 
                     // ....
 
+//                    By Rokus from navigate_to_observe.py
+
+//                    x = e.pose.position.x
+//                    y = e.pose.position.y
+
+//                    ch.append(ch[0])
+
+//                    pci = ""
+
+//                    for i in xrange(len(ch) - 1):
+//                        dx = ch[i+1].x - ch[i].x
+//                        dy = ch[i+1].y - ch[i].y
+
+//                        length = (dx * dx + dy * dy)**.5
+
+//                        xs = ch[i].x + (dy/length)*self.radius
+//                        ys = ch[i].y - (dx/length)*self.radius
+
+//                        if i != 0:
+//                            pci = pci + ' and '
+
+//                        pci = pci + "-(x-%f)*%f+(y-%f)*%f > 0.0 "%(xs, dy, ys, dx)
+
+//                    pc = PositionConstraint(constraint=pci, frame="/map")
+//                    oc = OrientationConstraint(look_at=Point(x, y, 0.0), frame="/map")
+
                     pc += "Something";
 
                     r.endGroup();
