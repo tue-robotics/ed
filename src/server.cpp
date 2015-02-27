@@ -230,6 +230,8 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
     // Start the plugin
     container->runThreaded();
 
+    plugin_thread_id_map_[container->threadId()] = plugin_name;
+
     return container;
 }
 

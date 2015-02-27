@@ -51,6 +51,11 @@ public:
 
     void publishStatistics() const;
 
+    const std::map<boost::thread::id, std::string>& pluginThreadIdMap() const
+    {
+        return plugin_thread_id_map_;
+    }
+
 private:
 
     // World model datastructure
@@ -76,6 +81,7 @@ private:
     //! Plugins
     std::vector<std::string> plugin_paths_;
     std::vector<PluginContainerPtr> plugin_containers_;
+    std::map<boost::thread::id, std::string> plugin_thread_id_map_;
 
     //! Profiling
     tue::ProfilePublisher pub_profile_;

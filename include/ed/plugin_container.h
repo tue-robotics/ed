@@ -61,6 +61,8 @@ public:
 
     double totalProcessingTime() const { return total_process_time_sec_; }
 
+    boost::thread::id threadId() const { return thread_->get_id(); }
+
 protected:
 
     class_loader::ClassLoader*  class_loader_;
