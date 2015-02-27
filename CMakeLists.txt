@@ -45,9 +45,6 @@ add_service_files(
 
    # For builder plugin
    SetEntity.srv
-
-   # For occupancy_grid_publisher
-   GetGoalArea.srv
 )
 
 # Generate added messages and services with any dependencies listed here
@@ -168,9 +165,6 @@ add_dependencies(ed ${PROJECT_NAME}_gencpp)
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
 # ------------------------------------------------------------------------------------------------
-
-add_library(ed_occupancy_grid_publisher_plugin plugins/occupancy_grid_publisher_plugin.cpp)
-add_dependencies(ed_occupancy_grid_publisher_plugin ${PROJECT_NAME}_gencpp)
 
 add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
 
