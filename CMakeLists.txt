@@ -45,6 +45,9 @@ add_service_files(
 
    # For builder plugin
    SetEntity.srv
+
+   # For occupancy_grid_publisher
+   GetGoalArea.srv
 )
 
 # Generate added messages and services with any dependencies listed here

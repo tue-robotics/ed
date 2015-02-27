@@ -8,6 +8,9 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <ed/GetGoalArea.h>
+#include <ros/callback_queue.h>
+
 class OccupancyGridPublisherPlugin : public ed::Plugin
 {
 
@@ -67,6 +70,16 @@ private:
     int width_, height_;
 
     double res_;
+
+    //! Get goal area service
+
+    const ed::WorldModel* world_;
+
+    bool srvGetGoalArea(const ed::GetGoalArea::Request& ros_req, ed::GetGoalArea::Response& ros_res);
+
+    ros::ServiceServer srv_get_goal_area_;
+
+    ros::CallbackQueue cb_queue_;
 
 };
 

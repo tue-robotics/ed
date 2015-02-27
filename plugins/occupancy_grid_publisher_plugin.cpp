@@ -32,6 +32,15 @@ void OccupancyGridPublisherPlugin::configure(tue::Configuration config)
     {
         initialize();
     }
+
+    ros::NodeHandle nh("~");
+
+    ros::AdvertiseServiceOptions opt_srv_get_goal_area =
+            ros::AdvertiseServiceOptions::create<ed::GetGoalArea>(
+                "nav/get_goal_area", boost::bind(&OccupancyGridPublisherPlugin::srvGetGoalArea, this, _1, _2),
+                ros::VoidPtr(), &cb_queue_);
+
+    srv_get_goal_area_ = nh.advertiseService(opt_srv_get_goal_area);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -46,6 +55,10 @@ void OccupancyGridPublisherPlugin::initialize()
 
 void OccupancyGridPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {
+    // Check for services
+    world_ = &world;
+    cb_queue_.callAvailable();
+
     std::vector<ed::EntityConstPtr> entities_to_be_projected;
     if (getMapData(world, entities_to_be_projected))
     {
@@ -223,6 +236,90 @@ void OccupancyGridPublisherPlugin::publishMapMsg(const cv::Mat& map)
 }
 
 // ----------------------------------------------------------------------------------------------------
+
+bool OccupancyGridPublisherPlugin::srvGetGoalArea(const ed::GetGoalArea::Request& req, ed::GetGoalArea::Response& res)
+{
+    ed::EntityConstPtr e = world_->getEntity(req.entity_id);
+
+    if (!e)
+    {
+        res.error_msg = "No such entity: '" + req.entity_id + "'.";
+        return true;
+    }
+
+    const tue::config::DataConstPointer& data = e->data();
+    if (data.empty())
+    {
+        res.error_msg = "Entity '" + e->id().str() + "': does not have an 'areas' property.";
+        return true;
+    }
+
+    tue::config::Reader r(data);
+    if (!r.readArray("areas"))
+    {
+        res.error_msg = "Entity '" + e->id().str() + "': does not have an 'areas' property.";
+        return true;
+    }
+
+    while(r.nextArrayItem())
+    {
+        std::string name;
+        if (r.value("name", name) && name == req.area_name)
+        {
+            if (!r.readArray("shape", tue::config::REQUIRED))
+            {
+                res.error_msg = "Entity '" + e->id().str() + "': area '" + req.area_name + "' does not have 'shape' property.";
+                return true;
+            }
+
+            // Construct position constraint from shape
+            std::string& pc = res.position_constraint;
+
+            while(r.nextArrayItem())
+            {
+                if (r.readGroup("box"))
+                {
+                    geo::Vector3 min, max;
+
+                    if (r.readGroup("min"))
+                    {
+                        r.value("x", min.x);
+                        r.value("y", min.y);
+                        r.value("z", min.z);
+                        r.endGroup();
+                    }
+
+                    if (r.readGroup("max"))
+                    {
+                        r.value("x", max.x);
+                        r.value("y", max.y);
+                        r.value("z", max.z);
+                        r.endGroup();
+                    }
+
+                    std::cout << "Box: " << min << " - " << max << std::endl;
+
+                    // Add to position constraint here:
+
+                    // ....
+
+                    pc += "Something";
+
+                    r.endGroup();
+                }
+            }
+
+            r.endArray();
+
+            return true;
+        }
+    }
+
+    r.endArray();
+
+    res.error_msg = "Entity '" + e->id().str() + "': area '" + req.area_name + "' does not exist";
+    return true;
+}
 
 ED_REGISTER_PLUGIN(OccupancyGridPublisherPlugin)
 
