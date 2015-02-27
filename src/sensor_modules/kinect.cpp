@@ -196,22 +196,50 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         }
     }
 
+//    //! 1) Lookup sensor map transform
+//    geo::Pose3D sensor_pose;
+//    {
+//        tue::ScopedTimer t(profiler_, "1) lookup sensor_tf");
+
+//        if(!getSensorPoseMap(rgbd_image->getTimestamp(), sensor_pose))
+//        {
+//            return;
+//        }
+//        else
+//        {
+//            geo::Pose3D corr;
+//            corr.setOrigin(geo::Vector3(0, 0, 0));
+//            corr.setRPY(3.1415, 0, 0);
+//            sensor_pose = sensor_pose* corr; // geolib fix
+//        }
+//    }
+
     //! 1) Lookup sensor map transform
     geo::Pose3D sensor_pose;
+
     {
         tue::ScopedTimer t(profiler_, "1) lookup sensor_tf");
 
-        if(!getSensorPoseMap(rgbd_image->getTimestamp(), sensor_pose))
+        if (!tf_listener_.waitForTransform("map", rgbd_image->getFrameId(), ros::Time(rgbd_image->getTimestamp()), ros::Duration(0.5)))
         {
+            ROS_WARN("[ED KINECT PLUGIN] Could not get sensor pose");
             return;
         }
-        else
+
+        try
         {
-            geo::Pose3D corr;
-            corr.setOrigin(geo::Vector3(0, 0, 0));
-            corr.setRPY(3.1415, 0, 0);
-            sensor_pose = sensor_pose* corr; // geolib fix
+            tf::StampedTransform t_sensor_pose;
+            tf_listener_.lookupTransform("map", rgbd_image->getFrameId(), ros::Time(rgbd_image->getTimestamp()), t_sensor_pose);
+            geo::convert(t_sensor_pose, sensor_pose);
         }
+        catch(tf::TransformException& ex)
+        {
+            ROS_WARN("[ED KINECT PLUGIN] Could not get sensor pose: %s", ex.what());
+            return;
+        }
+
+        // Convert from ROS coordinate frame to geolib coordinate frame
+        sensor_pose.R = sensor_pose.R * geo::Matrix3(1, 0, 0, 0, -1, 0, 0, 0, -1);
     }
 
     //! 2) Preprocess image: remove all data points that are behind world model entities
