@@ -95,6 +95,18 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
 // ----------------------------------------------------------------------------------------------------
 
+bool ModelLoader::exists(const std::string& type) const
+{
+    std::map<std::string, tue::config::DataConstPointer>::const_iterator it = model_cache_.find(type);
+    if (it != model_cache_.end())
+        return true;
+
+    tue::filesystem::Path model_path = getModelPath(type);
+    return model_path.exists();
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error)
 {
     std::string model_path;

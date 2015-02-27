@@ -29,6 +29,8 @@ public:
     bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id,
                 UpdateRequest& req, std::stringstream& error, const std::string& model_path = "");
 
+    bool exists(const std::string& type) const;
+
 private:
 
     // Model name to model data
