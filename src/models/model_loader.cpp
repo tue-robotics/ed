@@ -42,14 +42,6 @@ tue::filesystem::Path getModelPath(const std::string& type)
 
 // ----------------------------------------------------------------------------------------------------
 
-tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::string& model_path_str)
-{
-    std::stringstream error;
-    return loadModelData(type, model_path_str, error);
-}
-
-// ----------------------------------------------------------------------------------------------------
-
 tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::string& model_path_str, std::stringstream& error)
 {
     std::map<std::string, tue::config::DataConstPointer>::iterator it = model_cache_.find(type);
@@ -103,14 +95,14 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
 // ----------------------------------------------------------------------------------------------------
 
-bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest& req)
+bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error)
 {
     std::string model_path;
-    tue::config::DataConstPointer data = loadModelData(type, model_path);
+    tue::config::DataConstPointer data = loadModelData(type, model_path, error);
     if (data.empty())
         return false;
 
-    if (!create(data, id, "", req, model_path))
+    if (!create(data, id, "", req, error, model_path))
         return false;
 
     return true;
@@ -118,9 +110,9 @@ bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest&
 
 // ----------------------------------------------------------------------------------------------------
 
-bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateRequest& req)
+bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateRequest& req, std::stringstream& error)
 {
-    if (!create(data, "", "", req, ""))
+    if (!create(data, "", "", req, error, ""))
         return false;
 
     return true;
@@ -128,7 +120,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateReques
 
 // ----------------------------------------------------------------------------------------------------
 
-bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id, UpdateRequest& req, const std::string& model_path)
+bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id,
+                         UpdateRequest& req, std::stringstream& error, const std::string& model_path)
 {
     tue::config::Reader r(data);
 
@@ -156,9 +149,9 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     if (r.value("type", type, tue::config::OPTIONAL))
     {
         std::string super_model_path;
-        tue::config::DataConstPointer super_data = loadModelData(type, super_model_path);
-        if (!super_data.empty())
-            create(super_data, id, parent_id, req, super_model_path);
+        tue::config::DataConstPointer super_data = loadModelData(type, super_model_path, error);
+        if (super_data.empty() || !create(super_data, id, parent_id, req, error, super_model_path))
+            return false;
     }
 
     // Set type
@@ -191,7 +184,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     {
         while (r.nextArrayItem())
         {
-            create(r.data(), "", id, req);
+            if (!create(r.data(), "", id, req, error))
+                return false;
         }
 
         r.endArray();
@@ -202,9 +196,11 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     {
         if (!model_path.empty() && tue::filesystem::Path(model_path).exists())
         {
-            geo::ShapePtr shape = loadShape(model_path, r, shape_cache_);
+            geo::ShapePtr shape = loadShape(model_path, r, shape_cache_, error);
             if (shape)
                 req.setShape(id, shape);
+            else
+                return false;
         }
 
         r.endGroup();

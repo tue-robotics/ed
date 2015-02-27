@@ -45,11 +45,13 @@ int main(int argc, char **argv)
     std::map<std::string, geo::ShapePtr> shape_cache; // necessary for call, not used
 
     // Call shape loader. This will generate a mesh from the file
-    geo::ShapePtr shape = ed::models::loadShape("", cfg, shape_cache);
+    std::stringstream error;
+    geo::ShapePtr shape = ed::models::loadShape("", cfg, shape_cache, error);
 
     if (!shape)
     {
-        std::cout << "Could not generate mesh from file." << std::endl;
+        std::cout << "Could not generate mesh from file:" << std::endl;
+        std::cout << error.str() << std::endl;
         return 1;
     }
 

@@ -164,8 +164,12 @@ void Server::reset()
 {
     // Prepare default world-addition request
     UpdateRequest req_world;
-    if (!model_loader_.create(world_name_, world_name_, req_world))
+    std::stringstream error;
+    if (!model_loader_.create(world_name_, world_name_, req_world, error))
+    {
+        ROS_ERROR_STREAM("[ED] While resetting world: " << error.str());
         return;
+    }
 
     // Prepare deletion request
     UpdateRequest req_delete;
@@ -427,8 +431,12 @@ void Server::update(const std::string& update_str, std::string& error)
 void Server::initializeWorld()
 {
     ed::UpdateRequest req;
-    if (!model_loader_.create(world_name_, world_name_, req))
+    std::stringstream error;
+    if (!model_loader_.create(world_name_, world_name_, req, error))
+    {
+        ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
         return;
+    }
 
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
