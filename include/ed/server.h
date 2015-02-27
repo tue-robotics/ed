@@ -82,10 +82,6 @@ private:
     tue::Profiler profiler_;
     ros::Publisher pub_stats_;
 
-    //! Visualization
-    ros::Publisher vis_pub_;
-    bool visualize_;
-
     //! Merge the entities!
     void mergeEntities(const WorldModelPtr& world_model, double not_updated_time, double overlap_fraction);
 

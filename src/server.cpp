@@ -128,8 +128,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         config.endArray();
     }
 
-    config.value("visualize", visualize_);
-
     // Initialize profiler
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
@@ -151,11 +149,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
 void Server::initialize()
 {
-    // Initialize visualization
-    if (visualize_) {
-        ros::NodeHandle nh;
-        vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("world_model",0,false);
-    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -309,13 +302,6 @@ void Server::update()
             it->second->update(new_world_model, req);
             new_world_model->update(req);
         }
-    }
-
-    // Visualize the world model
-    if (visualize_)
-    {
-        tue::ScopedTimer t(profiler_, "visualization");
-        helpers::visualization::publishWorldModelVisualizationMarkerArray(*world_model_, vis_pub_);
     }
 
     // Perception update (make soup of the entity measurements)
