@@ -58,7 +58,7 @@ plugins:
   parameters:
       frequency: 10
       resolution: 0.05
-      topic: /ed_map
+      topic: /map_planner
       frame_id: /map
       sim_time: 1.0
       object_persistence_time: 10
@@ -67,7 +67,7 @@ plugins:
   parameters:
       frequency: 1
       resolution: 0.025
-      topic: /ed_loc_map
+      topic: /map
       frame_id: /map
       specifier: localizable
       sim_time: 0.0
