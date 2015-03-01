@@ -22,11 +22,14 @@ public:
 
     ~ModelLoader();
 
-    bool create(const UUID& id, const std::string& type, UpdateRequest& req);
+    bool create(const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error);
 
-    bool create(const tue::config::DataConstPointer& data, UpdateRequest& req);
+    bool create(const tue::config::DataConstPointer& data, UpdateRequest& req, std::stringstream& error);
 
-    bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id, UpdateRequest& req, const std::string& model_path = "");
+    bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id,
+                UpdateRequest& req, std::stringstream& error, const std::string& model_path = "");
+
+    bool exists(const std::string& type) const;
 
 private:
 
@@ -35,8 +38,6 @@ private:
 
     // Shape filename to shape
     std::map<std::string, geo::ShapePtr> shape_cache_;
-
-    tue::config::DataConstPointer loadModelData(const std::string& type, std::string& model_path_str);
 
     tue::config::DataConstPointer loadModelData(const std::string& type, std::string& model_path_str, std::stringstream& error);
 

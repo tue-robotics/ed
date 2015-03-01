@@ -167,7 +167,7 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, int d_start, std::v
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::Reader cfg)
+geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::Reader cfg, std::stringstream& error)
 {
     double resolution, origin_x, origin_y, origin_z, blockheight;
     if (!(cfg.value("origin_x", origin_x) &&
@@ -330,7 +330,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg, std::map<std::string, geo::ShapePtr>& shape_cache)
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
+                        std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
     geo::ShapePtr shape;
 
@@ -354,7 +355,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg, 
             std::string xt = shape_path.extension();
             if (xt == ".pgm")
             {
-                shape = getHeightMapShape(shape_path, cfg);
+                shape = getHeightMapShape(shape_path, cfg, error);
             }
             else if (xt == ".geo")
             {
@@ -372,19 +373,19 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg, 
             }
 
             if (!shape)
-                std::cout << "ed::models::loadShape() : ERROR while loading shape at " << shape_path.string() << std::endl;
+                error << "ed::models::loadShape() : ERROR while loading shape at " << shape_path.string() << std::endl;
             else
                 // Add to cache
                 shape_cache[shape_path.string()] = shape;
         }
         else
         {
-            std::cout << "ed::models::loadShape() : ERROR while loading shape of at " << shape_path.string() << " ; file does not exist" << std::endl;
+            error << "ed::models::loadShape() : ERROR while loading shape of at " << shape_path.string() << " ; file does not exist" << std::endl;
         }
     }
     else
     {
-        std::cout << "ed::models::loadShape() : ERROR while loading shape, no path specified in model.yaml" << std::endl;
+        error << "ed::models::loadShape() : ERROR while loading shape, no path specified in model.yaml" << std::endl;
     }
 
     return shape;

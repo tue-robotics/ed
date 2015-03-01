@@ -25,6 +25,14 @@
 
 #include <ros/package.h>
 
+#include <signal.h>
+#include <stdio.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <boost/thread.hpp>
+
 ed::Server* ed_wm;
 std::string update_request_;
 
@@ -194,9 +202,53 @@ bool getEnvironmentVariable(const std::string& var, std::string& value)
 
 // ----------------------------------------------------------------------------------------------------
 
+void signalHandler( int sig )
+{
+    // Make sure to remove all signal handlers
+    signal(SIGSEGV, SIG_DFL);
+    signal(SIGABRT, SIG_DFL);
+
+    std::cout << "\033[38;5;1m";
+    std::cout << "[ED] ED Crashed! This was caused by ";
+
+    if (sig == SIGSEGV)
+        std::cout << "a segmentation fault." << std::endl;
+    else if (sig == SIGABRT)
+        std::cout << "SIGABRT (possibly an invalid assert)." << std::endl;
+
+    std::cout << std::endl;
+
+    std::map<boost::thread::id, std::string>::const_iterator it = ed_wm->pluginThreadIdMap().find(boost::this_thread::get_id());
+
+    if (it != ed_wm->pluginThreadIdMap().end())
+        std::cout << "Caused by plugin '" << it->second << "'" << std::endl;
+    else
+        std::cout << "Possibly caused by main thread" << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "Here's the stack trace: " << std::endl << std::endl;
+
+    void *array[10];
+    size_t size;
+
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+
+    // print out all the frames to stderr
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    std::cout << "\033[0m" << std::endl;
+    exit(1);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "ed");
+
+    // register signal SIGINT and signal handler
+    signal(SIGSEGV, signalHandler);
+    signal(SIGABRT, signalHandler);
 
     ed_wm = new ed::Server();
 
@@ -246,28 +298,30 @@ int main(int argc, char** argv)
     // - - - - - - - - - - - - service initialization - - - - - - - - - - - -
 
     ros::NodeHandle nh;
+    ros::NodeHandle nh_private("~");
 
     ros::CallbackQueue cb_queue;
 
     ros::AdvertiseServiceOptions opt_simple_query =
             ros::AdvertiseServiceOptions::create<ed::SimpleQuery>(
-                "/ed/simple_query", srvSimpleQuery, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_simple_query = nh.advertiseService(opt_simple_query);
+                "simple_query", srvSimpleQuery, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_simple_query = nh_private.advertiseService(opt_simple_query);
 
     ros::AdvertiseServiceOptions opt_reset =
             ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
-                "/ed/reset", srvReset, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_reset = nh.advertiseService(opt_reset);
+                "reset", srvReset, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_reset = nh_private.advertiseService(opt_reset);
 
     ros::AdvertiseServiceOptions opt_load_plugin =
             ros::AdvertiseServiceOptions::create<ed::LoadPlugin>(
-                "/ed/load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_load_plugin = nh.advertiseService(opt_load_plugin);
+                "load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_load_plugin = nh_private.advertiseService(opt_load_plugin);
 
     ros::AdvertiseServiceOptions opt_update =
             ros::AdvertiseServiceOptions::create<ed::UpdateSrv>(
-                "/ed/update", srvUpdate, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_update = nh.advertiseService(opt_update);
+                "update", srvUpdate, ros::VoidPtr(), &cb_queue);
+    ros::ServiceServer srv_update = nh_private.advertiseService(opt_update);
+
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

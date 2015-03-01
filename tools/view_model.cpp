@@ -30,9 +30,11 @@ int main(int argc, char **argv)
     ed::UpdateRequest req;
 
     ed::models::ModelLoader model_loader;
-    if (!model_loader.create(model_name, model_name, req))
+    std::stringstream error;
+    if (!model_loader.create(model_name, model_name, req, error))
     {
-        std::cout << "Model could not be loaded." << std::endl;
+        std::cout << "Model could not be loaded:" << std::endl << std::endl;
+        std::cout << error.str() << std::endl;
         return 1;
     }
 

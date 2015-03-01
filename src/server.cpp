@@ -128,8 +128,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         config.endArray();
     }
 
-    config.value("visualize", visualize_);
-
     // Initialize profiler
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
@@ -142,7 +140,7 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     if (pub_stats_.getTopic() == "")
     {
         ros::NodeHandle nh;
-        pub_stats_ = nh.advertise<std_msgs::String>("/ed/stats", 10);
+        pub_stats_ = nh.advertise<std_msgs::String>("ed/stats", 10);
     }
 
 }
@@ -151,20 +149,42 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
 void Server::initialize()
 {
-    // Initialize visualization
-    if (visualize_) {
-        ros::NodeHandle nh;
-        vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("world_model",0,false);
-    }
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void Server::reset()
 {
-    world_model_.reset(new WorldModel);
+    // Prepare default world-addition request
+    UpdateRequest req_world;
+    std::stringstream error;
+    if (!model_loader_.create(world_name_, world_name_, req_world, error))
+    {
+        ROS_ERROR_STREAM("[ED] While resetting world: " << error.str());
+        return;
+    }
 
-    initializeWorld();
+    // Prepare deletion request
+    UpdateRequest req_delete;
+    for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
+        req_delete.removeEntity((*it)->id());
+
+    // Create world model copy
+    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+
+    // Apply the requests (first deletion, than default world creation)
+    new_world_model->update(req_delete);
+    new_world_model->update(req_world);
+
+    // Swap to new world model
+    world_model_ = new_world_model;
+
+    // Notify plugins
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
+        const PluginContainerPtr& c = *it;
+        c->setWorld(new_world_model);
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -210,6 +230,8 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
     // Start the plugin
     container->runThreaded();
 
+    plugin_thread_id_map_[container->threadId()] = plugin_name;
+
     return container;
 }
 
@@ -237,11 +259,11 @@ void Server::stepPlugins()
             plugins_with_requests.push_back(c);
 
             // Temporarily for Javier
-            for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
-            {
-                PluginContainerPtr c = *it;
-                c->plugin()->updateRequestCallback(*c->updateRequest());
-            }
+//            for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+//            {
+//                PluginContainerPtr c = *it;
+//                c->plugin()->updateRequestCallback(*c->updateRequest());
+//            }
         }
     }
 
@@ -250,7 +272,7 @@ void Server::stepPlugins()
         // Set the new (updated) world
         for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
         {
-            PluginContainerPtr c = *it;
+            const PluginContainerPtr& c = *it;
             c->setWorld(new_world_model);
         }
 
@@ -282,13 +304,6 @@ void Server::update()
             it->second->update(new_world_model, req);
             new_world_model->update(req);
         }
-    }
-
-    // Visualize the world model
-    if (visualize_)
-    {
-        tue::ScopedTimer t(profiler_, "visualization");
-        helpers::visualization::publishWorldModelVisualizationMarkerArray(*world_model_, vis_pub_);
     }
 
     // Perception update (make soup of the entity measurements)
@@ -404,8 +419,12 @@ void Server::update(const std::string& update_str, std::string& error)
 void Server::initializeWorld()
 {
     ed::UpdateRequest req;
-    if (!model_loader_.create(world_name_, world_name_, req))
+    std::stringstream error;
+    if (!model_loader_.create(world_name_, world_name_, req, error))
+    {
+        ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
         return;
+    }
 
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);

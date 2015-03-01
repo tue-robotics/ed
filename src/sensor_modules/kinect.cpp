@@ -2,7 +2,6 @@
 
 #include "ed/association_localization_modules/point_normal_alm.h"
 #include "ed/association_localization_modules/polygon_height_alm.h"
-#include "ed/association_localization_modules/relative_alm.h"
 
 #include "ed/segmentation_modules/euclidean_clustering_sm.h"
 
@@ -114,22 +113,13 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
             {
                 if (type == "PointNormal")
                 {
-                    std::cout << "Loading RGBD Association module type '" << type << "'" << std::endl;
                     RGBDALModulePtr alm(new PointNormalALM());
                     alm->configure(config);
                     al_modules_[type] = alm;
                 }
                 else if (type == "PolygonHeight")
                 {
-                    std::cout << "Loading RGBD Association module type '" << type << "'" << std::endl;
                     RGBDALModulePtr alm(new PolygonHeightALM());
-                    alm->configure(config);
-                    al_modules_[type] = alm;
-                }
-                else if (type == "RelativeLocalization")
-                {
-                    std::cout << "Loading RGBD Association module type '" << type << "'" << std::endl;
-                    RGBDALModulePtr alm(new RelativeLocalizationModule());
                     alm->configure(config);
                     al_modules_[type] = alm;
                 }
@@ -167,12 +157,11 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
     }
 
     // get sensor config
-    std::string source_str, frame_str, improved_frame_str;
-    if (config.value("source", source_str) && config.value("frame_id", frame_str) && config.value("improved_frame_id", improved_frame_str))
+    std::string source_str, frame_str;
+    if (config.value("source", source_str) && config.value("frame_id", frame_str))
     {
         source_ = source_str;
         frame_ = frame_str;
-        improved_frame_ = improved_frame_str;
 
         // Initialize profiler
         profiler_.setName("kinect_sensor");
@@ -202,33 +191,62 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         rgbd_image = rgbd_client_.nextImage();
         if (!rgbd_image)
         {
-            ROS_WARN_STREAM("No RGBD image available for sensor '" << source_ << "', is the RGBD Server running?");
+    //       ROS_WARN_STREAM("No RGBD image available for sensor '" << source_ << "', is the RGBD Server running?");
             return;
         }
     }
+
+//    //! 1) Lookup sensor map transform
+//    geo::Pose3D sensor_pose;
+//    {
+//        tue::ScopedTimer t(profiler_, "1) lookup sensor_tf");
+
+//        if(!getSensorPoseMap(rgbd_image->getTimestamp(), sensor_pose))
+//        {
+//            return;
+//        }
+//        else
+//        {
+//            geo::Pose3D corr;
+//            corr.setOrigin(geo::Vector3(0, 0, 0));
+//            corr.setRPY(3.1415, 0, 0);
+//            sensor_pose = sensor_pose* corr; // geolib fix
+//        }
+//    }
 
     //! 1) Lookup sensor map transform
     geo::Pose3D sensor_pose;
+
     {
         tue::ScopedTimer t(profiler_, "1) lookup sensor_tf");
 
-        if(!getSensorPoseMap(rgbd_image->getTimestamp(), sensor_pose))
+        if (!tf_listener_.waitForTransform("map", rgbd_image->getFrameId(), ros::Time(rgbd_image->getTimestamp()), ros::Duration(0.5)))
         {
-            ROS_WARN_STREAM("No sensor pose available for sensor '" << source_ << "'");
+            ROS_WARN("[ED KINECT PLUGIN] Could not get sensor pose");
             return;
         }
-        else
+
+        try
         {
-            // Convert from ROS frame to Geolib frame
-            sensor_pose.R = sensor_pose.R * geo::Matrix3(1, 0, 0, 0, -1, 0, 0, 0, -1);
+            tf::StampedTransform t_sensor_pose;
+            tf_listener_.lookupTransform("map", rgbd_image->getFrameId(), ros::Time(rgbd_image->getTimestamp()), t_sensor_pose);
+            geo::convert(t_sensor_pose, sensor_pose);
         }
+        catch(tf::TransformException& ex)
+        {
+            ROS_WARN("[ED KINECT PLUGIN] Could not get sensor pose: %s", ex.what());
+            return;
+        }
+
+        // Convert from ROS coordinate frame to geolib coordinate frame
+        sensor_pose.R = sensor_pose.R * geo::Matrix3(1, 0, 0, 0, -1, 0, 0, 0, -1);
     }
 
-    //! 2) Preprocess image: remove all data points that are behind world model entities (Why?)
-//    {
-//        tue::ScopedTimer t(profiler_, "2) filter points behind wm");
-//        filterPointsBehindWorldModel(world_model, sensor_pose, rgbd_image, vis_marker_pub_);
-//    }
+    //! 2) Preprocess image: remove all data points that are behind world model entities
+    {
+        tue::ScopedTimer t(profiler_, "2) filter points behind wm");
+        filterPointsBehindWorldModel(world_model, sensor_pose, rgbd_image, vis_marker_pub_);
+    }
 
     // Construct RGBD Data
     RGBDData rgbd_data;
@@ -257,24 +275,20 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
     for(unsigned int i = 0; i < pc_mask->size(); ++i)
         (*pc_mask)[i] = i;
 
-
     //! 6) Do the Association and Localization on the entities in the frustrum (UPDATING)
     {
         tue::ScopedTimer t(profiler_, "6) association and localisation");
 
         ALMResult alm_result;
-        alm_result.sensor_pose_corrected = rgbd_data.sensor_pose;
 
         for (std::map<std::string, RGBDALModulePtr>::const_iterator it = al_modules_.begin(); it != al_modules_.end(); ++it) {
-
             if (pc_mask->empty())
                 break;
             profiler_.startTimer(it->second->getType());
             it->second->process(rgbd_data, pc_mask, world_model, alm_result);
-            req.setPose(improved_frame_, alm_result.sensor_pose_corrected);
-
             profiler_.stopTimer();
         }
+
 
         // Process ALM result
         for(std::map<UUID, std::vector<MeasurementConstPtr> >::const_iterator it = alm_result.associations.begin();
@@ -284,7 +298,6 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
             req.addMeasurements(it->first, measurements);
         }
     }
-
 
     //! 7) Segment the residual sensor data
     if (!pc_mask->empty())
@@ -310,7 +323,6 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
 
         profiler_.stopTimer();
     }
-
 
     //! 8) Clearing
     {
@@ -339,7 +351,6 @@ void Kinect::update(const WorldModelConstPtr& world_model, UpdateRequest& req)
         for (std::vector<UUID>::const_iterator it = entities_in_view_not_associated.begin(); it != entities_in_view_not_associated.end(); ++it)
             req.removeEntity(*it);
     }
-
 
     //! 8) Visualization
     if (visualize_)
