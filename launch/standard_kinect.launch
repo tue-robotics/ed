@@ -11,7 +11,7 @@
 
 
 <!-- ED -->
-<node name="ed_server" pkg="ed" type="ed_server" args="$(arg ed_config)" output="screen" />
+<node name="ed_server" pkg="ed" type="ed" args="$(arg ed_config)" output="screen" />
 <!-- launch-prefix="valgrind" -->
 
 
