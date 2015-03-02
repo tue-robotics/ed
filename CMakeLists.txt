@@ -148,6 +148,8 @@ target_link_libraries(ed_kinect ed_segmentation ed_association)
 add_dependencies(ed_kinect ${PROJECT_NAME}_gencpp)
 
 add_library(ed_visualization
+    include/ed/helpers/image_publisher.h
+    src/helpers/image_publisher.cpp
     src/helpers/visualization.cpp
 )
 target_link_libraries(ed_visualization ${catkin_LIBRARIES})
