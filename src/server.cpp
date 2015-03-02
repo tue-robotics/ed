@@ -28,6 +28,8 @@
 #include "ed/serialization/serialization.h"
 #include <tue/config/writer.h>
 
+#include "ed/error_context.h"
+
 namespace ed
 {
 
@@ -63,6 +65,8 @@ std::string Server::getFullLibraryPath(const std::string& lib)
 
 void Server::configure(tue::Configuration& config, bool reconfigure)
 {
+    ErrorContext errc("Server", "configure");
+
     // For now, do not reconfigure perception
     if (!reconfigure && config.readGroup("perception"))
     {
@@ -155,6 +159,8 @@ void Server::initialize()
 
 void Server::reset()
 {
+    ErrorContext errc("Server", "reset");
+
     // Prepare default world-addition request
     UpdateRequest req_world;
     std::stringstream error;
@@ -191,6 +197,8 @@ void Server::reset()
 
 PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, tue::Configuration config)
 {    
+    ErrorContext errc("Server", "loadPlugin");
+
     config.setErrorContext("While loading plugin '" + plugin_name + "': ");
 
     if (lib_file.empty())
@@ -237,6 +245,8 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
 
 void Server::stepPlugins()
 {   
+    ErrorContext errc("Server", "stepPlugins");
+
     WorldModelPtr new_world_model;
 
     // collect and apply all update requests
@@ -289,6 +299,8 @@ void Server::stepPlugins()
 
 void Server::update()
 {
+    ErrorContext errc("Server", "update");
+
     tue::ScopedTimer t(profiler_, "ed");
 
     // Create world model copy (shallow)

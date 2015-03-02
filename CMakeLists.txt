@@ -99,6 +99,10 @@ add_library(ed_core
     # DDP is used by measurement.cpp, so put here
     src/helpers/depth_data_processing.cpp
     src/helpers/clipper/clipper.cpp
+
+    src/error_context.cpp
+    include/ed/error_context.h
+
     ${HEADER_FILES}
 )
 target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
