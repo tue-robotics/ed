@@ -109,9 +109,11 @@ void RelativeLocalizationModule::process(RGBDData& sensor_data,
     //    pcl::PointCloud<pcl::PointNormal> final_pc;
     pcl::PointCloud<pcl::PointNormal>::Ptr final_pc(new pcl::PointCloud<pcl::PointNormal>);
 
-    pcl::IterativeClosestPoint<pcl::PointNormal, pcl::PointNormal> icp;
+    pcl::IterativeClosestPointWithNormals<pcl::PointNormal, pcl::PointNormal> icp;
     icp.setInputSource(sensor_data.point_cloud_with_normals);
     icp.setInputTarget(world_model_npcl);
+
+    icp.setRANSACIterations(1000);
     icp.align(*final_pc);
 
     //    std::cout << "Original pose = " << sensor_data.sensor_pose << std::endl;
