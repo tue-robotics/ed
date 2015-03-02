@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <boost/thread.hpp>
+boost::thread::id main_thread_id;
 
 ed::Server* ed_wm;
 std::string update_request_;
@@ -218,15 +219,25 @@ void signalHandler( int sig )
 
     std::cout << std::endl;
 
-    std::map<boost::thread::id, std::string>::const_iterator it = ed_wm->pluginThreadIdMap().find(boost::this_thread::get_id());
-
-    if (it != ed_wm->pluginThreadIdMap().end())
-        std::cout << "Caused by plugin '" << it->second << "'" << std::endl;
+    char name[1000];
+    size_t name_size = 1000;
+    if (pthread_getname_np(pthread_self(), name, name_size) == 0)
+    {
+        if (std::string(name) == "ed_main")
+        {
+            if (boost::this_thread::get_id() == main_thread_id)
+                std::cout << "Caused by main thread." << std::endl;
+            else
+                std::cout << "Responsible thread has no name." << std::endl;
+        }
+        else
+            std::cout << "Responsible thread: '" << name << "'." << std::endl;
+    }
     else
-        std::cout << "Possibly caused by main thread" << std::endl;
+        std::cout << "Could not get name of responsible thread." << std::endl;
 
     std::cout << std::endl;
-    std::cout << "Here's the stack trace: " << std::endl << std::endl;
+    std::cout << "Here's the backtrace: " << std::endl << std::endl;
 
     void *array[10];
     size_t size;
@@ -246,11 +257,19 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "ed");
 
+    // Set the name of the main thread
+    pthread_setname_np(pthread_self(), "ed_main");
+
+    // Remember the main thread id
+    main_thread_id = boost::this_thread::get_id();
+
     // register signal SIGINT and signal handler
     signal(SIGSEGV, signalHandler);
     signal(SIGABRT, signalHandler);
 
-    ed_wm = new ed::Server();
+    // Create the ED server
+    ed::Server server;
+    ed_wm = &server;
 
     // - - - - - - - - - - - - - - - configure - - - - - - - - - - - - - - -
 
@@ -355,8 +374,6 @@ int main(int argc, char** argv)
 
         r.sleep();
     }
-
-    delete ed_wm;
 
     return 0;
 }

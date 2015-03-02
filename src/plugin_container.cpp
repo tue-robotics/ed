@@ -91,6 +91,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
 void PluginContainer::runThreaded()
 {
     thread_ = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&PluginContainer::run, this)));
+    pthread_setname_np(thread_->native_handle(), name_.c_str());
 }
 
 // --------------------------------------------------------------------------------
