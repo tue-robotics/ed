@@ -2,6 +2,7 @@
 
 #include "ed/association_localization_modules/point_normal_alm.h"
 #include "ed/association_localization_modules/polygon_height_alm.h"
+#include "ed/association_localization_modules/relative_alm.h"
 
 #include "ed/segmentation_modules/euclidean_clustering_sm.h"
 
@@ -120,6 +121,12 @@ void Kinect::configure(tue::Configuration config, bool reconfigure)
                 else if (type == "PolygonHeight")
                 {
                     RGBDALModulePtr alm(new PolygonHeightALM());
+                    alm->configure(config);
+                    al_modules_[type] = alm;
+                }
+                else if (type == "RelativeLocalization")
+                {
+                    RGBDALModulePtr alm(new RelativeLocalizationModule ());
                     alm->configure(config);
                     al_modules_[type] = alm;
                 }
