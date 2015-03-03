@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <boost/thread.hpp>
+#include "ed/error_context.h"
 boost::thread::id main_thread_id;
 
 ed::Server* ed_wm;
@@ -210,14 +211,24 @@ void signalHandler( int sig )
     signal(SIGABRT, SIG_DFL);
 
     std::cout << "\033[38;5;1m";
-    std::cout << "[ED] ED Crashed! This was caused by ";
+    std::cout << "[ED] ED Crashed!" << std::endl << std::endl;
 
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // Print signal
+
+    std::cout << "    Signal: ";
     if (sig == SIGSEGV)
-        std::cout << "a segmentation fault." << std::endl;
+        std::cout << "segmentation fault";
     else if (sig == SIGABRT)
-        std::cout << "SIGABRT (possibly an invalid assert)." << std::endl;
+        std::cout << "abort";
+    else
+        std::cout << "unknown";
+    std::cout << std::endl << std::endl;
 
-    std::cout << std::endl;
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // Print thread name
+
+    std::cout << "    Thread: ";
 
     char name[1000];
     size_t name_size = 1000;
@@ -226,18 +237,52 @@ void signalHandler( int sig )
         if (std::string(name) == "ed_main")
         {
             if (boost::this_thread::get_id() == main_thread_id)
-                std::cout << "Caused by main thread." << std::endl;
+                std::cout << "main";
             else
-                std::cout << "Responsible thread has no name." << std::endl;
+                std::cout << "name unknown (id = " << boost::this_thread::get_id() << ")";
         }
         else
-            std::cout << "Responsible thread: '" << name << "'." << std::endl;
+            std::cout << name;
     }
     else
-        std::cout << "Could not get name of responsible thread." << std::endl;
+        std::cout << "name unknown (id = " << boost::this_thread::get_id() << ")";
 
-    std::cout << std::endl;
-    std::cout << "Here's the backtrace: " << std::endl << std::endl;
+    std::cout << std::endl << std::endl;
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // Print error context
+
+    std::cout << "    Error context: ";
+
+    ed::ErrorContextData* edata = ed::ErrorContext::data();
+    if (edata && !edata->stack.empty())
+    {
+        std::cout << std::endl << std::endl;
+
+        for(unsigned int i = edata->stack.size(); i > 0; --i)
+        {
+            const char* message = edata->stack[i-1].first;
+            const char* value = edata->stack[i-1].second;
+
+            if (message)
+            {
+                std::cout << "        " << message;
+                if (value)
+                    std::cout << " " << value;
+                std::cout << std::endl;
+            }
+        }
+    }
+    else
+        std::cout << "unknown";
+
+    std::cout << std::endl << std::endl;
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // Print backtrace
+
+    std::cout << "--------------------------------------------------" << std::endl;
+    std::cout << "Backtrace: " << std::endl << std::endl;
 
     void *array[10];
     size_t size;
@@ -267,11 +312,15 @@ int main(int argc, char** argv)
     signal(SIGSEGV, signalHandler);
     signal(SIGABRT, signalHandler);
 
+    ed::ErrorContext errc("Start ED server", "init");
+
     // Create the ED server
     ed::Server server;
     ed_wm = &server;
 
     // - - - - - - - - - - - - - - - configure - - - - - - - - - - - - - - -
+
+    errc.change("Start ED server", "configure");
 
     // Get plugin paths
     std::string ed_plugin_path;
@@ -316,6 +365,8 @@ int main(int argc, char** argv)
 
     // - - - - - - - - - - - - service initialization - - - - - - - - - - - -
 
+    errc.change("Start ED server", "service init");
+
     ros::NodeHandle nh;
     ros::NodeHandle nh_private("~");
 
@@ -344,6 +395,8 @@ int main(int argc, char** argv)
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    errc.change("Start ED server", "init");
+
     // Init ED
     ed_wm->initialize();
 
@@ -352,6 +405,10 @@ int main(int argc, char** argv)
     ed::EventClock trigger_stats(2);
     ed::EventClock trigger_plugins(1000);
     ed::EventClock trigger_cb(100);
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    errc.change("ED server", "main loop");
 
     ros::Rate r(1000);
     while(ros::ok()) {

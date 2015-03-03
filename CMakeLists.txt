@@ -99,6 +99,10 @@ add_library(ed_core
     # DDP is used by measurement.cpp, so put here
     src/helpers/depth_data_processing.cpp
     src/helpers/clipper/clipper.cpp
+
+    src/error_context.cpp
+    include/ed/error_context.h
+
     ${HEADER_FILES}
 )
 target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
@@ -145,6 +149,8 @@ target_link_libraries(ed_kinect ed_segmentation ed_association)
 add_dependencies(ed_kinect ${PROJECT_NAME}_gencpp)
 
 add_library(ed_visualization
+    include/ed/helpers/image_publisher.h
+    src/helpers/image_publisher.cpp
     src/helpers/visualization.cpp
 )
 target_link_libraries(ed_visualization ${catkin_LIBRARIES})

@@ -41,6 +41,9 @@ void PerceptionWorker::start()
 
     state_ = RUNNING;
     processing_thread_ = boost::thread(boost::bind(&PerceptionWorker::run, this));
+
+    std::string thread_name = "ed-perception";
+    pthread_setname_np(processing_thread_.native_handle(), thread_name.c_str());
 }
 
 // ----------------------------------------------------------------------------------------------------
