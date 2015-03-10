@@ -35,7 +35,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     }
 
     nh_ = new ros::NodeHandle();
-    ros::ServiceClient client = nh_->serviceClient<ed::LoadPlugin>("/ed/load_plugin");
+    ros::ServiceClient client = nh_->serviceClient<ed::LoadPlugin>("ed/load_plugin");
     client.waitForExistence();
 
     ed::LoadPlugin srv;
@@ -66,7 +66,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     {
         // Initialize connection with the probe
         probe_name_ = probe_name;
-        srv_probe_ = nh_->serviceClient<tue_serialization::BinaryService>("/ed/probe/" + probe_name_);
+        srv_probe_ = nh_->serviceClient<tue_serialization::BinaryService>("ed/probe/" + probe_name_);
         srv_probe_.waitForExistence();
     }
 }

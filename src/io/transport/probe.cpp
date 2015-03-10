@@ -28,7 +28,7 @@ void Probe::initialize()
 
     ros::AdvertiseServiceOptions opt_srv =
             ros::AdvertiseServiceOptions::create<tue_serialization::BinaryService>(
-                "/ed/probe/" + name(), boost::bind(&Probe::srvCallback, this, _1, _2),
+                "ed/probe/" + name(), boost::bind(&Probe::srvCallback, this, _1, _2),
                 ros::VoidPtr(), &cb_queue_);
 
     srv_ = nh.advertiseService(opt_srv);
