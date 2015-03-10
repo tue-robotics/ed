@@ -59,7 +59,7 @@ generate_messages(
 ###################################
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES ed_core ed_io ed_perception
+    LIBRARIES ed_core ed_io ed_perception ed_visualization
     CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
 #  DEPENDS system_lib
 )
