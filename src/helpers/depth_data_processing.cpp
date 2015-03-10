@@ -351,6 +351,9 @@ void findEuclideanClusters(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud
     if (cloud->size() == 0) {
         return;
     }
+    if (mask->size() == 0) {
+        return;
+    }
 
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
     tree->setInputCloud (cloud, mask);

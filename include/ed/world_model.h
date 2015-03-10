@@ -23,7 +23,12 @@ public:
 
     public:
 
-        EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end()) {}
+        EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end())
+        {
+            // Skip possible zero-entities (deleted entities) at the beginning
+            while(!(*it_) && it_ != it_end_)
+                ++it_;
+        }
 
         EntityIterator(const EntityIterator& it) : it_(it.it_) {}
 
@@ -31,6 +36,7 @@ public:
 
         EntityIterator& operator++()
         {
+            // Increase iterator and skip possible zero-entities (deleted entities)
             do { ++it_; if (it_ == it_end_) break; } while (!(*it_));
             return *this;
         }
