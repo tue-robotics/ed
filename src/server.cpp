@@ -1,6 +1,5 @@
 #include "ed/server.h"
 
-#include "ed/sensor_modules/kinect.h"
 #include "ed/entity.h"
 #include "ed/measurement.h"
 #include "ed/helpers/visualization.h"
@@ -72,42 +71,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     {
         perception_.configure(config.limitScope());
         config.endGroup();
-    }
-
-    if (config.readArray("sensors"))
-    {
-        while(config.nextArrayItem())
-        {
-            std::string name;
-            if (config.value("name", name))
-            {
-                std::map<std::string, SensorModulePtr>::iterator it_sensor = sensors_.find(name);
-
-                if (it_sensor == sensors_.end())
-                {
-                    // Sensor module does not yet exist. Determine the type and create a sensor
-                    // module accordingly.
-
-                    std::string type;
-                    if (config.value("type", type))
-                    {
-                        if (type == "kinect")
-                        {
-                            SensorModulePtr sensor_mod(new Kinect(tf_listener_));
-                            sensor_mod->configure(config);
-                            sensors_[name] = sensor_mod;
-                        }
-                    }
-                }
-                else
-                {
-                    // Sensor module exists, so reconfigure
-                    it_sensor->second->configure(config, true);
-                }
-            }
-        }
-
-        config.endArray();
     }
 
     // Unload all previously loaded plugins
@@ -305,16 +268,6 @@ void Server::update()
 
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
-
-    // Sensor Measurements integration (Loop over all sensors and integrate the measurements)
-    {
-        tue::ScopedTimer t(profiler_, "sensor integration");
-        for (std::map<std::string, SensorModulePtr>::const_iterator it = sensors_.begin(); it != sensors_.end(); ++it) {
-            UpdateRequest req;
-            it->second->update(new_world_model, req);
-            new_world_model->update(req);
-        }
-    }
 
     // Perception update (make soup of the entity measurements)
     {
