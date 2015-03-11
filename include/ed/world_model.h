@@ -85,6 +85,8 @@ public:
 
     bool calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const;
 
+    const std::vector<EntityConstPtr>& entities() const { return entities_; }
+
 private:
 
     std::map<UUID, Idx> entity_map_;
