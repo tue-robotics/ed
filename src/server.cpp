@@ -230,10 +230,10 @@ void Server::stepPlugins()
             plugins_with_requests.push_back(c);
 
             // Temporarily for Javier
-            for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+            for(std::vector<PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
             {
-                PluginContainerPtr c = *it;
-                c->plugin()->updateRequestCallback(*c->updateRequest());
+                PluginContainerPtr c2 = *it;
+                c2->plugin()->updateRequestCallback(*c->updateRequest());
             }
         }
     }
