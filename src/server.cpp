@@ -232,7 +232,7 @@ void Server::stepPlugins()
             // Temporarily for Javier
             for(std::vector<PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
             {
-                PluginContainerPtr c2 = *it;
+                PluginContainerPtr c2 = *it2;
                 c2->plugin()->updateRequestCallback(*c->updateRequest());
             }
         }
