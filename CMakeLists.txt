@@ -175,6 +175,7 @@ target_link_libraries(ed_view_model ed_core)
 # ------------------------------------------------------------------------------------------------
 
 add_library(ed_hello_world_plugin examples/hello_world/hello_world_plugin.cpp)
+add_library(ed_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS
