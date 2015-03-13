@@ -10,6 +10,9 @@
 #include <boost/circular_buffer.hpp>
 #include <ros/time.h>
 
+#include "ed/variant.h"
+#include "ed/property_key.h"
+
 namespace ed
 {
 
@@ -85,6 +88,40 @@ public:
 
     const std::map<Idx, Idx>& relationsTo() const { return relations_to_; }
 
+    template<typename T>
+    const T* property(const PropertyKey<T>& key) const
+    {
+        std::map<Idx, Variant>::const_iterator it = properties_.find(key.idx);
+        if (it == properties_.end())
+            return 0;
+
+        const Variant& v = it->second;
+
+        try
+        {
+            return &v.getValue<T>();
+        }
+        catch (std::bad_cast& e)
+        {
+            return 0;
+        }
+    }
+
+    template<typename T>
+    void setProperty(const PropertyKey<T>& key, const T& t)
+    {
+        if (!key.valid())
+            return;
+
+        Variant& v = properties_[key.idx];
+        v.setValue(t);
+    }
+
+    void setProperty(Idx idx, const Variant& v)
+    {
+        properties_[idx] = v;
+    }
+
 private:
 
     UUID id_;
@@ -114,6 +151,9 @@ private:
 
     std::map<Idx, Idx> relations_from_;
     std::map<Idx, Idx> relations_to_;
+
+    // Generic property map
+    std::map<Idx, Variant> properties_;
 
 };
 

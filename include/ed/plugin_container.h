@@ -16,6 +16,8 @@ namespace class_loader { class ClassLoader; }
 namespace ed
 {
 
+struct InitData;
+
 class PluginContainer
 {
 
@@ -25,7 +27,7 @@ public:
 
     virtual ~PluginContainer();
 
-    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, tue::Configuration config);
+    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init);
 
     PluginPtr plugin() const { return plugin_; }
 

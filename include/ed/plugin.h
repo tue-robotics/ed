@@ -6,6 +6,8 @@
 
 #include <tue/config/configuration.h>
 
+#include "ed/init_data.h"
+
 namespace ed {
 
 struct WorldModel;
@@ -21,6 +23,8 @@ public:
     virtual void configure(tue::Configuration config) {}
 
     virtual void initialize() {}
+
+    virtual void initialize(InitData& init) {}
 
     virtual void process(const WorldModel& world, UpdateRequest& req) {}
 

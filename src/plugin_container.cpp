@@ -32,7 +32,7 @@ PluginContainer::~PluginContainer()
 
 // --------------------------------------------------------------------------------
 
-PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::string& lib_filename, tue::Configuration config)
+PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init)
 {
     // Load the library
     delete class_loader_;
@@ -44,10 +44,10 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
 
     if (classes.empty())
     {
-        config.addError("Could not find any plugins in '" + class_loader_->getLibraryPath() + "'.");
+        init.config.addError("Could not find any plugins in '" + class_loader_->getLibraryPath() + "'.");
     } else if (classes.size() > 1)
     {
-        config.addError("Multiple plugins registered in '" + class_loader_->getLibraryPath() + "'.");
+        init.config.addError("Multiple plugins registered in '" + class_loader_->getLibraryPath() + "'.");
     } else
     {
         plugin_ = class_loader_->createInstance<Plugin>(classes.front());
@@ -58,19 +58,34 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
             name_ = plugin_name;
             plugin_->name_ = plugin_name;
 
-            if (config.readGroup("parameters"))
+            if (init.config.readGroup("parameters"))
             {
-                // Configure plugin
-                plugin_->configure(config.limitScope());
+                tue::Configuration scoped_config = init.config.limitScope();
+                InitData scoped_init(init.properties, scoped_config);
+
+                plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
+                plugin_->initialize(scoped_init);
 
                 // Read optional frequency
-                config.value("frequency", freq, tue::OPTIONAL);
+                init.config.value("frequency", freq, tue::OPTIONAL);
 
-                config.endGroup();
+                init.config.endGroup();
+            }
+            else
+            {
+                // No parameter available
+                tue::Configuration scoped_config;
+                InitData scoped_init(init.properties, scoped_config);
+
+                plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
+                plugin_->initialize(scoped_init);
+
+                if (scoped_config.hasError())
+                    init.config.addError(scoped_config.error());
             }
 
             // If there was an error during configuration, do not start plugin
-            if (config.hasError())
+            if (init.config.hasError())
                 return PluginPtr();
 
             // Initialize the plugin

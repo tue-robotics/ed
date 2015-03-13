@@ -191,8 +191,10 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
     // Create a plugin container
     PluginContainerPtr container(new PluginContainer());
 
+    InitData init(property_key_db_, config);
+
     // Load the plugin
-    if (!container->loadPlugin(plugin_name, full_lib_file, config))
+    if (!container->loadPlugin(plugin_name, full_lib_file, init))
         return PluginContainerPtr();
 
     // Add the plugin container
