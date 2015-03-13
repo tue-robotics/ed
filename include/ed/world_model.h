@@ -26,7 +26,7 @@ public:
         EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end())
         {
             // Skip possible zero-entities (deleted entities) at the beginning
-            while(!(*it_) && it_ != it_end_)
+            while(it_ != it_end_ && !(*it_))
                 ++it_;
         }
 
