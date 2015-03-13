@@ -152,8 +152,6 @@ add_dependencies(ed ${PROJECT_NAME}_gencpp)
 #                                               PLUGINS
 # ------------------------------------------------------------------------------------------------
 
-add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
-
 add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
 
 find_package(kdl_parser REQUIRED)
@@ -169,9 +167,14 @@ add_executable(ed-list-ids tools/list_ids.cpp)
 add_executable(ed_view_model tools/view_model.cpp)
 target_link_libraries(ed_view_model ed_core)
 
-
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)
+
+# ------------------------------------------------------------------------------------------------
+#                                               EXAMPLES
+# ------------------------------------------------------------------------------------------------
+
+add_library(ed_hello_world_plugin examples/hello_world/hello_world_plugin.cpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS

@@ -12,9 +12,7 @@ public:
 
     virtual ~HelloWorld();
 
-    void configure(tue::Configuration config);
-
-    void initialize();
+    void initialize(ed::InitData& init);
 
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
 
