@@ -10,7 +10,7 @@
 #include <boost/circular_buffer.hpp>
 #include <ros/time.h>
 
-#include "ed/variant.h"
+#include "ed/property.h"
 #include "ed/property_key.h"
 
 namespace ed
@@ -91,15 +91,15 @@ public:
     template<typename T>
     const T* property(const PropertyKey<T>& key) const
     {
-        std::map<Idx, Variant>::const_iterator it = properties_.find(key.idx);
+        std::map<Idx, Property>::const_iterator it = properties_.find(key.idx);
         if (it == properties_.end())
             return 0;
 
-        const Variant& v = it->second;
+        const Property& p = it->second;
 
         try
         {
-            return &v.getValue<T>();
+            return &p.value.getValue<T>();
         }
         catch (std::bad_cast& e)
         {
@@ -113,14 +113,41 @@ public:
         if (!key.valid())
             return;
 
-        Variant& v = properties_[key.idx];
-        v.setValue(t);
+        std::map<Idx, Property>::iterator it = properties_.find(key.idx);
+        if (it == properties_.end())
+        {
+            Property& p = properties_[key.idx];
+            p.info = key.info;
+            p.revision = 0;
+            p.value.setValue(t);
+        }
+        else
+        {
+            Property& p = it->second;
+            p.value.setValue(t);
+            ++(p.revision);
+        }
     }
 
-    void setProperty(Idx idx, const Variant& v)
+    void setProperty(Idx idx, const Property& p)
     {
-        properties_[idx] = v;
+        std::map<Idx, Property>::iterator it = properties_.find(idx);
+        if (it == properties_.end())
+        {
+            Property& p_new = properties_[idx];
+            p_new.info = p.info;
+            p_new.revision = 0;
+            p_new.value = p.value;
+        }
+        else
+        {
+            Property& p_new = it->second;
+            p_new.value = p.value;
+            ++(p_new.revision);
+        }
     }
+
+    const std::map<Idx, Property>& properties() const { return properties_; }
 
 private:
 
@@ -153,7 +180,7 @@ private:
     std::map<Idx, Idx> relations_to_;
 
     // Generic property map
-    std::map<Idx, Variant> properties_;
+    std::map<Idx, Property> properties_;
 
 };
 

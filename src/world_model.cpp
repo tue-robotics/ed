@@ -99,14 +99,15 @@ void WorldModel::update(const UpdateRequest& req)
             setEntity(it->first, e_updated);
     }
 
-    for(std::map<UUID, std::map<Idx, Variant> >::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
+    for(std::map<UUID, std::map<Idx, Property> >::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::map<Idx, Variant>& props = it->second;
+        const std::map<Idx, Property>& props = it->second;
 
-        for(std::map<Idx, Variant>::const_iterator it2 = props.begin(); it2 != props.end(); ++it2)
+        for(std::map<Idx, Property>::const_iterator it2 = props.begin(); it2 != props.end(); ++it2)
         {
-            e->setProperty(it2->first, it2->second);
+            const Property& p = it2->second;
+            e->setProperty(it2->first, p);
         }
     }
 

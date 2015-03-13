@@ -3,7 +3,7 @@
 
 #include "ed/types.h"
 #include "ed/uuid.h"
-#include "ed/variant.h"
+#include "ed/property.h"
 #include "ed/property_key.h"
 
 #include <tue/config/data_pointer.h>
@@ -93,7 +93,7 @@ public:
         empty_ = false;
     }
 
-    std::map<UUID, std::map<Idx, Variant> > properties;
+    std::map<UUID, std::map<Idx, Property> > properties;
 
     template<typename T>
     void setProperty(const UUID& id, const PropertyKey<T>& key, const T& value)
@@ -101,7 +101,9 @@ public:
         if (!key.valid())
             return;
 
-        properties[id][key.idx] = value;
+        Property& p = properties[id][key.idx];
+        p.info = key.info;
+        p.value = value;
         empty_ = false;
     }
 

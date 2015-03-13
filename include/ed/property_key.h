@@ -6,12 +6,14 @@
 namespace ed
 {
 
+class PropertyInfo;
+
 template<typename T>
 struct PropertyKey
 {
-    PropertyKey() : idx(-1) {}
+    PropertyKey() : idx(-1), info(0) {}
     Idx idx;
-    std::string name;
+    const PropertyInfo* info;
 
     bool valid() const { return idx != -1; }
 };
