@@ -99,10 +99,8 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
 
-    if (config.value("world_name", world_name_))
+    if (config.value("world_name", world_name_, tue::OPTIONAL))
         initializeWorld();
-    else
-        std::cout << "No world specified in parameter file, cannot initialize world" << std::endl;
 
     if (pub_stats_.getTopic() == "")
     {
@@ -264,9 +262,8 @@ void Server::stepPlugins()
 
 void Server::update()
 {
-    ErrorContext errc("Server", "update");
-
     tue::ScopedTimer t(profiler_, "ed");
+    ErrorContext errc("Server", "update");
 
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
@@ -274,6 +271,7 @@ void Server::update()
     // Perception update (make soup of the entity measurements)
     {
         tue::ScopedTimer t(profiler_, "perception");
+        ErrorContext errc("Serve::update()", "perception");
 
         UpdateRequest req;
         perception_.update(new_world_model, req);
@@ -283,6 +281,8 @@ void Server::update()
     // Look if we can merge some not updates entities
     {
         tue::ScopedTimer t(profiler_, "merge entities");
+        ErrorContext errc("Server::update()", "merge");
+
         mergeEntities(new_world_model, 5.0, 0.5);
     }
 
