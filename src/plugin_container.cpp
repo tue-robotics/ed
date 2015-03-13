@@ -58,6 +58,9 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
             name_ = plugin_name;
             plugin_->name_ = plugin_name;
 
+            // Read optional frequency
+            init.config.value("frequency", freq, tue::OPTIONAL);
+
             if (init.config.readGroup("parameters"))
             {
                 tue::Configuration scoped_config = init.config.limitScope();
@@ -66,8 +69,11 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
                 plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
                 plugin_->initialize(scoped_init);
 
-                // Read optional frequency
-                init.config.value("frequency", freq, tue::OPTIONAL);
+                // Read optional frequency (inside parameters is obsolete)
+                if (init.config.value("frequency", freq, tue::OPTIONAL))
+                {
+                    std::cout << "[ED]: Warning while loading plugin '" << name_ << "': please specify parameter 'frequency' outside 'parameters'." << std::endl;
+                }
 
                 init.config.endGroup();
             }
