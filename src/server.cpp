@@ -233,7 +233,7 @@ void Server::stepPlugins()
             for(std::vector<PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
             {
                 PluginContainerPtr c2 = *it2;
-                c2->plugin()->updateRequestCallback(*c->updateRequest());
+                c2->addDelta(c->updateRequest());
             }
         }
     }
@@ -383,9 +383,9 @@ void Server::update(const std::string& update_str, std::string& error)
 
 void Server::initializeWorld()
 {
-    ed::UpdateRequest req;
+    ed::UpdateRequestPtr req(new UpdateRequest);
     std::stringstream error;
-    if (!model_loader_.create(world_name_, world_name_, req, error))
+    if (!model_loader_.create(world_name_, world_name_, *req, error))
     {
         ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
         return;
@@ -394,13 +394,13 @@ void Server::initializeWorld()
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
-    new_world_model->update(req);
+    new_world_model->update(*req);
 
     // Temporarily for Javier
     for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
         PluginContainerPtr c = *it;
-        c->plugin()->updateRequestCallback(req);
+        c->addDelta(req);
     }
 
     world_model_ = new_world_model;

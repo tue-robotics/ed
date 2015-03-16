@@ -13,6 +13,15 @@ namespace ed {
 struct WorldModel;
 struct UpdateRequest;
 
+struct PluginInput
+{
+    PluginInput(const WorldModel& world_, const std::vector<UpdateRequestConstPtr>& deltas_)
+        : world(world_), deltas(deltas_) {}
+
+    const WorldModel& world;
+    const std::vector<UpdateRequestConstPtr>& deltas;
+};
+
 class Plugin
 {
 
@@ -27,6 +36,8 @@ public:
     virtual void initialize(InitData& init) {}
 
     virtual void process(const WorldModel& world, UpdateRequest& req) {}
+
+    virtual void process(const PluginInput& data, UpdateRequest& req) {}
 
     // Temporarily for Javier
     virtual void updateRequestCallback(const UpdateRequest& req) {}

@@ -153,12 +153,25 @@ void PluginContainer::step()
 
     if (world_current_)
     {        
+        std::vector<UpdateRequestConstPtr> world_deltas;
+        {
+            boost::lock_guard<boost::mutex> lg(mutex_world_deltas_);
+            world_deltas = world_deltas_;
+            world_deltas_.clear();
+        }
+
+        PluginInput data(*world_current_, world_deltas);
+
         UpdateRequestPtr update_request(new UpdateRequest);
 
         tue::Timer timer;
         timer.start();
 
+        // Old
         plugin_->process(*world_current_, *update_request);
+
+        // New
+        plugin_->process(data, *update_request);
 
         timer.stop();
         total_process_time_sec_ += timer.getElapsedTimeInSec();

@@ -63,6 +63,12 @@ public:
 
     double totalProcessingTime() const { return total_process_time_sec_; }
 
+    void addDelta(const UpdateRequestConstPtr& delta)
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_world_deltas_);
+        world_deltas_.push_back(delta);
+    }
+
 protected:
 
     class_loader::ClassLoader*  class_loader_;
@@ -103,6 +109,11 @@ protected:
     void step();
 
     void run();
+
+
+    // buffer of delta's since last process call
+    mutable boost::mutex mutex_world_deltas_;
+    std::vector<UpdateRequestConstPtr> world_deltas_;
 
 };
 
