@@ -47,7 +47,12 @@ public:
     void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
 
     inline const geo::Pose3D& pose() const { return pose_; }
-    inline void setPose(const geo::Pose3D& pose) { pose_ = pose; }
+    inline void setPose(const geo::Pose3D& pose)
+    {
+        pose_ = pose;
+        if (shape_)
+            updateConvexHull();
+    }
 
     inline const geo::Pose3D& velocity() const { return velocity_; }
     inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }
@@ -181,6 +186,8 @@ private:
 
     // Generic property map
     std::map<Idx, Property> properties_;
+
+    void updateConvexHull();
 
 };
 
