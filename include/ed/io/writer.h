@@ -27,6 +27,7 @@ public:
     virtual void endGroup() = 0;
 
     virtual void writeValue(const std::string& key, float f) = 0;
+    virtual void writeValue(const std::string& key, double d) = 0;
     virtual void writeValue(const std::string& key, int i) = 0;
     virtual void writeValue(const std::string& key, const std::string& s) = 0;
 

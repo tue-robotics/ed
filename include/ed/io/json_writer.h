@@ -11,7 +11,7 @@ namespace ed
 namespace io
 {
 
-class JSONWriter : Writer
+class JSONWriter : public Writer
 {
 
 public:
@@ -45,7 +45,7 @@ public:
         if (add_comma_)
             out_ << ",";
 
-        out_ << "\"" << key << "\":\"" << f << "\"";
+        out_ << "\"" << key << "\":" << f;
         add_comma_ = true;
     }
 
@@ -54,7 +54,7 @@ public:
         if (add_comma_)
             out_ << ",";
 
-        out_ << "\"" << key << "\":\"" << i << "\"";
+        out_ << "\"" << key << "\":" << i;
         add_comma_ = true;
     }
 
@@ -64,6 +64,15 @@ public:
             out_ << ",";
 
         out_ << "\"" << key << "\":\"" << s << "\"";
+        add_comma_ = true;
+    }
+
+    void writeValue(const std::string& key, double d)
+    {
+        if (add_comma_)
+            out_ << ",";
+
+        out_ << "\"" << key << "\":" << d;
         add_comma_ = true;
     }
 
@@ -120,13 +129,26 @@ public:
         if (add_comma_)
             out_ << ",";
 
-        out_ << "[";
+        out_ << "\"" << key << "\":[";
         type_stack_.push_back('a');
         add_comma_ = false;
     }
 
-    void addArrayItem() {}
-    void endArrayItem() {}
+    void addArrayItem()
+    {
+        if (add_comma_)
+            out_ << ",";
+
+        out_ << "{";
+        type_stack_.push_back('g');
+        add_comma_ = false;
+    }
+    void endArrayItem()
+    {
+        out_ << "}";
+        type_stack_.pop_back();
+        add_comma_ = true;
+    }
 
     void endArray()
     {
