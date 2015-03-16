@@ -29,18 +29,14 @@ class Plugin
 
 public:
 
+    // Old
     virtual void configure(tue::Configuration config) {}
-
     virtual void initialize() {}
-
-    virtual void initialize(InitData& init) {}
-
     virtual void process(const WorldModel& world, UpdateRequest& req) {}
 
+    // New
+    virtual void initialize(InitData& init) {}
     virtual void process(const PluginInput& data, UpdateRequest& req) {}
-
-    // Temporarily for Javier
-    virtual void updateRequestCallback(const UpdateRequest& req) {}
 
     const std::string& name() const { return name_; }
 
