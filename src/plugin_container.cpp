@@ -141,25 +141,23 @@ void PluginContainer::step()
             return;
     }
 
+    std::vector<UpdateRequestConstPtr> world_deltas;
+
     // Check if there is a new world. If so replace the current one with the new one
     {
         boost::lock_guard<boost::mutex> lg(mutex_world_);
         if (world_new_)
         {
             world_current_ = world_new_;
+            world_deltas = world_deltas_;
+
+            world_deltas_.clear();
             world_new_.reset();
         }
     }
 
     if (world_current_)
     {        
-        std::vector<UpdateRequestConstPtr> world_deltas;
-        {
-            boost::lock_guard<boost::mutex> lg(mutex_world_deltas_);
-            world_deltas = world_deltas_;
-            world_deltas_.clear();
-        }
-
         PluginInput data(*world_current_, world_deltas);
 
         UpdateRequestPtr update_request(new UpdateRequest);

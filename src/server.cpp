@@ -123,25 +123,25 @@ void Server::reset()
     ErrorContext errc("Server", "reset");
 
     // Prepare default world-addition request
-    UpdateRequest req_world;
+    UpdateRequestPtr req_world(new UpdateRequest);
     std::stringstream error;
-    if (!model_loader_.create(world_name_, world_name_, req_world, error))
+    if (!model_loader_.create(world_name_, world_name_, *req_world, error))
     {
         ROS_ERROR_STREAM("[ED] While resetting world: " << error.str());
         return;
     }
 
     // Prepare deletion request
-    UpdateRequest req_delete;
+    UpdateRequestPtr req_delete(new UpdateRequest);
     for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
-        req_delete.removeEntity((*it)->id());
+        req_delete->removeEntity((*it)->id());
 
     // Create world model copy
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
     // Apply the requests (first deletion, than default world creation)
-    new_world_model->update(req_delete);
-    new_world_model->update(req_world);
+    new_world_model->update(*req_delete);
+    new_world_model->update(*req_world);
 
     // Swap to new world model
     world_model_ = new_world_model;
@@ -150,6 +150,8 @@ void Server::reset()
     for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
         const PluginContainerPtr& c = *it;
+        c->addDelta(req_delete);
+        c->addDelta(req_world);
         c->setWorld(new_world_model);
     }
 }
@@ -270,6 +272,8 @@ void Server::update()
 
     // Perception update (make soup of the entity measurements)
     {
+        // TODO: move this to a plugin
+
         tue::ScopedTimer t(profiler_, "perception");
         ErrorContext errc("Serve::update()", "perception");
 
@@ -280,6 +284,8 @@ void Server::update()
 
     // Look if we can merge some not updates entities
     {
+        // TODO: move this to a plugin
+
         tue::ScopedTimer t(profiler_, "merge entities");
         ErrorContext errc("Server::update()", "merge");
 
@@ -401,6 +407,7 @@ void Server::initializeWorld()
     {
         PluginContainerPtr c = *it;
         c->addDelta(req);
+        c->setWorld(new_world_model);
     }
 
     world_model_ = new_world_model;

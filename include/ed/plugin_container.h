@@ -65,7 +65,7 @@ public:
 
     void addDelta(const UpdateRequestConstPtr& delta)
     {
-        boost::lock_guard<boost::mutex> lg(mutex_world_deltas_);
+        boost::lock_guard<boost::mutex> lg(mutex_world_);
         world_deltas_.push_back(delta);
     }
 
@@ -112,7 +112,6 @@ protected:
 
 
     // buffer of delta's since last process call
-    mutable boost::mutex mutex_world_deltas_;
     std::vector<UpdateRequestConstPtr> world_deltas_;
 
 };
