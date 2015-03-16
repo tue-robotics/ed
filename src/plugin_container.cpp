@@ -5,6 +5,8 @@
 // TODO: get rid of ros rate
 #include <ros/rate.h>
 
+#include <ed/error_context.h>
+
 namespace ed
 {
 
@@ -166,10 +168,14 @@ void PluginContainer::step()
         timer.start();
 
         // Old
-        plugin_->process(*world_current_, *update_request);
+        {
+            ed::ErrorContext errc("Plugin:", name().c_str());
 
-        // New
-        plugin_->process(data, *update_request);
+            plugin_->process(*world_current_, *update_request);
+
+            // New
+            plugin_->process(data, *update_request);
+        }
 
         timer.stop();
         total_process_time_sec_ += timer.getElapsedTimeInSec();
