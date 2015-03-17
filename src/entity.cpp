@@ -35,6 +35,48 @@ Entity::~Entity()
 
 // ----------------------------------------------------------------------------------------------------
 
+void Entity::updateConvexHull()
+{
+    // ----- Calculate convex hull -----
+
+    const std::vector<geo::Vector3>& vertices = shape_->getMesh().getPoints();
+
+    if (!vertices.empty())
+    {
+        geo::Vector3 p_total(0, 0, 0);
+
+        cv::Mat_<cv::Vec2f> pointMat(1, vertices.size());
+        pcl::PointCloud<pcl::PointXYZ> point_cloud;
+        point_cloud.resize(vertices.size());
+
+        convex_hull_.min_z = vertices[0].z;
+        convex_hull_.max_z = vertices[0].z;
+
+        for(unsigned int i = 0; i < vertices.size(); ++i)
+        {
+            geo::Vector3 p_MAP = pose_ * vertices[i];
+            convex_hull_.min_z = std::min(convex_hull_.min_z, p_MAP.z);
+            convex_hull_.max_z = std::max(convex_hull_.max_z, p_MAP.z);
+
+            pointMat(0, i) = cv::Vec2f(p_MAP.x, p_MAP.y);
+            point_cloud.points[i] = pcl::PointXYZ(p_MAP.x, p_MAP.y, p_MAP.z);
+
+            p_total += p_MAP;
+        }
+
+        std::vector<int> chull_mask_indices;
+        cv::convexHull(pointMat, chull_mask_indices);
+
+        convex_hull_.chull.resize(chull_mask_indices.size());
+        for(unsigned int i = 0; i < chull_mask_indices.size(); ++i)
+            convex_hull_.chull[i] = point_cloud.points[chull_mask_indices[i]];
+
+        convex_hull_.center_point = p_total / vertices.size();
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void Entity::setShape(const geo::ShapeConstPtr& shape)
 {
     if (shape_ != shape)
@@ -42,42 +84,7 @@ void Entity::setShape(const geo::ShapeConstPtr& shape)
         ++shape_revision_;
         shape_ = shape;
 
-        // ----- Calculate convex hull -----
-
-        const std::vector<geo::Vector3>& vertices = shape->getMesh().getPoints();
-
-        if (!vertices.empty())
-        {
-            geo::Vector3 p_total(0, 0, 0);
-
-            cv::Mat_<cv::Vec2f> pointMat(1, vertices.size());
-            pcl::PointCloud<pcl::PointXYZ> point_cloud;
-            point_cloud.resize(vertices.size());
-
-            convex_hull_.min_z = vertices[0].z;
-            convex_hull_.max_z = vertices[0].z;
-
-            for(unsigned int i = 0; i < vertices.size(); ++i)
-            {
-                geo::Vector3 p_MAP = pose_ * vertices[i];
-                convex_hull_.min_z = std::min(convex_hull_.min_z, p_MAP.z);
-                convex_hull_.max_z = std::max(convex_hull_.max_z, p_MAP.z);
-
-                pointMat(0, i) = cv::Vec2f(p_MAP.x, p_MAP.y);
-                point_cloud.points[i] = pcl::PointXYZ(p_MAP.x, p_MAP.y, p_MAP.z);
-
-                p_total += p_MAP;
-            }
-
-            std::vector<int> chull_mask_indices;
-            cv::convexHull(pointMat, chull_mask_indices);
-
-            convex_hull_.chull.resize(chull_mask_indices.size());
-            for(unsigned int i = 0; i < chull_mask_indices.size(); ++i)
-                convex_hull_.chull[i] = point_cloud.points[chull_mask_indices[i]];
-
-            convex_hull_.center_point = p_total / vertices.size();
-        }
+        updateConvexHull();
     }
 }
 
@@ -99,24 +106,6 @@ void Entity::addMeasurement(MeasurementConstPtr measurement)
     {
         best_measurement_ = measurement;
     }
-
-    // Update the convex hull
-    updateEntityState(measurement);
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void Entity::updateEntityState(MeasurementConstPtr m)
-{
-    // Update the chull
-    helpers::ddp::removeInViewConvexHullPoints(m->image(), m->sensorPose(), convex_hull_);
-    helpers::ddp::add2DConvexHull(m->convexHull(),convex_hull_);
-
-    // Update chull buffer
-    convex_hull_buffer_.push_front(std::make_pair(convex_hull_, m->timestamp())); // Store the convex hulls over time for velocity calculation
-
-    // Calculate velocity
-    calculateVelocity();
 }
 
 // ----------------------------------------------------------------------------------------------------

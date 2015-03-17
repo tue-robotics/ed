@@ -6,10 +6,21 @@
 
 #include <tue/config/configuration.h>
 
+#include "ed/init_data.h"
+
 namespace ed {
 
 struct WorldModel;
 struct UpdateRequest;
+
+struct PluginInput
+{
+    PluginInput(const WorldModel& world_, const std::vector<UpdateRequestConstPtr>& deltas_)
+        : world(world_), deltas(deltas_) {}
+
+    const WorldModel& world;
+    const std::vector<UpdateRequestConstPtr>& deltas;
+};
 
 class Plugin
 {
@@ -18,14 +29,14 @@ class Plugin
 
 public:
 
+    // Old
     virtual void configure(tue::Configuration config) {}
-
     virtual void initialize() {}
-
     virtual void process(const WorldModel& world, UpdateRequest& req) {}
 
-    // Temporarily for Javier
-    virtual void updateRequestCallback(const UpdateRequest& req) {}
+    // New
+    virtual void initialize(InitData& init) {}
+    virtual void process(const PluginInput& data, UpdateRequest& req) {}
 
     const std::string& name() const { return name_; }
 

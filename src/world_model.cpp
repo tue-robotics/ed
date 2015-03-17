@@ -97,7 +97,18 @@ void WorldModel::update(const UpdateRequest& req)
             e_updated->setData(params);
 
             setEntity(it->first, e_updated);
+    }
 
+    for(std::map<UUID, std::map<Idx, Property> >::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        const std::map<Idx, Property>& props = it->second;
+
+        for(std::map<Idx, Property>::const_iterator it2 = props.begin(); it2 != props.end(); ++it2)
+        {
+            const Property& p = it2->second;
+            e->setProperty(it2->first, p);
+        }
     }
 
     // Remove entities

@@ -16,15 +16,9 @@ HelloWorld::~HelloWorld()
 
 // ----------------------------------------------------------------------------------------------------
 
-void HelloWorld::configure(tue::Configuration config)
+void HelloWorld::initialize(ed::InitData& init)
 {
-    config.value("text", text_);
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void HelloWorld::initialize()
-{
+    init.config.value("text", text_);
 }
 
 // ----------------------------------------------------------------------------------------------------

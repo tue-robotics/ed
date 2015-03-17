@@ -16,6 +16,8 @@ namespace class_loader { class ClassLoader; }
 namespace ed
 {
 
+struct InitData;
+
 class PluginContainer
 {
 
@@ -25,7 +27,7 @@ public:
 
     virtual ~PluginContainer();
 
-    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, tue::Configuration config);
+    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init);
 
     PluginPtr plugin() const { return plugin_; }
 
@@ -60,6 +62,12 @@ public:
     double totalRunningTime() const { return total_timer_.getElapsedTimeInSec(); }
 
     double totalProcessingTime() const { return total_process_time_sec_; }
+
+    void addDelta(const UpdateRequestConstPtr& delta)
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        world_deltas_.push_back(delta);
+    }
 
 protected:
 
@@ -101,6 +109,10 @@ protected:
     void step();
 
     void run();
+
+
+    // buffer of delta's since last process call
+    std::vector<UpdateRequestConstPtr> world_deltas_;
 
 };
 

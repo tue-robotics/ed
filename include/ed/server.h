@@ -13,6 +13,8 @@
 
 #include <ed/models/model_loader.h>
 
+#include "ed/property_key_db.h"
+
 #include <queue>
 
 namespace ed
@@ -72,6 +74,9 @@ private:
 
     //! Perception
     Perception perception_;
+
+    //! Property Key DB
+    PropertyKeyDB property_key_db_;
 
     //! Plugins
     std::vector<std::string> plugin_paths_;

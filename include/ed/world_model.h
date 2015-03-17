@@ -26,7 +26,7 @@ public:
         EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end())
         {
             // Skip possible zero-entities (deleted entities) at the beginning
-            while(!(*it_) && it_ != it_end_)
+            while(it_ != it_end_ && !(*it_))
                 ++it_;
         }
 
@@ -84,6 +84,8 @@ public:
     bool findEntityIdx(const UUID& id, Idx& idx) const;
 
     bool calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const;
+
+    const std::vector<EntityConstPtr>& entities() const { return entities_; }
 
 private:
 

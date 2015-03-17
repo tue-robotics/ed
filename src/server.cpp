@@ -1,6 +1,5 @@
 #include "ed/server.h"
 
-#include "ed/sensor_modules/kinect.h"
 #include "ed/entity.h"
 #include "ed/measurement.h"
 #include "ed/helpers/visualization.h"
@@ -74,42 +73,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         config.endGroup();
     }
 
-    if (config.readArray("sensors"))
-    {
-        while(config.nextArrayItem())
-        {
-            std::string name;
-            if (config.value("name", name))
-            {
-                std::map<std::string, SensorModulePtr>::iterator it_sensor = sensors_.find(name);
-
-                if (it_sensor == sensors_.end())
-                {
-                    // Sensor module does not yet exist. Determine the type and create a sensor
-                    // module accordingly.
-
-                    std::string type;
-                    if (config.value("type", type))
-                    {
-                        if (type == "kinect")
-                        {
-                            SensorModulePtr sensor_mod(new Kinect(tf_listener_));
-                            sensor_mod->configure(config);
-                            sensors_[name] = sensor_mod;
-                        }
-                    }
-                }
-                else
-                {
-                    // Sensor module exists, so reconfigure
-                    it_sensor->second->configure(config, true);
-                }
-            }
-        }
-
-        config.endArray();
-    }
-
     // Unload all previously loaded plugins
     plugin_containers_.clear();
 
@@ -136,10 +99,8 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     profiler_.setName("ed");
     pub_profile_.initialize(profiler_);
 
-    if (config.value("world_name", world_name_))
+    if (config.value("world_name", world_name_, tue::OPTIONAL))
         initializeWorld();
-    else
-        std::cout << "No world specified in parameter file, cannot initialize world" << std::endl;
 
     if (pub_stats_.getTopic() == "")
     {
@@ -162,25 +123,25 @@ void Server::reset()
     ErrorContext errc("Server", "reset");
 
     // Prepare default world-addition request
-    UpdateRequest req_world;
+    UpdateRequestPtr req_world(new UpdateRequest);
     std::stringstream error;
-    if (!model_loader_.create(world_name_, world_name_, req_world, error))
+    if (!model_loader_.create(world_name_, world_name_, *req_world, error))
     {
         ROS_ERROR_STREAM("[ED] While resetting world: " << error.str());
         return;
     }
 
     // Prepare deletion request
-    UpdateRequest req_delete;
+    UpdateRequestPtr req_delete(new UpdateRequest);
     for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
-        req_delete.removeEntity((*it)->id());
+        req_delete->removeEntity((*it)->id());
 
     // Create world model copy
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
     // Apply the requests (first deletion, than default world creation)
-    new_world_model->update(req_delete);
-    new_world_model->update(req_world);
+    new_world_model->update(*req_delete);
+    new_world_model->update(*req_world);
 
     // Swap to new world model
     world_model_ = new_world_model;
@@ -189,6 +150,8 @@ void Server::reset()
     for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
         const PluginContainerPtr& c = *it;
+        c->addDelta(req_delete);
+        c->addDelta(req_world);
         c->setWorld(new_world_model);
     }
 }
@@ -228,8 +191,10 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
     // Create a plugin container
     PluginContainerPtr container(new PluginContainer());
 
+    InitData init(property_key_db_, config);
+
     // Load the plugin
-    if (!container->loadPlugin(plugin_name, full_lib_file, config))
+    if (!container->loadPlugin(plugin_name, full_lib_file, init))
         return PluginContainerPtr();
 
     // Add the plugin container
@@ -267,11 +232,11 @@ void Server::stepPlugins()
             plugins_with_requests.push_back(c);
 
             // Temporarily for Javier
-//            for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
-//            {
-//                PluginContainerPtr c = *it;
-//                c->plugin()->updateRequestCallback(*c->updateRequest());
-//            }
+            for(std::vector<PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
+            {
+                PluginContainerPtr c2 = *it2;
+                c2->addDelta(c->updateRequest());
+            }
         }
     }
 
@@ -299,26 +264,18 @@ void Server::stepPlugins()
 
 void Server::update()
 {
-    ErrorContext errc("Server", "update");
-
     tue::ScopedTimer t(profiler_, "ed");
+    ErrorContext errc("Server", "update");
 
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
-    // Sensor Measurements integration (Loop over all sensors and integrate the measurements)
-    {
-        tue::ScopedTimer t(profiler_, "sensor integration");
-        for (std::map<std::string, SensorModulePtr>::const_iterator it = sensors_.begin(); it != sensors_.end(); ++it) {
-            UpdateRequest req;
-            it->second->update(new_world_model, req);
-            new_world_model->update(req);
-        }
-    }
-
     // Perception update (make soup of the entity measurements)
     {
+        // TODO: move this to a plugin
+
         tue::ScopedTimer t(profiler_, "perception");
+        ErrorContext errc("Serve::update()", "perception");
 
         UpdateRequest req;
         perception_.update(new_world_model, req);
@@ -327,7 +284,11 @@ void Server::update()
 
     // Look if we can merge some not updates entities
     {
+        // TODO: move this to a plugin
+
         tue::ScopedTimer t(profiler_, "merge entities");
+        ErrorContext errc("Server::update()", "merge");
+
         mergeEntities(new_world_model, 5.0, 0.5);
     }
 
@@ -428,9 +389,9 @@ void Server::update(const std::string& update_str, std::string& error)
 
 void Server::initializeWorld()
 {
-    ed::UpdateRequest req;
+    ed::UpdateRequestPtr req(new UpdateRequest);
     std::stringstream error;
-    if (!model_loader_.create(world_name_, world_name_, req, error))
+    if (!model_loader_.create(world_name_, world_name_, *req, error))
     {
         ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
         return;
@@ -439,7 +400,15 @@ void Server::initializeWorld()
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
-    new_world_model->update(req);
+    new_world_model->update(*req);
+
+    // Temporarily for Javier
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
+        PluginContainerPtr c = *it;
+        c->addDelta(req);
+        c->setWorld(new_world_model);
+    }
 
     world_model_ = new_world_model;
 }

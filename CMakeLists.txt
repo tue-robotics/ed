@@ -59,7 +59,7 @@ generate_messages(
 ###################################
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES ed_core ed_io ed_perception
+    LIBRARIES ed_core ed_io ed_perception ed_visualization
     CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
 #  DEPENDS system_lib
 )
@@ -112,7 +112,6 @@ add_library(ed_perception
     src/perception_modules/perception_module.cpp
     src/perception.cpp
     src/perception_worker.cpp
-#    src/perception/model_fitter.cpp
 )
 target_link_libraries(ed_perception ed_core)
 add_dependencies(ed_perception ${PROJECT_NAME}_gencpp)
@@ -127,26 +126,6 @@ add_library(ed_io
 )
 target_link_libraries(ed_io ed_core)
 add_dependencies(ed_io ${PROJECT_NAME}_gencpp)
-
-add_library(ed_association
-    src/association_localization_modules/point_normal_alm.cpp
-    src/association_localization_modules/polygon_height_alm.cpp
-    src/association_localization_modules/world_model_renderer.cpp
-    src/association_localization_modules/relative_alm.cpp
-)
-add_dependencies(ed_association ${PROJECT_NAME}_gencpp)
-
-add_library(ed_segmentation
-    src/segmentation_modules/euclidean_clustering_sm.cpp
-    src/segmentation_modules/floodfill_sm.cpp
-)
-add_dependencies(ed_segmentation ${PROJECT_NAME}_gencpp)
-
-add_library(ed_kinect
-    src/sensor_modules/kinect.cpp
-)
-target_link_libraries(ed_kinect ed_segmentation ed_association)
-add_dependencies(ed_kinect ${PROJECT_NAME}_gencpp)
 
 add_library(ed_visualization
     include/ed/helpers/image_publisher.h
@@ -166,14 +145,12 @@ add_executable(ed
     src/server.cpp
     src/plugin_container.cpp
 )
-target_link_libraries(ed ed_core ed_perception ed_association ed_segmentation ed_io ed_kinect ed_visualization)
+target_link_libraries(ed ed_core ed_perception ed_io ed_visualization)
 add_dependencies(ed ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
 # ------------------------------------------------------------------------------------------------
-
-add_library(ed_hello_world_plugin plugins/hello_world_plugin.cpp)
 
 add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
 
@@ -190,9 +167,15 @@ add_executable(ed-list-ids tools/list_ids.cpp)
 add_executable(ed_view_model tools/view_model.cpp)
 target_link_libraries(ed_view_model ed_core)
 
-
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)
+
+# ------------------------------------------------------------------------------------------------
+#                                               EXAMPLES
+# ------------------------------------------------------------------------------------------------
+
+add_library(ed_hello_world_plugin examples/hello_world/hello_world_plugin.cpp)
+add_library(ed_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS

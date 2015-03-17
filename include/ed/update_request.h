@@ -3,6 +3,8 @@
 
 #include "ed/types.h"
 #include "ed/uuid.h"
+#include "ed/property.h"
+#include "ed/property_key.h"
 
 #include <tue/config/data_pointer.h>
 
@@ -20,45 +22,52 @@ class UpdateRequest
 
 public:
 
+    UpdateRequest() {}
+
     // MEASUREMENTS
 
     std::map<UUID, std::vector<MeasurementConstPtr> > measurements;
-    void addMeasurement(const UUID& id, const MeasurementConstPtr& m) { measurements[id].push_back(m); }
+    void addMeasurement(const UUID& id, const MeasurementConstPtr& m) { measurements[id].push_back(m); flagUpdated(id); }
 
     void addMeasurements(const UUID& id, const std::vector<MeasurementConstPtr>& measurements_)
     {
+        if (measurements_.empty())
+            return;
+
         std::vector<MeasurementConstPtr>& v = measurements[id];
         v.insert(v.end(), measurements_.begin(), measurements_.end());
+
+        flagUpdated(id);
     }
 
 
     // SHAPES
 
     std::map<UUID, geo::ShapeConstPtr> shapes;
-    void setShape(const UUID& id, const geo::ShapeConstPtr& shape) { shapes[id] = shape; }
+    void setShape(const UUID& id, const geo::ShapeConstPtr& shape) { shapes[id] = shape; flagUpdated(id); }
 
 
     // CONVEX HULLS
 
     std::map<UUID, ed::ConvexHull2D> convex_hulls;
-    void setConvexHull(const UUID& id, const ed::ConvexHull2D& convex_hull) { convex_hulls[id] = convex_hull; }
+    void setConvexHull(const UUID& id, const ed::ConvexHull2D& convex_hull) { convex_hulls[id] = convex_hull; flagUpdated(id); }
 
     // TYPES
 
     std::map<UUID, std::string> types;
-    void setType(const UUID& id, const std::string& type) { types[id] = type; }
+    void setType(const UUID& id, const std::string& type) { types[id] = type; flagUpdated(id); }
 
 
     // POSES
 
     std::map<UUID, geo::Pose3D> poses;
-    void setPose(const UUID& id, const geo::Pose3D& pose) { poses[id] = pose; }
+    void setPose(const UUID& id, const geo::Pose3D& pose) { poses[id] = pose; flagUpdated(id); }
 
 
     // RELATIONS
 
     std::map<UUID, std::map<UUID, RelationConstPtr> > relations;
-    void setRelation(const UUID& id1, const UUID& id2, const RelationConstPtr& r) { relations[id1][id2] = r; }
+    void setRelation(const UUID& id1, const UUID& id2, const RelationConstPtr& r) { relations[id1][id2] = r; flagUpdated(id1); flagUpdated(id2);}
 
 
     // DATA
@@ -80,6 +89,22 @@ public:
 
             it->second = data_total;
         }
+
+        flagUpdated(id);
+    }
+
+    std::map<UUID, std::map<Idx, Property> > properties;
+
+    template<typename T>
+    void setProperty(const UUID& id, const PropertyKey<T>& key, const T& value)
+    {
+        if (!key.valid())
+            return;
+
+        Property& p = properties[id][key.idx];
+        p.info = key.info;
+        p.value = value;
+        flagUpdated(id);
     }
 
 
@@ -87,20 +112,20 @@ public:
 
     std::set<UUID> removed_entities;
 
-    void removeEntity(const UUID& id) { removed_entities.insert(id); }
+    void removeEntity(const UUID& id) { removed_entities.insert(id); flagUpdated(id); }
 
 
 
-    bool empty() const
-    {
-        return measurements.empty() &&
-               shapes.empty() &&
-               types.empty() &&
-               poses.empty() &&
-               relations.empty() &&
-               removed_entities.empty() &&
-               datas.empty();
-    }
+    // UPDATED (AND REMOVED) ENTITIES
+
+    std::set<UUID> updated_entities;
+
+    bool empty() const { return updated_entities.empty(); }
+
+
+private:
+
+    void flagUpdated(const ed::UUID& id) { updated_entities.insert(id); }
 
 };
 
