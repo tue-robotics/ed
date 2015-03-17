@@ -90,6 +90,9 @@ add_library(ed_core
     src/world_model.cpp
     src/transform_cache.cpp
 
+    # World model querying
+    src/world_model/transform_crawler.cpp
+
     # Model loading
     src/models/model_loader.cpp
     src/models/shape_loader.cpp
