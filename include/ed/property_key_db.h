@@ -10,6 +10,20 @@
 namespace ed
 {
 
+struct PropertyKeyDBEntry
+{
+    PropertyKeyDBEntry() : info(0) {}
+
+    ~PropertyKeyDBEntry()
+    {
+        delete info;
+    }
+
+    std::string name;
+    PropertyInfo* info;
+    Idx idx;
+};
+
 class PropertyKeyDB
 {
 
@@ -17,7 +31,7 @@ public:
 
     ~PropertyKeyDB()
     {
-        for(std::map<std::string, PropertyInfo*>::iterator it = name_to_info_.begin(); it != name_to_info_.end(); ++it)
+        for(std::map<std::string, PropertyKeyDBEntry*>::iterator it = name_to_info_.begin(); it != name_to_info_.end(); ++it)
         {
             delete it->second;
         }
@@ -26,32 +40,41 @@ public:
     template<typename T>
     void registerProperty(const std::string& name, PropertyKey<T>& key, PropertyInfo* info = 0)
     {
-        std::map<std::string, PropertyInfo*>::const_iterator it = name_to_info_.find(name);
-        if (it != name_to_info_.end())
-        {            
-            key.info = it->second;
-            key.idx = it->second->idx;
+        PropertyKeyDBEntry* entry;
 
-            // Make sure info is deleted to prevent mem leaks
-            delete info;
+        std::map<std::string, PropertyKeyDBEntry*>::iterator it = name_to_info_.find(name);
+        if (it == name_to_info_.end())
+        {            
+            entry = new PropertyKeyDBEntry;
+            entry->name = name;
+            entry->idx = name_to_info_.size();
+
+            if (info)
+                entry->info = info;
+            else
+                entry->info = new PropertyInfo;
+
+            name_to_info_[name] = entry;
         }
         else
         {
-            if (!info)
-                info = new PropertyInfo;
+            entry = it->second;
 
-            info->name = name;
-            info->idx = name_to_info_.size();
-            name_to_info_[name] = info;
-
-            key.info = info;
-            key.idx = info->idx;
+            if (info)
+            {
+                // TODO: needs locking? (Keys may access the entry info at this point)
+                delete entry->info;
+                entry->info = info;
+            }
         }
+
+        key.entry = entry;
+        key.idx = entry->idx;
     }
 
 private:
 
-    std::map<std::string, PropertyInfo*> name_to_info_;
+    std::map<std::string, PropertyKeyDBEntry*> name_to_info_;
 
 };
 

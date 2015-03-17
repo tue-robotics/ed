@@ -7,14 +7,14 @@
 namespace ed
 {
 
-class PropertyInfo;
+class PropertyKeyDBEntry;
 
 struct Property
 {
-    Property() : info(0), revision(-1) {}
+    Property() : entry(0), revision(-1) {}
 
     Variant value;
-    const PropertyInfo* info;
+    const PropertyKeyDBEntry* entry;
     unsigned long revision;
 };
 

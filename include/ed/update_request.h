@@ -102,7 +102,7 @@ public:
             return;
 
         Property& p = properties[id][key.idx];
-        p.info = key.info;
+        p.entry = key.entry;
         p.value = value;
         flagUpdated(id);
     }

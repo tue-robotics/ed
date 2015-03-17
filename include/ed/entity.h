@@ -122,7 +122,7 @@ public:
         if (it == properties_.end())
         {
             Property& p = properties_[key.idx];
-            p.info = key.info;
+            p.entry = key.entry;
             p.revision = 0;
             p.value.setValue(t);
         }
@@ -140,7 +140,7 @@ public:
         if (it == properties_.end())
         {
             Property& p_new = properties_[idx];
-            p_new.info = p.info;
+            p_new.entry = p.entry;
             p_new.revision = 0;
             p_new.value = p.value;
         }
