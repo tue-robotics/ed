@@ -320,6 +320,9 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
         // Create the joints
         constructRobot(robot_name_, tree_.getRootSegment(), req);
         model_initialized_ = true;
+
+        req.setType(robot_name_, "robot");
+
         return;
     }
 
