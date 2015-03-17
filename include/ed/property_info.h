@@ -3,6 +3,7 @@
 
 #include "ed/types.h"
 #include "ed/variant.h"
+#include "ed/io/writer.h"
 
 namespace ed
 {
@@ -12,14 +13,18 @@ class PropertyInfo
 
 public:
 
-    PropertyInfo() : idx(-1) {}
+    PropertyInfo() {}
 
     virtual ~PropertyInfo() {}
 
-    virtual bool serialize(const Variant& v, std::ostream& out) const { return false; }
+    virtual void serialize(const Variant& v, io::Writer& out) const { }
 
-    Idx idx;
-    std::string name;
+    virtual bool serializable() const { return false; }
+
+private:
+
+
+
 };
 
 } // end namespace

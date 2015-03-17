@@ -6,14 +6,15 @@
 namespace ed
 {
 
-class PropertyInfo;
+class PropertyKeyDBEntry;
 
 template<typename T>
 struct PropertyKey
 {
-    PropertyKey() : idx(-1), info(0) {}
+    PropertyKey() : idx(-1), entry(0) {}
     Idx idx;
-    const PropertyInfo* info;
+
+    const PropertyKeyDBEntry* entry;
 
     bool valid() const { return idx != -1; }
 };
