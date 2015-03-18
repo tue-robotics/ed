@@ -18,6 +18,10 @@ struct ConvexHull2D {
     pcl::PointCloud<pcl::PointXYZ> chull; // Convex hull point w.r.t. center
     double min_z, max_z; // min and max z of convex hull
     geo::Vector3 center_point; // Center of the convex hull
+
+    double area();
+    double height();
+    double volume();
 };
 
 struct ConvexHull2DWithIndices {

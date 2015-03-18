@@ -89,6 +89,7 @@ add_library(ed_core
     src/update_request.cpp
     src/world_model.cpp
     src/transform_cache.cpp
+    src/convex_hull_2d.cpp
 
     # Model loading
     src/models/model_loader.cpp
