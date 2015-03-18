@@ -155,6 +155,9 @@ geo::ShapePtr linkToShape(const boost::shared_ptr<urdf::Link>& link)
         shape->setMesh(mesh);
     }
 
+    // Transform using visual offset
+    shape->setMesh(shape->getMesh().getTransformed(offset));
+
     return shape;
 }
 
@@ -312,6 +315,7 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
         for(std::vector<boost::shared_ptr<urdf::Link> >::const_iterator it = links.begin(); it != links.end(); ++it)
         {
             const boost::shared_ptr<urdf::Link>& link = *it;
+
             geo::ShapePtr shape = linkToShape(link);
             if (shape)
                 req.setShape(robot_name_ + "/" + link->name, shape);
