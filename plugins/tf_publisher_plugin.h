@@ -24,6 +24,9 @@ private:
 
     std::string root_frame_id_;
 
+    // Exclude all ids starting with this value
+    std::string exclude_;
+
     tf::TransformBroadcaster* tf_broadcaster_;
 
 };

@@ -23,6 +23,12 @@ TFPublisherPlugin::~TFPublisherPlugin()
 void TFPublisherPlugin::configure(tue::Configuration config)
 {
     config.value("root_frame_id", root_frame_id_);
+
+    config.value("exclude", exclude_, tue::OPTIONAL);
+
+    // Remove possible beginning slash
+    if (!exclude_.empty() && exclude_[0] == '/')
+        exclude_ = exclude_.substr(1);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -40,25 +46,30 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
     {
         const ed::EntityConstPtr& e = *it;
 
-        // check if its NULL, theres a bug somewhere
-        if (e){
-            geo::Pose3D pose_MAP;
+        std::string id = e->id().str();
+        if (!id.empty() && id[0] == '/')
+            id = id.substr(1);
 
-            pose_MAP = e->pose();
+        // If exclude is set, do not add entities whose id starts with exclude
+        if (!exclude_.empty() && id.size() >= exclude_.size() && id.substr(0, exclude_.size()) == exclude_)
+            continue;
 
-            if (e->bestMeasurement())
-            {
-                pose_MAP.t = e->convexHull().center_point;
-            }
+        geo::Pose3D pose_MAP;
 
-            tf::StampedTransform t;
-            geo::convert(pose_MAP, t);
-            t.frame_id_ = root_frame_id_;
-            t.child_frame_id_ = e->id().str();
-            t.stamp_ = ros::Time::now();
+        pose_MAP = e->pose();
 
-            tf_broadcaster_->sendTransform(t);
+        if (e->bestMeasurement())
+        {
+            pose_MAP.t = e->convexHull().center_point;
         }
+
+        tf::StampedTransform t;
+        geo::convert(pose_MAP, t);
+        t.frame_id_ = root_frame_id_;
+        t.child_frame_id_ = e->id().str();
+        t.stamp_ = ros::Time::now();
+
+        tf_broadcaster_->sendTransform(t);
     }
 }
 

@@ -71,11 +71,11 @@ void WorldModel::update(const UpdateRequest& req)
                 if (findEntityIdx(it2->first, idx2))
                     setRelation(idx1, idx2, it2->second);
                 else
-                    std::cout << "WorldModel::update: unknown entity: '" << it2->first << "'." << std::endl;
+                    std::cout << "WorldModel::update (relation): unknown entity: '" << it2->first << "'." << std::endl;
             }
         }
         else
-            std::cout << "WorldModel::update: unknown entity: '" << it->first << "'." << std::endl;
+            std::cout << "WorldModel::update (relation): unknown entity: '" << it->first << "'." << std::endl;
     }
 
     // Update additional info (data)

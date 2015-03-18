@@ -85,7 +85,11 @@ public:
 
     bool calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const;
 
+    /// Warning: the return vector may return null-pointers
     const std::vector<EntityConstPtr>& entities() const { return entities_; }
+
+    /// Warning: the return vector may return null-pointers
+    const std::vector<RelationConstPtr>& relations() const { return relations_; }
 
 private:
 
