@@ -19,9 +19,9 @@ struct ConvexHull2D {
     double min_z, max_z; // min and max z of convex hull
     geo::Vector3 center_point; // Center of the convex hull
 
-    double area();
-    double height();
-    double volume();
+    double area() const;
+    double height() const;
+    double volume() const;
 };
 
 struct ConvexHull2DWithIndices {

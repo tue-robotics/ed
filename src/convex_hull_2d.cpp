@@ -3,10 +3,10 @@
 namespace ed
 {
 
-double ConvexHull2D::area()
+double ConvexHull2D::area() const
 {
     double a = 0.0;
-    for ( pcl::PointCloud<pcl::PointXYZ>::iterator ch_it = chull.begin(); ch_it != chull.end(); ++ch_it)
+    for ( pcl::PointCloud<pcl::PointXYZ>::const_iterator ch_it = chull.begin(); ch_it != chull.end(); ++ch_it)
     {
         double x1 = ch_it->x;
         double y1 = ch_it->y;
@@ -26,12 +26,12 @@ double ConvexHull2D::area()
     return a;
 }
 
-double ConvexHull2D::height()
+double ConvexHull2D::height() const
 {
-    return this->max_z - this->min_z;
+    return max_z - min_z;
 }
 
-double ConvexHull2D::volume()
+double ConvexHull2D::volume() const
 {
     return area() * height();
 }
