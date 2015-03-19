@@ -488,12 +488,12 @@ bool polygonCollisionCheck(const ConvexHull2D& chull1, const ConvexHull2D& chull
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void removeInViewConvexHullPoints(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, ConvexHull2D& convex_hull)
+void removeInViewConvexHullPoints(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, ConvexHull2D& convex_hull, float max_range)
 {
     for ( pcl::PointCloud<pcl::PointXYZ>::iterator it = convex_hull.chull.begin(); it != convex_hull.chull.end() ; ) {
         geo::Vector3 p(it->x,it->y, (convex_hull.max_z + convex_hull.min_z) / 2);
         bool in_frustrum, object_in_front;
-        if ( inView(rgbd_image, sensor_pose, p, 2.9, 0.2, in_frustrum, object_in_front) ) { //! TODO: THis param here <--
+        if ( inView(rgbd_image, sensor_pose, p, max_range, 0.2, in_frustrum, object_in_front) ) { //! TODO: THis param here <--
             it = convex_hull.chull.erase(it);
         } else {
             ++it;

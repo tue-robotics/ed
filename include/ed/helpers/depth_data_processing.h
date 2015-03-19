@@ -62,7 +62,7 @@ void add2DConvexHull(const ConvexHull2D& input, ConvexHull2D& output);
 void get2DConvexHullsFromDepthImageMask(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, const ImageMask& mask, float cell_size, float max_distance, float tolerance, int min_cluster_size, std::vector<ConvexHull2DWithIndices>& convex_hulls);
 
 
-void removeInViewConvexHullPoints(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, ConvexHull2D& convex_hull);
+void removeInViewConvexHullPoints(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, ConvexHull2D& convex_hull, float max_range);
 
 bool inView(rgbd::ImageConstPtr rgbd_image, const geo::Pose3D& sensor_pose, const geo::Vector3& p, float max_range, float padding_fraction, bool& in_frustrum, bool& object_in_front);
 
