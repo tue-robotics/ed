@@ -4,6 +4,10 @@
 #include <ed/update_request.h>
 #include <ed/entity.h>
 
+// Property info
+#include "pose_info.h"
+#include "counter_info.h"
+
 // ----------------------------------------------------------------------------------------------------
 
 CustomProperties::CustomProperties()
@@ -24,8 +28,8 @@ void CustomProperties::initialize(ed::InitData& init)
     // property. This name is used to specify properties accross plugins. The second is the property
     // key, which will be initialized when calling this function
 
-    init.properties.registerProperty("pose", k_pose_);
-    init.properties.registerProperty("counter", k_counter_);
+    init.properties.registerProperty("pose", k_pose_, new PoseInfo);
+    init.properties.registerProperty("counter", k_counter_, new CounterInfo);
 }
 
 // ----------------------------------------------------------------------------------------------------
