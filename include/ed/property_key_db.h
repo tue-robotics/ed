@@ -72,6 +72,15 @@ public:
         key.idx = entry->idx;
     }
 
+    const PropertyKeyDBEntry* getPropertyKeyDBEntry(const std::string& name) const
+    {
+        std::map<std::string, PropertyKeyDBEntry*>::const_iterator it = name_to_info_.find(name);
+        if (it == name_to_info_.end())
+            return 0;
+
+        return it->second;
+    }
+
 private:
 
     std::map<std::string, PropertyKeyDBEntry*> name_to_info_;

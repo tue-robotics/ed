@@ -58,6 +58,8 @@ public:
 
     typedef EntityIterator const_iterator;
 
+    WorldModel();
+
     inline const_iterator begin() const { return const_iterator(entities_); }
 
     inline const_iterator end() const { return const_iterator(entities_.end()); }
@@ -91,11 +93,19 @@ public:
     /// Warning: the return vector may return null-pointers
     const std::vector<RelationConstPtr>& relations() const { return relations_; }
 
+    unsigned long revision() const { return revision_; }
+
+    const std::vector<unsigned long>& entity_revisions() const { return entity_revisions_; }
+
 private:
+
+    unsigned long revision_;
 
     std::map<UUID, Idx> entity_map_;
 
     std::vector<EntityConstPtr> entities_;
+
+    std::vector<unsigned long> entity_revisions_;
 
     std::queue<Idx> entity_empty_spots_;
 
@@ -105,7 +115,7 @@ private:
 
     EntityPtr getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& new_entities);
 
-    void addNewEntity(const EntityConstPtr& e);
+    Idx addNewEntity(const EntityConstPtr& e);
 
 
 };

@@ -12,10 +12,19 @@ namespace ed
 
 // --------------------------------------------------------------------------------
 
+WorldModel::WorldModel() : revision_(0)
+{
+}
+
+// --------------------------------------------------------------------------------
+
 void WorldModel::update(const UpdateRequest& req)
 {
     if (req.empty())
         return;
+
+    // Increase revision number
+    ++revision_;
 
     std::map<UUID, EntityPtr> new_entities;
 
@@ -242,6 +251,12 @@ void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
     {
         relations_[r_idx] = r;
     }
+
+    // Update entity revisions
+    for(std::size_t i = entity_revisions_.size(); i < std::max(parent, child) + 1; ++i)
+        entity_revisions_.push_back(0);
+    entity_revisions_[parent] = revision_;
+    entity_revisions_[child] = revision_;
 }
 
 // --------------------------------------------------------------------------------
@@ -276,6 +291,7 @@ void WorldModel::removeEntity(const UUID& id)
     if (it_idx != entity_map_.end())
     {
         entities_[it_idx->second].reset();
+        entity_revisions_[it_idx->second] = revision_;
         entity_map_.erase(it_idx);
         entity_empty_spots_.push(it_idx->second);
     }
@@ -307,8 +323,15 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
     {
         // Does not yet exist
         e = boost::make_shared<Entity>(id);
-        addNewEntity(e);
+        idx = addNewEntity(e);
     }
+
+    // Update entity revision
+    e->setRevision(revision_);
+
+    for(std::size_t i = entity_revisions_.size(); i < idx + 1; ++i)
+        entity_revisions_.push_back(0);
+    entity_revisions_[idx] = revision_;
 
     return e;
 }
@@ -332,21 +355,24 @@ bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
 
 // --------------------------------------------------------------------------------
 
-void WorldModel::addNewEntity(const EntityConstPtr& e)
+Idx WorldModel::addNewEntity(const EntityConstPtr& e)
 {
+    Idx idx;
     if (entity_empty_spots_.empty())
     {
-        Idx idx = entities_.size();
+        idx = entities_.size();
         entity_map_[e->id()] = idx;
         entities_.push_back(e);
     }
     else
     {
-        Idx idx = entity_empty_spots_.front();
+        idx = entity_empty_spots_.front();
         entity_empty_spots_.pop();
         entity_map_[e->id()] = idx;
         entities_[idx] = e;
     }
+
+    return idx;
 }
 
 // --------------------------------------------------------------------------------

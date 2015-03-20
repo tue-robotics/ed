@@ -112,27 +112,27 @@ public:
         }
     }
 
-    template<typename T>
-    void setProperty(const PropertyKey<T>& key, const T& t)
-    {
-        if (!key.valid())
-            return;
+//    template<typename T>
+//    void setProperty(const PropertyKey<T>& key, const T& t)
+//    {
+//        if (!key.valid())
+//            return;
 
-        std::map<Idx, Property>::iterator it = properties_.find(key.idx);
-        if (it == properties_.end())
-        {
-            Property& p = properties_[key.idx];
-            p.entry = key.entry;
-            p.revision = 0;
-            p.value.setValue(t);
-        }
-        else
-        {
-            Property& p = it->second;
-            p.value.setValue(t);
-            ++(p.revision);
-        }
-    }
+//        std::map<Idx, Property>::iterator it = properties_.find(key.idx);
+//        if (it == properties_.end())
+//        {
+//            Property& p = properties_[key.idx];
+//            p.entry = key.entry;
+//            p.revision = 0;
+//            p.value.setValue(t);
+//        }
+//        else
+//        {
+//            Property& p = it->second;
+//            p.value.setValue(t);
+//            ++(p.revision);
+//        }
+//    }
 
     void setProperty(Idx idx, const Property& p)
     {
@@ -141,22 +141,31 @@ public:
         {
             Property& p_new = properties_[idx];
             p_new.entry = p.entry;
-            p_new.revision = 0;
+            p_new.revision = p.revision;
             p_new.value = p.value;
         }
         else
         {
             Property& p_new = it->second;
             p_new.value = p.value;
-            ++(p_new.revision);
+            p_new.revision = p.revision;
         }
+
+        if (revision_ < p.revision)
+            revision_ = p.revision;
     }
 
     const std::map<Idx, Property>& properties() const { return properties_; }
 
+    unsigned long revision() const { return revision_; }
+
+    void setRevision(unsigned long revision) { revision_ = revision; }
+
 private:
 
     UUID id_;
+
+    unsigned long revision_;
 
     TYPE type_;
 

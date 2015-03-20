@@ -53,6 +53,11 @@ public:
 
     void publishStatistics() const;
 
+    const PropertyKeyDBEntry* getPropertyKeyDBEntry(const std::string& name) const
+    {
+        return property_key_db_.getPropertyKeyDBEntry(name);
+    }
+
 private:
 
     // World model datastructure

@@ -9,6 +9,9 @@
 #include <geolib/ros/msg_conversions.h>
 #include <tue/config/yaml_emitter.h>
 
+#include "ed/Query.h"
+#include "ed/io/json_writer.h"
+
 // Update
 #include <ed/UpdateSrv.h>
 
@@ -104,6 +107,108 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
     // Check if the update_request is filled. Is so, update the world model
     if (!req.request.empty())
         ed_wm->update(req.request, res.response);
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
+{
+    tue::Timer timer;
+    timer.start();
+
+    // Set of queried ids
+    std::set<std::string> ids(req.ids.begin(), req.ids.end());
+
+    // convert property names to indexes
+    std::vector<ed::Idx> property_idxs;
+    for(std::vector<std::string>::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
+    {
+        const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(*it);
+        if (entry)
+            property_idxs.push_back(entry->idx);
+    }
+
+    const std::vector<unsigned long>& entity_revs = ed_wm->world_model()->entity_revisions();
+    const std::vector<ed::EntityConstPtr>&  entities = ed_wm->world_model()->entities();
+
+    std::vector<std::string> removed_entities;
+
+    std::stringstream out;
+    ed::io::JSONWriter w(out);
+
+    w.writeArray("entities");
+
+    for(ed::Idx i = 0; i < entity_revs.size(); ++i)
+    {
+        if (req.since_revision >= entity_revs[i])
+            continue;
+
+        const ed::EntityConstPtr& e = entities[i];
+
+        if (!ids.empty() && ids.find(e->id().str()) == ids.end())
+            continue;
+
+        if (e)
+        {
+            w.addArrayItem();
+            w.writeValue("id", e->id().str());
+            w.writeValue("idx", (int)i);
+
+            const std::map<ed::Idx, ed::Property>& properties = e->properties();
+
+            if (req.properties.empty())
+            {
+                for(std::map<ed::Idx, ed::Property>::const_iterator it = properties.begin(); it != properties.end(); ++it)
+                {
+                    const ed::Property& prop = it->second;
+                    if (req.since_revision < prop.revision && prop.entry->info->serializable())
+                    {
+                        w.writeGroup(prop.entry->name);
+                        prop.entry->info->serialize(prop.value, w);
+                        w.endGroup();
+                    }
+                }
+            }
+            else
+            {
+                for(std::vector<ed::Idx>::const_iterator it = property_idxs.begin(); it != property_idxs.end(); ++it)
+                {
+                    std::map<ed::Idx, ed::Property>::const_iterator it_prop = properties.find(*it);
+                    if (it_prop != properties.end())
+                    {
+                        const ed::Property& prop = it_prop->second;
+                        if (req.since_revision < prop.revision && prop.entry->info->serializable())
+                        {
+                            w.writeGroup(prop.entry->name);
+                            prop.entry->info->serialize(prop.value, w);
+                            w.endGroup();
+                        }
+                    }
+                }
+            }
+
+            w.endArrayItem();
+        }
+        else
+        {
+            // Was removed
+            removed_entities.push_back(e->id().str());
+        }
+    }
+
+    w.endArray();
+
+    if (!removed_entities.empty())
+        w.writeValue("removed_entities", &removed_entities[0], removed_entities.size());
+
+    w.finish();
+
+    res.human_readable = out.str();
+    res.new_revision = ed_wm->world_model()->revision();
+
+    std::cout << "[ED] Quering took " << timer.getElapsedTimeInMilliSec() << " ms." << std::endl;
 
     return true;
 }
@@ -391,6 +496,11 @@ int main(int argc, char** argv)
             ros::AdvertiseServiceOptions::create<ed::UpdateSrv>(
                 "update", srvUpdate, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_update = nh_private.advertiseService(opt_update);
+
+    ros::NodeHandle nh_private2("~");
+    nh_private2.setCallbackQueue(&cb_queue);
+
+    ros::ServiceServer srv_query = nh_private2.advertiseService("query", srvQuery);
 
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

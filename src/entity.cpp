@@ -13,6 +13,7 @@ namespace ed
 
 Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size) :
     id_(id),
+    revision_(0),
     type_(type),
     shape_revision_(0),
     measurements_(measurement_buffer_size),
