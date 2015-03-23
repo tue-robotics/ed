@@ -16,11 +16,13 @@
 namespace ed
 {
 
+struct GlobalData;
+
 class Entity
 {
 
 public:
-    Entity(const UUID& id = generateID(), const TYPE& type = "", const unsigned int& measurement_buffer_size = 5);
+    Entity(const UUID& id, const GlobalDataConstPtr& global_data);
     ~Entity();
 
     static UUID generateID();
@@ -46,13 +48,9 @@ public:
 
     void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
 
-    inline const geo::Pose3D& pose() const { return pose_; }
-    inline void setPose(const geo::Pose3D& pose)
-    {
-        pose_ = pose;
-        if (shape_)
-            updateConvexHull();
-    }
+    const geo::Pose3D& pose() const;
+
+    void setPose(const geo::Pose3D& pose);
 
     inline const geo::Pose3D& velocity() const { return velocity_; }
     inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }
@@ -197,6 +195,8 @@ private:
     std::map<Idx, Property> properties_;
 
     void updateConvexHull();
+
+    GlobalDataConstPtr global_data_;
 
 };
 

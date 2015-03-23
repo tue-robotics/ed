@@ -8,22 +8,26 @@
 #include <boost/make_shared.hpp>
 
 #include "ed/property_key_db.h"
+#include "ed/global_data.h"
 
 namespace ed
 {
 
 // --------------------------------------------------------------------------------
 
-WorldModel::WorldModel(const PropertyKeyDB* prop_key_db) : revision_(0), property_info_db_(prop_key_db)
+WorldModel::WorldModel() : revision_(0), global_data_(new GlobalData)
 {
 }
 
 // --------------------------------------------------------------------------------
 
-void WorldModel::update(const UpdateRequest& req)
+void WorldModel::update(const UpdateRequest& req_tmp)
 {
-    if (req.empty())
+    if (req_tmp.empty())
         return;
+
+    // Temp: make a copy
+    UpdateRequest req = req_tmp;
 
     // Increase revision number
     ++revision_;
@@ -46,6 +50,11 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setPose(it->second);
+
+        std::cout << it->first << " (" << e << "): set pose" << std::endl;
+
+        // New
+        req.setProperty(it->first, global_data_->k_pose_, it->second);
     }
 
     // Update shapes
@@ -53,6 +62,9 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setShape(it->second);
+
+        // New
+        req.setProperty(it->first, global_data_->k_shape_, it->second);
     }
 
     // Update convex hulls
@@ -67,6 +79,9 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setType(it->second);
+
+        // New
+        req.setProperty(it->first, global_data_->k_type_, it->second);
     }
 
     // Update relations
@@ -117,8 +132,12 @@ void WorldModel::update(const UpdateRequest& req)
 
         for(std::map<Idx, Property>::const_iterator it2 = props.begin(); it2 != props.end(); ++it2)
         {
-            const Property& p = it2->second;
+            Property p = it2->second;
+            p.revision = revision_;
             e->setProperty(it2->first, p);
+
+            std::cout << it->first << " (" << e << "): set property " << p.entry->name << std::endl;
+            std::cout << e->properties().size() << " properties" << std::endl;
         }
     }
 
@@ -306,25 +325,30 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
     // Check if the id is already in the new_entities map. If so, return it
     std::map<UUID, EntityPtr>::const_iterator it_e = new_entities.find(id);
     if (it_e != new_entities.end())
+    {
+        std::cout << "ALREADY EXISTS " << id << std::endl;
         return it_e->second;
+    }
 
     EntityPtr e;
 
     Idx idx;
     if (findEntityIdx(id, idx))
     {
+        std::cout << "COPY " << id << std::endl;
+
         // Create a copy of the existing entity
         e = boost::make_shared<Entity>(*entities_[idx]);
 
+        std::cout << "    " << e->properties().size() << " properties" << std::endl;
+
         // Set the copy
         entities_[idx] = e;
-
-        new_entities[id] = e;
     }
     else
     {
         // Does not yet exist
-        e = boost::make_shared<Entity>(id);
+        e = boost::make_shared<Entity>(id, global_data_);
         idx = addNewEntity(e);
     }
 
@@ -334,6 +358,8 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
     for(std::size_t i = entity_revisions_.size(); i < idx + 1; ++i)
         entity_revisions_.push_back(0);
     entity_revisions_[idx] = revision_;
+
+    new_entities[id] = e;
 
     return e;
 }
@@ -381,10 +407,7 @@ Idx WorldModel::addNewEntity(const EntityConstPtr& e)
 
 const PropertyKeyDBEntry* WorldModel::getPropertyInfo(const std::string& name) const
 {
-    if (!property_info_db_)
-        return 0;
-
-    return property_info_db_->getPropertyKeyDBEntry(name);
+    return global_data_->property_key_db_->getPropertyKeyDBEntry(name);
 }
 
 }

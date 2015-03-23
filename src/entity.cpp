@@ -11,18 +11,18 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size) :
+Entity::Entity(const UUID& id, const GlobalDataConstPtr& global_data) :
     id_(id),
     revision_(0),
-    type_(type),
-    measurements_(measurement_buffer_size),
+    measurements_(5),
     measurements_seq_(0),
     convex_hull_buffer_(20),
     shape_revision_(0),
 //    creation_time_(creation_time),
     pose_(geo::Pose3D::identity()),
     velocity_(geo::Pose3D::identity()),
-    average_displacement_vector_(geo::Vector3(0,0,0))
+    average_displacement_vector_(geo::Vector3(0,0,0)),
+    global_data_(global_data)
 {
     convex_hull_.center_point = geo::Vector3(0,0,0);
 }
@@ -79,7 +79,7 @@ void Entity::updateConvexHull()
 // ----------------------------------------------------------------------------------------------------
 
 void Entity::setShape(const geo::ShapeConstPtr& shape)
-{
+{    
     if (shape_ != shape)
     {
         ++shape_revision_;
@@ -184,6 +184,22 @@ UUID Entity::generateID() {
     }
 
     return UUID(s);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+const geo::Pose3D& Entity::pose() const
+{
+    return pose_;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void Entity::setPose(const geo::Pose3D& pose)
+{
+    pose_ = pose;
+    if (shape_)
+        updateConvexHull();
 }
 
 }

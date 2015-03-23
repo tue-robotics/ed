@@ -61,7 +61,7 @@ public:
 
     typedef EntityIterator const_iterator;
 
-    WorldModel(const PropertyKeyDB* prop_key_db = 0);
+    WorldModel();
 
     inline const_iterator begin() const { return const_iterator(entities_); }
 
@@ -102,6 +102,10 @@ public:
 
     const PropertyKeyDBEntry* getPropertyInfo(const std::string& name) const;
 
+    GlobalDataConstPtr global_data() const { return global_data_; }
+
+    GlobalDataPtr global_data() { return global_data_; }
+
 private:
 
     unsigned long revision_;
@@ -116,7 +120,7 @@ private:
 
     std::vector<RelationConstPtr> relations_;
 
-    const PropertyKeyDB* property_info_db_;
+    GlobalDataPtr global_data_;
 
     Idx addRelation(const RelationConstPtr& r);
 

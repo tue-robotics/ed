@@ -58,6 +58,10 @@ class Relation;
 typedef boost::shared_ptr<Relation> RelationPtr;
 typedef boost::shared_ptr<const Relation> RelationConstPtr;
 
+struct GlobalData;
+typedef boost::shared_ptr<GlobalData> GlobalDataPtr;
+typedef boost::shared_ptr<const GlobalData> GlobalDataConstPtr;
+
 class ConvexHull2D;
 class ImageMask;
 

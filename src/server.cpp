@@ -25,17 +25,35 @@
 #include <std_msgs/String.h>
 
 #include "ed/serialization/serialization.h"
+
+#include "ed/global_data.h"
+
 #include <tue/config/writer.h>
 
 #include "ed/error_context.h"
+
+// Properties (temporary)
+#include "ed/properties/pose_info.h"
+#include "ed/properties/string_info.h"
+#include "ed/properties/shape_info.h"
 
 namespace ed
 {
 
 // ----------------------------------------------------------------------------------------------------
 
-Server::Server() : world_model_(new WorldModel(&property_key_db_))
+Server::Server()
 {
+    WorldModelPtr wm(new WorldModel);
+
+    GlobalDataPtr global_data = wm->global_data();
+    global_data->property_key_db_ = &property_key_db_;
+
+    property_key_db_.registerProperty("pose", global_data->k_pose_, new PoseInfo);
+    property_key_db_.registerProperty("type", global_data->k_type_, new StringInfo);
+    property_key_db_.registerProperty("shape", global_data->k_shape_, new ShapeInfo);
+
+    world_model_ = wm;
 }
 
 // ----------------------------------------------------------------------------------------------------
