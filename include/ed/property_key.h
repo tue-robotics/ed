@@ -11,12 +11,12 @@ class PropertyKeyDBEntry;
 template<typename T>
 struct PropertyKey
 {
-    PropertyKey() : idx(-1), entry(0) {}
+    PropertyKey() : idx(INVALID_IDX), entry(0) {}
     Idx idx;
 
     const PropertyKeyDBEntry* entry;
 
-    bool valid() const { return idx != -1; }
+    bool valid() const { return idx != INVALID_IDX; }
 };
 
 } // end namespace

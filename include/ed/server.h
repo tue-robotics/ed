@@ -35,6 +35,8 @@ public:
 
     void update();
 
+    void update(const ed::UpdateRequest& req);
+
     void update(const std::string& update_str, std::string& error);
 
     void storeEntityMeasurements(const std::string& path) const;

@@ -41,9 +41,9 @@ add_service_files(
    SetLabel.srv
    SimpleQuery.srv
    LoadPlugin.srv
-   UpdateSrv.srv
 
    Query.srv
+   UpdateSrv.srv
 
    # For builder plugin
    SetEntity.srv
@@ -69,6 +69,8 @@ catkin_package(
 ###########
 ## Build ##
 ###########
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreturn-type -Wsign-compare -Wreorder")
 
 include_directories(
     include
@@ -129,6 +131,8 @@ add_library(ed_io
     src/io/transport/probe.cpp
     src/io/transport/probe_ros.cpp
     src/io/transport/probe_client.cpp
+
+    src/io/json_reader.cpp
 )
 target_link_libraries(ed_io ed_core)
 add_dependencies(ed_io ${PROJECT_NAME}_gencpp)

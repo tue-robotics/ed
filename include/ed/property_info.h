@@ -4,6 +4,7 @@
 #include "ed/types.h"
 #include "ed/variant.h"
 #include "ed/io/writer.h"
+#include "ed/io/reader.h"
 
 namespace ed
 {
@@ -18,6 +19,8 @@ public:
     virtual ~PropertyInfo() {}
 
     virtual void serialize(const Variant& v, io::Writer& out) const { }
+
+    virtual bool deserialize(io::Reader& in, Variant& v) const { return false; }
 
     virtual bool serializable() const { return false; }
 

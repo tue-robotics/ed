@@ -14,6 +14,8 @@
 
 // Update
 #include <ed/UpdateSrv.h>
+#include "ed/io/json_reader.h"
+#include "ed/update_request.h"
 
 // Reset
 #include <std_srvs/Empty.h>
@@ -104,9 +106,71 @@ bool srvReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 
 bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
 {
-    // Check if the update_request is filled. Is so, update the world model
-    if (!req.request.empty())
-        ed_wm->update(req.request, res.response);
+    ed::io::JSONReader r(req.request.c_str());
+
+    if (!r.ok())
+    {
+        res.response = r.error();
+        return true;
+    }
+
+    ed::UpdateRequest update_req;
+
+    if (r.readArray("entities"))
+    {
+        while(r.nextArrayItem())
+        {
+            std::string id;
+            if (!r.readValue("id", id))
+            {
+                res.response += "Entities should have field 'id'.\n";
+                continue;
+            }
+
+            if (r.readArray("properties"))
+            {
+                while(r.nextArrayItem())
+                {
+                    std::string prop_name;
+                    if (!r.readValue("name", prop_name))
+                        continue;
+
+                    const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(prop_name);
+                    if (!entry)
+                    {
+                        res.response += "For entity '" + id + "': unknown property '" + prop_name +"'.\n";
+                        continue;
+                    }
+
+                    if (!entry->info->serializable())
+                    {
+                        res.response += "For entity '" + id + "': property '" + prop_name +"' is not serializable.\n";
+                        continue;
+                    }
+
+                    ed::Variant value;
+                    if (entry->info->deserialize(r, value))
+                        update_req.setProperty(id, entry, value);
+                    else
+                        res.response += "For entity '" + id + "': deserialization of property '" + prop_name +"' failed.\n";
+                }
+
+                r.endArray();
+            }
+        }
+
+        r.endArray();
+    }
+
+    if (r.ok())
+    {
+        if (!update_req.empty())
+            ed_wm->update(update_req);
+    }
+    else
+    {
+        res.response = r.error();
+    }
 
     return true;
 }
@@ -156,6 +220,8 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
             w.writeValue("id", e->id().str());
             w.writeValue("idx", (int)i);
 
+            w.writeArray("properties");
+
             const std::map<ed::Idx, ed::Property>& properties = e->properties();
 
             if (req.properties.empty())
@@ -165,9 +231,10 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
                     const ed::Property& prop = it->second;
                     if (req.since_revision < prop.revision && prop.entry->info->serializable())
                     {
-                        w.writeGroup(prop.entry->name);
+                        w.addArrayItem();
+                        w.writeValue("name", prop.entry->name);
                         prop.entry->info->serialize(prop.value, w);
-                        w.endGroup();
+                        w.endArrayItem();
                     }
                 }
             }
@@ -181,13 +248,16 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
                         const ed::Property& prop = it_prop->second;
                         if (req.since_revision < prop.revision && prop.entry->info->serializable())
                         {
-                            w.writeGroup(prop.entry->name);
+                            w.addArrayItem();
+                            w.writeValue("name", prop.entry->name);
                             prop.entry->info->serialize(prop.value, w);
-                            w.endGroup();
+                            w.endArrayItem();
                         }
                     }
                 }
             }
+
+            w.endArray();
 
             w.endArrayItem();
         }
@@ -492,15 +562,11 @@ int main(int argc, char** argv)
                 "load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_load_plugin = nh_private.advertiseService(opt_load_plugin);
 
-    ros::AdvertiseServiceOptions opt_update =
-            ros::AdvertiseServiceOptions::create<ed::UpdateSrv>(
-                "update", srvUpdate, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_update = nh_private.advertiseService(opt_update);
-
     ros::NodeHandle nh_private2("~");
     nh_private2.setCallbackQueue(&cb_queue);
 
     ros::ServiceServer srv_query = nh_private2.advertiseService("query", srvQuery);
+    ros::ServiceServer srv_update = nh_private2.advertiseService("update", srvUpdate);
 
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

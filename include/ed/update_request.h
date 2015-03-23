@@ -5,6 +5,7 @@
 #include "ed/uuid.h"
 #include "ed/property.h"
 #include "ed/property_key.h"
+#include "ed/property_key_db.h"
 
 #include <tue/config/data_pointer.h>
 
@@ -104,6 +105,14 @@ public:
         Property& p = properties[id][key.idx];
         p.entry = key.entry;
         p.value = value;
+        flagUpdated(id);
+    }
+
+    void setProperty(const UUID& id, const PropertyKeyDBEntry* entry, const ed::Variant& v)
+    {
+        Property& p = properties[id][entry->idx];
+        p.entry = entry;
+        p.value = v;
         flagUpdated(id);
     }
 

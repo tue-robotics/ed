@@ -307,6 +307,27 @@ void Server::update()
 
 // ----------------------------------------------------------------------------------------------------
 
+void Server::update(const ed::UpdateRequest& req)
+{
+    // Create world model copy (shallow)
+    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+
+    // Update the world model
+    new_world_model->update(req);
+
+    // Notify all plugins of the updated world model
+    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    {
+        PluginContainerPtr c = *it;
+        c->setWorld(new_world_model);
+    }
+
+    // Set the new (updated) world
+    world_model_ = new_world_model;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void Server::update(const std::string& update_str, std::string& error)
 {
     tue::ScopedTimer t(profiler_, "ed");
