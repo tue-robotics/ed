@@ -13,7 +13,7 @@ namespace ed
 // --------------------------------------------------------------------------------
 
 PluginContainer::PluginContainer()
-    : class_loader_(0), cycle_duration_(0.1), loop_frequency_(10), stop_(false), step_finished_(true), t_last_update_(0),
+    : class_loader_(0), stop_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
       total_process_time_sec_(0)
 {
     timer_.start();

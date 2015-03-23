@@ -110,7 +110,7 @@ int main(int argc, char **argv)
             }
         }
 
-        for(unsigned int i = 0; i < depth_image.rows * depth_image.cols; ++i)
+        for(int i = 0; i < depth_image.rows * depth_image.cols; ++i)
         {
             float& d = depth_image.at<float>(i);
             if (d > 0)

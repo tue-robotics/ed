@@ -204,7 +204,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                 std::vector<geo::Vec2i> points, line_starts;
                 findContours(image, geo::Vec2i(x, y), 0, points, line_starts, contour_map, true);
 
-                int num_points = points.size();
+                unsigned int num_points = points.size();
 
                 if (num_points > 2)
                 {
@@ -234,7 +234,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                     testpolys.push_back(poly);
 
                     // Calculate side triangles
-                    for(int i = 0; i < num_points; ++i)
+                    for(unsigned int i = 0; i < num_points; ++i)
                     {
                         int j = (i + 1) % num_points;
                         mesh.addTriangle(i * 2, i * 2 + 1, j * 2);
@@ -276,7 +276,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                                 testpolys.push_back(poly_hole);
 
                                 // Calculate side triangles
-                                for(int j = 0; j < hole_points.size(); ++j)
+                                for(unsigned int j = 0; j < hole_points.size(); ++j)
                                 {
                                     const geo::Vec2i& hp1 = hole_points[j];
                                     const geo::Vec2i& hp2 = hole_points[(j + 1) % hole_points.size()];
