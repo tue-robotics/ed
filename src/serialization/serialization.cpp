@@ -88,17 +88,20 @@ void serialize(const WorldModel& wm, tue::config::Writer& w)
         w.setValue("id", e->id().str());
         w.setValue("type", e->type());
 
-        w.writeGroup("pose");
-        w.setValue("x", e->pose().t.x);
-        w.setValue("y", e->pose().t.y);
-        w.setValue("z", e->pose().t.z);
+        if (e->has_pose())
+        {
+            w.writeGroup("pose");
+            w.setValue("x", e->pose().t.x);
+            w.setValue("y", e->pose().t.y);
+            w.setValue("z", e->pose().t.z);
 
-        double X, Y, Z;
-        getEulerYPR(e->pose().R, Z, Y, X);
-        w.setValue("X", X);
-        w.setValue("Y", Y);
-        w.setValue("Z", Z);
-        w.endGroup();
+            double X, Y, Z;
+            getEulerYPR(e->pose().R, Z, Y, X);
+            w.setValue("X", X);
+            w.setValue("Y", Y);
+            w.setValue("Z", Z);
+            w.endGroup();
+        }
 
         w.endArrayItem();
     }
