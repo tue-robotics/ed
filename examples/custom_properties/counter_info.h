@@ -14,6 +14,15 @@ public:
         w.writeValue("value", counter);
     }
 
+    bool deserialize(ed::io::Reader& r, ed::Variant& v) const
+    {
+        int counter;
+        r.readValue("value", counter);
+        v.setValue<int>(counter);
+
+        return true;
+    }
+
     bool serializable() const { return true; }
 
 };

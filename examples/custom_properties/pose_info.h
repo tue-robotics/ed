@@ -31,6 +31,36 @@ public:
         w.endGroup();
     }
 
+    bool deserialize(ed::io::Reader& r, ed::Variant& v) const
+    {
+        geo::Pose3D p = geo::Pose3D::identity();
+
+        if (r.readGroup("pos"))
+        {
+            r.readValue("x", p.t.x);
+            r.readValue("y", p.t.y);
+            r.readValue("z", p.t.z);
+            r.endGroup();
+        }
+
+        if (r.readGroup("rot"))
+        {
+            r.readValue("xx", p.R.xx);
+            r.readValue("xy", p.R.xy);
+            r.readValue("xz", p.R.xz);
+            r.readValue("yx", p.R.yx);
+            r.readValue("yy", p.R.yy);
+            r.readValue("yz", p.R.yz);
+            r.readValue("zx", p.R.zx);
+            r.readValue("zy", p.R.zy);
+            r.readValue("zz", p.R.zz);
+            r.endGroup();
+        }
+
+        v = p;
+        return true;
+    }
+
     bool serializable() const { return true; }
 
 };
