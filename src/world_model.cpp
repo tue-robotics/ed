@@ -7,12 +7,14 @@
 #include <tue/config/reader.h>
 #include <boost/make_shared.hpp>
 
+#include "ed/property_key_db.h"
+
 namespace ed
 {
 
 // --------------------------------------------------------------------------------
 
-WorldModel::WorldModel() : revision_(0)
+WorldModel::WorldModel(const PropertyKeyDB* prop_key_db) : revision_(0), property_info_db_(prop_key_db)
 {
 }
 
@@ -377,6 +379,13 @@ Idx WorldModel::addNewEntity(const EntityConstPtr& e)
 
 // --------------------------------------------------------------------------------
 
+const PropertyKeyDBEntry* WorldModel::getPropertyInfo(const std::string& name) const
+{
+    if (!property_info_db_)
+        return 0;
+
+    return property_info_db_->getPropertyKeyDBEntry(name);
+}
 
 }
 

@@ -34,7 +34,7 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-Server::Server() : world_model_(new WorldModel)
+Server::Server() : world_model_(new WorldModel(&property_key_db_))
 {
 }
 

@@ -11,6 +11,9 @@
 namespace ed
 {
 
+class PropertyKeyDB;
+class PropertyKeyDBEntry;
+
 // ----------------------------------------------------------------------------------------------------
 
 class WorldModel
@@ -58,7 +61,7 @@ public:
 
     typedef EntityIterator const_iterator;
 
-    WorldModel();
+    WorldModel(const PropertyKeyDB* prop_key_db = 0);
 
     inline const_iterator begin() const { return const_iterator(entities_); }
 
@@ -97,6 +100,8 @@ public:
 
     const std::vector<unsigned long>& entity_revisions() const { return entity_revisions_; }
 
+    const PropertyKeyDBEntry* getPropertyInfo(const std::string& name) const;
+
 private:
 
     unsigned long revision_;
@@ -110,6 +115,8 @@ private:
     std::queue<Idx> entity_empty_spots_;
 
     std::vector<RelationConstPtr> relations_;
+
+    const PropertyKeyDB* property_info_db_;
 
     Idx addRelation(const RelationConstPtr& r);
 
