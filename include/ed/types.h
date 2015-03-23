@@ -5,12 +5,14 @@
 //#include <geolib/datatypes.h>
 
 #include <boost/shared_ptr.hpp>
+#include <limits>
+#include <stdint.h>
 
 namespace ed
 {
 
-typedef unsigned int Idx;
-static const unsigned int INVALID_IDX = -1;
+typedef uint64_t Idx;
+static const Idx INVALID_IDX = std::numeric_limits<Idx>::max();
 
 class Measurement;
 typedef boost::shared_ptr<Measurement> MeasurementPtr;
