@@ -22,7 +22,7 @@ class Entity
 {
 
 public:
-    Entity(const UUID& id, const GlobalDataConstPtr& global_data);
+    Entity(const UUID& id, const GlobalDataConstPtr& global_data = GlobalDataConstPtr());
     ~Entity();
 
     static UUID generateID();
@@ -48,9 +48,23 @@ public:
 
     void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
 
-    const geo::Pose3D& pose() const;
+    inline const geo::Pose3D& pose() const
+    {
+        if (!has_pose_)
+            std::cout << "[ED] WARNING! Someone's accessing an entity's pose while it doesnt have one." << std::endl;
+        return pose_;
+    }
 
-    void setPose(const geo::Pose3D& pose);
+    inline void setPose(const geo::Pose3D& pose)
+    {
+        pose_ = pose;
+        if (shape_)
+            updateConvexHull();
+
+        has_pose_ = true;
+    }
+
+    inline bool has_pose() const { return has_pose_; }
 
     inline const geo::Pose3D& velocity() const { return velocity_; }
     inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }
@@ -177,6 +191,7 @@ private:
     int shape_revision_;
     ConvexHull2D convex_hull_;
 
+    bool has_pose_;
     geo::Pose3D pose_;
     geo::Pose3D velocity_;
     geo::Vector3 average_displacement_vector_;

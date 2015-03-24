@@ -280,7 +280,7 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
 
         geo::ShapeConstPtr shape = e->shape();
 
-        if (shape) { // Do the shape
+        if (shape && e->has_pose()) { // Do the shape
 
             m.type = visualization_msgs::Marker::TRIANGLE_LIST;
             m.scale.x = m.scale.y = m.scale.z = 1.0;
@@ -311,7 +311,7 @@ void publishWorldModelVisualizationMarkerArray(const WorldModel& world_model, co
             }
             m_array.markers.push_back(m);
 
-        } else { // Do the convex hull
+        } else if (e->has_pose()) { // Do the convex hull
 
             getConvexHullVisualizationMarker(m, e->convexHull(), getHash(e->id().str()), "ns");
             m_array.markers.push_back(m);

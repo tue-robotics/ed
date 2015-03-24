@@ -211,24 +211,47 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
 
         const ed::EntityConstPtr& e = entities[i];
 
+        if (!e)
+        {
+            // Was removed
+            //            removed_entities.push_back(e->id().str());
+            continue;
+        }
+
         if (!ids.empty() && ids.find(e->id().str()) == ids.end())
             continue;
 
-        if (e)
+        w.addArrayItem();
+        w.writeValue("id", e->id().str());
+        w.writeValue("idx", (int)i);
+
+        w.writeArray("properties");
+
+        const std::map<ed::Idx, ed::Property>& properties = e->properties();
+
+        if (req.properties.empty())
         {
-            w.addArrayItem();
-            w.writeValue("id", e->id().str());
-            w.writeValue("idx", (int)i);
-
-            w.writeArray("properties");
-
-            const std::map<ed::Idx, ed::Property>& properties = e->properties();
-
-            if (req.properties.empty())
+            for(std::map<ed::Idx, ed::Property>::const_iterator it = properties.begin(); it != properties.end(); ++it)
             {
-                for(std::map<ed::Idx, ed::Property>::const_iterator it = properties.begin(); it != properties.end(); ++it)
+                const ed::Property& prop = it->second;
+
+                if (req.since_revision < prop.revision && prop.entry->info->serializable())
                 {
-                    const ed::Property& prop = it->second;
+                    w.addArrayItem();
+                    w.writeValue("name", prop.entry->name);
+                    prop.entry->info->serialize(prop.value, w);
+                    w.endArrayItem();
+                }
+            }
+        }
+        else
+        {
+            for(std::vector<ed::Idx>::const_iterator it = property_idxs.begin(); it != property_idxs.end(); ++it)
+            {
+                std::map<ed::Idx, ed::Property>::const_iterator it_prop = properties.find(*it);
+                if (it_prop != properties.end())
+                {
+                    const ed::Property& prop = it_prop->second;
 
                     if (req.since_revision < prop.revision && prop.entry->info->serializable())
                     {
@@ -239,35 +262,11 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
                     }
                 }
             }
-            else
-            {
-                for(std::vector<ed::Idx>::const_iterator it = property_idxs.begin(); it != property_idxs.end(); ++it)
-                {
-                    std::map<ed::Idx, ed::Property>::const_iterator it_prop = properties.find(*it);
-                    if (it_prop != properties.end())
-                    {
-                        const ed::Property& prop = it_prop->second;
-
-                        if (req.since_revision < prop.revision && prop.entry->info->serializable())
-                        {
-                            w.addArrayItem();
-                            w.writeValue("name", prop.entry->name);
-                            prop.entry->info->serialize(prop.value, w);
-                            w.endArrayItem();
-                        }
-                    }
-                }
-            }
-
-            w.endArray();
-
-            w.endArrayItem();
         }
-        else
-        {
-            // Was removed
-            removed_entities.push_back(e->id().str());
-        }
+
+        w.endArray();
+
+        w.endArrayItem();
     }
 
     w.endArray();

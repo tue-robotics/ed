@@ -19,6 +19,7 @@ Entity::Entity(const UUID& id, const GlobalDataConstPtr& global_data) :
     convex_hull_buffer_(20),
     shape_revision_(0),
 //    creation_time_(creation_time),
+    has_pose_(false),
     pose_(geo::Pose3D::identity()),
     velocity_(geo::Pose3D::identity()),
     average_displacement_vector_(geo::Vector3(0,0,0)),
@@ -184,22 +185,6 @@ UUID Entity::generateID() {
     }
 
     return UUID(s);
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-const geo::Pose3D& Entity::pose() const
-{
-    return pose_;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void Entity::setPose(const geo::Pose3D& pose)
-{
-    pose_ = pose;
-    if (shape_)
-        updateConvexHull();
 }
 
 }

@@ -352,9 +352,11 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
 
 bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
 {
-    idx = id.idx;
-    if (idx != INVALID_IDX && entities_[idx] && entities_[idx]->id() == id.str())
+    if (id.idx != INVALID_IDX && entities_[id.idx] && entities_[id.idx]->id() == id.str())
+    {
+        idx = id.idx;
         return true;
+    }
 
     std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
     if (it == entity_map_.end())

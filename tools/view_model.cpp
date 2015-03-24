@@ -103,8 +103,7 @@ int main(int argc, char **argv)
             const ed::EntityConstPtr& e = *it;
             const std::string& id = e->id().str();
 
-            if (e->shape() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
-
+            if (e->shape() && e->has_pose() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
             {
                 cam.rasterize(*e->shape(), geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0), geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose(), depth_image);
             }

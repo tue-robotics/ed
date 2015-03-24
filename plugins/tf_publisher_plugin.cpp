@@ -46,6 +46,9 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
     {
         const ed::EntityConstPtr& e = *it;
 
+        if (!e->has_pose())
+            continue;
+
         std::string id = e->id().str();
         if (!id.empty() && id[0] == '/')
             id = id.substr(1);
