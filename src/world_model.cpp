@@ -290,8 +290,8 @@ void WorldModel::removeEntity(const UUID& id)
     {
         entities_[it_idx->second].reset();
         entity_revisions_[it_idx->second] = revision_;
-        entity_map_.erase(it_idx);
         entity_empty_spots_.push(it_idx->second);
+        entity_map_.erase(it_idx);
     }
 }
 
@@ -338,9 +338,11 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
 
 bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
 {
-    idx = id.idx;
-    if (idx != INVALID_IDX && entities_[idx] && entities_[idx]->id() == id.str())
+    if (id.idx != INVALID_IDX && entities_[id.idx] && entities_[id.idx]->id() == id.str())
+    {
+        idx = id.idx;
         return true;
+    }
 
     std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
     if (it == entity_map_.end())
