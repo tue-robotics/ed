@@ -94,20 +94,16 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
 
-            EntityPtr e_updated(new Entity(*e));
+        tue::config::DataPointer params;
+        params.add(e->data());
+        params.add(it->second);
 
-            tue::config::DataPointer params;
-            params.add(e->data());
-            params.add(it->second);
+        tue::config::Reader r(params);
+        std::string type;
+        if (r.value("type", type, tue::config::OPTIONAL))
+            e->setType(type);
 
-            tue::config::Reader r(params);
-            std::string type;
-            if (r.value("type", type, tue::config::OPTIONAL))
-                e_updated->setType(type);
-
-            e_updated->setData(params);
-
-            setEntity(it->first, e_updated);
+        e->setData(params);
     }
 
     for(std::map<UUID, std::map<Idx, Property> >::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
@@ -318,8 +314,6 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
 
         // Set the copy
         entities_[idx] = e;
-
-        new_entities[id] = e;
     }
     else
     {
@@ -330,6 +324,8 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
 
     // Update entity revision
     e->setRevision(revision_);
+
+    new_entities[id] = e;
 
     for(std::size_t i = entity_revisions_.size(); i < idx + 1; ++i)
         entity_revisions_.push_back(0);
