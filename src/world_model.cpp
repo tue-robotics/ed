@@ -51,8 +51,6 @@ void WorldModel::update(const UpdateRequest& req_tmp)
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setPose(it->second);
 
-        std::cout << it->first << " (" << e << "): set pose" << std::endl;
-
         // New
         req.setProperty(it->first, global_data_->k_pose_, it->second);
     }
@@ -97,11 +95,11 @@ void WorldModel::update(const UpdateRequest& req_tmp)
                 if (findEntityIdx(it2->first, idx2))
                     setRelation(idx1, idx2, it2->second);
                 else
-                    std::cout << "WorldModel::update (relation): unknown entity: '" << it2->first << "'." << std::endl;
+                    std::cout << "[ED] WorldModel::update (relation): unknown entity: '" << it2->first << "'." << std::endl;
             }
         }
         else
-            std::cout << "WorldModel::update (relation): unknown entity: '" << it->first << "'." << std::endl;
+            std::cout << "[ED] WorldModel::update (relation): unknown entity: '" << it->first << "'." << std::endl;
     }
 
     // Update additional info (data)
@@ -109,20 +107,16 @@ void WorldModel::update(const UpdateRequest& req_tmp)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
 
-            EntityPtr e_updated(new Entity(*e));
+        tue::config::DataPointer params;
+        params.add(e->data());
+        params.add(it->second);
 
-            tue::config::DataPointer params;
-            params.add(e->data());
-            params.add(it->second);
+        tue::config::Reader r(params);
+        std::string type;
+        if (r.value("type", type, tue::config::OPTIONAL))
+            e->setType(type);
 
-            tue::config::Reader r(params);
-            std::string type;
-            if (r.value("type", type, tue::config::OPTIONAL))
-                e_updated->setType(type);
-
-            e_updated->setData(params);
-
-            setEntity(it->first, e_updated);
+        e->setData(params);
     }
 
     for(std::map<UUID, std::map<Idx, Property> >::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
@@ -135,9 +129,6 @@ void WorldModel::update(const UpdateRequest& req_tmp)
             Property p = it2->second;
             p.revision = revision_;
             e->setProperty(it2->first, p);
-
-            std::cout << it->first << " (" << e << "): set property " << p.entry->name << std::endl;
-            std::cout << e->properties().size() << " properties" << std::endl;
         }
     }
 
@@ -325,22 +316,15 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
     // Check if the id is already in the new_entities map. If so, return it
     std::map<UUID, EntityPtr>::const_iterator it_e = new_entities.find(id);
     if (it_e != new_entities.end())
-    {
-        std::cout << "ALREADY EXISTS " << id << std::endl;
         return it_e->second;
-    }
 
     EntityPtr e;
 
     Idx idx;
     if (findEntityIdx(id, idx))
     {
-        std::cout << "COPY " << id << std::endl;
-
         // Create a copy of the existing entity
         e = boost::make_shared<Entity>(*entities_[idx]);
-
-        std::cout << "    " << e->properties().size() << " properties" << std::endl;
 
         // Set the copy
         entities_[idx] = e;

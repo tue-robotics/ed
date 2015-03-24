@@ -220,20 +220,15 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
             w.writeValue("id", e->id().str());
             w.writeValue("idx", (int)i);
 
-            std::cout << e->id() << ": ";
-
             w.writeArray("properties");
 
             const std::map<ed::Idx, ed::Property>& properties = e->properties();
-            std::cout << properties.size() << " properties" << std::endl;
 
             if (req.properties.empty())
             {
                 for(std::map<ed::Idx, ed::Property>::const_iterator it = properties.begin(); it != properties.end(); ++it)
                 {
                     const ed::Property& prop = it->second;
-
-                    std::cout << "    " << prop.entry->name << std::endl;
 
                     if (req.since_revision < prop.revision && prop.entry->info->serializable())
                     {
@@ -252,8 +247,6 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
                     if (it_prop != properties.end())
                     {
                         const ed::Property& prop = it_prop->second;
-
-                        std::cout << "    " << prop.entry->name << std::endl;
 
                         if (req.since_revision < prop.revision && prop.entry->info->serializable())
                         {
