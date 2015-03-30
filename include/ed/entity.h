@@ -13,6 +13,8 @@
 #include "ed/property.h"
 #include "ed/property_key.h"
 
+#include "ed/logging.h"
+
 namespace ed
 {
 
@@ -49,7 +51,7 @@ public:
     inline const geo::Pose3D& pose() const
     {
         if (!has_pose_)
-            std::cout << "[ED] WARNING! Someone's accessing an entity's pose while it doesnt have one." << std::endl;
+            log::warning() << "Someone's accessing an entity's pose while it doesnt have one." << std::endl;
         return pose_;
     }
 

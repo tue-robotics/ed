@@ -108,6 +108,9 @@ add_library(ed_core
     src/helpers/depth_data_processing.cpp
     src/helpers/clipper/clipper.cpp
 
+    # Logging
+    src/logging.cpp
+
     src/error_context.cpp
     include/ed/error_context.h
 
