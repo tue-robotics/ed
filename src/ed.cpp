@@ -299,6 +299,9 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;
 
+        if (!e->has_pose()) //  TODO: also check for custom property pose
+            continue;
+
         if (!req.type.empty())
         {
             if (req.type == "unknown")
