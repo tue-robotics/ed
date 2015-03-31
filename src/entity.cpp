@@ -101,7 +101,8 @@ void Entity::addMeasurement(MeasurementConstPtr measurement)
     // Update beste measurement
     if (best_measurement_)
     {
-        if (measurement->mask()->size() > best_measurement_->mask()->size())
+        if (measurement->imageMask().getSize() > best_measurement_->imageMask().getSize()
+                || (measurement->mask() && best_measurement_->mask() && measurement->mask()->size() > best_measurement_->mask()->size()))
             best_measurement_ = measurement;
     }
     else
