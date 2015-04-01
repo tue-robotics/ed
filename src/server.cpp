@@ -115,26 +115,22 @@ void Server::reset()
 {
     ErrorContext errc("Server", "reset");
 
-    // Prepare default world-addition request
-    UpdateRequestPtr req_world(new UpdateRequest);
-    std::stringstream error;
-    if (!model_loader_.create(world_name_, world_name_, *req_world, error))
-    {
-        ROS_ERROR_STREAM("[ED] While resetting world: " << error.str());
-        return;
-    }
-
     // Prepare deletion request
     UpdateRequestPtr req_delete(new UpdateRequest);
     for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
-        req_delete->removeEntity((*it)->id());
+    {
+        // Only remove entities that do not have a (mesh) shape, but DO have a convex hull. This way
+        // only entities that are added by sensor integration are removed
+        const ed::EntityConstPtr& e = *it;
+        if (!e->shape() && !e->convexHull().chull.empty())
+            req_delete->removeEntity((*it)->id());
+    }
 
     // Create world model copy
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
-    // Apply the requests (first deletion, than default world creation)
+    // Apply the deletion request
     new_world_model->update(*req_delete);
-    new_world_model->update(*req_world);
 
     // Swap to new world model
     world_model_ = new_world_model;
@@ -144,7 +140,6 @@ void Server::reset()
     {
         const PluginContainerPtr& c = *it;
         c->addDelta(req_delete);
-        c->addDelta(req_world);
         c->setWorld(new_world_model);
     }
 }
