@@ -66,13 +66,6 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 {
     ErrorContext errc("Server", "configure");
 
-    // For now, do not reconfigure perception
-    if (!reconfigure && config.readGroup("perception"))
-    {
-        perception_.configure(config.limitScope());
-        config.endGroup();
-    }
-
     // Unload all previously loaded plugins
     plugin_containers_.clear();
 
@@ -269,18 +262,6 @@ void Server::update()
 
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
-
-    // Perception update (make soup of the entity measurements)
-    {
-        // TODO: move this to a plugin
-
-        tue::ScopedTimer t(profiler_, "perception");
-        ErrorContext errc("Serve::update()", "perception");
-
-        UpdateRequest req;
-        perception_.update(new_world_model, req);
-        new_world_model->update(req);
-    }
 
     // Look if we can merge some not updates entities
     {

@@ -61,7 +61,7 @@ generate_messages(
 ###################################
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES ed_core ed_io ed_perception ed_visualization
+    LIBRARIES ed_core ed_io ed_visualization
     CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
 #  DEPENDS system_lib
 )
@@ -119,14 +119,6 @@ add_library(ed_core
 target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(ed_core ${PROJECT_NAME}_gencpp)
 
-add_library(ed_perception
-    src/perception_modules/perception_module.cpp
-    src/perception.cpp
-    src/perception_worker.cpp
-)
-target_link_libraries(ed_perception ed_core)
-add_dependencies(ed_perception ${PROJECT_NAME}_gencpp)
-
 add_library(ed_io
     src/serialization/serialization.cpp
     src/io/filesystem/read.cpp
@@ -158,7 +150,7 @@ add_executable(ed
     src/server.cpp
     src/plugin_container.cpp
 )
-target_link_libraries(ed ed_core ed_perception ed_io ed_visualization)
+target_link_libraries(ed ed_core ed_io ed_visualization)
 add_dependencies(ed ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------

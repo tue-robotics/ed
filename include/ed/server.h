@@ -2,7 +2,6 @@
 #define ED_SERVER_H_
 
 #include "ed/types.h"
-#include "ed/perception.h"
 
 #include <tue/profiling/profiler.h>
 #include <tue/profiling/ros/profile_publisher.h>
@@ -14,6 +13,8 @@
 #include <ed/models/model_loader.h>
 
 #include "ed/property_key_db.h"
+
+#include "tue/config/configuration.h"
 
 #include <queue>
 
@@ -40,10 +41,6 @@ public:
     void update(const std::string& update_str, std::string& error);
 
     void storeEntityMeasurements(const std::string& path) const;
-
-//    int size() const { return entities_.size(); }
-
-//    const std::map<UUID, EntityConstPtr>& entities() const { return entities_; }
 
     WorldModelConstPtr world_model() const { return world_model_; }
 
@@ -78,9 +75,6 @@ private:
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;
     tf::TransformListener tf_listener_;
-
-    //! Perception
-    Perception perception_;
 
     //! Property Key DB
     PropertyKeyDB property_key_db_;
