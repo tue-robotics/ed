@@ -106,7 +106,7 @@ protected:
 
     tue::Timer total_timer_;
 
-    void step();
+    bool step();
 
     void run();
 
