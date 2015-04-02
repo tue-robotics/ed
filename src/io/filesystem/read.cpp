@@ -57,7 +57,7 @@ bool read(const std::string& filename, Measurement& msr)
         ed::deserialize(a_in, mask);
     }
 
-    msr = Measurement(image, mask);
+    msr = Measurement(image, mask, geo::Pose3D::identity()); // TODO: read pose
 
     return true;
 }

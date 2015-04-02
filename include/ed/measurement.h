@@ -15,7 +15,7 @@ public:
 
     Measurement();
 
-    Measurement(rgbd::ImageConstPtr image, const ImageMask& image_mask);
+    Measurement(rgbd::ImageConstPtr image, const ImageMask& image_mask, const geo::Pose3D& sensor_pose);
 
     Measurement(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, unsigned int seq = 0);
 
