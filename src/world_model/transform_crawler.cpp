@@ -21,6 +21,10 @@ TransformCrawler::TransformCrawler(const WorldModel& wm, const UUID& root_id, co
         pushChildren(*e, geo::Pose3D::identity());
         visited_.insert(root_idx);
     }
+    else
+    {
+        std::cout << "NOT wm_.findEntityIdx(" << root_id << ", " << root_idx << ")" << std::endl;
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -34,6 +38,7 @@ const EntityConstPtr& TransformCrawler::entity() const
 
 bool TransformCrawler::next()
 {
+    std::cout << "TransformCrawler queue leng: " << queue_.size() << std::endl;
     if (queue_.empty())
         return false;
 
