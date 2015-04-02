@@ -123,24 +123,28 @@ void PluginContainer::run()
 {
     total_timer_.start();
 
+    double innerloop_frequency = 1000; // TODO: magic number!
+
     ros::Rate r(loop_frequency_);
+    ros::Rate ir(innerloop_frequency);
     while(!stop_)
     {
-        step();
+        while (!step())
+            ir.sleep();
         r.sleep();
     }
 }
 
 // --------------------------------------------------------------------------------
 
-void PluginContainer::step()
+bool PluginContainer::step()
 {
     // If we still have an update_request, it means the request is not yet handled,
     // so we have to skip this cycle (and wait until the world model has handled it)
     {
         boost::lock_guard<boost::mutex> lg(mutex_update_request_);
         if (update_request_)
-            return;
+            return false;
     }
 
     std::vector<UpdateRequestConstPtr> world_deltas;
@@ -184,6 +188,7 @@ void PluginContainer::step()
         if (!update_request->empty())
             update_request_ = update_request;
     }
+    return true;
 }
 
 // --------------------------------------------------------------------------------
