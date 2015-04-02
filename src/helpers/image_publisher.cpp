@@ -23,7 +23,7 @@ ImagePublisher::~ImagePublisher()
 
 // ----------------------------------------------------------------------------------------------------
 
-void ImagePublisher::intialize(const char* name)
+void ImagePublisher::initialize(const char* name)
 {
     ros::NodeHandle nh("~");
     pub_ = nh.advertise<rgbd::RGBDMsg>(name, 1);

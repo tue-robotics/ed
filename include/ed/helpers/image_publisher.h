@@ -16,7 +16,7 @@ public:
 
     ~ImagePublisher();
 
-    void intialize(const char* name);
+    void initialize(const char* name);
 
     void publish(const cv::Mat& img) const;
 
