@@ -38,7 +38,7 @@ const EntityConstPtr& TransformCrawler::entity() const
 
 bool TransformCrawler::next()
 {
-    std::cout << "TransformCrawler queue leng: " << queue_.size() << std::endl;
+    //std::cout << "TransformCrawler queue leng: " << queue_.size() << std::endl;
     if (queue_.empty())
         return false;
 
