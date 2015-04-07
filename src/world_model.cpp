@@ -344,12 +344,11 @@ bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
         return true;
     }
 
-   typedef std::map<UUID, Idx>::const_iterator MapIterator;
-   for (MapIterator iter = entity_map_.begin(); iter != entity_map_.end(); iter++)
-   {
-       
-       std::cout << "Key: " << iter->first << std::endl; // << " -> Value:" << iter->second  << std::endl;
-   }
+//    typedef std::map<UUID, Idx>::const_iterator MapIterator;
+//   for (MapIterator iter = entity_map_.begin(); iter != entity_map_.end(); iter++)
+//   {       
+//       std::cout << "Key: " << iter->first << std::endl; // << " -> Value:" << iter->second  << std::endl;
+//   }
 
     std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
     if (it == entity_map_.end())
