@@ -42,7 +42,10 @@ struct MyHandler {
     bool StartObject()
     {
         if (stack.empty())
+        {
+            stack.push_back('g');
             return true;
+        }
 
         if (stack.back() == 'a')
         {
