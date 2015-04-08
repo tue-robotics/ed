@@ -48,6 +48,8 @@ bool TransformCrawler::next()
 
     pushChildren(*e, transform());
 
+    std::cout << "TransformCrawler::next queue_.size() = " << queue_.size() << std::endl;
+
     queue_.pop();
 
     return true;
