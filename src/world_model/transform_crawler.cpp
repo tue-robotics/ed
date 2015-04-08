@@ -75,7 +75,7 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
                 queue_.push(Node(n2, transform * rel_transform));
 
             visited_.insert(n2);
-            std::cout << "TO: Inserted " << n2 << " in visited_. Has " << visited_.size() < ," elements now" << std::endl;
+            std::cout << "TO: Inserted " << n2 << " in visited_. Has " << visited_.size() << " elements now" << std::endl;
         }
     }
 
@@ -92,7 +92,7 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
                 queue_.push(Node(n2, transform * rel_transform.inverse()));
 
             visited_.insert(n2);
-            std::cout << "FROM: Inserted " << n2 << " in visited_. Has " << visited_.size() < ," elements now" << std::endl;
+            std::cout << "FROM: Inserted " << n2 << " in visited_. Has " << visited_.size() << " elements now" << std::endl;
         }
     }
 }
