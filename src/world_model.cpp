@@ -22,6 +22,7 @@ WorldModel::WorldModel(const PropertyKeyDB* prop_key_db) : revision_(0), propert
 
 void WorldModel::update(const UpdateRequest& req)
 {
+    std::cout << "WorldModel::update req.empty() = " << req.empty() << "|req.poses| = " << req.poses.size() << std::endl;
     if (req.empty())
         return;
 
@@ -45,6 +46,7 @@ void WorldModel::update(const UpdateRequest& req)
     for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
+        std::cout << "Updating pose for " << e->id() << std::endl;
         e->setPose(it->second);
     }
 
