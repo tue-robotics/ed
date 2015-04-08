@@ -71,7 +71,7 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
         {
             geo::Pose3D rel_transform;
             RelationConstPtr r = wm_.relations()[it->second];
-            std::cout << "TO: " << n2 << "has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
+            std::cout << "TO: " << n2 << " has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
             if (r && r->calculateTransform(time_, rel_transform))
             {
                 std::cout << "TO: " << n2 << ": transform * rel_transform = " << transform << " * " << rel_transform << " = " << transform * rel_transform << std::endl;
@@ -79,11 +79,11 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
             }
             else
             {
-                std::cout << "TO: NOT (r && r->calculateTransform(time_, rel_transform))" << std::endl;
+//                std::cout << "TO: NOT (r && r->calculateTransform(time_, rel_transform))" << std::endl;
             }
 
             visited_.insert(n2);
-            std::cout << "TO: Inserted " << n2 << " in visited_. Has " << visited_.size() << " elements now" << std::endl;
+//            std::cout << "TO: Inserted " << n2 << " in visited_. Has " << visited_.size() << " elements now" << std::endl;
         }
     }
 
@@ -96,7 +96,7 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
         {
             geo::Pose3D rel_transform;
             RelationConstPtr r = wm_.relations()[it->second];
-            std::cout << "FROM: " << n2 << "has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
+            std::cout << "FROM: " << n2 << " has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
             if (r && r->calculateTransform(time_, rel_transform))
             {
                 std::cout << "FROM: " << n2 << ": transform * rel_transform.inverse() = " << transform << " * " << rel_transform.inverse() << " = " << transform * rel_transform.inverse() << std::endl;
@@ -104,11 +104,11 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
             }
             else
             {
-                std::cout << "FROM: NOT (r && r->calculateTransform(time_, rel_transform))" << std::endl;
+//                std::cout << "FROM: NOT (r && r->calculateTransform(time_, rel_transform))" << std::endl;
             }
 
             visited_.insert(n2);
-            std::cout << "FROM: Inserted " << n2 << " in visited_. Has " << visited_.size() << " elements now" << std::endl;
+//            std::cout << "FROM: Inserted " << n2 << " in visited_. Has " << visited_.size() << " elements now" << std::endl;
         }
     }
 }
