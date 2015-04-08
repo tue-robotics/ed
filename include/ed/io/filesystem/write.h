@@ -7,8 +7,11 @@ namespace ed
 {
 
 class Measurement;
+class Entity;
 
 bool write(const std::string& filename, const Measurement& msr);
+
+bool write(const std::string &filename, const Entity& e);
 
 }
 
