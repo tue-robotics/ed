@@ -23,7 +23,7 @@ class UpdateRequest
 
 public:
 
-    UpdateRequest() {}
+    UpdateRequest() : is_sync_update(false) {}
 
     // MEASUREMENTS
 
@@ -130,6 +130,13 @@ public:
     std::set<UUID> updated_entities;
 
     bool empty() const { return updated_entities.empty(); }
+
+
+    // Is true if the update was created for synchronization only (used by ed_cloud)
+
+    bool is_sync_update;
+
+    void setSyncUpdate(bool b = true) { is_sync_update = b; }
 
 
 private:
