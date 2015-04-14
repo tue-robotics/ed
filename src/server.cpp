@@ -73,6 +73,10 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     {
         while(config.nextArrayItem())
         {
+            int enabled = 1;
+            if (config.value("enabled", enabled, tue::OPTIONAL) && enabled == 0)
+                continue;
+
             std::string name;
             if (!config.value("name", name))
                 continue;
