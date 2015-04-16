@@ -22,7 +22,7 @@ WorldModel::WorldModel(const PropertyKeyDB* prop_key_db) : revision_(0), propert
 
 void WorldModel::update(const UpdateRequest& req)
 {
-    std::cout << "WorldModel::update req.empty() = " << req.empty() << "|req.poses| = " << req.poses.size() << std::endl;
+    //std::cout << "WorldModel::update req.empty() = " << req.empty() << "|req.poses| = " << req.poses.size() << std::endl;
     if (req.empty())
         return;
 
@@ -46,7 +46,7 @@ void WorldModel::update(const UpdateRequest& req)
     for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
-        std::cout << "Updating pose for " << e->id() << std::endl;
+//        std::cout << "Updating pose for " << e->id() << std::endl;
         e->setPose(it->second);
     }
 
@@ -347,10 +347,10 @@ bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
     }
 
 //    typedef std::map<UUID, Idx>::const_iterator MapIterator;
-//   for (MapIterator iter = entity_map_.begin(); iter != entity_map_.end(); iter++)
-//   {       
-//       std::cout << "Key: " << iter->first << std::endl; // << " -> Value:" << iter->second  << std::endl;
-//   }
+//    for (MapIterator iter = entity_map_.begin(); iter != entity_map_.end(); iter++)
+//    {       
+//        std::cout << "Key: " << iter->first << std::endl; // << " -> Value:" << iter->second  << std::endl;
+//    }
 
     std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
     if (it == entity_map_.end())

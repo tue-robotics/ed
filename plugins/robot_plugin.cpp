@@ -17,7 +17,7 @@
 
 bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 {
-    std::cout << "JointRelation::calculateTransform" << std::endl;
+    //std::cout << "JointRelation::calculateTransform" << std::endl;
 
     ed::TimeCache<float>::const_iterator it_low, it_up;
     joint_pos_cache_.getLowerUpper(t, it_low, it_up);
@@ -54,7 +54,7 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
         }
     }
 
-    std::cout << "JointRelation::calculateTransform: " << joint_pos << std::endl;
+//    std::cout << "JointRelation::calculateTransform: " << joint_pos << std::endl;
     // Calculate joint pose for this joint position
     KDL::Frame pose_kdl = segment_.pose(joint_pos);
 

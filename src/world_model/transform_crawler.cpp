@@ -48,7 +48,7 @@ bool TransformCrawler::next()
 
     pushChildren(*e, transform());
 
-    std::cout << "TransformCrawler::next queue_.size() = " << queue_.size() << std::endl;
+//    std::cout << "TransformCrawler::next queue_.size() = " << queue_.size() << std::endl;
 
     queue_.pop();
 
@@ -62,7 +62,7 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
     // Push all nodes that point to this node
     const std::map<Idx, Idx>& transforms_to = e.relationsTo();
 
-    std::cout << e.id() << " has " << transforms_to.size() << " relations to other entities" << std::endl;
+//    std::cout << e.id() << " has " << transforms_to.size() << " relations to other entities" << std::endl;
 
     for(std::map<Idx, Idx>::const_iterator it = transforms_to.begin(); it != transforms_to.end(); ++it)
     {
@@ -71,10 +71,10 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
         {
             geo::Pose3D rel_transform;
             RelationConstPtr r = wm_.relations()[it->second];
-            std::cout << "TO: " << n2 << " has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
+//            std::cout << "TO: " << n2 << " has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
             if (r && r->calculateTransform(time_, rel_transform))
             {
-                std::cout << "TO: " << n2 << ": transform * rel_transform = " << transform << " * " << rel_transform << " = " << transform * rel_transform << std::endl;
+//                std::cout << "TO: " << n2 << ": transform * rel_transform = " << transform << " * " << rel_transform << " = " << transform * rel_transform << std::endl;
                 queue_.push(Node(n2, transform * rel_transform));
             }
             else
@@ -96,10 +96,10 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
         {
             geo::Pose3D rel_transform;
             RelationConstPtr r = wm_.relations()[it->second];
-            std::cout << "FROM: " << n2 << " has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
+//            std::cout << "FROM: " << n2 << " has a "<< typeid(r).name() << " relation r " << r << " with " << it->second << std::endl;
             if (r && r->calculateTransform(time_, rel_transform))
             {
-                std::cout << "FROM: " << n2 << ": transform * rel_transform.inverse() = " << transform << " * " << rel_transform.inverse() << " = " << transform * rel_transform.inverse() << std::endl;
+//                std::cout << "FROM: " << n2 << ": transform * rel_transform.inverse() = " << transform << " * " << rel_transform.inverse() << " = " << transform * rel_transform.inverse() << std::endl;
                 queue_.push(Node(n2, transform * rel_transform.inverse()));
             }
             else
