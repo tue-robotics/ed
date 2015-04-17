@@ -79,13 +79,16 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
             std::string name;
             if (!config.value("name", name))
-                continue;
+                return;
 
             std::string lib;
             if (!config.value("lib", lib))
-                continue;
+                return;
 
             loadPlugin(name, lib, config);
+
+            if (config.hasError())
+                return;
 
         } // end iterate plugins
 
@@ -152,7 +155,7 @@ void Server::reset()
 
 PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, tue::Configuration config)
 {    
-    ErrorContext errc("Server", "loadPlugin");
+    ErrorContext errc("Server loadPlugin", plugin_name.c_str());
 
     config.setErrorContext("While loading plugin '" + plugin_name + "': ");
 
