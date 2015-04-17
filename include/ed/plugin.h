@@ -29,6 +29,8 @@ class Plugin
 
 public:
 
+    virtual ~Plugin() {}
+
     // Old
     virtual void configure(tue::Configuration config) {}
     virtual void initialize() {}
