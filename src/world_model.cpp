@@ -355,7 +355,7 @@ bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
     std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
     if (it == entity_map_.end())
     {
-        std::cout << "Can't find " << id << std::endl;
+        //std::cout << "Can't find " << id << std::endl;
         return false;
     }
 
