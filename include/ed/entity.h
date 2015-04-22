@@ -173,6 +173,10 @@ public:
 
     void setRevision(unsigned long revision) { revision_ = revision; }
 
+    void setExistenceProbability(double prob) { existence_prob_ = prob; }
+
+    double existenceProbability() const { return existence_prob_; }
+
 private:
 
     UUID id_;
@@ -180,6 +184,8 @@ private:
     unsigned long revision_;
 
     TYPE type_;
+
+    double existence_prob_;
 
     boost::circular_buffer<MeasurementConstPtr> measurements_;
     MeasurementConstPtr best_measurement_;

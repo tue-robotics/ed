@@ -15,6 +15,7 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
     id_(id),
     revision_(0),
     type_(type),
+    existence_prob_(1.0),
     measurements_(measurement_buffer_size),
     measurements_seq_(0),
     convex_hull_buffer_(20),

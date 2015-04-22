@@ -69,6 +69,13 @@ void WorldModel::update(const UpdateRequest& req)
         e->setType(it->second);
     }
 
+    // Update existence probabilities
+    for(std::map<UUID, double>::const_iterator it = req.existence_probabilities.begin(); it != req.existence_probabilities.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setExistenceProbability(it->second);
+    }
+
     // Update relations
     for(std::map<UUID, std::map<UUID, RelationConstPtr> >::const_iterator it = req.relations.begin(); it != req.relations.end(); ++it)
     {

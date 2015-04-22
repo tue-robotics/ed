@@ -25,6 +25,7 @@ public:
 
     UpdateRequest() : is_sync_update(false) {}
 
+
     // MEASUREMENTS
 
     std::map<UUID, std::vector<MeasurementConstPtr> > measurements;
@@ -57,6 +58,13 @@ public:
 
     std::map<UUID, std::string> types;
     void setType(const UUID& id, const std::string& type) { types[id] = type; flagUpdated(id); }
+
+
+    // PROBABILITY OF EXISTENCE
+
+    std::map<UUID, double> existence_probabilities;
+
+    void setExistenceProbability(const UUID& id, double prob) { existence_probabilities[id] = prob; }
 
 
     // POSES
