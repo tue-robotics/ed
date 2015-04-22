@@ -49,6 +49,7 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 {
     msg.id = e.id().str();
     msg.type = e.type();
+    msg.existence_probability = e.existenceProbability();
 //    msg.creation_time = ros::Time(e.creationTime());
 
     // Convex hull

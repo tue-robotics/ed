@@ -1,6 +1,8 @@
 string id
 string type
 
+float32 existence_probability
+
 time last_update_time
 time creation_time
 
