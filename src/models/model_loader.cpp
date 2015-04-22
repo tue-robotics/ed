@@ -152,7 +152,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     std::string id_str;
     if (r.value("id", id_str, tue::config::OPTIONAL))
     {
-        if (parent_id.str().empty())
+        if (parent_id.str().empty() || parent_id.str()[0] == '_')
             id = id_str;
         else
             id = parent_id.str() + "/" + id_str;

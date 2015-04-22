@@ -395,7 +395,7 @@ void Server::initializeWorld()
 {
     ed::UpdateRequestPtr req(new UpdateRequest);
     std::stringstream error;
-    if (!model_loader_.create("", world_name_, *req, error))
+    if (!model_loader_.create("_root", world_name_, *req, error))
     {
         ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
         return;
