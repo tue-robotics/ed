@@ -27,7 +27,8 @@ public:
     bool create(const tue::config::DataConstPointer& data, UpdateRequest& req, std::stringstream& error);
 
     bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id,
-                UpdateRequest& req, std::stringstream& error, const std::string& model_path = "");
+                UpdateRequest& req, std::stringstream& error, const std::string& model_path = "",
+                const geo::Pose3D& pose_offset = geo::Pose3D::identity());
 
     bool exists(const std::string& type) const;
 
@@ -39,7 +40,7 @@ private:
     // Shape filename to shape
     std::map<std::string, geo::ShapePtr> shape_cache_;
 
-    tue::config::DataConstPointer loadModelData(const std::string& type, std::string& model_path_str, std::stringstream& error);
+    tue::config::DataConstPointer loadModelData(const std::string& type, std::stringstream& error);
 
 };
 

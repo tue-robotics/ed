@@ -42,17 +42,12 @@ tue::filesystem::Path getModelPath(const std::string& type)
 
 // ----------------------------------------------------------------------------------------------------
 
-tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::string& model_path_str, std::stringstream& error)
+tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::stringstream& error)
 {
     std::map<std::string, tue::config::DataConstPointer>::iterator it = model_cache_.find(type);
     if (it != model_cache_.end())
     {
         const tue::config::DataConstPointer& data = it->second;
-
-        // Extract model path
-        tue::config::Reader r(data);
-        r.value("__model_path__", model_path_str);
-
         return data;
     }
 
@@ -79,13 +74,28 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
         return data;
     }
 
-    model_path_str = model_path.string();
+    std::string super_type;
+    if (model_cfg.value("type", super_type, tue::OPTIONAL))
+    {
+        tue::config::DataConstPointer super_data = loadModelData(super_type, error);
+        tue::config::DataPointer combined_data;
+        combined_data.add(super_data);
+        combined_data.add(model_cfg.data());
 
-    data = model_cfg.data();
+        data = combined_data;
+    }
+    else
+    {
+        data = model_cfg.data();
+    }
 
-    // Set model path in data
-    tue::config::Writer w(data);
-    w.setValue("__model_path__", model_path_str);
+    // If model loads a shape, set model path in shape data
+    tue::config::ReaderWriter rw(data);
+    if (rw.readGroup("shape"))
+    {
+        rw.setValue("__model_path__", model_path.string());
+        rw.endGroup();
+    }
 
     // Store data in cache
     model_cache_[type] = data;
@@ -109,12 +119,11 @@ bool ModelLoader::exists(const std::string& type) const
 
 bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error)
 {
-    std::string model_path;
-    tue::config::DataConstPointer data = loadModelData(type, model_path, error);
+    tue::config::DataConstPointer data = loadModelData(type, error);
     if (data.empty())
         return false;
 
-    if (!create(data, id, "", req, error, model_path))
+    if (!create(data, id, "", req, error))
         return false;
 
     return true;
@@ -133,7 +142,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateReques
 // ----------------------------------------------------------------------------------------------------
 
 bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id,
-                         UpdateRequest& req, std::stringstream& error, const std::string& model_path)
+                         UpdateRequest& req, std::stringstream& error, const std::string& model_path,
+                         const geo::Pose3D& pose_offset)
 {
     tue::config::Reader r(data);
 
@@ -142,10 +152,10 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     std::string id_str;
     if (r.value("id", id_str, tue::config::OPTIONAL))
     {
-//        if (parent_id.str().empty())
+        if (parent_id.str().empty())
             id = id_str;
-//        else
-//            id = parent_id.str() + "/" + id_str;
+        else
+            id = parent_id.str() + "/" + id_str;
     }
     else if (!id_opt.str().empty())
     {
@@ -160,10 +170,15 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     std::string type;
     if (r.value("type", type, tue::config::OPTIONAL))
     {
-        std::string super_model_path;
-        tue::config::DataConstPointer super_data = loadModelData(type, super_model_path, error);
-        if (super_data.empty() || !create(super_data, id, parent_id, req, error, super_model_path))
+        tue::config::DataConstPointer super_data = loadModelData(type, error);
+        if (super_data.empty())
             return false;
+
+        tue::config::DataPointer data_combined;
+        data_combined.add(super_data);
+        data_combined.add(data);
+
+        r = tue::config::Reader(data_combined);
     }
 
     // Set type
@@ -189,6 +204,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.endGroup();
     }
 
+    pose = pose_offset * pose;
+
     req.setPose(id, pose);
 
     // Check the composition
@@ -196,7 +213,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     {
         while (r.nextArrayItem())
         {
-            if (!create(r.data(), "", id, req, error))
+            if (!create(r.data(), "", id, req, error, "", pose))
                 return false;
         }
 
@@ -206,9 +223,12 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Set shape
     if (r.readGroup("shape"))
     {
-        if (!model_path.empty() && tue::filesystem::Path(model_path).exists())
+        std::string shape_model_path = model_path;
+        r.value("__model_path__", shape_model_path);
+
+        if (!shape_model_path.empty() && tue::filesystem::Path(shape_model_path).exists())
         {
-            geo::ShapePtr shape = loadShape(model_path, r, shape_cache_, error);
+            geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
             if (shape)
                 req.setShape(id, shape);
             else
@@ -219,7 +239,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     }
 
     // Add additional data
-    req.addData(id, data);
+    req.addData(id, r.data());
 
     return true;
 }
