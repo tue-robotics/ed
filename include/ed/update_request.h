@@ -13,7 +13,9 @@
 #include <vector>
 #include <geolib/datatypes.h>
 
-#include <ed/convex_hull_2d.h>
+#include "ed/convex_hull_2d.h"
+#include "ed/convex_hull.h"
+
 
 namespace ed
 {
@@ -53,6 +55,13 @@ public:
 
     std::map<UUID, ed::ConvexHull2D> convex_hulls;
     void setConvexHull(const UUID& id, const ed::ConvexHull2D& convex_hull) { convex_hulls[id] = convex_hull; flagUpdated(id); }
+
+
+    // CONVEX HULLS NEW
+
+    std::map<UUID, ed::ConvexHull> convex_hulls_new;
+    void setConvexHullNew(const UUID& id, const ed::ConvexHull& convex_hull) { convex_hulls_new[id] = convex_hull; flagUpdated(id); }
+
 
     // TYPES
 

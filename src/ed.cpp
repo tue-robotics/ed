@@ -488,8 +488,8 @@ int main(int argc, char** argv)
     main_thread_id = boost::this_thread::get_id();
 
     // register signal SIGINT and signal handler
-    signal(SIGSEGV, signalHandler);
-    signal(SIGABRT, signalHandler);
+//    signal(SIGSEGV, signalHandler);
+//    signal(SIGABRT, signalHandler);
 
     ed::ErrorContext errc("Start ED server", "init");
 

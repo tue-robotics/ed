@@ -62,6 +62,14 @@ void WorldModel::update(const UpdateRequest& req)
         e->setConvexHull(it->second);
     }
 
+    // Update convex hulls new
+    for(std::map<UUID, ed::ConvexHull>::const_iterator it = req.convex_hulls_new.begin(); it != req.convex_hulls_new.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setConvexHullNew(it->second);
+    }
+
+
     // Update types
     for(std::map<UUID, std::string>::const_iterator it = req.types.begin(); it != req.types.end(); ++it)
     {

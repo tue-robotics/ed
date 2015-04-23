@@ -3,6 +3,7 @@
 
 #include "ed/types.h"
 #include "ed/convex_hull_2d.h"
+#include "ed/convex_hull.h"
 #include "ed/uuid.h"
 
 #include <tue/config/data.h>
@@ -47,6 +48,10 @@ public:
     inline const ConvexHull2D& convexHull() const { return convex_hull_; }
 
     void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
+
+    inline const ConvexHull& convexHullNew() const { return convex_hull_new_; }
+
+    void setConvexHullNew(const ConvexHull& convex_hull) { convex_hull_new_ = convex_hull; }
 
     inline const geo::Pose3D& pose() const
     {
@@ -196,6 +201,7 @@ private:
     geo::ShapeConstPtr shape_;
     int shape_revision_;
     ConvexHull2D convex_hull_;
+    ConvexHull convex_hull_new_;
 
     bool has_pose_;
     geo::Pose3D pose_;

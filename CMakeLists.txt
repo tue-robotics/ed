@@ -94,6 +94,8 @@ add_library(ed_core
     src/world_model.cpp
     src/transform_cache.cpp
     src/convex_hull_2d.cpp
+    src/convex_hull_calc.cpp
+    include/ed/convex_hull.h
 
     # World model querying
     src/world_model/transform_crawler.cpp
