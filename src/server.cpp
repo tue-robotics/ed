@@ -265,15 +265,15 @@ void Server::update()
     // Create world model copy (shallow)
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
-    // Look if we can merge some not updates entities
-    {
-        // TODO: move this to a plugin
+//    // Look if we can merge some not updates entities
+//    {
+//        // TODO: move this to a plugin
 
-        tue::ScopedTimer t(profiler_, "merge entities");
-        ErrorContext errc("Server::update()", "merge");
+//        tue::ScopedTimer t(profiler_, "merge entities");
+//        ErrorContext errc("Server::update()", "merge");
 
-        mergeEntities(new_world_model, 5.0, 0.5);
-    }
+//        mergeEntities(new_world_model, 5.0, 0.5);
+//    }
 
     // Notify all plugins of the updated world model
     for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
