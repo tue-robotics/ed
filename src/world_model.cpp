@@ -84,6 +84,13 @@ void WorldModel::update(const UpdateRequest& req)
         e->setExistenceProbability(it->second);
     }
 
+    // Update last update timestamps
+    for(std::map<UUID, double>::const_iterator it = req.last_update_timestamps.begin(); it != req.last_update_timestamps.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setLastUpdateTimestamp(it->second);
+    }
+
     // Update relations
     for(std::map<UUID, std::map<UUID, RelationConstPtr> >::const_iterator it = req.relations.begin(); it != req.relations.end(); ++it)
     {

@@ -76,6 +76,13 @@ public:
     void setExistenceProbability(const UUID& id, double prob) { existence_probabilities[id] = prob; }
 
 
+    // LAST UPDATE TIMESTAMP
+
+    std::map<UUID, double> last_update_timestamps;
+
+    void setLastUpdateTimestamp(const UUID& id, double t) { last_update_timestamps[id] = t; }
+
+
     // POSES
 
     std::map<UUID, geo::Pose3D> poses;

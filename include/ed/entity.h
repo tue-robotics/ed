@@ -182,6 +182,10 @@ public:
 
     double existenceProbability() const { return existence_prob_; }
 
+    void setLastUpdateTimestamp(double t) { last_update_timestamp_ = t; }
+
+    double lastUpdateTimestamp() const { return last_update_timestamp_; }
+
 private:
 
     UUID id_;
@@ -191,6 +195,8 @@ private:
     TYPE type_;
 
     double existence_prob_;
+
+    double last_update_timestamp_;
 
     boost::circular_buffer<MeasurementConstPtr> measurements_;
     MeasurementConstPtr best_measurement_;
