@@ -118,7 +118,7 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
     ed::UpdateRequest update_req;
 
     if (r.readArray("entities"))
-    {
+    {   
         while(r.nextArrayItem())
         {
             std::string id;
@@ -126,6 +126,34 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
             {
                 res.response += "Entities should have field 'id'.\n";
                 continue;
+            }
+
+            std::string type;
+            if (r.readValue("type", type))
+            {
+                update_req.setType(id, type);
+            }
+
+            if (r.readGroup("pose"))
+            {
+                double x, y, z;
+                if (r.readValue("x", x) && r.readValue("y", y) && r.readValue("z", z))
+                {
+                    geo::Pose3D pose = geo::Pose3D::identity();
+                    pose.t = geo::Vector3(x, y, z);
+
+                    double X, Y, Z;
+                    if (r.readValue("X", X) && r.readValue("Y", Y) && r.readValue("Z", Z))
+                        pose.setRPY(X, Y, Z);
+
+                    update_req.setPose(id, pose);
+
+                    r.endGroup();
+                }
+                else
+                {
+                    res.response += "For entity '" + id + "': invalid pose (position).\n";
+                }
             }
 
             if (r.readArray("properties"))
@@ -166,7 +194,9 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
     if (r.ok())
     {
         if (!update_req.empty())
+        {
             ed_wm->update(update_req);
+        }
     }
     else
     {
