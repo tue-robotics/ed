@@ -248,6 +248,9 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
         if (!ids.empty() && ids.find(e->id().str()) == ids.end())
             continue;
 
+        if (e->id().str().substr(0, 6) == "sergio") // TODO: robocup hack
+            continue;
+
         if (e)
         {
             w.addArrayItem();
@@ -257,8 +260,20 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
             // Write type
             w.writeValue("type", e->type());
 
+            w.writeValue("existence_prob", e->existenceProbability());
+
+            w.writeGroup("timestamp");
+            {
+                double t = e->lastUpdateTimestamp();
+                w.writeValue("sec", (int)t);
+                w.writeValue("nsec", (int)((t - (int)t) * 1e9));
+                w.endGroup();
+            }
+
             // Write convex hull
-            w.writeGroup("convex_hull");
+            if (!e->convexHullNew().points.empty())
+            {
+                w.writeGroup("convex_hull");
                 w.writeArray("points");
                 for (std::vector<geo::Vec2f>::const_iterator it = e->convexHullNew().points.begin(); it != e->convexHullNew().points.end(); ++it)
                 {
@@ -269,29 +284,33 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
                 w.endArray();
                 w.writeValue("z_min", e->convexHullNew().z_min);
                 w.writeValue("z_max", e->convexHullNew().z_max);
-            w.endGroup();
+                w.endGroup();
+            }
 
             // Pose
-            const geo::Pose3D& p = e->pose();
-            w.writeGroup("pose");
+            if (e->has_pose())
+            {
+                const geo::Pose3D& p = e->pose();
+                w.writeGroup("pose");
                 w.writeGroup("pos");
-                    w.writeValue("x", p.t.x);
-                    w.writeValue("y", p.t.y);
-                    w.writeValue("z", p.t.z);
+                w.writeValue("x", p.t.x);
+                w.writeValue("y", p.t.y);
+                w.writeValue("z", p.t.z);
                 w.endGroup();
 
                 w.writeGroup("rot");
-                    w.writeValue("xx", p.R.xx);
-                    w.writeValue("xy", p.R.xy);
-                    w.writeValue("xz", p.R.xz);
-                    w.writeValue("yx", p.R.yx);
-                    w.writeValue("yy", p.R.yy);
-                    w.writeValue("yz", p.R.yz);
-                    w.writeValue("zx", p.R.zx);
-                    w.writeValue("zy", p.R.zy);
-                    w.writeValue("zz", p.R.zz);
+                w.writeValue("xx", p.R.xx);
+                w.writeValue("xy", p.R.xy);
+                w.writeValue("xz", p.R.xz);
+                w.writeValue("yx", p.R.yx);
+                w.writeValue("yy", p.R.yy);
+                w.writeValue("yz", p.R.yz);
+                w.writeValue("zx", p.R.zx);
+                w.writeValue("zy", p.R.zy);
+                w.writeValue("zz", p.R.zz);
                 w.endGroup();
-            w.endGroup();
+                w.endGroup();
+            }
 
             // Mesh
             if (e->shape())
@@ -381,7 +400,7 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
     res.human_readable = out.str();
     res.new_revision = ed_wm->world_model()->revision();
 
-    std::cout << "[ED] Quering took " << timer.getElapsedTimeInMilliSec() << " ms." << std::endl;
+//    std::cout << "[ED] Quering took " << timer.getElapsedTimeInMilliSec() << " ms." << std::endl;
 
     return true;
 }

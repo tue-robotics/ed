@@ -67,7 +67,7 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
         return;
     }
 
-    std::cout << "Response size: " << query.response.human_readable.size() << std::endl;
+//    std::cout << "Response size: " << query.response.human_readable.size() << std::endl;
 
     std::string error;
 
@@ -85,6 +85,20 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
             std::string type;
             if (r.readValue("type", type))
                 req.setType(id, type);
+
+            double existence_prob;
+            if (r.readValue("existence_prob", existence_prob))
+                req.setExistenceProbability(id, existence_prob);
+
+            if (r.readGroup("timestamp"))
+            {
+                int sec, nsec;
+                r.readValue("sec", sec);
+                r.readValue("nsec", nsec);
+                double t = sec + (double)nsec / 1e9;
+                req.setLastUpdateTimestamp(id, t);
+                r.endGroup();
+            }
 
             if (r.readGroup("pose"))
             {
@@ -112,6 +126,8 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                     r.endGroup();
                 }
 
+                req.setPose(id, p);
+
                 r.endGroup();
             }
 
@@ -135,6 +151,10 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
                 ed::convex_hull::calculateEdgesAndNormals(chull);
                 req.setConvexHullNew(id, chull);
+
+                std::cout << chull.points.size() << std::endl;
+
+                r.endGroup();
             }
 
             if (r.readGroup("mesh"))
@@ -173,6 +193,8 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
                 geo::ShapePtr shape(new geo::Shape);
                 shape->setMesh(mesh);
+
+                r.endGroup();
             }
 
             if (r.readArray("properties"))
