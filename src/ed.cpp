@@ -28,6 +28,9 @@
 #include <ed/LoadPlugin.h>
 #include <tue/config/loaders/yaml.h>
 
+#include <geolib/Shape.h>
+#include <geolib/Mesh.h>
+
 #include <ros/package.h>
 
 #include <signal.h>
@@ -251,7 +254,76 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
             w.writeValue("id", e->id().str());
             w.writeValue("idx", (int)i);
 
+            // Write type
+            w.writeValue("type", e->type());
+
+            // Write convex hull
+            w.writeGroup("convex_hull");
+                w.writeArray("points");
+                for (std::vector<geo::Vec2f>::const_iterator it = e->convexHullNew().points.begin(); it != e->convexHullNew().points.end(); ++it)
+                {
+                    w.addArrayItem();
+                    w.writeValue("x", it->x); w.writeValue("y", it->y);
+                    w.endArrayItem();
+                }
+                w.endArray();
+                w.writeValue("z_min", e->convexHullNew().z_min);
+                w.writeValue("z_max", e->convexHullNew().z_max);
+            w.endGroup();
+
+            // Pose
+            const geo::Pose3D& p = e->pose();
+            w.writeGroup("pose");
+                w.writeGroup("pos");
+                    w.writeValue("x", p.t.x);
+                    w.writeValue("y", p.t.y);
+                    w.writeValue("z", p.t.z);
+                w.endGroup();
+
+                w.writeGroup("rot");
+                    w.writeValue("xx", p.R.xx);
+                    w.writeValue("xy", p.R.xy);
+                    w.writeValue("xz", p.R.xz);
+                    w.writeValue("yx", p.R.yx);
+                    w.writeValue("yy", p.R.yy);
+                    w.writeValue("yz", p.R.yz);
+                    w.writeValue("zx", p.R.zx);
+                    w.writeValue("zy", p.R.zy);
+                    w.writeValue("zz", p.R.zz);
+                w.endGroup();
+            w.endGroup();
+
+            // Mesh
+            if (e->shape())
+            {
+                w.writeGroup("mesh");
+                    w.writeArray("vertices");
+                    const std::vector<geo::Vector3>& vertices = e->shape()->getMesh().getPoints();
+                    for(std::vector<geo::Vector3>::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
+                    {
+                        w.addArrayItem();
+                        w.writeValue("x", it->x); w.writeValue("y", it->y); w.writeValue("z", it->z);
+                        w.endArrayItem();
+                    }
+                    w.endArray();
+
+                    w.writeArray("triangles");
+                    const std::vector<geo::TriangleI>& triangles = e->shape()->getMesh().getTriangleIs();
+                    for(unsigned int i = 0; i < triangles.size(); ++i)
+                    {
+                        w.addArrayItem();
+                        w.writeValue("i1", triangles[i].i1_);
+                        w.writeValue("i2", triangles[i].i2_);
+                        w.writeValue("i3", triangles[i].i3_);
+                        w.endArrayItem();
+
+                    }
+                    w.endArray();
+                w.endGroup();
+            }
+
             w.writeArray("properties");
+
 
             const std::map<ed::Idx, ed::Property>& properties = e->properties();
 
