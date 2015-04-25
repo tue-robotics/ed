@@ -244,6 +244,8 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
             continue;
 
         const ed::EntityConstPtr& e = entities[i];
+        if (!e)
+            continue;
 
         if (!ids.empty() && ids.find(e->id().str()) == ids.end())
             continue;
