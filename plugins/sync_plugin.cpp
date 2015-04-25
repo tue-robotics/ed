@@ -13,6 +13,10 @@
 #include "../examples/custom_properties/pose_info.h"
 #include "../examples/custom_properties/counter_info.h"
 
+#include "ed/convex_hull_calc.h"
+
+#include "geolib/Shape.h"
+
 // ----------------------------------------------------------------------------------------------------
 
 SyncPlugin::SyncPlugin() : rev_number_(0)
@@ -76,6 +80,99 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
             {
                 error += "Entities should have field 'id'.\n";
                 continue;
+            }
+
+            std::string type;
+            if (r.readValue("type", type))
+                req.setType(id, type);
+
+            if (r.readGroup("pose"))
+            {
+                geo::Pose3D p = geo::Pose3D::identity();
+
+                if (r.readGroup("pos"))
+                {
+                    r.readValue("x", p.t.x);
+                    r.readValue("y", p.t.y);
+                    r.readValue("z", p.t.z);
+                    r.endGroup();
+                }
+
+                if (r.readGroup("rot"))
+                {
+                    r.readValue("xx", p.R.xx);
+                    r.readValue("xy", p.R.xy);
+                    r.readValue("xz", p.R.xz);
+                    r.readValue("yx", p.R.yx);
+                    r.readValue("yy", p.R.yy);
+                    r.readValue("yz", p.R.yz);
+                    r.readValue("zx", p.R.zx);
+                    r.readValue("zy", p.R.zy);
+                    r.readValue("zz", p.R.zz);
+                    r.endGroup();
+                }
+
+                r.endGroup();
+            }
+
+            if (r.readGroup("convex_hull"))
+            {
+                ed::ConvexHull chull;
+                if (r.readArray("points"))
+                {
+                    while(r.nextArrayItem())
+                    {
+                        geo::Vec2f p;
+                        r.readValue("x", p.x);
+                        r.readValue("y", p.y);
+                        chull.points.push_back(p);
+                    }
+                    r.endArray();
+                }
+
+                r.readValue("z_min", chull.z_min);
+                r.readValue("z_max", chull.z_max);
+
+                ed::convex_hull::calculateEdgesAndNormals(chull);
+                req.setConvexHullNew(id, chull);
+            }
+
+            if (r.readGroup("mesh"))
+            {
+                geo::Mesh mesh;
+
+                // Vertices
+                if (r.readArray("vertices"))
+                {
+                    while(r.nextArrayItem())
+                    {
+                        geo::Vector3 p;
+                        r.readValue("x", p.x);
+                        r.readValue("y", p.y);
+                        r.readValue("z", p.z);
+                        mesh.addPoint(p);
+                    }
+
+                    r.endArray();
+                }
+
+                // Triangles
+                if (r.readArray("triangles"))
+                {
+                    while(r.nextArrayItem())
+                    {
+                        int i1, i2, i3;
+                        r.readValue("i1", i1);
+                        r.readValue("i2", i2);
+                        r.readValue("i3", i3);
+                        mesh.addTriangle(i1, i2, i3);
+                    }
+
+                    r.endArray();
+                }
+
+                geo::ShapePtr shape(new geo::Shape);
+                shape->setMesh(mesh);
             }
 
             if (r.readArray("properties"))
