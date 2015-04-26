@@ -122,14 +122,25 @@ void Server::reset()
 {
     ErrorContext errc("Server", "reset");
 
+    // Create init world request, such that we can check which entities we have to keep in the world model
+    ed::UpdateRequest req_init_world;
+    std::stringstream error;
+    if (!model_loader_.create("_root", world_name_, req_init_world, error))
+    {
+        ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
+    }
+
     // Prepare deletion request
     UpdateRequestPtr req_delete(new UpdateRequest);
     for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
     {
-        // Only remove entities that do not have a (mesh) shape, but DO have a convex hull. This way
-        // only entities that are added by sensor integration are removed
+        // Only remove entities that are NOT in the initial world model
         const ed::EntityConstPtr& e = *it;
-        if (!e->shape() && !e->convexHull().chull.empty())
+
+        if (e->id().str().substr(0, 6) == "sergio" || e->id().str().substr(0, 5) == "amigo") // TODO: robocup hack
+            continue;
+
+        if (req_init_world.updated_entities.find(e->id()) == req_init_world.updated_entities.end())
             req_delete->removeEntity((*it)->id());
     }
 
