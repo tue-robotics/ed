@@ -17,6 +17,22 @@
 
 #include "geolib/Shape.h"
 
+namespace
+{
+
+void convertConvexHull(const ed::ConvexHull& c, const geo::Pose3D& pose, ed::ConvexHull2D& c2)
+{
+    c2.min_z = c.z_min + pose.t.z;
+    c2.max_z = c.z_max + pose.t.z;
+    c2.center_point = pose.t;
+
+    c2.chull.resize(c.points.size());
+    for(unsigned int i = 0; i < c.points.size(); ++i)
+        c2.chull.points[i] = pcl::PointXYZ(c.points[i].x + pose.t.x, c.points[i].y + pose.t.y, 0);
+}
+
+}
+
 // ----------------------------------------------------------------------------------------------------
 
 SyncPlugin::SyncPlugin() : rev_number_(0)
@@ -100,33 +116,32 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                 r.endGroup();
             }
 
+            geo::Pose3D pose = geo::Pose3D::identity();
             if (r.readGroup("pose"))
             {
-                geo::Pose3D p = geo::Pose3D::identity();
-
                 if (r.readGroup("pos"))
                 {
-                    r.readValue("x", p.t.x);
-                    r.readValue("y", p.t.y);
-                    r.readValue("z", p.t.z);
+                    r.readValue("x", pose.t.x);
+                    r.readValue("y", pose.t.y);
+                    r.readValue("z", pose.t.z);
                     r.endGroup();
                 }
 
                 if (r.readGroup("rot"))
                 {
-                    r.readValue("xx", p.R.xx);
-                    r.readValue("xy", p.R.xy);
-                    r.readValue("xz", p.R.xz);
-                    r.readValue("yx", p.R.yx);
-                    r.readValue("yy", p.R.yy);
-                    r.readValue("yz", p.R.yz);
-                    r.readValue("zx", p.R.zx);
-                    r.readValue("zy", p.R.zy);
-                    r.readValue("zz", p.R.zz);
+                    r.readValue("xx", pose.R.xx);
+                    r.readValue("xy", pose.R.xy);
+                    r.readValue("xz", pose.R.xz);
+                    r.readValue("yx", pose.R.yx);
+                    r.readValue("yy", pose.R.yy);
+                    r.readValue("yz", pose.R.yz);
+                    r.readValue("zx", pose.R.zx);
+                    r.readValue("zy", pose.R.zy);
+                    r.readValue("zz", pose.R.zz);
                     r.endGroup();
                 }
 
-                req.setPose(id, p);
+                req.setPose(id, pose);
 
                 r.endGroup();
             }
@@ -152,7 +167,10 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                 ed::convex_hull::calculateEdgesAndNormals(chull);
                 req.setConvexHullNew(id, chull);
 
-                std::cout << chull.points.size() << std::endl;
+                // Set old chull (is used in other plugins, e.g. navigation)
+                ed::ConvexHull2D chull_old;
+                convertConvexHull(chull, pose, chull_old);
+                req.setConvexHull(id, chull_old);
 
                 r.endGroup();
             }

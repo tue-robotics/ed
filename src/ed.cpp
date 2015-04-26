@@ -77,6 +77,7 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
     {
         // If the entity has a shape, use the pose of this shape
         geo::convert(e.pose(), msg.pose);
+        msg.center_point = msg.pose.position;
     }
     else
     {
@@ -84,9 +85,7 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
         geo::convert(geo::Pose3D(geo::Matrix3::identity(), e.convexHull().center_point), msg.pose);
     }
 
-    ed::MeasurementConstPtr m = e.lastMeasurement();
-    if (m)
-        msg.last_update_time =  ros::Time(m->timestamp());
+    msg.last_update_time =  ros::Time(e.lastUpdateTimestamp());
 
     if (!e.data().empty())
     {
