@@ -69,6 +69,19 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     // Unload all previously loaded plugins
     plugin_containers_.clear();
 
+    blackboard_.initialize();
+
+    if (config.readArray("externals", tue::OPTIONAL))
+    {
+        while (config.nextArrayItem())
+        {
+            std::string bb_id;
+            config.value("name", bb_id);
+            blackboard_.addExternal(bb_id);
+        }
+    }
+    config.endArray();
+
     if (config.readArray("plugins"))
     {
         while(config.nextArrayItem())
@@ -94,6 +107,8 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
         config.endArray();
     }
+
+
 
     // Initialize profiler
     profiler_.setName("ed");
@@ -197,10 +212,10 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
     // Create a plugin container
     PluginContainerPtr container(new PluginContainer());
 
-    InitData init(property_key_db_, config);
+    InitData init(property_key_db_, config, blackboard_);
 
     // Load the plugin
-    if (!container->loadPlugin(plugin_name, full_lib_file, init))
+    if (!container->loadPlugin(plugin_name, full_lib_file, init, &blackboard_))
         return PluginContainerPtr();
 
     // Add the plugin container
@@ -234,6 +249,9 @@ void Server::stepPlugins()
                 new_world_model = boost::make_shared<WorldModel>(*world_model_);
             }
 
+            // Update Blackboard
+            blackboard_.update(c->updateRequest()->bb_update);
+
             new_world_model->update(*c->updateRequest());
             plugins_with_requests.push_back(c);
 
@@ -264,6 +282,10 @@ void Server::stepPlugins()
             c->clearUpdateRequest();
         }
     }
+
+    blackboard_.updateConnections();
+    blackboard_.updateValues();
+
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -554,7 +576,13 @@ void Server::publishStatistics() const
 //    tue::config::Writer w(data);
 //    ed::serialize(*world_model_, w);
 
-//    std::cout << data << std::endl;
+    //    std::cout << data << std::endl;
 }
+
+bb::Blackboard &Server::blackboard()
+{
+    return blackboard_;
+}
+
 
 }

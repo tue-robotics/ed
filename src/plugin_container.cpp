@@ -34,11 +34,14 @@ PluginContainer::~PluginContainer()
 
 // --------------------------------------------------------------------------------
 
-PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init)
+PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init, bb::Blackboard *blackboard)
 {
     // Load the library
     delete class_loader_;
     class_loader_ = new class_loader::ClassLoader(lib_filename);
+
+    // Set the blackboard
+    blackboard_ = blackboard;
 
     // Create plugin
     class_loader_->loadLibrary();
@@ -66,7 +69,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
             if (init.config.readGroup("parameters"))
             {
                 tue::Configuration scoped_config = init.config.limitScope();
-                InitData scoped_init(init.properties, scoped_config);
+                InitData scoped_init(init.properties, scoped_config, *blackboard_);
 
                 plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
                 plugin_->initialize(scoped_init);
@@ -83,7 +86,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
             {
                 // No parameter available
                 tue::Configuration scoped_config;
-                InitData scoped_init(init.properties, scoped_config);
+                InitData scoped_init(init.properties, scoped_config, *blackboard_);
 
                 plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
                 plugin_->initialize(scoped_init);
@@ -164,7 +167,7 @@ bool PluginContainer::step()
 
     if (world_current_)
     {        
-        PluginInput data(*world_current_, world_deltas);
+        PluginInput data(*world_current_, world_deltas, *blackboard_);
 
         UpdateRequestPtr update_request(new UpdateRequest);
 
@@ -198,6 +201,11 @@ void PluginContainer::stop()
     stop_ = true;
     thread_->join();
     plugin_.reset();
+}
+
+void PluginContainer::setBlackboard(bb::Blackboard *blackboard)
+{
+    blackboard_ = blackboard;
 }
 
 // --------------------------------------------------------------------------------

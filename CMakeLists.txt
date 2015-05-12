@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   nav_msgs
   tue_config
+  blackboard
 )
 
 find_package(PCL REQUIRED)
@@ -62,7 +63,7 @@ generate_messages(
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ed_core ed_io ed_visualization
-    CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
+    CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models blackboard
 #  DEPENDS system_lib
 )
 

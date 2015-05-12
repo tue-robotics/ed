@@ -8,7 +8,7 @@
 #include <tue/config/configuration.h>
 
 #include <boost/thread.hpp>
-
+#include <blackboard/blackboard.h>
 #include <queue>
 
 namespace class_loader { class ClassLoader; }
@@ -27,7 +27,7 @@ public:
 
     virtual ~PluginContainer();
 
-    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init);
+    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init, bb::Blackboard *blackboard);
 
     PluginPtr plugin() const { return plugin_; }
 
@@ -56,6 +56,8 @@ public:
     }
 
     void setLoopFrequency(double freq) { loop_frequency_ = freq; }
+
+    void setBlackboard(bb::Blackboard *blackboard);
 
     double loopFrequency() const { return loop_frequency_; }
 
@@ -101,6 +103,8 @@ protected:
     WorldModelConstPtr world_new_;
 
     WorldModelConstPtr world_current_;
+
+    bb::Blackboard *blackboard_;
 
     double total_process_time_sec_;
 

@@ -16,6 +16,8 @@
 #include "ed/convex_hull_2d.h"
 #include "ed/convex_hull.h"
 
+#include "blackboard/update.h"
+
 
 namespace ed
 {
@@ -27,6 +29,7 @@ public:
 
     UpdateRequest() : is_sync_update(false) {}
 
+    bb::Update bb_update;
 
     // MEASUREMENTS
 
@@ -147,13 +150,11 @@ public:
 
     void removeEntity(const UUID& id) { removed_entities.insert(id); flagUpdated(id); }
 
-
-
     // UPDATED (AND REMOVED) ENTITIES
 
     std::set<UUID> updated_entities;
 
-    bool empty() const { return updated_entities.empty(); }
+    bool empty() const { return updated_entities.empty() && bb_update.updates().empty(); }
 
 
     // Is true if the update was created for synchronization only (used by ed_cloud)

@@ -7,6 +7,7 @@
 #include <tue/config/configuration.h>
 
 #include "ed/init_data.h"
+#include "blackboard/blackboard.h"
 
 namespace ed {
 
@@ -15,11 +16,12 @@ struct UpdateRequest;
 
 struct PluginInput
 {
-    PluginInput(const WorldModel& world_, const std::vector<UpdateRequestConstPtr>& deltas_)
-        : world(world_), deltas(deltas_) {}
+    PluginInput(const WorldModel& world_, const std::vector<UpdateRequestConstPtr>& deltas_, const bb::Blackboard& blackboard_)
+        : world(world_), deltas(deltas_), blackboard(blackboard_) {}
 
     const WorldModel& world;
     const std::vector<UpdateRequestConstPtr>& deltas;
+    const bb::Blackboard& blackboard;
 };
 
 class Plugin

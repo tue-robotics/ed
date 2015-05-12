@@ -18,6 +18,8 @@
 
 #include <queue>
 
+#include <blackboard/blackboard.h>
+
 namespace ed
 {
 
@@ -57,6 +59,8 @@ public:
         return property_key_db_.getPropertyKeyDBEntry(name);
     }
 
+    bb::Blackboard& blackboard();
+
 private:
 
     // World model datastructure
@@ -89,9 +93,11 @@ private:
     ros::Publisher pub_stats_;
 
     //! Merge the entities!
-    void mergeEntities(const WorldModelPtr& world_model, double not_updated_time, double overlap_fraction);
+    void mergeEntities(WorldModel& world, double not_updated_time, double overlap_fraction);
 
     std::string getFullLibraryPath(const std::string& lib);
+
+    bb::Blackboard blackboard_;
 };
 
 }
