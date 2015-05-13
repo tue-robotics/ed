@@ -93,7 +93,7 @@ private:
     ros::Publisher pub_stats_;
 
     //! Merge the entities!
-    void mergeEntities(WorldModel& world, double not_updated_time, double overlap_fraction);
+    void mergeEntities(const WorldModelPtr& world, double not_updated_time, double overlap_fraction);
 
     std::string getFullLibraryPath(const std::string& lib);
 
