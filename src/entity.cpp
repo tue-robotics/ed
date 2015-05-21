@@ -61,7 +61,10 @@ Entity::~Entity()
 void Entity::updateConvexHull()
 {
     if (convex_hull_map_.empty())
+    {
+        convex_hull_new_.points.clear();
         return;
+    }
 
     std::map<std::string, MeasurementConvexHull>::const_iterator it = convex_hull_map_.begin();
     const MeasurementConvexHull& m = it->second;

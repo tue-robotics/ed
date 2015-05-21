@@ -57,13 +57,23 @@ public:
 
     void setConvexHullNew(const ConvexHull& convex_hull, const geo::Pose3D& pose, double time, const std::string& source = "")
     {
-        ed::MeasurementConvexHull& m = convex_hull_map_[source];
-        m.convex_hull = convex_hull;
-        m.pose = pose;
-        m.timestamp = time;
+        if (convex_hull.points.empty())
+        {
+            // This signals that the measurement convex hull must be removed
+            convex_hull_map_.erase(source);
+        }
+        else
+        {
+            ed::MeasurementConvexHull& m = convex_hull_map_[source];
+            m.convex_hull = convex_hull;
+            m.pose = pose;
+            m.timestamp = time;
+        }
 
         updateConvexHull();
     }
+
+    const std::map<std::string, MeasurementConvexHull>& convexHullMap() const { return convex_hull_map_; }
 
     inline const geo::Pose3D& pose() const
     {
