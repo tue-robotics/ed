@@ -6,6 +6,26 @@
 #include <geolib/Shape.h>
 #include <geolib/Mesh.h>
 
+#include "ed/convex_hull_calc.h"
+
+// ----------------------------------------------------------------------------------------------------
+
+namespace
+{
+
+void convertConvexHull(const ed::ConvexHull& c, const geo::Pose3D& pose, ed::ConvexHull2D& c2)
+{
+    c2.min_z = c.z_min + pose.t.z;
+    c2.max_z = c.z_max + pose.t.z;
+    c2.center_point = pose.t;
+
+    c2.chull.resize(c.points.size());
+    for(unsigned int i = 0; i < c.points.size(); ++i)
+        c2.chull.points[i] = pcl::PointXYZ(c.points[i].x + pose.t.x, c.points[i].y + pose.t.y, 0);
+}
+
+}
+
 namespace ed
 {
 
@@ -39,6 +59,51 @@ Entity::~Entity()
 // ----------------------------------------------------------------------------------------------------
 
 void Entity::updateConvexHull()
+{
+    if (convex_hull_map_.empty())
+        return;
+
+    std::map<std::string, MeasurementConvexHull>::const_iterator it = convex_hull_map_.begin();
+    const MeasurementConvexHull& m = it->second;
+
+    if (convex_hull_map_.size() == 1)
+    {
+        convex_hull_new_ = m.convex_hull;
+        pose_ = m.pose;
+        has_pose_ = true;
+
+        return;
+    }
+
+    float z_min = m.convex_hull.z_min + m.pose.t.z;
+    float z_max = m.convex_hull.z_max + m.pose.t.z;
+
+    ++it;
+
+    std::vector<geo::Vec2f> points;
+    for(; it != convex_hull_map_.end(); ++it)
+    {
+        const MeasurementConvexHull& m = it->second;
+        z_min = std::min<float>(z_min, m.convex_hull.z_min + m.pose.t.z);
+        z_max = std::max<float>(z_max, m.convex_hull.z_max + m.pose.t.z);
+
+        geo::Vec2f offset(m.pose.t.x, m.pose.t.y);
+
+        for(unsigned int i = 0; i < m.convex_hull.points.size(); ++i)
+            points.push_back(m.convex_hull.points[i] + offset);
+    }
+
+    ed::convex_hull::create(points, z_min, z_max, convex_hull_new_, pose_);
+
+    // Convert to old convex hull format
+    convertConvexHull(convex_hull_new_, pose_, convex_hull_);
+
+    has_pose_ = true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void Entity::updateConvexHullFromShape()
 {
     // ----- Calculate convex hull -----
 
@@ -87,7 +152,7 @@ void Entity::setShape(const geo::ShapeConstPtr& shape)
         ++shape_revision_;
         shape_ = shape;
 
-        updateConvexHull();
+        updateConvexHullFromShape();
     }
 }
 

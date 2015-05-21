@@ -15,7 +15,7 @@
 
 #include "ed/convex_hull_2d.h"
 #include "ed/convex_hull.h"
-
+#include "ed/measurement_convex_hull.h"
 
 namespace ed
 {
@@ -59,8 +59,15 @@ public:
 
     // CONVEX HULLS NEW
 
-    std::map<UUID, ed::ConvexHull> convex_hulls_new;
-    void setConvexHullNew(const UUID& id, const ed::ConvexHull& convex_hull) { convex_hulls_new[id] = convex_hull; flagUpdated(id); }
+    std::map<UUID, std::map<std::string, ed::MeasurementConvexHull> > convex_hulls_new;
+    void setConvexHullNew(const UUID& id, const ed::ConvexHull& convex_hull, const geo::Pose3D& pose, double time, std::string source = "")
+    {
+        ed::MeasurementConvexHull& m = convex_hulls_new[id][source];
+        m.convex_hull = convex_hull;
+        m.pose = pose;
+        m.timestamp = time;
+        flagUpdated(id);
+    }
 
 
     // TYPES

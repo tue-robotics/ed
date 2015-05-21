@@ -106,13 +106,14 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
             if (r.readValue("existence_prob", existence_prob))
                 req.setExistenceProbability(id, existence_prob);
 
+            double timestamp = 0;
             if (r.readGroup("timestamp"))
             {
                 int sec, nsec;
                 r.readValue("sec", sec);
                 r.readValue("nsec", nsec);
-                double t = sec + (double)nsec / 1e9;
-                req.setLastUpdateTimestamp(id, t);
+                timestamp = sec + (double)nsec / 1e9;
+                req.setLastUpdateTimestamp(id, timestamp);
                 r.endGroup();
             }
 
@@ -165,7 +166,7 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                 r.readValue("z_max", chull.z_max);
 
                 ed::convex_hull::calculateEdgesAndNormals(chull);
-                req.setConvexHullNew(id, chull);
+                req.setConvexHullNew(id, chull, pose, timestamp);
 
                 // Set old chull (is used in other plugins, e.g. navigation)
                 ed::ConvexHull2D chull_old;

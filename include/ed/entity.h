@@ -16,8 +16,12 @@
 
 #include "ed/logging.h"
 
+#include "ed/measurement_convex_hull.h"
+
 namespace ed
 {
+
+// ----------------------------------------------------------------------------------------------------
 
 class Entity
 {
@@ -51,7 +55,15 @@ public:
 
     inline const ConvexHull& convexHullNew() const { return convex_hull_new_; }
 
-    void setConvexHullNew(const ConvexHull& convex_hull) { convex_hull_new_ = convex_hull; }
+    void setConvexHullNew(const ConvexHull& convex_hull, const geo::Pose3D& pose, double time, const std::string& source = "")
+    {
+        ed::MeasurementConvexHull& m = convex_hull_map_[source];
+        m.convex_hull = convex_hull;
+        m.pose = pose;
+        m.timestamp = time;
+
+        updateConvexHull();
+    }
 
     inline const geo::Pose3D& pose() const
     {
@@ -64,7 +76,7 @@ public:
     {
         pose_ = pose;
         if (shape_)
-            updateConvexHull();
+            updateConvexHullFromShape();
 
         has_pose_ = true;
     }
@@ -207,6 +219,8 @@ private:
     geo::ShapeConstPtr shape_;
     int shape_revision_;
     ConvexHull2D convex_hull_;
+
+    std::map<std::string, MeasurementConvexHull> convex_hull_map_;
     ConvexHull convex_hull_new_;
 
     bool has_pose_;
@@ -228,6 +242,8 @@ private:
     std::map<Idx, Property> properties_;
 
     void updateConvexHull();
+
+    void updateConvexHullFromShape();
 
 };
 
