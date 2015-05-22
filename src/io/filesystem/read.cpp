@@ -14,6 +14,7 @@
 
 #include "ed/entity.h"
 #include "ed/update_request.h"
+#include "ed/logging.h"
 
 #include <tue/filesystem/path.h>
 
@@ -160,37 +161,37 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
     if (r.readValue("type", type))
         req.setType(id, type);
 
+    // Pose
+    geo::Pose3D pose;
+    if (read(r, "pose", pose))
+        req.setPose(id, pose);
+
     // Convex hull
     if (r.readGroup("convex_hull"))
     {
-        ConvexHull2D chull;
-        r.readValue("z_min", chull.min_z);
-        r.readValue("z_max", chull.max_z);
-
-        read(r, "center_point", chull.center_point);
+        ConvexHull chull;
+        r.readValue("z_min", chull.z_min);
+        r.readValue("z_max", chull.z_max);
 
         if (r.readArray("points"))
         {
             while(r.nextArrayItem())
             {
-                chull.chull.push_back(pcl::PointXYZ());
-                pcl::PointXYZ& p = chull.chull.back();
+                chull.points.push_back(geo::Vec2f());
+                geo::Vec2f& p = chull.points.back();
                 r.readValue("x", p.x);
                 r.readValue("y", p.y);
-                p.z = 0;
             }
             r.endArray();
         }
 
-        req.setConvexHull(id, chull);
+        ed::log::warning() << "ed::readEntity: convex hull timestamp is set to 0." << std::endl;
+        req.setConvexHullNew(id, chull, pose, 0);
 
         r.endGroup();
     }
 
-    // Pose
-    geo::Pose3D pose;
-    if (read(r, "pose", pose))
-        req.setPose(id, pose);
+
 
     // RGBD measurement
     if (r.readGroup("rgbd_measurement"))

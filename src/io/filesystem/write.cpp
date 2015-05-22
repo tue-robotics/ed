@@ -135,19 +135,17 @@ bool write(const std::string& filename, const Entity& e)
     w.writeValue("type", e.type());
 
     // Convex hull
-    const ed::ConvexHull2D& chull = e.convexHull();
-    if (!chull.chull.empty())
+    const ed::ConvexHull& chull = e.convexHull();
+    if (!chull.points.empty())
     {
         w.writeGroup("convex_hull");
-        w.writeValue("z_min", chull.min_z);
-        w.writeValue("z_max", chull.max_z);
-
-        write("center_point", chull.center_point, w);
+        w.writeValue("z_min", chull.z_min);
+        w.writeValue("z_max", chull.z_max);
 
         w.writeArray("points");
-        for(unsigned int i = 0; i < chull.chull.size(); ++i)
+        for(unsigned int i = 0; i < chull.points.size(); ++i)
         {
-            const pcl::PointXYZ& p = chull.chull[i];
+            const geo::Vec2f& p = chull.points[i];
 
             w.addArrayItem();
             w.writeValue("x", p.x);

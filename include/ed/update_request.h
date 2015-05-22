@@ -51,10 +51,6 @@ public:
     void setShape(const UUID& id, const geo::ShapeConstPtr& shape) { shapes[id] = shape; flagUpdated(id); }
 
 
-    // CONVEX HULLS
-
-    std::map<UUID, ed::ConvexHull2D> convex_hulls;
-    void setConvexHull(const UUID& id, const ed::ConvexHull2D& convex_hull) { convex_hulls[id] = convex_hull; flagUpdated(id); }
 
 
     // CONVEX HULLS NEW

@@ -55,13 +55,6 @@ void WorldModel::update(const UpdateRequest& req)
         e->setShape(it->second);
     }
 
-    // Update convex hulls
-    for(std::map<UUID, ed::ConvexHull2D>::const_iterator it = req.convex_hulls.begin(); it != req.convex_hulls.end(); ++it)
-    {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setConvexHull(it->second);
-    }
-
     // Update convex hulls new
     for(std::map<UUID, std::map<std::string, ed::MeasurementConvexHull> >::const_iterator it = req.convex_hulls_new.begin(); it != req.convex_hulls_new.end(); ++it)
     {
@@ -69,7 +62,7 @@ void WorldModel::update(const UpdateRequest& req)
         for(std::map<std::string, ed::MeasurementConvexHull>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2)
         {
             const ed::MeasurementConvexHull& m = it2->second;
-            e->setConvexHullNew(m.convex_hull, m.pose, m.timestamp, it2->first);
+            e->setConvexHull(m.convex_hull, m.pose, m.timestamp, it2->first);
         }
     }
 

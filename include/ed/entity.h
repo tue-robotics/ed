@@ -49,13 +49,9 @@ public:
 
     inline int shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
 
-    inline const ConvexHull2D& convexHull() const { return convex_hull_; }
+    inline const ConvexHull& convexHull() const { return convex_hull_new_; }
 
-    void setConvexHull(const ConvexHull2D& convex_hull) { convex_hull_ = convex_hull; }
-
-    inline const ConvexHull& convexHullNew() const { return convex_hull_new_; }
-
-    void setConvexHullNew(const ConvexHull& convex_hull, const geo::Pose3D& pose, double time, const std::string& source = "")
+    void setConvexHull(const ConvexHull& convex_hull, const geo::Pose3D& pose, double time, const std::string& source = "")
     {
         if (convex_hull.points.empty())
         {
@@ -92,12 +88,6 @@ public:
     }
 
     inline bool has_pose() const { return has_pose_; }
-
-    inline const geo::Pose3D& velocity() const { return velocity_; }
-    inline void setVelocity(const geo::Pose3D& velocity) { velocity_ = velocity; }
-
-//    inline void setConfig(const tue::Configuration& config) { config_ = config; }
-//    inline tue::Configuration getConfig() const { return config_.limitScope(); }
 
     inline const tue::config::DataConstPointer& data() const { return config_; }
     inline void setData(const tue::config::DataConstPointer& data) { config_ = data; }
@@ -232,22 +222,14 @@ private:
     MeasurementConstPtr best_measurement_;
     unsigned int measurements_seq_;
 
-    boost::circular_buffer<std::pair<ConvexHull2D, double> > convex_hull_buffer_;
-
     geo::ShapeConstPtr shape_;
     int shape_revision_;
-    ConvexHull2D convex_hull_;
 
     std::map<std::string, MeasurementConvexHull> convex_hull_map_;
     ConvexHull convex_hull_new_;
 
     bool has_pose_;
     geo::Pose3D pose_;
-    geo::Pose3D velocity_;
-    geo::Vector3 average_displacement_vector_;
-
-    void updateEntityState(MeasurementConstPtr m);
-    void calculateVelocity();
 
 //    double creation_time_;
 

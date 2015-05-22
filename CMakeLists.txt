@@ -137,7 +137,6 @@ add_dependencies(ed_io ${PROJECT_NAME}_gencpp)
 add_library(ed_visualization
     include/ed/helpers/image_publisher.h
     src/helpers/image_publisher.cpp
-    src/helpers/visualization.cpp
 )
 target_link_libraries(ed_visualization ${catkin_LIBRARIES})
 add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
@@ -197,10 +196,6 @@ target_link_libraries(ed_test_wm ed_core ${OpenCV_LIBRARIES})
 add_executable(test_mask test/test_mask.cpp)
 target_link_libraries(test_mask ed_core ${OpenCV_LIBRARIES})
 add_dependencies(test_mask ${PROJECT_NAME}_gencpp)
-
-add_executable(test_sampling test/test_sampling.cpp)
-target_link_libraries(test_sampling ed_core ed_visualization ${OpenCV_LIBRARIES})
-add_dependencies(test_sampling ${PROJECT_NAME}_gencpp)
 
 add_executable(test_service_speed test/test_service_speed.cpp)
 target_link_libraries(test_service_speed ed_core)

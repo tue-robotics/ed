@@ -60,16 +60,35 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
     convex_hull::calculateEdgesAndNormals(chull);
 
     // Calculate area
-    chull.area = 0;
-    for(unsigned int i = 0; i < chull.points.size(); ++i)
+    calculateArea(chull);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& c)
+{
+    cv::Mat_<cv::Vec2f> points_2d(1, points.size());
+    for(unsigned int i = 0; i < points.size(); ++i)
+        points_2d.at<cv::Vec2f>(i) = cv::Vec2f(points[i].x, points[i].y);
+
+    c.z_min = z_min;
+    c.z_max = z_max;
+
+    std::vector<int> chull_indices;
+    cv::convexHull(points_2d, chull_indices);
+
+    c.points.resize(chull_indices.size());
+    for(unsigned int i = 0; i < chull_indices.size(); ++i)
     {
-        unsigned int j = (i + 1) % chull.points.size();
-
-        const geo::Vec2f& p1 = chull.points[i];
-        const geo::Vec2f& p2 = chull.points[j];
-
-        chull.area += 0.5 * (p1.x * p2.y - p2.x * p1.y);
+        const cv::Vec2f& p_cv = points_2d.at<cv::Vec2f>(chull_indices[i]);
+        c.points[i] = geo::Vec2f(p_cv[0], p_cv[1]);
     }
+
+    // Calculate normals and edges
+    convex_hull::calculateEdgesAndNormals(c);
+
+    // Calculate area
+    calculateArea(c);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -167,6 +186,24 @@ bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
 
     return true;
 }
+
+// ----------------------------------------------------------------------------------------------------
+
+void calculateArea(ConvexHull& c)
+{
+    c.area = 0;
+    for(unsigned int i = 0; i < c.points.size(); ++i)
+    {
+        unsigned int j = (i + 1) % c.points.size();
+
+        const geo::Vec2f& p1 = c.points[i];
+        const geo::Vec2f& p2 = c.points[j];
+
+        c.area += 0.5 * (p1.x * p2.y - p2.x * p1.y);
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
 
 }
 

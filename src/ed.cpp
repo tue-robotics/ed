@@ -56,34 +56,25 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 //    msg.creation_time = ros::Time(e.creationTime());
 
     // Convex hull
-    const ed::ConvexHull2D& convex_hull = e.convexHull();
-    if (!convex_hull.chull.empty())
+    const ed::ConvexHull& convex_hull = e.convexHull();
+    if (!convex_hull.points.empty())
     {
-        geo::convert(convex_hull.center_point, msg.center_point);
-        msg.z_min = convex_hull.min_z;
-        msg.z_max = convex_hull.max_z;
+        msg.z_min = convex_hull.z_min;
+        msg.z_max = convex_hull.z_max;
 
-        msg.convex_hull.resize(convex_hull.chull.size());
+        msg.convex_hull.resize(convex_hull.points.size());
         for(unsigned int i = 0; i < msg.convex_hull.size(); ++i)
         {
-            msg.convex_hull[i].x = convex_hull.chull[i].x;
-            msg.convex_hull[i].y = convex_hull.chull[i].y;
-            msg.convex_hull[i].z = convex_hull.chull[i].z;
+            msg.convex_hull[i].x = convex_hull.points[i].x;
+            msg.convex_hull[i].y = convex_hull.points[i].y;
+            msg.convex_hull[i].z = 0;
         }
     }
 
     msg.has_shape = e.shape() ? true : false;
-    if (msg.has_shape || e.convexHull().chull.empty())
-    {
-        // If the entity has a shape, use the pose of this shape
+    msg.has_pose = e.has_pose();
+    if (e.has_pose())
         geo::convert(e.pose(), msg.pose);
-        msg.center_point = msg.pose.position;
-    }
-    else
-    {
-        // If the entity has no shape, use the center point of the convex hull as point
-        geo::convert(geo::Pose3D(geo::Matrix3::identity(), e.convexHull().center_point), msg.pose);
-    }
 
     msg.last_update_time =  ros::Time(e.lastUpdateTimestamp());
 
@@ -290,19 +281,19 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
             }
 
             // Write convex hull
-            if (!e->convexHullNew().points.empty())
+            if (!e->convexHull().points.empty())
             {
                 w.writeGroup("convex_hull");
                 w.writeArray("points");
-                for (std::vector<geo::Vec2f>::const_iterator it = e->convexHullNew().points.begin(); it != e->convexHullNew().points.end(); ++it)
+                for (std::vector<geo::Vec2f>::const_iterator it = e->convexHull().points.begin(); it != e->convexHull().points.end(); ++it)
                 {
                     w.addArrayItem();
                     w.writeValue("x", it->x); w.writeValue("y", it->y);
                     w.endArrayItem();
                 }
                 w.endArray();
-                w.writeValue("z_min", e->convexHullNew().z_min);
-                w.writeValue("z_max", e->convexHullNew().z_max);
+                w.writeValue("z_min", e->convexHull().z_min);
+                w.writeValue("z_max", e->convexHull().z_max);
                 w.endGroup();
             }
 
@@ -440,7 +431,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;       
 
-        if (!e->has_pose()) //  TODO: also check for custom property pose
+        if (!e->has_pose())
             continue;
 
         if (!req.type.empty())
@@ -460,17 +451,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
         bool geom_ok = true;
         if (radius > 0)
         {
-            geo::Vector3 p_entity;
-            if (e->shape() || e->convexHull().chull.empty())
-                p_entity = e->pose().getOrigin();
-            else
-            {
-                p_entity.x = e->convexHull().center_point.x;
-                p_entity.y = e->convexHull().center_point.y;
-                p_entity.z = e->convexHull().center_point.z;
-            }
-
-            geom_ok = (radius * radius > (p_entity - center_point).length2());
+            geom_ok = (radius * radius > (e->pose().t - center_point).length2());
         }
 
         if (geom_ok)

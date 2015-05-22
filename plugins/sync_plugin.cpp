@@ -17,22 +17,6 @@
 
 #include "geolib/Shape.h"
 
-namespace
-{
-
-void convertConvexHull(const ed::ConvexHull& c, const geo::Pose3D& pose, ed::ConvexHull2D& c2)
-{
-    c2.min_z = c.z_min + pose.t.z;
-    c2.max_z = c.z_max + pose.t.z;
-    c2.center_point = pose.t;
-
-    c2.chull.resize(c.points.size());
-    for(unsigned int i = 0; i < c.points.size(); ++i)
-        c2.chull.points[i] = pcl::PointXYZ(c.points[i].x + pose.t.x, c.points[i].y + pose.t.y, 0);
-}
-
-}
-
 // ----------------------------------------------------------------------------------------------------
 
 SyncPlugin::SyncPlugin() : rev_number_(0)
@@ -167,11 +151,6 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
                 ed::convex_hull::calculateEdgesAndNormals(chull);
                 req.setConvexHullNew(id, chull, pose, timestamp);
-
-                // Set old chull (is used in other plugins, e.g. navigation)
-                ed::ConvexHull2D chull_old;
-                convertConvexHull(chull, pose, chull_old);
-                req.setConvexHull(id, chull_old);
 
                 r.endGroup();
             }
