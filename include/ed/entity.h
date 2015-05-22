@@ -208,6 +208,14 @@ public:
 
     double lastUpdateTimestamp() const { return last_update_timestamp_; }
 
+    void setFlag(const std::string& flag) { flags_.insert(flag); }
+
+    void removeFlag(const std::string& flag) { flags_.erase(flag); }
+
+    bool hasFlag(const std::string& flag) const { return flags_.find(flag) != flags_.end(); }
+
+    const std::set<std::string>& flags() const { return flags_; }
+
 private:
 
     UUID id_;
@@ -254,6 +262,8 @@ private:
     void updateConvexHull();
 
     void updateConvexHullFromShape();
+
+    std::set<std::string> flags_;
 
 };
 

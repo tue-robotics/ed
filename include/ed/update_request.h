@@ -161,6 +161,17 @@ public:
     void removeEntity(const UUID& id) { removed_entities.insert(id); flagUpdated(id); }
 
 
+    // FLAGS
+
+    std::map<ed::UUID, std::string> added_flags;
+
+    void setFlag(const UUID& id, const std::string& flag) { added_flags[id] = flag; flagUpdated(id); }
+
+    std::map<ed::UUID, std::string> removed_flags;
+
+    void removeFlag(const UUID& id, const std::string& flag) { removed_flags[id] = flag; flagUpdated(id); }
+
+
 
     // UPDATED (AND REMOVED) ENTITIES
 

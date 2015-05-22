@@ -95,6 +95,10 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 
         msg.data = ss.str();
     }
+
+    // Flags
+    for(std::set<std::string>::const_iterator it = e.flags().begin(); it != e.flags().end(); ++it)
+        msg.flags.push_back(*it);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -149,12 +153,26 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
                         pose.setRPY(X, Y, Z);
 
                     update_req.setPose(id, pose);
-
-                    r.endGroup();
                 }
                 else
                 {
                     res.response += "For entity '" + id + "': invalid pose (position).\n";
+                }
+
+                r.endGroup();
+            }
+
+            if (r.readArray("flags"))
+            {
+                while(r.nextArrayItem())
+                {
+                    std::string flag;
+                    if (r.readValue("add", flag))
+                        update_req.setFlag(id, flag);
+                    else if (r.readValue("remove", flag))
+                        update_req.removeFlag(id, flag);
+                    else
+                        res.response += "For entity '" + id + "': flag list should only contain 'add' or 'remove'.\n";
                 }
             }
 
@@ -202,7 +220,7 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
     }
     else
     {
-        res.response = r.error();
+        res.response += r.error();
     }
 
     return true;
@@ -420,7 +438,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 
         const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
-            continue;
+            continue;       
 
         if (!e->has_pose()) //  TODO: also check for custom property pose
             continue;
