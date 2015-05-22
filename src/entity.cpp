@@ -90,17 +90,17 @@ void Entity::updateConvexHullFromShape()
     if (vertices.empty())
         return;
 
-    float z_min = vertices[0].z;
-    float z_max = vertices[0].z;
+    float z_min = 1e9;
+    float z_max = -1e9;
 
     std::vector<geo::Vec2f> points(vertices.size());
     for(unsigned int i = 0; i < vertices.size(); ++i)
     {
-        const geo::Vector3& p = vertices[i];
-        z_min = std::min<float>(z_min, p.z);
-        z_max = std::max<float>(z_max, p.z);
+        geo::Vector3 p_MAP = pose_ * vertices[i];
+        z_min = std::min<float>(z_min, p_MAP.z - pose_.t.z);
+        z_max = std::max<float>(z_max, p_MAP.z - pose_.t.z);
 
-        points[i] = geo::Vec2f(p.x, p.y);
+        points[i] = geo::Vec2f(p_MAP.x - pose_.t.x, p_MAP.y - pose_.t.y);
     }
 
     convex_hull::createAbsolute(points, z_min, z_max, convex_hull_new_);
