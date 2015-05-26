@@ -46,7 +46,7 @@ public:
 
     void addPluginPath(const std::string& path) { plugin_paths_.push_back(path); }
 
-    PluginContainerPtr loadPlugin(const std::string& plugin_name, const std::string& lib_file, tue::Configuration config);
+    PluginContainerPtr loadPlugin(const std::string& plugin_name, tue::Configuration config);
 
     void stepPlugins();
 
@@ -81,7 +81,7 @@ private:
 
     //! Plugins
     std::vector<std::string> plugin_paths_;
-    std::vector<PluginContainerPtr> plugin_containers_;
+    std::map<std::string, PluginContainerPtr> plugin_containers_;
 
     //! Profiling
     tue::ProfilePublisher pub_profile_;

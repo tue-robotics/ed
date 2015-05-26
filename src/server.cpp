@@ -65,29 +65,44 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 {
     ErrorContext errc("Server", "configure");
 
-    // Unload all previously loaded plugins
-    plugin_containers_.clear();
-
     if (config.readArray("plugins"))
     {
         while(config.nextArrayItem())
         {
-            int enabled = 1;
-            if (config.value("enabled", enabled, tue::OPTIONAL) && enabled == 0)
-                continue;
-
             std::string name;
             if (!config.value("name", name))
                 return;
 
-            std::string lib;
-            if (!config.value("lib", lib))
-                return;
+            int enabled = 1;
+            config.value("enabled", enabled, tue::OPTIONAL);
 
-            loadPlugin(name, lib, config);
+            PluginContainerPtr plugin_container;
+
+            std::map<std::string, PluginContainerPtr>::iterator it_plugin = plugin_containers_.find(name);
+            if (it_plugin == plugin_containers_.end())
+            {
+                // Plugin does not yet exist
+                plugin_container = loadPlugin(name, config);
+            }
+            else
+            {
+                // Plugin already exists
+
+                plugin_container = it_plugin->second;
+
+                if (!enabled && plugin_container->isRunning())
+                    plugin_container->requestStop();
+
+                InitData init(property_key_db_, config);
+
+                plugin_container->configure(init, true);
+            }
 
             if (config.hasError())
                 return;
+
+            if (enabled && plugin_container && !plugin_container->isRunning())
+                plugin_container->runThreaded();
 
         } // end iterate plugins
 
@@ -153,9 +168,9 @@ void Server::reset()
     world_model_ = new_world_model;
 
     // Notify plugins
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        const PluginContainerPtr& c = *it;
+        const PluginContainerPtr& c = it->second;
         c->addDelta(req_delete);
         c->setWorld(new_world_model);
     }
@@ -163,11 +178,15 @@ void Server::reset()
 
 // ----------------------------------------------------------------------------------------------------
 
-PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std::string& lib_file, tue::Configuration config)
+PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Configuration config)
 {    
     ErrorContext errc("Server loadPlugin", plugin_name.c_str());
 
     config.setErrorContext("While loading plugin '" + plugin_name + "': ");
+
+    std::string lib_file;
+    if (!config.value("lib", lib_file))
+        return PluginContainerPtr();
 
     if (lib_file.empty())
     {
@@ -203,10 +222,7 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, const std:
         return PluginContainerPtr();
 
     // Add the plugin container
-    plugin_containers_.push_back(container);
-
-    // Start the plugin
-    container->runThreaded();
+    plugin_containers_[plugin_name] = container;
 
     return container;
 }
@@ -221,9 +237,9 @@ void Server::stepPlugins()
 
     // collect and apply all update requests
     std::vector<PluginContainerPtr> plugins_with_requests;
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        PluginContainerPtr c = *it;
+        PluginContainerPtr c = it->second;
 
         if (c->updateRequest())
         {
@@ -237,9 +253,9 @@ void Server::stepPlugins()
             plugins_with_requests.push_back(c);
 
             // Temporarily for Javier
-            for(std::vector<PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
+            for(std::map<std::string, PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
             {
-                PluginContainerPtr c2 = *it2;
+                PluginContainerPtr c2 = it2->second;
                 c2->addDelta(c->updateRequest());
             }
         }
@@ -248,9 +264,9 @@ void Server::stepPlugins()
     if (new_world_model)
     {
         // Set the new (updated) world
-        for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+        for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
         {
-            const PluginContainerPtr& c = *it;
+            const PluginContainerPtr& c = it->second;
             c->setWorld(new_world_model);
         }
 
@@ -286,9 +302,9 @@ void Server::update()
 //    }
 
     // Notify all plugins of the updated world model
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        PluginContainerPtr c = *it;
+        PluginContainerPtr c = it->second;
         c->setWorld(new_world_model);
     }
 
@@ -309,9 +325,9 @@ void Server::update(const ed::UpdateRequest& req)
     new_world_model->update(req);
 
     // Notify all plugins of the updated world model
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        PluginContainerPtr c = *it;
+        PluginContainerPtr c = it->second;
         c->setWorld(new_world_model);
     }
 
@@ -388,9 +404,9 @@ void Server::update(const std::string& update_str, std::string& error)
     new_world_model->update(req);
 
     // Notify all plugins of the updated world model
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        PluginContainerPtr c = *it;
+        PluginContainerPtr c = it->second;
         c->setWorld(new_world_model);
     }
 
@@ -417,9 +433,9 @@ void Server::initializeWorld()
     new_world_model->update(*req);
 
     // Temporarily for Javier
-    for(std::vector<PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        PluginContainerPtr c = *it;
+        PluginContainerPtr c = it->second;
         c->addDelta(req);
         c->setWorld(new_world_model);
     }
@@ -532,9 +548,9 @@ void Server::publishStatistics() const
     std::stringstream s;
 
     s << "[plugins]" << std::endl;
-    for(std::vector<PluginContainerPtr>::const_iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for(std::map<std::string, PluginContainerPtr>::const_iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
-        const PluginContainerPtr& p = *it;
+        const PluginContainerPtr& p = it->second;
 
         // Calculate CPU usage percentage
         double cpu_perc = p->totalProcessingTime() * 100 / p->totalRunningTime();

@@ -31,9 +31,11 @@ public:
 
     PluginPtr plugin() const { return plugin_; }
 
+    void configure(InitData& init, bool reconfigure);
+
     void runThreaded();
 
-    void stop();
+    void requestStop();
 
     const std::string& name() const { return name_; }
 
@@ -69,6 +71,8 @@ public:
         world_deltas_.push_back(delta);
     }
 
+    bool isRunning() const { return is_running_; }
+
 protected:
 
     class_loader::ClassLoader*  class_loader_;
@@ -77,7 +81,9 @@ protected:
 
     std::string name_;
 
-    bool stop_;
+    bool request_stop_;
+
+    bool is_running_;
 
     // 1.0 / cycle frequency
     double cycle_duration_;
