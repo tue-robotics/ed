@@ -15,6 +15,7 @@
 #include "ed/entity.h"
 #include "ed/update_request.h"
 #include "ed/logging.h"
+#include "ed/convex_hull_calc.h"
 
 #include <tue/filesystem/path.h>
 
@@ -185,13 +186,14 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
             r.endArray();
         }
 
+        ed::convex_hull::calculateEdgesAndNormals(chull);
+        ed::convex_hull::calculateArea(chull);
+
         ed::log::warning() << "ed::readEntity: convex hull timestamp is set to 0." << std::endl;
         req.setConvexHullNew(id, chull, pose, 0);
 
         r.endGroup();
     }
-
-
 
     // RGBD measurement
     if (r.readGroup("rgbd_measurement"))
