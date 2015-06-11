@@ -42,11 +42,22 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
 
     double freq = 1000; // default
     tue::Configuration config;
-    config.setValue("name", probe_name);
-    config.setValue("lib", lib);
-    config.setValue("frequency", freq);
+
+    config.writeArray("plugins");
+    {
+        config.addArrayItem();
+        {
+            config.setValue("name", probe_name);
+            config.setValue("lib", lib);
+            config.setValue("frequency", freq);
+        }
+        config.endArrayItem();
+    }
+    config.endArray();
 
     srv.request.request = config.toYAMLString();
+
+    std::cout << "Sending request to launch probe using configuration: " << srv.request.request << std::endl;
 
     std::string error;
 
