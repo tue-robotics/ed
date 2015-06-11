@@ -44,6 +44,7 @@ add_service_files(
 
    Query.srv
    UpdateSrv.srv
+   Configure.srv
 
    # For builder plugin
    SetEntity.srv

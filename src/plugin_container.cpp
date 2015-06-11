@@ -13,7 +13,7 @@ namespace ed
 // --------------------------------------------------------------------------------
 
 PluginContainer::PluginContainer()
-    : class_loader_(0), stop_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
+    : class_loader_(0), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
       total_process_time_sec_(0)
 {
     timer_.start();
@@ -23,7 +23,7 @@ PluginContainer::PluginContainer()
 
 PluginContainer::~PluginContainer()
 {
-    stop_ = true;
+    request_stop_ = true;
 
 //    if (thread_)
 //        thread_->join();
@@ -55,42 +55,10 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
         plugin_ = class_loader_->createInstance<Plugin>(classes.front());
         if (plugin_)
         {
-            double freq = 10; // default
-
             name_ = plugin_name;
             plugin_->name_ = plugin_name;
 
-            // Read optional frequency
-            init.config.value("frequency", freq, tue::OPTIONAL);
-
-            if (init.config.readGroup("parameters"))
-            {
-                tue::Configuration scoped_config = init.config.limitScope();
-                InitData scoped_init(init.properties, scoped_config);
-
-                plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
-                plugin_->initialize(scoped_init);
-
-                // Read optional frequency (inside parameters is obsolete)
-                if (init.config.value("frequency", freq, tue::OPTIONAL))
-                {
-                    std::cout << "[ED]: Warning while loading plugin '" << name_ << "': please specify parameter 'frequency' outside 'parameters'." << std::endl;
-                }
-
-                init.config.endGroup();
-            }
-            else
-            {
-                // No parameter available
-                tue::Configuration scoped_config;
-                InitData scoped_init(init.properties, scoped_config);
-
-                plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
-                plugin_->initialize(scoped_init);
-
-                if (scoped_config.hasError())
-                    init.config.addError(scoped_config.error());
-            }
+            configure(init, false);
 
             // If there was an error during configuration, do not start plugin
             if (init.config.hasError())
@@ -99,14 +67,52 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
             // Initialize the plugin
             plugin_->initialize();
 
-            // Set plugin loop frequency
-            setLoopFrequency(freq);
-
             return plugin_;
         }
     }
 
     return PluginPtr();
+}
+
+// --------------------------------------------------------------------------------
+
+void PluginContainer::configure(InitData& init, bool reconfigure)
+{
+    // Read optional frequency
+    double freq = 10; // default
+    init.config.value("frequency", freq, tue::OPTIONAL);
+
+    // Set plugin loop frequency
+    setLoopFrequency(freq);
+
+    if (init.config.readGroup("parameters"))
+    {
+        tue::Configuration scoped_config = init.config.limitScope();
+        InitData scoped_init(init.properties, scoped_config);
+
+        plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
+        plugin_->initialize(scoped_init);
+
+        // Read optional frequency (inside parameters is obsolete)
+        if (init.config.value("frequency", freq, tue::OPTIONAL))
+        {
+            std::cout << "[ED]: Warning while loading plugin '" << name_ << "': please specify parameter 'frequency' outside 'parameters'." << std::endl;
+        }
+
+        init.config.endGroup();
+    }
+    else if (!reconfigure)
+    {
+        // No parameter available
+        tue::Configuration scoped_config;
+        InitData scoped_init(init.properties, scoped_config);
+
+        plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
+        plugin_->initialize(scoped_init);
+
+        if (scoped_config.hasError())
+            init.config.addError(scoped_config.error());
+    }
 }
 
 // --------------------------------------------------------------------------------
@@ -121,18 +127,23 @@ void PluginContainer::runThreaded()
 
 void PluginContainer::run()
 {
+    is_running_ = true;
+    request_stop_ = false;
+
     total_timer_.start();
 
     double innerloop_frequency = 1000; // TODO: magic number!
 
     ros::Rate r(loop_frequency_);
     ros::Rate ir(innerloop_frequency);
-    while(!stop_)
+    while(!request_stop_)
     {
         while (!step())
             ir.sleep();
         r.sleep();
     }
+
+    is_running_ = false;
 }
 
 // --------------------------------------------------------------------------------
@@ -193,11 +204,9 @@ bool PluginContainer::step()
 
 // --------------------------------------------------------------------------------
 
-void PluginContainer::stop()
+void PluginContainer::requestStop()
 {
-    stop_ = true;
-    thread_->join();
-    plugin_.reset();
+    request_stop_ = true;
 }
 
 // --------------------------------------------------------------------------------

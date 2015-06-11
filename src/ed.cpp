@@ -20,6 +20,9 @@
 // Reset
 #include <std_srvs/Empty.h>
 
+// Configure
+#include <ed/Configure.h>
+
 // Loop
 #include <ed/event_clock.h>
 
@@ -466,26 +469,23 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvLoadPlugin(const ed::LoadPlugin::Request& req, ed::LoadPlugin::Response& res)
+bool srvConfigure(ed::Configure::Request& req, ed::Configure::Response& res)
 {
-    tue::Configuration cfg;
-    if (!req.configuration.empty())
+    tue::Configuration config;
+    if (!tue::config::loadFromYAMLString(req.request, config))
     {
-        cfg.writeGroup("parameters");
-
-        if (!tue::config::loadFromYAMLString(req.configuration, cfg))
-        {
-            res.error_msg = cfg.error();
-            return true;
-        }
-
-        cfg.endGroup();
+        res.error_msg = config.error();
+        return true;
     }
 
-    ed_wm->loadPlugin(req.plugin_name, req.library_path, cfg);
+    // Configure ED
+    ed_wm->configure(config);
 
-    if (cfg.hasError())
-        res.error_msg = cfg.error();
+    if (config.hasError())
+    {
+        res.error_msg = config.error();
+        return true;
+    }
 
     return true;
 }
@@ -682,17 +682,12 @@ int main(int argc, char** argv)
                 "reset", srvReset, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_reset = nh_private.advertiseService(opt_reset);
 
-    ros::AdvertiseServiceOptions opt_load_plugin =
-            ros::AdvertiseServiceOptions::create<ed::LoadPlugin>(
-                "load_plugin", srvLoadPlugin, ros::VoidPtr(), &cb_queue);
-    ros::ServiceServer srv_load_plugin = nh_private.advertiseService(opt_load_plugin);
-
     ros::NodeHandle nh_private2("~");
     nh_private2.setCallbackQueue(&cb_queue);
 
     ros::ServiceServer srv_query = nh_private2.advertiseService("query", srvQuery);
     ros::ServiceServer srv_update = nh_private2.advertiseService("update", srvUpdate);
-
+    ros::ServiceServer srv_configure = nh_private2.advertiseService("configure", srvConfigure);
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
