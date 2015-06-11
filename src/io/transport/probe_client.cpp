@@ -1,7 +1,7 @@
 #include "ed/io/transport/probe_client.h"
 
 // ROS services
-#include "ed/LoadPlugin.h"
+#include "ed/Configure.h"
 #include "tue_serialization/BinaryService.h"
 
 #include <ros/node_handle.h>
@@ -35,17 +35,18 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     }
 
     nh_ = new ros::NodeHandle();
-    ros::ServiceClient client = nh_->serviceClient<ed::LoadPlugin>("ed/load_plugin");
+    ros::ServiceClient client = nh_->serviceClient<ed::Configure>("ed/configure");
     client.waitForExistence();
 
-    ed::LoadPlugin srv;
-    srv.request.plugin_name = probe_name;
-    srv.request.library_path = lib;
+    ed::Configure srv;
 
     double freq = 1000; // default
     tue::Configuration config;
+    config.setValue("name", probe_name);
+    config.setValue("lib", lib);
     config.setValue("frequency", freq);
-    srv.request.configuration = config.toYAMLString();
+
+    srv.request.request = config.toYAMLString();
 
     std::string error;
 
@@ -55,7 +56,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     }
     else
     {
-        error = "Failed to call service '/ed/load_plugin'";
+        error = "Failed to call service '/ed/configure'";
     }
 
     if (!error.empty())
