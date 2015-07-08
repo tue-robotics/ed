@@ -82,6 +82,7 @@ private:
     //! Plugins
     std::vector<std::string> plugin_paths_;
     std::map<std::string, PluginContainerPtr> plugin_containers_;
+    std::map<std::string, PluginContainerPtr> inactive_plugin_containers_;
 
     //! Profiling
     tue::ProfilePublisher pub_profile_;

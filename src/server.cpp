@@ -82,6 +82,12 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
             if (it_plugin == plugin_containers_.end())
             {
                 // Plugin does not yet exist
+                if (!enabled)
+                {
+                    // It is not enabled, so simply skip it
+                    continue;
+                }
+
                 plugin_container = loadPlugin(name, config);
             }
             else
@@ -91,11 +97,17 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
                 plugin_container = it_plugin->second;
 
                 if (!enabled && plugin_container->isRunning())
+                {
                     plugin_container->requestStop();
-
-                InitData init(property_key_db_, config);
-
-                plugin_container->configure(init, true);
+                    inactive_plugin_containers_[name] = plugin_container;
+                    plugin_containers_.erase(name);
+                    continue;
+                }
+                else
+                {
+                    InitData init(property_key_db_, config);
+                    plugin_container->configure(init, true);
+                }
             }
 
             if (config.hasError())
