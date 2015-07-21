@@ -84,11 +84,17 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
             std::string type;
             if (r.readValue("type", type))
+            {
                 req.setType(id, type);
+                ROS_INFO_STREAM("Sync plugin: setType " << id);
+            }
 
             double existence_prob;
             if (r.readValue("existence_prob", existence_prob))
+            {
                 req.setExistenceProbability(id, existence_prob);
+                ROS_INFO_STREAM("Sync plugin: setExistenceProbability " << id);
+            }
 
             double timestamp = 0;
             if (r.readGroup("timestamp"))
@@ -98,6 +104,7 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                 r.readValue("nsec", nsec);
                 timestamp = sec + (double)nsec / 1e9;
                 req.setLastUpdateTimestamp(id, timestamp);
+                ROS_INFO_STREAM("Sync plugin: setLastUpdateTimestamp " << id);
                 r.endGroup();
             }
 
@@ -127,6 +134,7 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                 }
 
                 req.setPose(id, pose);
+                ROS_INFO_STREAM("Sync plugin: setPose " << id);
 
                 r.endGroup();
             }
@@ -151,6 +159,7 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
                 ed::convex_hull::calculateEdgesAndNormals(chull);
                 req.setConvexHullNew(id, chull, pose, timestamp);
+                ROS_INFO_STREAM("Sync plugin: setConvexHullNew " << id);
 
                 r.endGroup();
             }
@@ -193,6 +202,8 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                 shape->setMesh(mesh);
                 req.setShape(id, shape);
 
+                ROS_INFO_STREAM("Sync plugin: setShape " << id);
+
                 r.endGroup();
             }
 
@@ -219,8 +230,10 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
                     ed::Variant value;
                     if (entry->info->deserialize(r, value))
+                    {
                         req.setProperty(id, entry, value);
-                    else
+                        ROS_INFO_STREAM("Sync plugin: setProperty " << id);
+                    } else
                         error += "For entity '" + id + "': deserialization of property '" + prop_name +"' failed.\n";
                 }
 
