@@ -191,6 +191,7 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
                 geo::ShapePtr shape(new geo::Shape);
                 shape->setMesh(mesh);
+                req.setShape(id, shape);
 
                 r.endGroup();
             }
