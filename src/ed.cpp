@@ -44,7 +44,6 @@
 #include <unistd.h>
 #include <boost/thread.hpp>
 #include "ed/error_context.h"
-
 boost::thread::id main_thread_id;
 
 ed::Server* ed_wm;
@@ -324,15 +323,6 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
                 w.writeValue("zz", p.R.zz);
                 w.endGroup();
                 w.endGroup();
-            }
-
-            // Data
-            if (!e->data().empty())
-            {
-                std::stringstream ss;
-                tue::config::YAMLEmitter emitter;
-                emitter.emit(e->data(), ss);
-                w.writeValue("data_yaml", ss.str());
             }
 
             // Mesh
