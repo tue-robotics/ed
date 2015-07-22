@@ -17,6 +17,8 @@
 
 #include "geolib/Shape.h"
 
+#include <tue/config/loaders/yaml.h>
+
 // ----------------------------------------------------------------------------------------------------
 
 SyncPlugin::SyncPlugin() : rev_number_(0)
@@ -238,6 +240,14 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
                 }
 
                 r.endArray();
+            }
+
+            std::string data_yaml;
+            if (r.readValue("data_yaml", data_yaml))
+            {
+                tue::Configuration config;
+                tue::config::loadFromYAMLString(data_yaml, config);
+                req.addData(id, config.data());
             }
         }
 
