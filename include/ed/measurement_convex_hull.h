@@ -1,6 +1,9 @@
 #ifndef ED_MEASUREMENT_CONVEX_HULL_H_
 #define ED_MEASUREMENT_CONVEX_HULL_H_
 
+#include "ed/convex_hull.h"
+#include "geolib/datatypes.h"
+
 namespace ed
 {
 
