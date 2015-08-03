@@ -121,25 +121,23 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         config.endArray();
     }
 
-    // Initialize profiler
-    profiler_.setName("ed");
-    pub_profile_.initialize(profiler_);
-
     if (config.value("world_name", world_name_, tue::OPTIONAL))
         initializeWorld();
-
-    if (pub_stats_.getTopic() == "")
-    {
-        ros::NodeHandle nh;
-        pub_stats_ = nh.advertise<std_msgs::String>("ed/stats", 10);
-    }
-
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void Server::initialize()
 {
+    // Initialize profiler
+    profiler_.setName("ed");
+    pub_profile_.initialize(profiler_);
+
+    if (pub_stats_.getTopic() == "")
+    {
+        ros::NodeHandle nh;
+        pub_stats_ = nh.advertise<std_msgs::String>("ed/stats", 10);
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------

@@ -644,23 +644,15 @@ int main(int argc, char** argv)
     {
         std::string yaml_filename = argv[1];
         config.loadFromYAMLFile(yaml_filename);
-    }
-    else
-    {
-        // Get the ED directory
-        std::string ed_dir = ros::package::getPath("ed");
 
-        // Load the default AMIGO YAML config file
-        config.loadFromYAMLFile(ed_dir + "/config/simple.yaml");
-    }
+        // Configure ED
+        ed_wm->configure(config);
 
-    // Configure ED
-    ed_wm->configure(config);
-
-    if (config.hasError())
-    {
-        std::cout << std::endl << "Error during configuration:" << std::endl << std::endl << config.error() << std::endl;
-        return 1;
+        if (config.hasError())
+        {
+            std::cout << std::endl << "Error during configuration:" << std::endl << std::endl << config.error() << std::endl;
+            return 1;
+        }
     }
 
     // - - - - - - - - - - - - service initialization - - - - - - - - - - - -

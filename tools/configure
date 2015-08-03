@@ -1,0 +1,33 @@
+#! /usr/bin/python
+
+import tue_config
+import sys
+
+import rospy
+from ed.srv import *
+
+if __name__ == "__main__":
+
+    if len(sys.argv) < 2:
+        print "Please specify a configuration file (.py, .yaml or .json)"
+        sys.exit(1)
+
+    cfg = tue_config.from_file(sys.argv[1], relative=False)
+    yaml_str = tue_config.to_yaml(cfg)
+
+
+    rospy.init_node('ed_configure')
+
+    rospy.wait_for_service('ed/configure')
+
+    try:
+        client = rospy.ServiceProxy('ed/configure', ed.srv.Configure)
+        resp = client(yaml_str)
+
+        if resp.error_msg:
+            rospy.logerr("Could not configure ED:\n\n" + resp.error_msg)
+            sys.exit(1)
+
+    except rospy.ServiceException, e:
+        rospy.logerr("Could not configure ED:\n\nService call failed: %s"%e)
+        sys.exit(1)
