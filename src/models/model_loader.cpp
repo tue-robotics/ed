@@ -193,13 +193,16 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.value("y", pose.t.y);
         r.value("z", pose.t.z);
 
-        double rx = 0, ry = 0, rz = 0;
-        r.value("X", rx, tue::config::OPTIONAL);
-        r.value("Y", ry, tue::config::OPTIONAL);
-        r.value("Z", rz, tue::config::OPTIONAL);
+        double roll = 0, pitch = 0, yaw = 0;
+        r.value("X", roll,  tue::config::OPTIONAL);
+        r.value("Y", pitch, tue::config::OPTIONAL);
+        r.value("Z", yaw,   tue::config::OPTIONAL);
+        r.value("roll",  roll,  tue::config::OPTIONAL);
+        r.value("pitch", pitch, tue::config::OPTIONAL);
+        r.value("yaw",   yaw,   tue::config::OPTIONAL);
 
         // Set rotation
-        pose.R.setRPY(rx, ry, rz);
+        pose.R.setRPY(roll, pitch, yaw);
 
         r.endGroup();
     }

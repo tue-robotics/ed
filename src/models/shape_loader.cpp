@@ -167,25 +167,14 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, int d_start, std::v
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::Reader cfg, std::stringstream& error)
+geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, double blockheight, double resolution, std::stringstream& error)
 {
-    double resolution, origin_x, origin_y, origin_z, blockheight;
-    if (!(cfg.value("origin_x", origin_x) &&
-            cfg.value("origin_y", origin_y) &&
-            cfg.value("origin_z", origin_z) &&
-            cfg.value("resolution", resolution) &&
-            cfg.value("blockheight", blockheight)))
-    {
-        std::cout << "ed::models::getHeightMapShape() : ERROR while loading heightmap parameters at '" << path.string() << "'. Required shape parameters: resolution, origin_x, origin_y, origin_z, blockheight" << std::endl;
-        return geo::ShapePtr();
-    }
-
-    cv::Mat image = cv::imread(path.string(), CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+    cv::Mat image = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
 
     if (!image.data)
     {
-        std::cout << "ed::models::getHeightMapShape() : ERROR loading heightmap at '" << path.string() << "'. Image constains invalid data." << std::endl;
-        return geo::ShapePtr();;
+        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap '" << image_filename << "'. Image could not be loaded." << std::endl;
+        return geo::ShapePtr();
     }
 
     cv::Mat vertex_index_map(image.rows, image.cols, CV_32SC1, -1);
@@ -210,8 +199,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                 {
                     geo::Mesh mesh;
 
-                    double min_z = origin_z;
-                    double max_z = origin_z + (double)(255 - v) / 255 * blockheight;
+                    double min_z = pos.z;
+                    double max_z = pos.z + (double)(255 - v) / 255 * blockheight;
 
                     std::list<TPPLPoly> testpolys;
 
@@ -224,8 +213,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                         poly[i].y = points[i].y;
 
                         // Convert to world coordinates
-                        double wx = points[i].x * resolution + origin_x;
-                        double wy = (image.rows - points[i].y - 1) * resolution + origin_y;
+                        double wx = points[i].x * resolution + pos.x;
+                        double wy = (image.rows - points[i].y - 1) * resolution + pos.y;
 
                         vertex_index_map.at<int>(points[i].y, points[i].x) = mesh.addPoint(geo::Vector3(wx, wy, min_z));
                         mesh.addPoint(geo::Vector3(wx, wy, max_z));
@@ -267,8 +256,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
                                     poly_hole[j].y = hole_points[j].y;
 
                                     // Convert to world coordinates
-                                    double wx = hole_points[j].x * resolution + origin_x;
-                                    double wy = (image.rows - hole_points[j].y - 1) * resolution + origin_y;
+                                    double wx = hole_points[j].x * resolution + pos.x;
+                                    double wy = (image.rows - hole_points[j].y - 1) * resolution + pos.y;
 
                                     vertex_index_map.at<int>(hole_points[j].y, hole_points[j].x) = mesh.addPoint(geo::Vector3(wx, wy, min_z));
                                     mesh.addPoint(geo::Vector3(wx, wy, max_z));
@@ -296,7 +285,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
 
                     if (!pp.Triangulate_EC(&testpolys, &result))
                     {
-                        std::cout << "ed::models::getHeightMapShape() : ERROR: could not triangulate polygon." << std::endl;
+                        error << "[ED::MODELS::LOADSHAPE] Error while creating heightmap: could not triangulate polygon." << std::endl;
                         return shape;
                     }
 
@@ -330,10 +319,58 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
 
 // ----------------------------------------------------------------------------------------------------
 
+geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::Reader cfg, std::stringstream& error)
+{
+    double resolution, origin_x, origin_y, origin_z, blockheight;
+    if (!(cfg.value("origin_x", origin_x) &&
+            cfg.value("origin_y", origin_y) &&
+            cfg.value("origin_z", origin_z) &&
+            cfg.value("resolution", resolution) &&
+            cfg.value("blockheight", blockheight)))
+    {
+        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap parameters at '" << path.string() << "'. Required shape parameters: resolution, origin_x, origin_y, origin_z, blockheight" << std::endl;
+        return geo::ShapePtr();
+    }
+
+    return getHeightMapShape(path.string(), geo::Vec3(origin_x, origin_y, origin_z), blockheight, resolution, error);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void readVec3(tue::config::Reader& cfg, geo::Vec3& v)
+{
+    cfg.value("x", v.x);
+    cfg.value("y", v.y);
+    cfg.value("z", v.z);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void readPose(tue::config::Reader& cfg, geo::Pose3D& pose)
+{
+    cfg.value("x", pose.t.x, tue::config::OPTIONAL);
+    cfg.value("y", pose.t.y, tue::config::OPTIONAL);
+    cfg.value("z", pose.t.z, tue::config::OPTIONAL);
+
+    double roll = 0, pitch = 0, yaw = 0;
+    cfg.value("X", roll,  tue::config::OPTIONAL);
+    cfg.value("Y", pitch, tue::config::OPTIONAL);
+    cfg.value("Z", yaw,   tue::config::OPTIONAL);
+    cfg.value("roll",  roll,  tue::config::OPTIONAL);
+    cfg.value("pitch", pitch, tue::config::OPTIONAL);
+    cfg.value("yaw",   yaw,   tue::config::OPTIONAL);
+
+    // Set rotation
+    pose.R.setRPY(roll, pitch, yaw);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
     geo::ShapePtr shape;
+    geo::Pose3D pose = geo::Pose3D::identity();
 
     std::string path;
     if (cfg.value("path", path))
@@ -373,19 +410,106 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             }
 
             if (!shape)
-                error << "ed::models::loadShape() : ERROR while loading shape at " << shape_path.string() << std::endl;
+                error << "[ED::MODELS::LOADSHAPE] Error while loading shape at " << shape_path.string() << std::endl;
             else
                 // Add to cache
                 shape_cache[shape_path.string()] = shape;
         }
         else
         {
-            error << "ed::models::loadShape() : ERROR while loading shape of at " << shape_path.string() << " ; file does not exist" << std::endl;
+            error << "[ED::MODELS::LOADSHAPE] Error while loading shape at " << shape_path.string() << " ; file does not exist" << std::endl;
+        }
+    }
+    else if (cfg.readGroup("box"))
+    {
+        geo::Vec3 min, max;
+        if (cfg.readGroup("min"))
+        {
+            readVec3(cfg, min);
+            cfg.endGroup();
+
+            if (cfg.readGroup("max"))
+            {
+                readVec3(cfg, max);
+                shape.reset(new geo::Box(min, max));
+                cfg.endGroup();
+            }
+            else
+            {
+                error << "[ED::MODELS::LOADSHAPE] Error while loading shape: box must contain 'min' and 'max' (only 'min' specified)";
+            }
+        }
+        else if (cfg.readGroup("size"))
+        {
+            geo::Vec3 size;
+            readVec3(cfg, size);
+            shape.reset(new geo::Box(-0.5 * size, 0.5 * size));
+            cfg.endGroup();
+        }
+        else
+        {
+            error << "[ED::MODELS::LOADSHAPE] Error while loading shape: box must contain 'min' and 'max' or 'size'.";
+        }
+
+        if (cfg.readGroup("pose"))
+        {
+            readPose(cfg, pose);
+            cfg.endGroup();
+        }
+    }
+    else if (cfg.readArray("compound"))
+    {
+        boost::shared_ptr<geo::CompositeShape> composite(new geo::CompositeShape);
+        while(cfg.nextArrayItem())
+        {
+            std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+            geo::ShapePtr sub_shape = loadShape(model_path, cfg, dummy_shape_cache, error);
+            composite->addShape(*sub_shape, geo::Pose3D::identity());
+        }
+        cfg.endArray();
+
+        shape = composite;
+    }
+    else if (cfg.readArray("heightmap"))
+    {
+        std::string image_filename;
+        double height, resolution;
+
+        if (cfg.value("image", image_filename)
+                && cfg.value("resolution", resolution)
+                && cfg.value("height", height))
+        {
+            std::string image_filename_full = model_path + "/" + image_filename;
+            shape = getHeightMapShape(image_filename_full, geo::Vec3(0, 0, 0), height, resolution, error);
+
+            if (cfg.readGroup("pose"))
+            {
+                readPose(cfg, pose);
+                cfg.endGroup();
+            }
+        }
+        else
+        {
+            error << "[ED::MODELS::LOADSHAPE] Error while loading shape: heightmap must contain 'image', 'resolution' and 'height'." << std::endl;
         }
     }
     else
     {
-        error << "ed::models::loadShape() : ERROR while loading shape, no path specified in model.yaml" << std::endl;
+        error << "[ED::MODELS::LOADSHAPE] Error while loading shape: must contain one of the following 'path', 'heightmap', 'box', 'compound'." << std::endl;
+    }
+
+    if (cfg.readGroup("pose"))
+    {
+        readPose(cfg, pose);
+        cfg.endGroup();
+    }
+
+    if (shape)
+    {
+        // Transform shape according to pose
+        geo::ShapePtr shape_tr(new geo::Shape);
+        shape_tr->setMesh(shape->getMesh().getTransformed(pose));
+        shape = shape_tr;
     }
 
     return shape;
