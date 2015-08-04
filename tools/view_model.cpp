@@ -76,7 +76,8 @@ public:
     void setMesh(const geo::Mesh* mesh_)
     {
         mesh = mesh_;
-        vals.resize(mesh->getTriangleIs().size(), -1);
+        vals.resize(mesh->getTriangleIs().size());
+        vals.assign(mesh->getTriangleIs().size(), -1);
     }
 
     void renderPixel(int x, int y, float depth, int i_triangle)
