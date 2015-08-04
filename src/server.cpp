@@ -123,6 +123,35 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
     if (config.value("world_name", world_name_, tue::OPTIONAL))
         initializeWorld();
+
+    if (config.readArray("world"))
+    {
+        while (config.nextArrayItem())
+        {
+            ed::UpdateRequestPtr req(new UpdateRequest);
+            std::stringstream error;
+            if (!model_loader_.create(config.data(), "", "", *req, error))
+            {
+                config.addError("Could not instantiate world object: " + error.str());
+                continue;
+            }
+
+            // Create world model copy (shallow)
+            WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+
+            new_world_model->update(*req);
+
+            // Temporarily for Javier
+            for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+            {
+                PluginContainerPtr c = it->second;
+                c->addDelta(req);
+                c->setWorld(new_world_model);
+            }
+
+            world_model_ = new_world_model;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
