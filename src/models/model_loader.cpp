@@ -229,14 +229,11 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         std::string shape_model_path = model_path;
         r.value("__model_path__", shape_model_path);
 
-        if (!shape_model_path.empty() && tue::filesystem::Path(shape_model_path).exists())
-        {
-            geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
-            if (shape)
-                req.setShape(id, shape);
-            else
-                return false;
-        }
+        geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
+        if (shape)
+            req.setShape(id, shape);
+        else
+            return false;
 
         r.endGroup();
     }
