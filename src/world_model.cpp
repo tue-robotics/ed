@@ -53,6 +53,12 @@ void WorldModel::update(const UpdateRequest& req)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setShape(it->second);
+
+        Idx idx;
+        if (findEntityIdx(e->id(), idx))
+        {
+            entity_shape_revisions_[idx] = revision_;
+        }
     }
 
     // Update convex hulls new
@@ -63,6 +69,12 @@ void WorldModel::update(const UpdateRequest& req)
         {
             const ed::MeasurementConvexHull& m = it2->second;
             e->setConvexHull(m.convex_hull, m.pose, m.timestamp, it2->first);
+        }
+
+        Idx idx;
+        if (findEntityIdx(e->id(), idx))
+        {
+            entity_shape_revisions_[idx] = revision_;
         }
     }
 
@@ -321,6 +333,7 @@ void WorldModel::removeEntity(const UUID& id)
     {
         entities_[it_idx->second].reset();
         entity_revisions_[it_idx->second] = revision_;
+        entity_shape_revisions_[it_idx->second] = 0;
         entity_empty_spots_.push(it_idx->second);
         entity_map_.erase(it_idx);
     }
@@ -394,6 +407,7 @@ Idx WorldModel::addNewEntity(const EntityConstPtr& e)
         idx = entities_.size();
         entity_map_[e->id()] = idx;
         entities_.push_back(e);
+        entity_shape_revisions_.push_back(0);
     }
     else
     {

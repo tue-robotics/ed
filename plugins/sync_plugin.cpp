@@ -5,8 +5,8 @@
 #include "ed/Query.h"
 #include "ed/io/json_reader.h"
 #include "ed/update_request.h"
-
 #include "ed/world_model.h"
+#include "ed/serialization/serialization.h"
 
 #include <iostream>
 
@@ -99,10 +99,7 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
             double timestamp = 0;
             if (r.readGroup("timestamp"))
             {
-                int sec, nsec;
-                r.readValue("sec", sec);
-                r.readValue("nsec", nsec);
-                timestamp = sec + (double)nsec / 1e9;
+                ed::deserializeTimestamp(r, timestamp);
                 req.setLastUpdateTimestamp(id, timestamp);
                 ROS_INFO_STREAM("Sync plugin: setLastUpdateTimestamp " << id);
                 r.endGroup();
@@ -111,51 +108,16 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
             geo::Pose3D pose = geo::Pose3D::identity();
             if (r.readGroup("pose"))
             {
-                if (r.readGroup("pos"))
-                {
-                    r.readValue("x", pose.t.x);
-                    r.readValue("y", pose.t.y);
-                    r.readValue("z", pose.t.z);
-                    r.endGroup();
-                }
-
-                if (r.readGroup("rot"))
-                {
-                    r.readValue("xx", pose.R.xx);
-                    r.readValue("xy", pose.R.xy);
-                    r.readValue("xz", pose.R.xz);
-                    r.readValue("yx", pose.R.yx);
-                    r.readValue("yy", pose.R.yy);
-                    r.readValue("yz", pose.R.yz);
-                    r.readValue("zx", pose.R.zx);
-                    r.readValue("zy", pose.R.zy);
-                    r.readValue("zz", pose.R.zz);
-                    r.endGroup();
-                }
-
+                ed::deserialize(r, pose);
                 req.setPose(id, pose);
                 ROS_INFO_STREAM("Sync plugin: setPose " << id);
-
                 r.endGroup();
             }
 
             if (r.readGroup("convex_hull"))
             {
                 ed::ConvexHull chull;
-                if (r.readArray("points"))
-                {
-                    while(r.nextArrayItem())
-                    {
-                        geo::Vec2f p;
-                        r.readValue("x", p.x);
-                        r.readValue("y", p.y);
-                        chull.points.push_back(p);
-                    }
-                    r.endArray();
-                }
-
-                r.readValue("z_min", chull.z_min);
-                r.readValue("z_max", chull.z_max);
+                ed::deserialize(r, chull);
 
                 ed::convex_hull::calculateEdgesAndNormals(chull);
                 req.setConvexHullNew(id, chull, pose, timestamp);
@@ -166,40 +128,8 @@ void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 
             if (r.readGroup("mesh"))
             {
-                geo::Mesh mesh;
-
-                // Vertices
-                if (r.readArray("vertices"))
-                {
-                    while(r.nextArrayItem())
-                    {
-                        geo::Vector3 p;
-                        r.readValue("x", p.x);
-                        r.readValue("y", p.y);
-                        r.readValue("z", p.z);
-                        mesh.addPoint(p);
-                    }
-
-                    r.endArray();
-                }
-
-                // Triangles
-                if (r.readArray("triangles"))
-                {
-                    while(r.nextArrayItem())
-                    {
-                        int i1, i2, i3;
-                        r.readValue("i1", i1);
-                        r.readValue("i2", i2);
-                        r.readValue("i3", i3);
-                        mesh.addTriangle(i1, i2, i3);
-                    }
-
-                    r.endArray();
-                }
-
                 geo::ShapePtr shape(new geo::Shape);
-                shape->setMesh(mesh);
+                ed::deserialize(r, *shape);
                 req.setShape(id, shape);
 
                 ROS_INFO_STREAM("Sync plugin: setShape " << id);

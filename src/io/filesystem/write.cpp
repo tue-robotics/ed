@@ -1,23 +1,17 @@
 #include "ed/io/filesystem/write.h"
 
 #include "ed/measurement.h"
+#include "ed/entity.h"
 #include "ed/serialization/serialization.h"
+#include "ed/io/json_writer.h"
+#include "ed/logging.h"
 
 #include <tue/serialization/output_archive.h>
+#include <tue/filesystem/path.h>
 
 #include <rgbd/serialization.h>
 
-#include <geolib/serialization.h>
-
 #include <fstream>
-
-#include "ed/io/json_writer.h"
-
-#include <ed/logging.h>
-
-#include "ed/entity.h"
-
-#include <tue/filesystem/path.h>
 
 namespace ed
 {
@@ -58,61 +52,7 @@ bool write(const std::string& filename, const Measurement& msr)
         }
     }
 
-//    // save sensor pose
-//    {
-//        std::string filename_pose = filename + ".poseMAP";
-//        std::ofstream f_out;
-//        f_out.open(filename_pose.c_str(), std::ifstream::binary);
-//        if (f_out.is_open())
-//        {
-//            f_out << msr.sensorPose();
-//        }
-//        else
-//        {
-//            std::cout << "Could not save to " << filename_pose << std::endl;
-//        }
-//    }
-
     return true;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-namespace
-{
-
-void write(const std::string& name, const geo::Vector3& v, io::Writer& w)
-{
-    w.writeGroup(name);
-    w.writeValue("x", v.x);
-    w.writeValue("y", v.y);
-    w.writeValue("z", v.z);
-    w.endGroup();
-}
-
-void write(const std::string& name, const geo::Matrix3& m, io::Writer& w)
-{
-    w.writeGroup(name);
-    w.writeValue("xx", m.xx);
-    w.writeValue("xy", m.xy);
-    w.writeValue("xz", m.xz);
-    w.writeValue("yx", m.yx);
-    w.writeValue("yy", m.yy);
-    w.writeValue("yz", m.yz);
-    w.writeValue("zx", m.zx);
-    w.writeValue("zy", m.zy);
-    w.writeValue("zz", m.zz);
-    w.endGroup();
-}
-
-void write(const std::string& name, const geo::Pose3D& p, io::Writer& w)
-{
-    w.writeGroup(name);
-    write("t", p.t, w);
-    write("R", p.R, w);
-    w.endGroup();
-}
-
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -139,27 +79,17 @@ bool write(const std::string& filename, const Entity& e)
     if (!chull.points.empty())
     {
         w.writeGroup("convex_hull");
-        w.writeValue("z_min", chull.z_min);
-        w.writeValue("z_max", chull.z_max);
-
-        w.writeArray("points");
-        for(unsigned int i = 0; i < chull.points.size(); ++i)
-        {
-            const geo::Vec2f& p = chull.points[i];
-
-            w.addArrayItem();
-            w.writeValue("x", p.x);
-            w.writeValue("y", p.y);
-            w.endArrayItem();
-        }
-
-        w.endArray();
-
+        ed::serialize(chull, w);
         w.endGroup();
     }
 
     // Pose
-    write("pose", e.pose(), w);
+    if (e.has_pose())
+    {
+        w.writeGroup("pose");
+        ed::serialize(e.pose(), w);
+        w.endGroup();
+    }
 
     // RGBD Measurement
     ed::MeasurementConstPtr msr = e.lastMeasurement();
@@ -172,7 +102,10 @@ bool write(const std::string& filename, const Entity& e)
 
         w.writeValue("image_file", base_filename + ".rgbd");
         w.writeValue("mask_file", base_filename + ".mask");
-        write("sensor_pose", msr->sensorPose(), w);
+
+        w.writeGroup("sensor_pose");
+        ed::serialize(msr->sensorPose(), w);
+        w.endGroup();
 
         write(filename, *msr);
 

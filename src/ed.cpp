@@ -8,6 +8,7 @@
 #include <ed/SimpleQuery.h>
 #include <geolib/ros/msg_conversions.h>
 #include <tue/config/yaml_emitter.h>
+#include <ed/serialization/serialization.h>
 
 #include "ed/Query.h"
 #include "ed/io/json_writer.h"
@@ -277,85 +278,35 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
 
             w.writeGroup("timestamp");
             {
-                double t = e->lastUpdateTimestamp();
-                w.writeValue("sec", (int)t);
-                w.writeValue("nsec", (int)((t - (int)t) * 1e9));
+                ed::serializeTimestamp(e->lastUpdateTimestamp(), w);
                 w.endGroup();
             }
 
             // Write convex hull
-            if (!e->convexHull().points.empty())
+            if (!e->convexHull().points.empty() && ed_wm->world_model()->entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("convex_hull");
-                w.writeArray("points");
-                for (std::vector<geo::Vec2f>::const_iterator it = e->convexHull().points.begin(); it != e->convexHull().points.end(); ++it)
-                {
-                    w.addArrayItem();
-                    w.writeValue("x", it->x); w.writeValue("y", it->y);
-                    w.endArrayItem();
-                }
-                w.endArray();
-                w.writeValue("z_min", e->convexHull().z_min);
-                w.writeValue("z_max", e->convexHull().z_max);
+                ed::serialize(e->convexHull(), w);
                 w.endGroup();
             }
 
             // Pose
             if (e->has_pose())
             {
-                const geo::Pose3D& p = e->pose();
                 w.writeGroup("pose");
-                w.writeGroup("pos");
-                w.writeValue("x", p.t.x);
-                w.writeValue("y", p.t.y);
-                w.writeValue("z", p.t.z);
-                w.endGroup();
-
-                w.writeGroup("rot");
-                w.writeValue("xx", p.R.xx);
-                w.writeValue("xy", p.R.xy);
-                w.writeValue("xz", p.R.xz);
-                w.writeValue("yx", p.R.yx);
-                w.writeValue("yy", p.R.yy);
-                w.writeValue("yz", p.R.yz);
-                w.writeValue("zx", p.R.zx);
-                w.writeValue("zy", p.R.zy);
-                w.writeValue("zz", p.R.zz);
-                w.endGroup();
+                ed::serialize(e->pose(), w);
                 w.endGroup();
             }
 
             // Mesh
-            if (e->shape())
+            if (e->shape() && ed_wm->world_model()->entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("mesh");
-                    w.writeArray("vertices");
-                    const std::vector<geo::Vector3>& vertices = e->shape()->getMesh().getPoints();
-                    for(std::vector<geo::Vector3>::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
-                    {
-                        w.addArrayItem();
-                        w.writeValue("x", it->x); w.writeValue("y", it->y); w.writeValue("z", it->z);
-                        w.endArrayItem();
-                    }
-                    w.endArray();
-
-                    w.writeArray("triangles");
-                    const std::vector<geo::TriangleI>& triangles = e->shape()->getMesh().getTriangleIs();
-                    for(unsigned int i = 0; i < triangles.size(); ++i)
-                    {
-                        w.addArrayItem();
-                        w.writeValue("i1", triangles[i].i1_);
-                        w.writeValue("i2", triangles[i].i2_);
-                        w.writeValue("i3", triangles[i].i3_);
-                        w.endArrayItem();
-
-                    }
-                    w.endArray();
+                ed::serialize(*e->shape(), w);
                 w.endGroup();
             }
 
             w.writeArray("properties");
-
 
             const std::map<ed::Idx, ed::Property>& properties = e->properties();
 
@@ -402,6 +353,8 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
             removed_entities.push_back(e->id().str());
         }
     }
+
+//    std::cout << out.str() << std::endl;
 
     w.endArray();
 

@@ -100,6 +100,8 @@ public:
 
     const std::vector<unsigned long>& entity_revisions() const { return entity_revisions_; }
 
+    const std::vector<unsigned long>& entity_shape_revisions() const { return entity_shape_revisions_; }
+
     const PropertyKeyDBEntry* getPropertyInfo(const std::string& name) const;
 
 private:
@@ -111,6 +113,8 @@ private:
     std::vector<EntityConstPtr> entities_;
 
     std::vector<unsigned long> entity_revisions_;
+
+    std::vector<unsigned long> entity_shape_revisions_;
 
     std::queue<Idx> entity_empty_spots_;
 

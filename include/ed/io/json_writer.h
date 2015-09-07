@@ -36,7 +36,10 @@ public:
     void endGroup()
     {
         out_ << "}";
-        type_stack_.pop_back();
+        if (type_stack_.empty() || type_stack_.back() != 'g')
+            std::cout << "JSONWriter::endArray(): no group to close." << std::endl;
+        else
+            type_stack_.pop_back();
         add_comma_ = true;
     }
 
@@ -140,20 +143,26 @@ public:
             out_ << ",";
 
         out_ << "{";
-        type_stack_.push_back('g');
+        type_stack_.push_back('i');
         add_comma_ = false;
     }
     void endArrayItem()
     {
         out_ << "}";
-        type_stack_.pop_back();
+        if (type_stack_.empty() || type_stack_.back() != 'i')
+            std::cout << "JSONWriter::endArray(): no array item to close." << std::endl;
+        else
+            type_stack_.pop_back();
         add_comma_ = true;
     }
 
     void endArray()
     {
         out_ << "]";
-        type_stack_.pop_back();
+        if (type_stack_.empty() || type_stack_.back() != 'a')
+            std::cout << "JSONWriter::endArray(): no array to close." << std::endl;
+        else
+            type_stack_.pop_back();
         add_comma_ = true;
     }
 
@@ -162,8 +171,12 @@ public:
         while(!type_stack_.empty())
         {
             char t = type_stack_.back();
+            type_stack_.pop_back();
+
             if (t == 'g')
                 endGroup();
+            else if (t == 'i')
+                endArrayItem();
             else if (t == 'a')
                 endArray();
         }

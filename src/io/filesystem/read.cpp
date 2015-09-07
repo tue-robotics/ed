@@ -81,57 +81,6 @@ bool read(const std::string& filename, Measurement& msr)
 
 // ----------------------------------------------------------------------------------------------------
 
-namespace
-{
-
-bool read(io::Reader& r, const std::string& name, geo::Vector3& p)
-{
-    if (!r.readGroup(name))
-        return false;
-
-    r.readValue("x", p.x);
-    r.readValue("y", p.y);
-    r.readValue("z", p.z);
-
-    r.endGroup();
-    return true;
-}
-
-bool read(io::Reader& r, const std::string& name, geo::Matrix3& m)
-{
-    if (!r.readGroup(name))
-        return false;
-
-    r.readValue("xx", m.xx);
-    r.readValue("xy", m.xy);
-    r.readValue("xz", m.xz);
-    r.readValue("yx", m.yx);
-    r.readValue("yy", m.yy);
-    r.readValue("yz", m.yz);
-    r.readValue("zx", m.zx);
-    r.readValue("zy", m.zy);
-    r.readValue("zz", m.zz);
-
-    r.endGroup();
-    return true;
-}
-
-bool read(io::Reader& r, const std::string& name, geo::Pose3D& p)
-{
-    if (!r.readGroup(name))
-        return false;
-
-    if (!read(r, "t", p.t) || !read(r, "R", p.R))
-        return false;
-
-    r.endGroup();
-    return true;
-}
-
-}
-
-// ----------------------------------------------------------------------------------------------------
-
 bool readEntity(const std::string& filename, UpdateRequest& req)
 {
     std::ifstream f_in;
@@ -164,8 +113,12 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
 
     // Pose
     geo::Pose3D pose;
-    if (read(r, "pose", pose))
-        req.setPose(id, pose);
+    if (r.readGroup("pose"))
+    {
+        if (ed::deserialize(r, pose))
+            req.setPose(id, pose);
+        r.endGroup();
+    }
 
     // Convex hull
     if (r.readGroup("convex_hull"))
@@ -210,7 +163,12 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
             readImageMask(base_path + "/" + mask_filename, mask);
 
             geo::Pose3D sensor_pose;
-            if (!read(r, "sensor_pose", sensor_pose))
+            if (r.readGroup("sensor_pose"))
+            {
+                ed::deserialize(r, sensor_pose);
+                r.endGroup();
+            }
+            else
             {
                 log::error() << "Could not read sensor pose from rgbd measurement" << std::endl;
                 sensor_pose = geo::Pose3D::identity();
