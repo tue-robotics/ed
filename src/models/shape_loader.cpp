@@ -3,7 +3,6 @@
 #include "xml_shape_parser.h"
 
 #include <tue/filesystem/path.h>
-#include <ros/package.h>
 
 #include <geolib/serialization.h>
 #include <geolib/HeightMap.h>
@@ -246,7 +245,8 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
             cfg.value("resolution", resolution) &&
             cfg.value("blockheight", blockheight)))
     {
-        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap parameters at '" << path.string() << "'. Required shape parameters: resolution, origin_x, origin_y, origin_z, blockheight" << std::endl;
+        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap parameters at '" << path.string()
+              << "'. Required shape parameters: resolution, origin_x, origin_y, origin_z, blockheight" << std::endl;
         return geo::ShapePtr();
     }
 

@@ -40,7 +40,11 @@ private:
     // Shape filename to shape
     std::map<std::string, geo::ShapePtr> shape_cache_;
 
+    std::vector<std::string> model_paths_;
+
     tue::config::DataConstPointer loadModelData(const std::string& type, std::stringstream& error);
+
+    std::string getModelPath(const std::string& type) const;
 
 };
 

@@ -5,7 +5,6 @@
 #include "ed/relations/transform_cache.h"
 
 #include <tue/filesystem/path.h>
-#include <ros/package.h>
 
 #include "shape_loader.h"
 
@@ -25,6 +24,14 @@ namespace models
 
 ModelLoader::ModelLoader()
 {
+    const char * mpath = ::getenv("ED_MODEL_PATH");
+    if (mpath)
+    {
+        std::stringstream ss(mpath);
+        std::string item;
+        while (std::getline(ss, item, ':'))
+            model_paths_.push_back(item);
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -35,9 +42,16 @@ ModelLoader::~ModelLoader()
 
 // ----------------------------------------------------------------------------------------------------
 
-tue::filesystem::Path getModelPath(const std::string& type)
+std::string ModelLoader::getModelPath(const std::string& type) const
 {
-    return tue::filesystem::Path(ros::package::getPath("ed_object_models") + "/models/" + type);
+    for(std::vector<std::string>::const_iterator it = model_paths_.begin(); it != model_paths_.end(); ++it)
+    {
+        tue::filesystem::Path model_path(*it + "/" + type);
+        if (model_path.exists())
+            return model_path.string();
+    }
+
+    return "";
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -53,14 +67,14 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
     tue::config::DataPointer data;
 
-    tue::filesystem::Path model_path = getModelPath(type);
-    if (!model_path.exists())
+    std::string model_path = getModelPath(type);
+    if (model_path.empty())
     {
-        error << "ed::models::create() : ERROR loading model '" << type << "'; '" << model_path.string() << "' does not exist." << std::endl;
+        error << "ed::models::create() : Model '" << type << "' could not be found." << std::endl;
         return data;
     }
 
-    tue::filesystem::Path model_cfg_path(model_path.string() + "/model.yaml");
+    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml");
     if (!model_cfg_path.exists())
     {
         error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' file does not exist." << std::endl;
@@ -93,7 +107,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     tue::config::ReaderWriter rw(data);
     if (rw.readGroup("shape"))
     {
-        rw.setValue("__model_path__", model_path.string());
+        rw.setValue("__model_path__", model_path);
         rw.endGroup();
     }
 
@@ -111,8 +125,8 @@ bool ModelLoader::exists(const std::string& type) const
     if (it != model_cache_.end())
         return true;
 
-    tue::filesystem::Path model_path = getModelPath(type);
-    return model_path.exists();
+    std::string model_path = getModelPath(type);
+    return !model_path.empty();
 }
 
 // ----------------------------------------------------------------------------------------------------
