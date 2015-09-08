@@ -1,25 +1,20 @@
 #include "shape_loader.h"
 
+#include "xml_shape_parser.h"
+
 #include <tue/filesystem/path.h>
 #include <ros/package.h>
-#include <fstream>
 
 #include <geolib/serialization.h>
 #include <geolib/HeightMap.h>
 #include <geolib/Shape.h>
-
-#include <yaml-cpp/yaml.h>
-
-#include <opencv2/highgui/highgui.hpp>
-
+#include <geolib/CompositeShape.h>
 #include <geolib/Importer.h>
-
-#include "xml_shape_parser.h"
 
 // Heightmap generation
 #include "polypartition/polypartition.h"
 #include <opencv2/imgproc/imgproc.hpp>
-#include <geolib/CompositeShape.h>
+#include <opencv2/highgui/highgui.hpp>
 
 namespace ed
 {
@@ -28,140 +23,62 @@ namespace models
 
 // ----------------------------------------------------------------------------------------------------
 
-void findContours(const cv::Mat& image, const geo::Vec2i& p, int d_start, std::vector<geo::Vec2i>& points,
-                  std::vector<geo::Vec2i>& line_starts, cv::Mat& contour_map, bool add_first)
+void findContours(const cv::Mat& image, const geo::Vec2i& p_start, int d_start, std::vector<geo::Vec2i>& points,
+                  std::vector<geo::Vec2i>& line_starts, cv::Mat& contour_map)
 {
     static int dx[4] = {1,  0, -1,  0 };
     static int dy[4] = {0,  1,  0, -1 };
 
-    unsigned char v = image.at<unsigned char>(p.y, p.x);
+    unsigned char v = image.at<unsigned char>(p_start.y, p_start.x);
 
-    int d_current = d_start; // Current direction
-    int x2 = p.x;
-    int y2 = p.y;
-
-    int line_piece_min = 1e9; // minimum line piece length of current line
-    int line_piece_max = 0; // maximum line piece length of current line
-
-    int d_main = d_current; // The main direction in which we're heading. If we follow a line
-                            // that gradually changes to the side (1-cell side steps), this direction
-                            // denotes the principle axis of the line
-
-    if (add_first)
-        points.push_back(p - geo::Vec2i(1, 1));
-
-    int n_uninterrupted = 1;
-    geo::Vec2i p_corner = p;
+    int d = d_start; // Current direction
+    geo::Vec2i p = p_start;
 
     while (true)
     {
-        bool found = false;
-        int d = (d_current + 3) % 4; // check going left first
+        if (d == 3) // up
+            line_starts.push_back(p);
 
-        for(int i = -1; i < 3; ++i)
+        if (d == 3)
+            contour_map.at<unsigned char>(p.y, p.x - 1) = 1;
+        else if (d == 1)
+            contour_map.at<unsigned char>(p.y, p.x) = 1;
+
+        if (image.at<unsigned char>(p.y + dy[(d + 3) % 4], p.x + dx[(d + 3) % 4]) == v) // left
         {
-            if (image.at<unsigned char>(y2 + dy[d], x2 + dx[d]) == v)
+            switch (d)
             {
-                found = true;
-                break;
+                case 0: points.push_back(p - geo::Vec2i(1, 1)); break;
+                case 1: points.push_back(p - geo::Vec2i(0, 1)); break;
+                case 2: points.push_back(p); break;
+                case 3: points.push_back(p - geo::Vec2i(1, 0)); break;
+            }
+
+            d = (d + 3) % 4;
+            p.x += dx[d];
+            p.y += dy[d];
+        }
+        else if (image.at<unsigned char>(p.y + dy[d], p.x + dx[d]) == v) // straight ahead
+        {
+            p.x += dx[d];
+            p.y += dy[d];
+        }
+        else // right
+        {
+            switch (d)
+            {
+                case 0: points.push_back(p - geo::Vec2i(0, 1)); break;
+                case 1: points.push_back(p); break;
+                case 2: points.push_back(p - geo::Vec2i(1, 0)); break;
+                case 3: points.push_back(p - geo::Vec2i(1, 1)); break;
+
             }
 
             d = (d + 1) % 4;
         }
 
-        if (!found)
+        if (p.x == p_start.x && p.y == p_start.y && d == d_start)
             return;
-
-        geo::Vec2i p_current(x2, y2);
-
-        if ((d + 2) % 4 == d_current)
-        {
-            // 180 degree turn
-
-            if (x2 == p.x && y2 == p.y) // Edge case: if we returned to the start point and
-                                        // this is a 180 degree angle, return without adding it
-                return;
-
-
-            geo::Vec2i q = p_current;
-            if (d == 0 || d_current == 0) // right
-                --q.y;
-            if (d == 3 || d_current == 3) // up
-                --q.x;
-
-            points.push_back(q);
-            d_main = d;
-            line_piece_min = 1e9;
-            line_piece_max = 0;
-
-        }
-        else if (d_current != d_main)
-        {
-            // Not moving in main direction (side step)
-
-            if (d != d_main)
-            {
-                // We are not moving back in the main direction
-                // Add the corner to the list and make this our main direction
-
-                points.push_back(p_corner);
-                d_main = d_current;
-                line_piece_min = 1e9;
-                line_piece_max = 0;
-            }
-        }
-        else
-        {
-            // Moving in main direction (no side step)
-
-            if (d_current != d)
-            {
-                // Turning 90 degrees
-
-                // Check if the length of the last line piece is OK w.r.t. the other pieces in this line. If it differs to much,
-                // (i.e., the contour has taken a different angle), add the last corner to the list. This way, we introduce a
-                // bend in the contour
-                if (line_piece_max > 0 && (n_uninterrupted < line_piece_max - 2 || n_uninterrupted > line_piece_min + 2))
-                {
-                    // Line is broken, add the corner as bend
-                    points.push_back(p_corner);
-
-                    line_piece_min = 1e9;
-                    line_piece_max = 0;
-                }
-
-                // Update the line piece lenth boundaries with the current found piece
-                line_piece_min = std::min(line_piece_min, n_uninterrupted);
-                line_piece_max = std::max(line_piece_max, n_uninterrupted);
-            }
-        }
-
-        if (d_current != d)
-        {
-            geo::Vec2i q = p_current;
-            if (d == 0 || d_current == 0) // right
-                --q.y;
-            if (d == 3 || d_current == 3) // up
-                --q.x;
-
-            p_corner = q;
-            n_uninterrupted = 0;
-        }
-
-        if ((d_current == 3 && d != 2) || (d == 3 && d != 0)) // up
-            line_starts.push_back(p_current);
-
-        contour_map.at<unsigned char>(p_current.y, p_current.x) = 1;
-
-        ++n_uninterrupted;
-
-        if (points.size() > 1 && x2 == p.x && y2 == p.y)
-            return;
-
-        x2 = x2 + dx[d];
-        y2 = y2 + dy[d];
-
-        d_current = d;
     }
 }
 
@@ -169,13 +86,17 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p, int d_start, std::v
 
 geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, double blockheight, double resolution, std::stringstream& error)
 {
-    cv::Mat image = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+    cv::Mat image_orig = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
 
-    if (!image.data)
+    if (!image_orig.data)
     {
         error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap '" << image_filename << "'. Image could not be loaded." << std::endl;
         return geo::ShapePtr();
     }
+
+    // Add borders
+    cv::Mat image(image_orig.rows + 2, image_orig.cols + 2, CV_8UC1, cv::Scalar(255));
+    image_orig.copyTo(image(cv::Rect(cv::Point(1, 1), cv::Size(image_orig.cols, image_orig.rows))));
 
     cv::Mat vertex_index_map(image.rows, image.cols, CV_32SC1, -1);
     cv::Mat contour_map(image.rows, image.cols, CV_8UC1, cv::Scalar(0));
@@ -191,7 +112,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
             if (v < 255)
             {
                 std::vector<geo::Vec2i> points, line_starts;
-                findContours(image, geo::Vec2i(x, y), 0, points, line_starts, contour_map, true);
+                findContours(image, geo::Vec2i(x, y), 0, points, line_starts, contour_map);
 
                 unsigned int num_points = points.size();
 
@@ -214,7 +135,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
 
                         // Convert to world coordinates
                         double wx = points[i].x * resolution + pos.x;
-                        double wy = (image.rows - points[i].y - 1) * resolution + pos.y;
+                        double wy = (image.rows - points[i].y - 2) * resolution + pos.y;
 
                         vertex_index_map.at<int>(points[i].y, points[i].x) = mesh.addPoint(geo::Vector3(wx, wy, min_z));
                         mesh.addPoint(geo::Vector3(wx, wy, max_z));
@@ -242,7 +163,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
                         {
                             // found a hole, so find the contours of this hole
                             std::vector<geo::Vec2i> hole_points;
-                            findContours(image, geo::Vec2i(x2 - 1, y2 + 1), 1, hole_points, line_starts, contour_map, false);
+                            findContours(image, geo::Vec2i(x2 - 1, y2 + 1), 1, hole_points, line_starts, contour_map);
 
                             if (hole_points.size() > 2)
                             {
@@ -257,7 +178,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
 
                                     // Convert to world coordinates
                                     double wx = hole_points[j].x * resolution + pos.x;
-                                    double wy = (image.rows - hole_points[j].y - 1) * resolution + pos.y;
+                                    double wy = (image.rows - hole_points[j].y - 2) * resolution + pos.y;
 
                                     vertex_index_map.at<int>(hole_points[j].y, hole_points[j].x) = mesh.addPoint(geo::Vector3(wx, wy, min_z));
                                     mesh.addPoint(geo::Vector3(wx, wy, max_z));
@@ -310,9 +231,6 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
             }
         }
     }
-
-//    std::cout << shape->getMesh().getPoints().size() << " vertices" << std::endl;
-//    std::cout << shape->getMesh().getTriangleIs().size() << " triangles" << std::endl;
 
     return shape;
 }

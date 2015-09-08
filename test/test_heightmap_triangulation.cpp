@@ -59,8 +59,8 @@ int main(int argc, char **argv)
     const std::vector<geo::Vector3>& vertices = shape->getMesh().getPoints();
 
     // Display number of vertices and triangles
-    std::cout << triangles.size() << " vertices" << std::endl;
-    std::cout << vertices.size() << " triangles" << std::endl;
+    std::cout << vertices.size() << " vertices" << std::endl;
+    std::cout << triangles.size() << " triangles" << std::endl;
 
     // Visualize triangles
     for(std::vector<geo::TriangleI>::const_iterator it = triangles.begin(); it != triangles.end(); ++it)
