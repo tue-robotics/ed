@@ -40,6 +40,9 @@ namespace ed
 //void serialize(const Entity& wm, ed::io::Writer& w, unsigned long since_revision = 0);
 
 
+bool deserialize(io::Reader &r, UpdateRequest& req);
+
+
 void serialize(const geo::Pose3D& pose, ed::io::Writer& w);
 
 bool deserialize(ed::io::Reader& r, geo::Pose3D& pose);

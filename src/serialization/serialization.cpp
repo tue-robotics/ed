@@ -30,6 +30,107 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
+bool deserialize(io::Reader &r, UpdateRequest& req)
+{
+    if (r.readArray("entities"))
+    {
+        while(r.nextArrayItem())
+        {
+            std::string id;
+            if (!r.readValue("id", id))
+            {
+                std::cout << "Deserialze: Entities should have field 'id'" << std::endl;
+                return false;
+            }
+
+            std::string type;
+            if (r.readValue("type", type))
+            {
+                req.setType(id, type);
+            }
+
+            double existence_prob;
+            if (r.readValue("existence_prob", existence_prob))
+            {
+                req.setExistenceProbability(id, existence_prob);
+            }
+
+            double timestamp = 0;
+            if (r.readGroup("timestamp"))
+            {
+                ed::deserializeTimestamp(r, timestamp);
+                req.setLastUpdateTimestamp(id, timestamp);
+                r.endGroup();
+            }
+
+            geo::Pose3D pose = geo::Pose3D::identity();
+            if (r.readGroup("pose"))
+            {
+                ed::deserialize(r, pose);
+                req.setPose(id, pose);
+                r.endGroup();
+            }
+
+            if (r.readGroup("convex_hull"))
+            {
+                ed::ConvexHull chull;
+                ed::deserialize(r, chull);
+
+                ed::convex_hull::calculateEdgesAndNormals(chull);
+                req.setConvexHullNew(id, chull, pose, timestamp);
+                r.endGroup();
+            }
+
+            if (r.readGroup("mesh"))
+            {
+                geo::ShapePtr shape(new geo::Shape);
+                ed::deserialize(r, *shape);
+                req.setShape(id, shape);
+                r.endGroup();
+            }
+
+//            if (r.readArray("properties"))
+//            {
+//                while(r.nextArrayItem())
+//                {
+//                    std::string prop_name;
+//                    if (!r.readValue("name", prop_name))
+//                        continue;
+
+//                    const ed::PropertyKeyDBEntry* entry = data.world.getPropertyInfo(prop_name);
+//                    if (!entry)
+//                    {
+//                        error += "For entity '" + id + "': unknown property '" + prop_name +"'.\n";
+//                        continue;
+//                    }
+
+//                    if (!entry->info->serializable())
+//                    {
+//                        error += "For entity '" + id + "': property '" + prop_name +"' is not serializable.\n";
+//                        continue;
+//                    }
+
+//                    ed::Variant value;
+//                    if (entry->info->deserialize(r, value))
+//                    {
+//                        req.setProperty(id, entry, value);
+//                        ROS_INFO_STREAM("Sync plugin: setProperty " << id);
+//                    } else
+//                        error += "For entity '" + id + "': deserialization of property '" + prop_name +"' failed.\n";
+//                }
+
+//                r.endArray();
+//            }
+        }
+
+        r.endArray();
+    }
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void serialize(const geo::Pose3D& pose, ed::io::Writer& w)
 {
     w.writeValue("x", pose.t.x);

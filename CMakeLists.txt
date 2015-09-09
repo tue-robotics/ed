@@ -175,7 +175,7 @@ target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
 add_executable(ed-list-ids tools/list_ids.cpp)
 
 add_executable(ed_view_model tools/view_model.cpp)
-target_link_libraries(ed_view_model ed_core)
+target_link_libraries(ed_view_model ed_core ed_io)
 
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)

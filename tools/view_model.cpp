@@ -2,6 +2,10 @@
 #include <ed/world_model.h>
 #include <ed/update_request.h>
 #include <ed/entity.h>
+#include <ed/serialization/serialization.h>
+#include <ed/io/json_reader.h>
+
+#include <fstream>
 
 #include <geolib/sensors/DepthCamera.h>
 #include <geolib/Shape.h>
@@ -115,27 +119,61 @@ public:
 
 // ----------------------------------------------------------------------------------------------------
 
+void usage()
+{
+    std::cout << "Usage: ed_view_model [ --file | --model ] FILE-OR-MODEL-NAME" << std::endl;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "ed_view_model");  // <- TODO: GET RID OF THIS!
     ros::NodeHandle nh;
 
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cout << "Please specify an instance name" << std::endl;
+        usage();
         return 1;
     }
 
-    std::string model_name = argv[1];
-
     ed::UpdateRequest req;
 
-    ed::models::ModelLoader model_loader;
-    std::stringstream error;
-    if (!model_loader.create("_root", model_name, req, error))
+    std::string load_type = argv[1];
+    if (load_type == "--file")
     {
-        std::cout << "Model could not be loaded:" << std::endl << std::endl;
-        std::cout << error.str() << std::endl;
+        std::string filename = argv[2];
+        std::ifstream f_in;
+        f_in.open(filename.c_str());
+
+        if (!f_in.is_open())
+        {
+            std::cerr << "Could not open file '" << filename << "'." << std::endl;
+            return 1;
+        }
+
+        std::stringstream buffer;
+        buffer << f_in.rdbuf();
+        std::string str = buffer.str();
+        ed::io::JSONReader r(str.c_str());
+        ed::deserialize(r, req);
+    }
+    else if (load_type == "--model")
+    {
+        std::string model_name = argv[2];
+        ed::models::ModelLoader model_loader;
+        std::stringstream error;
+        if (!model_loader.create("_root", model_name, req, error))
+        {
+            std::cerr << "Model '" << model_name << "' could not be loaded:" << std::endl << std::endl;
+            std::cerr << error.str() << std::endl;
+            return 1;
+        }
+    }
+    else
+    {
+        std::cerr << "Unknown load type: '" << load_type << "'." << std::endl << std::endl;
+        usage();
         return 1;
     }
 
