@@ -34,7 +34,7 @@ before_script:
   - cd .. # go to the catkin workspace
 
 script:
-  - catkin_make
+  - catkin_make -j2
   - catkin_make install   # installing the package
   - catkin_make tests     # build the tests
   - catkin_make run_tests # and run them
