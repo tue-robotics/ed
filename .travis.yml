@@ -5,23 +5,26 @@ python:
   - "2.7"
 compiler:
   - gcc
+  - clang
 env:
   - ROS_DISTRO=hydro
+matrix:
+  allow_failures:
+    - compiler: clang
 notifications:
   - email: false
 
 before_install:
-  - export CI_SOURCE_PATH=$(pwd)
-  - export REPOSITORY_NAME=${PWD##*/}
+  - CI_SOURCE_PATH=$(pwd)
+  - REPOSITORY_NAME=${PWD##*/}
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
 
 install:
-  - export TUE_ENV=$ROS_DISTRO
-  - source <(wget -O- https://raw.githubusercontent.com/tue-robotics/tue-env/master/installer/scripts/bootstrap)
+  - source <(wget -O- https://raw.githubusercontent.com/tue-robotics/tue-env/master/installer/scripts/bootstrap-ros-$ROS_DISTRO)
   - tue-get install ros-${REPOSITORY_NAME}
+  - source ~/.tue/setup.bash # source all target setup files
 
 before_script:
-  - source ~/.tue/setup.bash # source ROS
   - cd ${TUE_SYSTEM_DIR}/src
 
   # Link the repo we are testing to the new workspace
@@ -31,7 +34,7 @@ before_script:
   - cd .. # go to the catkin workspace
 
 script:
-  - catkin_make
+  - catkin_make -j2
   - catkin_make install   # installing the package
   - catkin_make tests     # build the tests
   - catkin_make run_tests # and run them
