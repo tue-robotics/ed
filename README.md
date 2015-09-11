@@ -17,6 +17,8 @@ ED - Environment Description - is a 3D geometric, object-based world representat
 * Though not yet released, ED has modules for **real-time, on-line generation of costmaps** that can be used directly by existing **navigation modules** such as MoveBase. Whenever the world model representation changes, the costmaps will instantly reflect the change.
 * ED can be visualized using a **web-based GUI**. This enables users to monitor the state of the world using a large variety of systems, including PC's, smart phones and tables.
 
+![ED Overview](/docs/images/wm.svg)
+
 ## Installation
 
 ### Requirements
