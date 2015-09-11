@@ -17,8 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
   tue_filesystem
   tue_serialization
   message_generation
-  visualization_msgs
-  nav_msgs
   tue_config
 )
 
