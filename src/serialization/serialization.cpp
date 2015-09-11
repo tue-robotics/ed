@@ -10,6 +10,7 @@
 #include <tue/config/writer.h>
 
 #include <geolib/Shape.h>
+#include <geolib/Box.h>
 
 namespace ed
 {
@@ -195,6 +196,48 @@ bool deserialize(ed::io::Reader& r, geo::Pose3D& pose)
 
 // ----------------------------------------------------------------------------------------------------
 
+bool deserialize(tue::config::Reader& r, const std::string& group, geo::Pose3D& pose)
+{
+    if (!r.readGroup(group))
+        return false;
+
+    pose.t = geo::Vec3(0, 0, 0);
+    r.value("x", pose.t.x, tue::config::OPTIONAL);
+    r.value("y", pose.t.y, tue::config::OPTIONAL);
+    r.value("z", pose.t.z, tue::config::OPTIONAL);
+
+    double roll = 0, pitch = 0, yaw = 0;
+    r.value("X", roll,  tue::config::OPTIONAL);
+    r.value("Y", pitch, tue::config::OPTIONAL);
+    r.value("Z", yaw,   tue::config::OPTIONAL);
+    r.value("roll",  roll,  tue::config::OPTIONAL);
+    r.value("pitch", pitch, tue::config::OPTIONAL);
+    r.value("yaw",   yaw,   tue::config::OPTIONAL);
+
+    // Set rotation
+    pose.R.setRPY(roll, pitch, yaw);
+
+    r.endGroup();
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool deserialize(tue::config::Reader& r, const std::string& group, geo::Vec3& p)
+{
+    if (!r.readGroup(group))
+        return false;
+
+    r.value("x", p.x);
+    r.value("y", p.y);
+    r.value("z", p.z);
+
+    r.endGroup();
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void serialize(const ConvexHull& ch, ed::io::Writer& w)
 {
     w.writeArray("points");
@@ -303,6 +346,58 @@ bool deserialize(ed::io::Reader& r, geo::Shape& s)
         return false;
 
     s.setMesh(mesh);
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+bool deserialize(tue::config::Reader& r, const std::string& group, geo::Shape& s)
+{
+    if (!r.readArray(group))
+        return false;
+
+    geo::Mesh mesh;
+
+    while(r.nextArrayItem())
+    {
+        if (r.readGroup("box"))
+        {
+            geo::Vec3 min, max, size;
+            if (deserialize(r, "min", min))
+            {
+                if (!deserialize(r, "max", max))
+                {
+                    r.endArray();
+                    return false;
+                }
+            }
+            else if (deserialize(r, "size", size))
+            {
+                min = -0.5 * size;
+                max =  0.5 * size;
+            }
+            else
+            {
+                r.endArray();
+                return false;
+            }
+
+            geo::Pose3D pose;
+            if (!deserialize(r, "pose", pose))
+                pose = geo::Pose3D::identity();
+
+            mesh.add(geo::Box(min, max).getMesh().getTransformed(pose));
+        }
+    }
+
+    if (mesh.getTriangleIs().empty())
+    {
+        r.endArray();
+        return false;
+    }
+
+    s.setMesh(mesh);
+
     return true;
 }
 

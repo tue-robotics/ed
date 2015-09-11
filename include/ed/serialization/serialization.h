@@ -47,6 +47,10 @@ void serialize(const geo::Pose3D& pose, ed::io::Writer& w);
 
 bool deserialize(ed::io::Reader& r, geo::Pose3D& pose);
 
+bool deserialize(tue::config::Reader& r, const std::string& group, geo::Pose3D& pose);
+
+bool deserialize(tue::config::Reader& r, const std::string& group, geo::Vec3& p);
+
 
 void serialize(const ConvexHull& ch, ed::io::Writer& w);
 
@@ -56,6 +60,8 @@ bool deserialize(ed::io::Reader& r, ConvexHull& ch);
 void serialize(const geo::Shape& s, ed::io::Writer& w);
 
 bool deserialize(ed::io::Reader& r, geo::Shape& s);
+
+bool deserialize(tue::config::Reader& r, const std::string& group, geo::Shape& s);
 
 
 void serializeTimestamp(double time, ed::io::Writer& w);
