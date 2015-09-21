@@ -255,6 +255,110 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
 
 // ----------------------------------------------------------------------------------------------------
 
+void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, bool create_bottom)
+{
+    TPPLPoly poly;
+    poly.Init(points.size());
+
+    double min_z = -height / 2;
+    double max_z =  height / 2;
+
+    geo::Mesh mesh;
+
+    for(unsigned int i = 0; i < points.size(); ++i)
+    {
+        poly[i].x = points[i].x;
+        poly[i].y = points[i].y;
+
+        mesh.addPoint(geo::Vector3(points[i].x, points[i].y, min_z));
+        mesh.addPoint(geo::Vector3(points[i].x, points[i].y, max_z));
+    }
+
+    // Add side triangles
+    for(unsigned int i = 0; i < points.size(); ++i)
+    {
+        int j = (i + 1) % points.size();
+        mesh.addTriangle(i * 2, j * 2, i * 2 + 1);
+        mesh.addTriangle(i * 2 + 1, j * 2, j * 2 + 1);
+    }
+
+    std::list<TPPLPoly> polys;
+    polys.push_back(poly);
+
+    TPPLPartition pp;
+    std::list<TPPLPoly> result;
+
+    if (!pp.Triangulate_EC(&polys, &result))
+    {
+        std::cout << "TRIANGULATION FAILED" << std::endl;
+        return;
+    }
+
+    for(std::list<TPPLPoly>::iterator it = result.begin(); it != result.end(); ++it)
+    {
+        TPPLPoly& cp = *it;
+
+        int i1 = mesh.addPoint(cp[0].x, cp[0].y, max_z);
+        int i2 = mesh.addPoint(cp[1].x, cp[1].y, max_z);
+        int i3 = mesh.addPoint(cp[2].x, cp[2].y, max_z);
+        mesh.addTriangle(i1, i2, i3);
+
+        if (create_bottom)
+        {
+            int i1 = mesh.addPoint(cp[0].x, cp[0].y, min_z);
+            int i2 = mesh.addPoint(cp[1].x, cp[1].y, min_z);
+            int i3 = mesh.addPoint(cp[2].x, cp[2].y, min_z);
+            mesh.addTriangle(i1, i3, i2);
+        }
+    }
+
+    mesh.filterOverlappingVertices();
+
+    shape.setMesh(mesh);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void createCylinder(geo::Shape& shape, double radius, double height, int num_corners)
+{
+    geo::Mesh mesh;
+
+    // Calculate vertices
+    for(int i = 0; i < num_corners; ++i)
+    {
+        double a = 6.283 * i / num_corners;
+        double x = sin(a) * radius;
+        double y = cos(a) * radius;
+
+        mesh.addPoint(x, y, -height / 2);
+        mesh.addPoint(x, y,  height / 2);
+    }
+
+    // Calculate top and bottom triangles
+    for(int i = 1; i < num_corners - 1; ++i)
+    {
+        int i2 = 2 * i;
+
+        // bottom
+        mesh.addTriangle(0, i2, i2 + 2);
+
+        // top
+        mesh.addTriangle(1, i2 + 3, i2 + 1);
+    }
+
+    // Calculate side triangles
+    for(int i = 0; i < num_corners; ++i)
+    {
+        int j = (i + 1) % num_corners;
+        mesh.addTriangle(i * 2, i * 2 + 1, j * 2);
+        mesh.addTriangle(i * 2 + 1, j * 2 + 1, j * 2);
+    }
+
+    shape.setMesh(mesh);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void readVec3(tue::config::Reader& cfg, geo::Vec3& v)
 {
     cfg.value("x", v.x);
@@ -380,6 +484,44 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             readPose(cfg, pose);
             cfg.endGroup();
         }
+    }
+    else if (cfg.readGroup("cylinder"))
+    {
+        int num_points = 12;
+        cfg.value("num_points", num_points, tue::config::OPTIONAL);
+
+        double radius, height;
+        if (cfg.value("radius", radius) && cfg.value("height", height))
+        {
+            shape.reset(new geo::Shape);
+            createCylinder(*shape, radius, height, num_points);
+        }
+
+        cfg.endGroup();
+    }
+    else if (cfg.readGroup("polygon"))
+    {
+        std::vector<geo::Vec2> points;
+        if (cfg.readArray("points", tue::config::REQUIRED))
+        {
+            while(cfg.nextArrayItem())
+            {
+                points.push_back(geo::Vec2());
+                geo::Vec2& p = points.back();
+                cfg.value("x", p.x);
+                cfg.value("y", p.y);
+            }
+            cfg.endArray();
+        }
+
+        double height;
+        if (cfg.value("height", height))
+        {
+            shape.reset(new geo::Shape);
+            createPolygon(*shape, points, height, true);
+        }
+
+        cfg.endGroup();
     }
     else if (cfg.readArray("compound"))
     {
