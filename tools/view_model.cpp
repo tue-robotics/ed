@@ -126,6 +126,48 @@ void usage()
 
 // ----------------------------------------------------------------------------------------------------
 
+bool loadModel(const std::string& load_type, const std::string& source, ed::UpdateRequest& req)
+{
+    if (load_type == "--file")
+    {
+        std::ifstream f_in;
+        f_in.open(source.c_str());
+
+        if (!f_in.is_open())
+        {
+            std::cerr << "Could not open file '" << source << "'." << std::endl;
+            return false;
+        }
+
+        std::stringstream buffer;
+        buffer << f_in.rdbuf();
+        std::string str = buffer.str();
+        ed::io::JSONReader r(str.c_str());
+        ed::deserialize(r, req);
+    }
+    else if (load_type == "--model")
+    {
+        ed::models::ModelLoader model_loader;
+        std::stringstream error;
+        if (!model_loader.create("_root", source, req, error))
+        {
+            std::cerr << "Model '" << source << "' could not be loaded:" << std::endl << std::endl;
+            std::cerr << error.str() << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        std::cerr << "Unknown load type: '" << load_type << "'." << std::endl << std::endl;
+        usage();
+        return false;
+    }
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "ed_view_model");  // <- TODO: GET RID OF THIS!
@@ -137,45 +179,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    ed::UpdateRequest req;
-
     std::string load_type = argv[1];
-    if (load_type == "--file")
-    {
-        std::string filename = argv[2];
-        std::ifstream f_in;
-        f_in.open(filename.c_str());
+    std::string source = argv[2];
 
-        if (!f_in.is_open())
-        {
-            std::cerr << "Could not open file '" << filename << "'." << std::endl;
-            return 1;
-        }
-
-        std::stringstream buffer;
-        buffer << f_in.rdbuf();
-        std::string str = buffer.str();
-        ed::io::JSONReader r(str.c_str());
-        ed::deserialize(r, req);
-    }
-    else if (load_type == "--model")
-    {
-        std::string model_name = argv[2];
-        ed::models::ModelLoader model_loader;
-        std::stringstream error;
-        if (!model_loader.create("_root", model_name, req, error))
-        {
-            std::cerr << "Model '" << model_name << "' could not be loaded:" << std::endl << std::endl;
-            std::cerr << error.str() << std::endl;
-            return 1;
-        }
-    }
-    else
-    {
-        std::cerr << "Unknown load type: '" << load_type << "'." << std::endl << std::endl;
-        usage();
+    ed::UpdateRequest req;
+    if (!loadModel(load_type, source, req))
         return 1;
-    }
 
     // Create world
     ed::WorldModel world_model;
@@ -284,7 +293,17 @@ int main(int argc, char **argv)
 //        }
 
         cv::imshow("visualization", image);
-        cv::waitKey(10);
+        char key = cv::waitKey(10);
+
+        if (key == 'r')
+        {
+            ed::UpdateRequest req;
+            if (loadModel(load_type, source, req))
+            {
+                world_model = ed::WorldModel();
+                world_model.update(req);
+            }
+        }
 
         angle += 0.03;
     }
