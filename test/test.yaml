@@ -1,0 +1,25 @@
+world:
+  - type: rwc2015
+    id: _rwc2015    # Use an underscore in the id to NOT namespace all child entities
+#  - type: "rwc2015/walls"
+#    id: "walls"
+#    pose:
+#        x: 0
+#        y: 0
+#  - type: "floor"
+#    id: "floor"
+#    pose:
+#        x: 0
+#        y: 0
+#  - type: "rwc2015/bookcase"
+#    id: "bookcase"
+#    pose:
+#        x: 0.925
+#        y: -4.74
+
+plugins:
+  - name: gui_server
+    lib: libed_gui_server_plugin.so
+    parameters:
+        robot_name: amigo
+
