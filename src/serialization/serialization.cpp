@@ -351,8 +351,10 @@ bool deserialize(ed::io::Reader& r, geo::Shape& s)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool deserialize(tue::config::Reader& r, const std::string& group, geo::Shape& s)
+bool deserialize(tue::config::Reader& r_orig, const std::string& group, geo::Shape& s)
 {
+    tue::config::Reader r = r_orig;
+
     if (!r.readArray(group))
         return false;
 
@@ -366,10 +368,7 @@ bool deserialize(tue::config::Reader& r, const std::string& group, geo::Shape& s
             if (deserialize(r, "min", min))
             {
                 if (!deserialize(r, "max", max))
-                {
-                    r.endArray();
                     return false;
-                }
             }
             else if (deserialize(r, "size", size))
             {
@@ -378,7 +377,6 @@ bool deserialize(tue::config::Reader& r, const std::string& group, geo::Shape& s
             }
             else
             {
-                r.endArray();
                 return false;
             }
 
@@ -391,10 +389,7 @@ bool deserialize(tue::config::Reader& r, const std::string& group, geo::Shape& s
     }
 
     if (mesh.getTriangleIs().empty())
-    {
-        r.endArray();
         return false;
-    }
 
     s.setMesh(mesh);
 
