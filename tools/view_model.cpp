@@ -113,7 +113,6 @@ public:
     const geo::Mesh* mesh;
     cv::Vec3b color;
     std::vector<double> vals;
-    double dist;
 
 };
 
@@ -237,8 +236,17 @@ int main(int argc, char **argv)
     double h = (p_max.z - p_min.z) / 2;
     double angle = 0;
 
-    std::cout << n_vertices << " vertices" << std::endl;
-    std::cout << n_triangles << " triangles" << std::endl;
+    std::cout << "Model loaded successfully:" << std::endl;
+    std::cout << "    " << n_vertices << " vertices" << std::endl;
+    std::cout << "    " << n_triangles << " triangles" << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "Keys:" << std::endl;
+    std::cout << "    r - reload model" << std::endl;
+    std::cout << "    a - show / hide model areas" << std::endl;
+    std::cout << "    q - quit" << std::endl;
+
+    bool show_areas = true;
 
     while (ros::ok())
     {
@@ -271,7 +279,6 @@ int main(int argc, char **argv)
                 }
 
                 res.setMesh(&e->shape()->getMesh());
-                res.dist = dist;
 
 //                cam_pose.inverse() * obj_pose
 
@@ -281,7 +288,37 @@ int main(int argc, char **argv)
 
                 // Render
                 cam.render(opt, res);
-//                cam.rasterize(*e->shape(), geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0), geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose(), depth_image);
+
+
+                // Render areas
+                geo::Shape shape;
+                tue::config::Reader r(e->data());
+
+                if (show_areas && r.readArray("areas"))
+                {
+                    while(r.nextArrayItem())
+                    {
+//                        std::cout << r.data() << std::endl;
+
+                        std::string a_name;
+                        if (!r.value("name", a_name))
+                            continue;
+
+//                        std::cout << a_name << std::endl;
+
+                        if (ed::deserialize(r, "shape", shape))
+                        {
+//                            geo::Pose3D pose = geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0).inverse() * (geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose());
+
+                            res.color = cv::Vec3b(0, 0, 255);
+                            opt.setMesh(shape.getMesh(), pose);
+                            cam.render(opt, res);
+                        }
+                    }
+                    r.endArray();
+                }
+
+
             }
         }
 
@@ -303,6 +340,14 @@ int main(int argc, char **argv)
                 world_model = ed::WorldModel();
                 world_model.update(req);
             }
+        }
+        else if (key == 'a')
+        {
+            show_areas = !show_areas;
+        }
+        else if (key == 'q')
+        {
+            break;
         }
 
         angle += 0.03;
