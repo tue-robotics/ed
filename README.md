@@ -151,7 +151,7 @@ In some simple steps, these two files can be converted to an ED world specificat
 3. Take a look at the map's YAML file. Remember the 'resolution' and 'origin' fields
 4. Change 'my-ed-config.yaml' to the following:
 
-
+<pre>
     world:
     - id: walls
       shape:
@@ -164,6 +164,7 @@ In some simple steps, these two files can be converted to an ED world specificat
     plugins:
       - name: gui_server
         lib: libed_gui_server_plugin.so
+</pre>
 
 **Note that you have to put the correct values in the 'resolution' and 'pose' field (as found in the map YAML file in step 3).**
 
