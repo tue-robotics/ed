@@ -545,11 +545,11 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                 && cfg.value("resolution", resolution)
                 && cfg.value("height", height))
         {
-            std::string image_filename_full;
-            if (image_filename[0] == '/')
-                image_filename_full = image_filename;
-            else
-                image_filename_full = model_path + "/" + image_filename;
+            std::string image_filename_full = image_filename;
+//            if (image_filename[0] == '/')
+//                image_filename_full = image_filename;
+//            else
+//                image_filename_full = model_path + "/" + image_filename;
 
             shape = getHeightMapShape(image_filename_full, geo::Vec3(0, 0, 0), height, resolution, error);
 
