@@ -56,12 +56,13 @@ std::string ModelLoader::getModelPath(const std::string& type) const
 
 // ----------------------------------------------------------------------------------------------------
 
-tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::stringstream& error)
+tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type, std::vector<std::string>& types, std::stringstream& error)
 {
-    std::map<std::string, tue::config::DataConstPointer>::iterator it = model_cache_.find(type);
+    std::map<std::string, ModelData>::iterator it = model_cache_.find(type);
     if (it != model_cache_.end())
     {
-        const tue::config::DataConstPointer& data = it->second;
+        types = it->second.second;
+        const tue::config::DataConstPointer& data = it->second.first;
         return data;
     }
 
@@ -91,10 +92,12 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     std::string super_type;
     if (model_cfg.value("type", super_type, tue::OPTIONAL))
     {
-        tue::config::DataConstPointer super_data = loadModelData(super_type, error);
+        tue::config::DataConstPointer super_data = loadModelData(super_type, types, error);
         tue::config::DataPointer combined_data;
         combined_data.add(super_data);
         combined_data.add(model_cfg.data());
+
+        types.push_back(super_type);
 
         data = combined_data;
     }
@@ -112,7 +115,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     // Store data in cache
-    model_cache_[type] = data;
+    model_cache_[type] = ModelData(data, types);
 
     return data;
 }
@@ -121,7 +124,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
 bool ModelLoader::exists(const std::string& type) const
 {
-    std::map<std::string, tue::config::DataConstPointer>::const_iterator it = model_cache_.find(type);
+    std::map<std::string, ModelData>::const_iterator it = model_cache_.find(type);
     if (it != model_cache_.end())
         return true;
 
@@ -133,12 +136,17 @@ bool ModelLoader::exists(const std::string& type) const
 
 bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error)
 {
-    tue::config::DataConstPointer data = loadModelData(type, error);
+    std::vector<std::string> types;
+    tue::config::DataConstPointer data = loadModelData(type, types, error);
     if (data.empty())
         return false;
 
     if (!create(data, id, "", req, error))
         return false;
+
+    types.push_back(type);
+    for(std::vector<std::string>::const_iterator it = types.begin(); it != types.end(); ++it)
+      req.addType(id, *it);
 
     return true;
 }
@@ -184,7 +192,9 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     std::string type;
     if (r.value("type", type, tue::config::OPTIONAL))
     {
-        tue::config::DataConstPointer super_data = loadModelData(type, error);
+        std::vector<std::string> types;
+        tue::config::DataConstPointer super_data = loadModelData(type, types, error);
+
         if (super_data.empty())
             return false;
 
@@ -193,6 +203,10 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         data_combined.add(data);
 
         r = tue::config::Reader(data_combined);
+
+        types.push_back(type);
+        for(std::vector<std::string>::const_iterator it = types.begin(); it != types.end(); ++it)
+          req.addType(id, *it);
     }
 
     // Set type

@@ -36,6 +36,9 @@ public:
     const TYPE& type() const { return type_; }
     void setType(const TYPE& type) { type_ = type; }
 
+    const std::set<TYPE>& types() const { return types_; }
+    void addType(const TYPE& type) { types_.insert(type); }
+
     void measurements(std::vector<MeasurementConstPtr>& measurements, double min_timestamp = 0) const;
     void measurements(std::vector<MeasurementConstPtr>& measurements, unsigned int num) const;
     MeasurementConstPtr lastMeasurement() const;
@@ -213,6 +216,8 @@ private:
     unsigned long revision_;
 
     TYPE type_;
+
+    std::set<TYPE> types_;
 
     double existence_prob_;
 

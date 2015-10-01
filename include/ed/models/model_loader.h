@@ -34,15 +34,17 @@ public:
 
 private:
 
+    typedef std::pair<tue::config::DataConstPointer, std::vector<std::string> > ModelData;
+
     // Model name to model data
-    std::map<std::string, tue::config::DataConstPointer> model_cache_;
+    std::map<std::string, ModelData> model_cache_;
 
     // Shape filename to shape
     std::map<std::string, geo::ShapePtr> shape_cache_;
 
     std::vector<std::string> model_paths_;
 
-    tue::config::DataConstPointer loadModelData(const std::string& type, std::stringstream& error);
+    tue::config::DataConstPointer loadModelData(const std::string& type, std::vector<std::string>& types, std::stringstream& error);
 
     std::string getModelPath(const std::string& type) const;
 

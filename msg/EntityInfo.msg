@@ -1,5 +1,6 @@
 string id
 string type
+string[] types
 
 float32 existence_probability
 

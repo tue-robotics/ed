@@ -56,6 +56,10 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 {
     msg.id = e.id().str();
     msg.type = e.type();
+
+    for(std::set<std::string>::const_iterator it = e.types().begin(); it != e.types().end(); ++it)
+        msg.types.push_back(*it);
+
     msg.existence_probability = e.existenceProbability();
 //    msg.creation_time = ros::Time(e.creationTime());
 
@@ -385,7 +389,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 
         const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
-            continue;       
+            continue;
 
         if (!e->has_pose())
             continue;
