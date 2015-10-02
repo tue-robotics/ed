@@ -523,7 +523,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         cfg.endGroup();
     }
-    else if (cfg.readArray("compound"))
+    else if (cfg.readArray("compound") || cfg.readArray("group"))
     {
         boost::shared_ptr<geo::CompositeShape> composite(new geo::CompositeShape);
         while(cfg.nextArrayItem())
