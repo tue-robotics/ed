@@ -34,10 +34,11 @@ public:
     const UUID& id() const { return id_; }
 
     const TYPE& type() const { return type_; }
-    void setType(const TYPE& type) { type_ = type; }
+    void setType(const TYPE& type) { type_ = type; types_.insert(type); }
 
     const std::set<TYPE>& types() const { return types_; }
     void addType(const TYPE& type) { types_.insert(type); }
+    bool hasType(const TYPE& type) const { return types_.find(type) != types_.end(); }
 
     void measurements(std::vector<MeasurementConstPtr>& measurements, double min_timestamp = 0) const;
     void measurements(std::vector<MeasurementConstPtr>& measurements, unsigned int num) const;

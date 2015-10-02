@@ -241,9 +241,9 @@ When you run visualization (you know how) you should see two tables. Neat!
 
 ### Models in models in ...
 
-We can even go one step further. Imagine I have a set of entities that always show up together, or, in other words, a model that **consists** out of other models. a practical example is the model specification of a certain environment, *e.g.* the robot lab. Such a robot lab consists out of walls, tables, etc. We can use **composition** to include models inside models.
+We can even go one step further. Imagine I have a set of entities that always show up together, or, in other words, a model that **consists** of other models. A practical example is the model specification of a certain environment, *e.g.* your robot lab. Such a robot lab consists of walls, tables, etc. We can use **composition** to include models inside models.
 
-An example. Assume we want to create a model called robot-lab. And let's say this robot lab contains walls and two table of which we've specified the model above. Then we can create a directory called 'robot-lab' and put the following in its 'model.yaml':
+An example. Assume we want to create a model called robot-lab. And let's say this robot lab contains walls and two tables of which we've specified the model above. Then we can create a directory called 'robot-lab' and put the following in its 'model.yaml':
 
     composition:
     - id: table1
@@ -274,7 +274,7 @@ Run ED and visualize the world model. You should see two tables and some walls, 
 
 ### Visualizing models
 
-We already know that we can visualize the world model by adding a certain plugin to the configuration file, running ED, running some proxy program and starting RViz. But it takes a lot of time starting and restarting these programs if are working on a model. Fortunately there is a faster way to visualize models. Try:
+We already know that we can visualize the world model by adding a certain plugin to the configuration file, running ED, running some proxy program and starting RViz. But it takes a lot of time starting and restarting these programs if we are working on a model. Fortunately, there is a faster way to visualize models. Try:
 
     rosrun ed ed_view_model --model table
 

@@ -403,7 +403,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
             }
             else
             {
-                if (e->type() != req.type)
+                if (!e->hasType(req.type))
                     continue;
             }
         }
