@@ -179,3 +179,107 @@ To visualize the world model specified in the config file above, simply run ED a
 
     rosrun ed ed my-ed-config.yaml
     rosrun ed_gui_server ed_rviz_publisher
+
+### Creating re-usable models
+
+Imagine you just took some time describing the shape of a certain table, but the robots' environment contains multiple instances of that table. It would be nice to create a model, and simply re-use that model multiple times within your environment description, or maybe even in other environment descriptions you have.
+
+Well, you can! Before we start, let's create a directory which will hold these models:
+
+    mkdir ~/my-model-dir
+
+You have to let ED know where it will be able to find the models. You can do this by setting the ED_MODEL_PATH variable.
+
+    export ED_MODEL_PATH=~/my-model-dir
+
+You can specify multiple paths by separating them with colons (':').
+
+Let's say we want to create an object model called 'table'. Create a directory with this name inside the model directory
+
+    cd ~/my-model-dir
+    mkdir table
+
+A model specification should always contain at least a file called 'model.yaml'. This will contain the description of the model. Of course you are free to add any other files that have something to do with the model, ''e.g.'', heightmap images, mesh binaries, etc. Inside the 'model.yaml' you can specify the shape of the model and some other properties such as color. So, inside the table directory create a file called 'model.yaml' with the following content:
+
+    shape:
+      group:
+      - box:
+          pose: {x: 0,    y: 0,      z: 0.75}
+          size: {x: 1.20, y: 0.80,   z: 0.02}
+      - box:
+          pose: {x: -0.55, y: -0.35, z: 0.37}
+          size: {x: 0.05,  y: 0.05,  z: 0.74}
+      - box:
+          pose: {x: 0.55,  y: -0.35, z: 0.37}
+          size: {x: 0.05,  y: 0.05,  z: 0.74}
+      - box:
+          pose: {x: -0.55, y: 0.35,  z: 0.37}
+          size: {x: 0.05,  y: 0.05,  z: 0.74}
+      - box:
+          pose: {x: 0.55,  y: 0.35,  z: 0.37}
+          size: {x: 0.05,  y: 0.05,  z: 0.74}
+
+So, what does this say? Note that this format looks *a lot* like the world description we specified above in the configuration file. And you know what? It has the exact same syntax! This simply states that the shape of the table is a collection of boxes (5 to be precise: 1 table top and 4 legs). In itself, this model is pretty useless. But we can instantiate it (multiple times if we want!) in you world specification. For example, try the following ED configuration:
+
+    world:
+    - id: table1
+      type: table
+      pose: { x: 2, y: 0, z: 0 }
+    - id: table2
+      type: table
+      pose: { x: 3, y: 2, z: 0, Z: 1.54 }
+
+    plugins:
+      - name: gui_server
+        lib: libed_gui_server_plugin.so
+
+**Make sure the ED_MODEL_PATH environment variable is set!**
+
+The 'type' field specifies we should instantiate an entity of the given model, 'table' in our case. What will happen under the hood is that ED starts looking for a directory called 'table' inside the model directories, and if it finds it, inspects the 'model.yaml' file. Then the entities 'table1' and 'table2' *inherit* all properties that are specified in the 'model.yaml'.
+
+When you run visualization (you know how) you should see two tables. Neat!
+
+### Models in models in ...
+
+We can even go one step further. Imagine I have a set of entities that always show up together, or, in other words, a model that **consists** out of other models. a practical example is the model specification of a certain environment, *e.g.* the robot lab. Such a robot lab consists out of walls, tables, etc. We can use **composition** to include models inside models.
+
+An example. Assume we want to create a model called robot-lab. And let's say this robot lab contains walls and two table of which we've specified the model above. Then we can create a directory called 'robot-lab' and put the following in its 'model.yaml':
+
+    composition:
+    - id: table1
+      type: table
+      pose: { x: 2, y: 0, z: 0 }
+    - id: table2
+      type: table
+      pose: { x: 3, y: 2, z: 0, Z: 1.54 }
+    - id: walls
+      shape:
+        heightmap:
+          image: $(file my-walls.pgm)
+          height: 2
+          resolution: 0.025
+          pose: { x: -10.0, y: -10.0, z: 0 }
+
+Don't forget to put the 'my-walls.pgm' in the 'robot-lab' model directory! Now we have specified a model which includes other models. Our configuration file can be as simple as:
+
+    world:
+    - type: robot-lab
+      pose: { x: 0, y: 0, z: 0 }
+
+    plugins:
+      - name: gui_server
+        lib: libed_gui_server_plugin.so
+
+Run ED and visualize the world model. You should see two tables and some walls, as specified by your heightmap.
+
+### Visualizing models
+
+We already know that we can visualize the world model by adding a certain plugin to the configuration file, running ED, running some proxy program and starting RViz. But it takes a lot of time starting and restarting these programs if are working on a model. Fortunately there is a faster way to visualize models. Try:
+
+    rosrun ed ed_view_model --model table
+
+(Again, remember that you should have set ED_MODEL_PATH). You should now see the table model visualized in a separate window. Now try:
+
+    rosrun ed ed_view_model --model robot-lab
+
+That also works! And even better, you don't have to restart the viewer if you've made a change. Simply press 'r' and the model and visualization will reload. Now if you need to create or edit a model, all you have to do is fire up your favorite editor and run the model viewer, and you can instantly see your changes!
