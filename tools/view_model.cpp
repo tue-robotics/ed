@@ -9,6 +9,7 @@
 
 #include <geolib/sensors/DepthCamera.h>
 #include <geolib/Shape.h>
+#include <geolib/Box.h>
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -313,6 +314,34 @@ int main(int argc, char **argv)
 
         SampleRenderResult res(depth_image, image);
 
+        {
+            // Draw axis
+
+            double al = 0.25; // axis length (m)
+            double at = 0.01; // axis thickness (m)
+
+            geo::Mesh x_box = geo::Box(geo::Vector3(0, -at, -at), geo::Vector3(al, at, at)).getMesh();
+            geo::Mesh y_box = geo::Box(geo::Vector3(-at, 0, -at), geo::Vector3(at, al, at)).getMesh();
+            geo::Mesh z_box = geo::Box(geo::Vector3(-at, -at, 0), geo::Vector3(at, at, al)).getMesh();
+
+            geo::RenderOptions opt;
+
+            res.color = cv::Vec3b(0, 0, 255);
+            res.setMesh(&x_box);
+            opt.setMesh(x_box, cam_pose.inverse());
+            cam.render(opt, res);
+
+            res.color = cv::Vec3b(0, 255, 0);
+            res.setMesh(&y_box);
+            opt.setMesh(y_box, cam_pose.inverse());
+            cam.render(opt, res);
+
+            res.color = cv::Vec3b(255, 0, 0);
+            res.setMesh(&z_box);
+            opt.setMesh(z_box, cam_pose.inverse());
+            cam.render(opt, res);
+        }
+
         for(ed::WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
         {
             const ed::EntityConstPtr& e = *it;
@@ -405,23 +434,11 @@ int main(int argc, char **argv)
         {
             break;
         }
-        else if (key == 81) // left
+        else if (key == 'c')
         {
-            cam_lookat.x -= 0.1;
+//            cam_lookat = geo::Vector3(0, 0, 0);
+            do_rotate = !do_rotate;
         }
-        else if (key == 82) // up
-        {
-            cam_lookat.y -= 0.1;
-        }
-        else if (key == 83) // right
-        {
-            cam_lookat.x += 0.1;
-        }
-        else if (key == 84) // down
-        {
-            cam_lookat.y += 0.1;
-        }
-
 //        std::cout  << (int)key << std::endl;
 
         if (do_rotate)
