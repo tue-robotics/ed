@@ -22,6 +22,9 @@ double CANVAS_HEIGHT = 480;
 
 geo::Vector3 cam_lookat;
 double cam_dist, cam_yaw, cam_pitch;
+cv::Point LAST_MOUSE_POS;
+bool do_rotate = true;
+geo::Pose3D cam_pose;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -151,6 +154,53 @@ bool loadModel(const std::string& load_type, const std::string& source, ed::Upda
 
 // ----------------------------------------------------------------------------------------------------
 
+void CallBackFunc(int event, int x, int y, int flags, void* userdata)
+{
+    if (event == cv::EVENT_LBUTTONDOWN)
+    {
+        LAST_MOUSE_POS = cv::Point(x, y);
+        do_rotate = false;
+    }
+    else if (event == cv::EVENT_RBUTTONDOWN)
+    {
+        LAST_MOUSE_POS = cv::Point(x, y);
+        do_rotate = false;
+    }
+    else if (event == cv::EVENT_MBUTTONDOWN)
+    {
+        LAST_MOUSE_POS = cv::Point(x, y);
+        do_rotate = false;
+    }
+    else if (event == cv::EVENT_MOUSEMOVE)
+    {
+        double dx = x - LAST_MOUSE_POS.x;
+        double dy = y - LAST_MOUSE_POS.y;
+
+        if (flags & cv::EVENT_FLAG_LBUTTON)
+        {
+            cam_yaw -= dx * 0.003;
+            cam_pitch += dy * 0.003;
+
+            if (cam_pitch > 1.57)
+                cam_pitch = 1.57;
+            else if (cam_pitch < -1.57)
+                cam_pitch = -1.57;
+        }
+        else if (flags & cv::EVENT_FLAG_MBUTTON)
+        {
+            cam_dist += cam_dist * dy * 0.002;
+        }
+        else if (flags & cv::EVENT_FLAG_RBUTTON)
+        {
+            cam_lookat += cam_pose.R * (geo::Vector3(-dx, dy, 0) * 0.001 * cam_dist);
+        }
+
+        LAST_MOUSE_POS = cv::Point(x, y);
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 int main(int argc, char **argv)
 {
 //    ros::init(argc, argv, "ed_view_model");  // <- TODO: GET RID OF THIS!
@@ -216,9 +266,8 @@ int main(int argc, char **argv)
         }
     }
 
-    double dist = std::max(p_max.z - p_min.z, std::max(p_max.x - p_min.x, p_max.y - p_min.y));
+    double dist = 2 * std::max(p_max.z - p_min.z, std::max(p_max.x - p_min.x, p_max.y - p_min.y));
     double h = (p_max.z - p_min.z) / 2;
-    double angle = 0;
 
     std::cout << "Model loaded successfully:" << std::endl;
     std::cout << "    " << n_vertices << " vertices" << std::endl;
@@ -232,18 +281,30 @@ int main(int argc, char **argv)
 
     bool show_areas = true;
 
-    cam_dist = 5;
-    cam_lookat = geo::Vector3(0, 0, 0);
+    cam_dist = dist;
+    cam_lookat = (p_min + p_max) / 2;
     cam_yaw = 0;
-    cam_pitch = 1;
+    cam_pitch = 0.7;
+
+    //Create a window
+    cv::namedWindow("visualization", 1);
+
+    //set the callback function for any mouse event
+    cv::setMouseCallback("visualization", CallBackFunc, NULL);
 
     while (true)
     {
-        geo::Pose3D cam_pose;
-        cam_pose.t = geo::Vector3(cos(cam_yaw), sin(cam_yaw), 0) * cos(cam_pitch) * dist;
-        cam_pose.t.z = sin(cam_pitch) * dist;
+        cam_pose.t = geo::Vector3(cos(cam_yaw), sin(cam_yaw), 0) * cos(cam_pitch) * cam_dist;
+        cam_pose.t.z = sin(cam_pitch) * cam_dist;
+        cam_pose.t += cam_lookat;
 
+        geo::Vector3 rz = -(cam_lookat - cam_pose.t).normalized();
+        geo::Vector3 rx = geo::Vector3(0, 0, 1).cross(rz).normalized();
+        geo::Vector3 ry = rz.cross(rx).normalized();
 
+        cam_pose.R = geo::Matrix3(rx.x, ry.x, rz.x,
+                                  rx.y, ry.y, rz.y,
+                                  rx.z, ry.z, rz.z);
 
         // * * * * * * DEPTH CAMERA * * * * * *
 
@@ -277,7 +338,7 @@ int main(int argc, char **argv)
 
 //                cam_pose.inverse() * obj_pose
 
-                geo::Pose3D pose = geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0).inverse() * (geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose());
+                geo::Pose3D pose = cam_pose.inverse() * e->pose();
                 geo::RenderOptions opt;
                 opt.setMesh(e->shape()->getMesh(), pose);
 
@@ -344,8 +405,27 @@ int main(int argc, char **argv)
         {
             break;
         }
+        else if (key == 81) // left
+        {
+            cam_lookat.x -= 0.1;
+        }
+        else if (key == 82) // up
+        {
+            cam_lookat.y -= 0.1;
+        }
+        else if (key == 83) // right
+        {
+            cam_lookat.x += 0.1;
+        }
+        else if (key == 84) // down
+        {
+            cam_lookat.y += 0.1;
+        }
 
-        angle += 0.03;
+//        std::cout  << (int)key << std::endl;
+
+        if (do_rotate)
+            cam_yaw += 0.03;
     }
 
    return 0;
