@@ -153,8 +153,8 @@ bool loadModel(const std::string& load_type, const std::string& source, ed::Upda
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "ed_view_model");  // <- TODO: GET RID OF THIS!
-    ros::NodeHandle nh;
+//    ros::init(argc, argv, "ed_view_model");  // <- TODO: GET RID OF THIS!
+//    ros::NodeHandle nh;
 
     if (argc != 3)
     {
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
     cam_yaw = 0;
     cam_pitch = 1;
 
-    while (ros::ok())
+    while (true)
     {
         geo::Pose3D cam_pose;
         cam_pose.t = geo::Vector3(cos(cam_yaw), sin(cam_yaw), 0) * cos(cam_pitch) * dist;
