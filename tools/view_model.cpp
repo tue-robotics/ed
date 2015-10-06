@@ -21,11 +21,19 @@
 double CANVAS_WIDTH = 640;
 double CANVAS_HEIGHT = 480;
 
+geo::DepthCamera cam;
+
 geo::Vector3 cam_lookat;
 double cam_dist, cam_yaw, cam_pitch;
 cv::Point LAST_MOUSE_POS;
 bool do_rotate = true;
 geo::Pose3D cam_pose;
+
+bool do_flyto = false;
+geo::Vector3 cam_lookat_flyto;
+
+cv::Mat depth_image;
+cv::Mat image;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -157,7 +165,16 @@ bool loadModel(const std::string& load_type, const std::string& source, ed::Upda
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
-    if (event == cv::EVENT_LBUTTONDOWN)
+    if (event == cv::EVENT_LBUTTONDBLCLK)
+    {
+        float d = depth_image.at<float>(y, x);
+        if (d > 0)
+        {
+            cam_lookat_flyto = cam_pose * (cam.project2Dto3D(x, y) * d);
+            do_flyto = true;
+        }
+    }
+    else if (event == cv::EVENT_LBUTTONDOWN)
     {
         LAST_MOUSE_POS = cv::Point(x, y);
         do_rotate = false;
@@ -225,7 +242,6 @@ int main(int argc, char **argv)
     world_model.update(req);
 
     // Set camera specs
-    geo::DepthCamera cam;
     cam.setFocalLengths(0.87 * CANVAS_WIDTH, 0.87 * CANVAS_WIDTH);
     cam.setOpticalCenter(CANVAS_WIDTH / 2 + 0.5, CANVAS_HEIGHT / 2 + 0.5);
     cam.setOpticalTranslation(0, 0);
@@ -275,9 +291,17 @@ int main(int argc, char **argv)
     std::cout << "    " << n_triangles << " triangles" << std::endl;
 
     std::cout << std::endl;
+    std::cout << "Mouse:" << std::endl;
+    std::cout << "    left         - orbit" << std::endl;
+    std::cout << "    middle       - zoom" << std::endl;
+    std::cout << "    right        - pan" << std::endl;
+    std::cout << "    double click - fly to" << std::endl;
+
+    std::cout << std::endl;
     std::cout << "Keys:" << std::endl;
     std::cout << "    r - reload model" << std::endl;
     std::cout << "    a - show / hide model areas" << std::endl;
+    std::cout << "    c - circle rotate" << std::endl;
     std::cout << "    q - quit" << std::endl;
 
     bool show_areas = true;
@@ -309,8 +333,8 @@ int main(int argc, char **argv)
 
         // * * * * * * DEPTH CAMERA * * * * * *
 
-        cv::Mat depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
-        cv::Mat image(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20));
+        depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
+        image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20));
 
         SampleRenderResult res(depth_image, image);
 
@@ -443,6 +467,24 @@ int main(int argc, char **argv)
 
         if (do_rotate)
             cam_yaw += 0.03;
+
+        if (do_flyto)
+        {
+            geo::Vector3 diff = cam_lookat_flyto - cam_lookat;
+            double dist = diff.length();
+
+//            double max_dist = 0.02 * cam_dist;
+            double max_dist = std::max(0.001 * cam_dist, dist * 0.1);
+            if (dist < max_dist)
+            {
+                cam_lookat = cam_lookat_flyto;
+                do_flyto = false;
+            }
+            else
+            {
+                cam_lookat += (diff / dist) * max_dist;
+            }
+        }
     }
 
    return 0;
