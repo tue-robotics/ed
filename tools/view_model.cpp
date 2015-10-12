@@ -460,8 +460,28 @@ int main(int argc, char **argv)
         }
         else if (key == 'c')
         {
-//            cam_lookat = geo::Vector3(0, 0, 0);
             do_rotate = !do_rotate;
+        }
+        else if (key == 'p')
+        {
+            // Snap pitch to 90 degrees
+//            if (cam_pitch < -0.785)
+//                cam_pitch = -1.57;
+//            else if (cam_pitch > 0.785)
+//                cam_pitch = 1.57;
+//            else
+//                cam_pitch = 0;
+
+            if (cam_pitch > 0)
+                cam_pitch = (int)(cam_pitch / 1.57 + 0.5) * 1.57;
+            else
+                cam_pitch = (int)(cam_pitch / 1.57 - 0.5) * 1.57;
+
+            // Snap yaw to 90 degrees
+            if (cam_yaw > 0)
+                cam_yaw = (int)(cam_yaw / 1.57 + 0.5) * 1.57;
+            else
+                cam_yaw = (int)(cam_yaw / 1.57 - 0.5) * 1.57;
         }
 //        std::cout  << (int)key << std::endl;
 
