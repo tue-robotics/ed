@@ -217,6 +217,15 @@ bool deserialize(tue::config::Reader& r, const std::string& group, geo::Pose3D& 
     // Set rotation
     pose.R.setRPY(roll, pitch, yaw);
 
+    geo::Quaternion q;
+    if (r.value("qx", q.x, tue::config::OPTIONAL)
+            && r.value("qy", q.y, tue::config::OPTIONAL)
+            && r.value("qz", q.z, tue::config::OPTIONAL)
+            && r.value("qw", q.w, tue::config::OPTIONAL))
+    {
+        pose.R.setRotation(q);
+    }
+
     r.endGroup();
     return true;
 }
