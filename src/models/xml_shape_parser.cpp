@@ -18,8 +18,12 @@ std::vector<double> parseArray(const TiXmlElement* xml_elem)
 
     std::string word;
     std::stringstream stream(txt);
-    while( getline(stream, word, ' ') ) {
-        v.push_back(atof(word.c_str()));
+    while(getline(stream, word, ' '))
+    {
+        float f = 0;
+        std::istringstream istr(word);
+        istr >> f;
+        v.push_back(f);
     }
 
     return v;
