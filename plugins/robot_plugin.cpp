@@ -13,6 +13,8 @@
 #include <geolib/Importer.h>
 #include <geolib/Box.h>
 
+#include <ed/world_model/transform_crawler.h>
+
 // ----------------------------------------------------------------------------------------------------
 
 bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
@@ -318,7 +320,10 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 
             geo::ShapePtr shape = linkToShape(link);
             if (shape)
-                req.setShape(robot_name_ + "/" + link->name, shape);
+            {
+                std::string id = robot_name_ + "/" + link->name;
+                req.setShape(id, shape);
+            }
         }
 
         // Create the joints
@@ -332,6 +337,21 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 
     update_req_ = &req;
     cb_queue_.callAvailable();
+
+    ed::EntityConstPtr e_robot = world.getEntity(robot_name_);
+    if (e_robot && e_robot->has_pose())
+    {
+        // Calculate absolute poses
+        for(ed::world_model::TransformCrawler tc(world, robot_name_, ros::Time::now().toSec()); tc.hasNext(); tc.next())
+        {
+            const ed::EntityConstPtr& e = tc.entity();
+            if (e->shape())
+            {
+                req.setPose(e->id(), e_robot->pose() * tc.transform());
+                req.setFlag(e->id(), "self"); // mark as self
+            }
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------
