@@ -174,7 +174,7 @@ bool PluginContainer::step()
     }
 
     if (world_current_)
-    {        
+    {
         PluginInput data(*world_current_, world_deltas);
 
         UpdateRequestPtr update_request(new UpdateRequest);

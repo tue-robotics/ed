@@ -15,7 +15,7 @@
   <build_depend>ed_object_models</build_depend>
   <build_depend>geolib2</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>rgbd</build_depend> 
+  <build_depend>rgbd</build_depend>
   <build_depend>pcl_conversions</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>roslib</build_depend>
@@ -45,5 +45,5 @@
   <run_depend>message_runtime</run_depend>
   <run_depend>tue_config</run_depend>
   <run_depend>kdl_parser</run_depend>
-  
+
 </package>

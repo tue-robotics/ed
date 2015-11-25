@@ -129,7 +129,7 @@ bool JSONReader::readGroup(const std::string& key)
     if (it == map.end())
         return false;
 
-    n_current_ = it->second;    
+    n_current_ = it->second;
     return true;
 }
 
@@ -151,7 +151,7 @@ bool JSONReader::readArray(const std::string& key)
     if (it == map.end())
         return false;
 
-    n_current_ = it->second;   
+    n_current_ = it->second;
     array_index_stack_.push_back(0);
 
     return true;
@@ -168,13 +168,13 @@ bool JSONReader::endArray()
     array_index_stack_.pop_back();
 
     if (n_current_.type != ARRAY && i_next_array_item_ > 0)
-         n_current_.idx = data_.array_parents[data_.map_parents[n_current_.idx]];
-     else
-         n_current_.idx = data_.array_parents[n_current_.idx];
+        n_current_.idx = data_.array_parents[data_.map_parents[n_current_.idx]];
+    else
+        n_current_.idx = data_.array_parents[n_current_.idx];
 
-     n_current_.type = MAP;
+    n_current_.type = MAP;
 
-     return true;
+    return true;
 }
 
 // ----------------------------------------------------------------------------------------------------

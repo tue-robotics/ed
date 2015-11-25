@@ -18,12 +18,12 @@ function check-output
 
         if [ -z "$diff" ]
         then
-	        echo "OK"
+            echo "OK"
         else
-	        echo "DIFFERENCE!"
+            echo "DIFFERENCE!"
             echo "------------------------------------------------------------"
-	        echo ""
-	        echo "$diff" | colordiff
+            echo ""
+            echo "$diff" | colordiff
             echo "------------------------------------------------------------"
         fi
     else

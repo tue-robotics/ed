@@ -26,7 +26,7 @@ class Server
 
 public:
     Server();
-    virtual ~Server();    
+    virtual ~Server();
 
     void configure(tue::Configuration& config, bool reconfigure = false);
 

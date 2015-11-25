@@ -25,44 +25,44 @@ find_package(OpenCV REQUIRED)
 
 # Generate messages in the 'msg' folder
 add_message_files(
-   FILES
-   EntityInfo.msg
+  FILES
+    EntityInfo.msg
 )
 
 # Generate services in the 'srv' folder
 add_service_files(
-   FILES
-   GetGUICommand.srv
-   GetMeasurements.srv
-   RaiseEvent.srv
-   SetClick.srv
-   SetLabel.srv
-   SimpleQuery.srv
-   LoadPlugin.srv
+  FILES
+    GetGUICommand.srv
+    GetMeasurements.srv
+    RaiseEvent.srv
+    SetClick.srv
+    SetLabel.srv
+    SimpleQuery.srv
+    LoadPlugin.srv
 
-   Query.srv
-   UpdateSrv.srv
-   Configure.srv
+    Query.srv
+    UpdateSrv.srv
+    Configure.srv
 
-   # For builder plugin
-   SetEntity.srv
+    # For builder plugin
+    SetEntity.srv
 )
 
 # Generate added messages and services with any dependencies listed here
 generate_messages(
-   DEPENDENCIES
-   geometry_msgs
-   tue_serialization
+  DEPENDENCIES
+    geometry_msgs
+    tue_serialization
 )
 
 ###################################
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES ed_core ed_io ed_visualization
-    CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES ed_core ed_io ed_visualization
+  CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
+  # DEPENDS system_lib
 )
 
 ###########
@@ -72,10 +72,10 @@ catkin_package(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreturn-type -Wsign-compare -Wreorder")
 
 include_directories(
-    include
-    3rdparty
-    ${PCL_INCLUDE_DIRS}
-    ${catkin_INCLUDE_DIRS}
+  include
+  3rdparty
+  ${PCL_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -87,55 +87,55 @@ file(GLOB_RECURSE HEADER_FILES include/*.h)
 
 # Declare a cpp library
 add_library(ed_core
-    src/entity.cpp
-    src/measurement.cpp
-    src/update_request.cpp
-    src/world_model.cpp
-    src/transform_cache.cpp
-    src/convex_hull_2d.cpp
-    src/convex_hull_calc.cpp
-    include/ed/convex_hull.h
+  src/entity.cpp
+  src/measurement.cpp
+  src/update_request.cpp
+  src/world_model.cpp
+  src/transform_cache.cpp
+  src/convex_hull_2d.cpp
+  src/convex_hull_calc.cpp
+  include/ed/convex_hull.h
 
-    # World model querying
-    src/world_model/transform_crawler.cpp
+  # World model querying
+  src/world_model/transform_crawler.cpp
 
-    # Model loading
-    src/models/model_loader.cpp
-    src/models/shape_loader.cpp
-    src/models/xml_shape_parser.cpp
-    3rdparty/polypartition/polypartition.cpp
+  # Model loading
+  src/models/model_loader.cpp
+  src/models/shape_loader.cpp
+  src/models/xml_shape_parser.cpp
+  3rdparty/polypartition/polypartition.cpp
 
-    # DDP is used by measurement.cpp, so put here
-    src/helpers/depth_data_processing.cpp
-    src/helpers/clipper/clipper.cpp
+  # DDP is used by measurement.cpp, so put here
+  src/helpers/depth_data_processing.cpp
+  src/helpers/clipper/clipper.cpp
 
-    # Logging
-    src/logging.cpp
+  # Logging
+  src/logging.cpp
 
-    src/error_context.cpp
-    include/ed/error_context.h
+  src/error_context.cpp
+  include/ed/error_context.h
 
-    ${HEADER_FILES}
+  ${HEADER_FILES}
 )
 target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(ed_core ${PROJECT_NAME}_gencpp)
 
 add_library(ed_io
-    src/serialization/serialization.cpp
-    src/io/filesystem/read.cpp
-    src/io/filesystem/write.cpp
-    src/io/transport/probe.cpp
-    src/io/transport/probe_ros.cpp
-    src/io/transport/probe_client.cpp
+  src/serialization/serialization.cpp
+  src/io/filesystem/read.cpp
+  src/io/filesystem/write.cpp
+  src/io/transport/probe.cpp
+  src/io/transport/probe_ros.cpp
+  src/io/transport/probe_client.cpp
 
-    src/io/json_reader.cpp
+  src/io/json_reader.cpp
 )
 target_link_libraries(ed_io ed_core)
 add_dependencies(ed_io ${PROJECT_NAME}_gencpp)
 
 add_library(ed_visualization
-    include/ed/helpers/image_publisher.h
-    src/helpers/image_publisher.cpp
+  include/ed/helpers/image_publisher.h
+  src/helpers/image_publisher.cpp
 )
 target_link_libraries(ed_visualization ${catkin_LIBRARIES})
 add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
@@ -146,9 +146,9 @@ add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
 
 # Create executable
 add_executable(ed
-    src/ed.cpp
-    src/server.cpp
-    src/plugin_container.cpp
+  src/ed.cpp
+  src/server.cpp
+  src/plugin_container.cpp
 )
 target_link_libraries(ed ed_core ed_io ed_visualization)
 add_dependencies(ed ${PROJECT_NAME}_gencpp)
@@ -205,8 +205,8 @@ target_link_libraries(show_gui ed_core ${OpenCV_LIBRARIES})
 add_dependencies(show_gui ${PROJECT_NAME}_gencpp)
 
 add_executable(ed_test_heightmap_triangulation
-	test/test_heightmap_triangulation.cpp
-	3rdparty/polypartition/polypartition.cpp
+  test/test_heightmap_triangulation.cpp
+  3rdparty/polypartition/polypartition.cpp
 )
 target_link_libraries(ed_test_heightmap_triangulation ed_core ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES} ${tue_config_LIBRARIES})
 

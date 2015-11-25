@@ -123,7 +123,7 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
     ed::UpdateRequest update_req;
 
     if (r.readArray("entities"))
-    {   
+    {
         while(r.nextArrayItem())
         {
             std::string id;
@@ -451,12 +451,12 @@ bool srvConfigure(ed::Configure::Request& req, ed::Configure::Response& res)
 
 bool getEnvironmentVariable(const std::string& var, std::string& value)
 {
-     const char * val = ::getenv(var.c_str());
-     if ( val == 0 )
-         return false;
+    const char * val = ::getenv(var.c_str());
+    if ( val == 0 )
+        return false;
 
-     value = val;
-     return true;
+    value = val;
+    return true;
 }
 
 // ----------------------------------------------------------------------------------------------------

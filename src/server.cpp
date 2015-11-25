@@ -218,7 +218,7 @@ void Server::reset()
 // ----------------------------------------------------------------------------------------------------
 
 PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Configuration config)
-{    
+{
     ErrorContext errc("Server loadPlugin", plugin_name.c_str());
 
     config.setErrorContext("While loading plugin '" + plugin_name + "': ");
@@ -269,7 +269,7 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
 // ----------------------------------------------------------------------------------------------------
 
 void Server::stepPlugins()
-{   
+{
     ErrorContext errc("Server", "stepPlugins");
 
     WorldModelPtr new_world_model;

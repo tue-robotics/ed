@@ -70,7 +70,7 @@ if __name__=="__main__":
     entity_id = sys.argv[1]
 
     settings = termios.tcgetattr(sys.stdin)
-    
+
     rospy.init_node('teleop_twist_keyboard')
 
     rospy.wait_for_service('/ed/update')
@@ -83,7 +83,7 @@ if __name__=="__main__":
     th = 0
 
     print msg
-    
+
     while(1):
         key = getKey()
         if key in speedBindings.keys():

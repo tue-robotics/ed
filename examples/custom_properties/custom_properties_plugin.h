@@ -25,7 +25,7 @@ private:
     // the type of the property using templates
 
     // 'Pose' property key
-    ed::PropertyKey<geo::Pose3D> k_pose_;    
+    ed::PropertyKey<geo::Pose3D> k_pose_;
 
     // 'Counter' property key
     ed::PropertyKey<int> k_counter_;

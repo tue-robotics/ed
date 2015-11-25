@@ -17,7 +17,7 @@ Measurement::Measurement() : timestamp_(0)
 
 Measurement::Measurement(rgbd::ImageConstPtr image, const ImageMask& image_mask, const geo::Pose3D& sensor_pose) :
     image_mask_(image_mask),
-    timestamp_(image->getTimestamp())    
+    timestamp_(image->getTimestamp())
 {
     rgbd_data_.image = image;
     rgbd_data_.sensor_pose = sensor_pose;

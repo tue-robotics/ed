@@ -44,7 +44,7 @@ public:
 
         std::map<std::string, PropertyKeyDBEntry*>::iterator it = name_to_info_.find(name);
         if (it == name_to_info_.end())
-        {            
+        {
             entry = new PropertyKeyDBEntry;
             entry->name = name;
             entry->idx = name_to_info_.size();

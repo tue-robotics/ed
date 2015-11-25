@@ -146,7 +146,7 @@ bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest&
 
     types.push_back(type);
     for(std::vector<std::string>::const_iterator it = types.begin(); it != types.end(); ++it)
-      req.addType(id, *it);
+        req.addType(id, *it);
 
     return true;
 }
@@ -206,7 +206,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         types.push_back(type);
         for(std::vector<std::string>::const_iterator it = types.begin(); it != types.end(); ++it)
-          req.addType(id, *it);
+            req.addType(id, *it);
     }
 
     // Set type

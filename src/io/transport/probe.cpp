@@ -51,7 +51,7 @@ void Probe::process(const WorldModel& world, UpdateRequest& req)
 bool Probe::srvCallback(const tue_serialization::BinaryService::Request& ros_req,
                         tue_serialization::BinaryService::Response& ros_res)
 {
-    std::stringstream ss_req;    
+    std::stringstream ss_req;
     tue::serialization::convert(ros_req.bin.data, ss_req);
     tue::serialization::InputArchive req(ss_req);
 
