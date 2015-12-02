@@ -347,11 +347,11 @@ plugins:
 
 Woah, that's a lot of parameters! Fortunately, it will probably work quite well with the parameters above. The most important thing is to fill in the values represented as [...], i.e., the initial pose topic, laser topic, odometry tf frame, and base tf frame. If you want to know more about the model parameters, have a look at the [AMCL wiki page](http://wiki.ros.org/amcl).
 
-Now run the ED with this configuration file, and visualize the whole thing in RViz. You should be able to select the 'map' frame a global frame, and see a transform from the map frame to your robot. You might notice that the robot is badly localized at first. That is because you need to tell the localization plugin the **initial pose** of the robot. You can either specify this in the configuration file, or your can use the initial pose topic to set it (you can do this in RViz if you correctly set the initial pose topic). Now drive around your robot. You should notice how the robot keeps itself localized with respect to the environment.
+Now run ED with this configuration file, and visualize the whole thing in RViz. You should be able to select the 'map' frame as global frame, and see a transform from the map frame to your robot. You might notice that the robot is badly localized at first. That is because you need to tell the localization plugin the **initial pose** of the robot. You can either specify this in the configuration file, or your can use the initial pose topic to set it (you can do this in RViz if you correctly set the initial pose topic). Now drive around your robot. You should notice how the robot keeps itself localized with respect to the environment.
 
 If the above doesn't work, make sure that:
 
-* The Range Finder is indeed broadcasting scan messages (e.g., use 'rostopic echo')
+* The Range Finder is indeed broadcasting scan messages (e.g., use 'rostopic echo' to find out)
 * The laser topic is correctly specified in the configuration file
 * The frame_id specified in the Range Finder messages are correct (i.e., there is a valid transformation from the odometry frame to this frame)
 * The TF frames in the configuration file are correct
