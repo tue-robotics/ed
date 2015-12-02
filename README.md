@@ -301,44 +301,51 @@ The ED localization is largely based on ROS' [AMCL-module](http://wiki.ros.org/a
 
 As stated above, we assume that you have a 2D Range Finder (we will sometimes use the word **laser**) available and that a transform from the robot odometry frame to the Range Finder frame can be calculated. The latter means that the odometry of your wheels is expressed in a TF frame from a virtual 'odometry frame' to your robot. If the wheels of your robot turn, the odometry frame should be updated. This is used by the localization algorithm to calculate how much the robot has moved since the last update.
 
-The ED localization module is in fact just an ED plugin. So, as you may have guessed, we need to specify it in our ED configuration file. **Add** the following to the **list of plugins** in your configuration file:
+The ED localization module is in fact just an ED plugin. So, as you may have guessed, we need to specify it in our ED configuration file. Add the localization plugin and it's parameters to the list of plugins in your configuration file. It will then look like this:
 
 <pre>
-- name: localization
-  lib: libed_localization_plugin.so
-  parameters:
-    robot_name: robot    # the robot will also be in the world model. This is the
-                         # id the robot entity will get in ED
-    initial_pose_topic: <INITIAL_POSE_TOPIC>
-    num_particles: 500   # maximum number of particles to use
-    initial_pose:        # where does the robot start (in map frame)?
-      x: 0
-      y: 0
-      rz: 0              # rotation
-    laser_model:
-      topic: <LASER_TOPIC>   # Laser topic
-      num_beams: 100         # Max number of beams used per particle (evenly spread)
-      z_hit: 0.95            # \
-      sigma_hit: 0.2         # |
-      z_short: 0.1           # |-- These are all parameters of the probabilistic laser
-      z_max: 0.05            # |    model. See 'Probabilistic Robotics' for more info.
-      z_rand: 0.05           # |
-      lambda_short: 0.1      # /
-      range_max: 10
-      min_particle_distance: 0.01            # Particles that are too close together will
-      min_particle_rotation_distance: 0.02   # be combined (resulting in less particles)
-    odom_model:
-      map_frame: map
-      odom_frame: <ODOM_TF_FRAME>
-      base_link_frame: <BASE_TF_FRAME>
-      alpha1: 0.2   # rot -> trans + strafe    # \
-      alpha2: 0.2    # trans -> rot            # |-- These are all parameters of the
-      alpha3: 0.2    # trans -> trans          # |   probabilistic odom model. See
-      alpha4: 0.2    # rot -> rot              # |   'Probabilistic Robotics' for more info
-      alpha5: 0.2    # trans -> strafe         # /
+world:
+- type: robot-lab
+  pose: { x: 0, y: 0, z: 0 }
+
+plugins:
+  - name: gui_server
+    lib: libed_gui_server_plugin.so     
+  - name: localization
+    lib: libed_localization_plugin.so
+    parameters:
+      robot_name: robot    # the robot will also be in the world model. This is the
+                           # id the robot entity will get in ED
+      initial_pose_topic: [INITIAL_POSE_TOPIC]
+      num_particles: 500   # maximum number of particles to use
+      initial_pose:        # where does the robot start (in map frame)?
+        x: 0
+        y: 0
+        rz: 0              # rotation
+      laser_model:
+        topic: [LASER_TOPIC]   # Laser topic
+        num_beams: 100         # Max number of beams used per particle (evenly spread)
+        z_hit: 0.95            # \
+        sigma_hit: 0.2         # |
+        z_short: 0.1           # |-- These are all parameters of the probabilistic laser
+        z_max: 0.05            # |    model. See 'Probabilistic Robotics' for more info.
+        z_rand: 0.05           # |
+        lambda_short: 0.1      # /
+        range_max: 10
+        min_particle_distance: 0.01            # Particles that are too close together will
+        min_particle_rotation_distance: 0.02   # be combined (resulting in less particles)
+      odom_model:
+        map_frame: map
+        odom_frame: [ODOM_TF_FRAME]
+        base_link_frame: [BASE_TF_FRAME]
+        alpha1: 0.2   # rot -> trans + strafe    # \
+        alpha2: 0.2    # trans -> rot            # |-- These are all parameters of the
+        alpha3: 0.2    # trans -> trans          # |   probabilistic odom model. See
+        alpha4: 0.2    # rot -> rot              # |   'Probabilistic Robotics' for more info
+        alpha5: 0.2    # trans -> strafe         # /
 </pre>
 
-Woah, that's a lot of parameters! Fortunately, it will probably work quite well with the parameters above. The most important thing is to fill in the values represented as <...>, i.e., the initial pose topic, laser topic, odometry tf frame, and base tf frame. If you want to know more about the model parameters, have a look at the [AMCL wiki page](http://wiki.ros.org/amcl).
+Woah, that's a lot of parameters! Fortunately, it will probably work quite well with the parameters above. The most important thing is to fill in the values represented as [...], i.e., the initial pose topic, laser topic, odometry tf frame, and base tf frame. If you want to know more about the model parameters, have a look at the [AMCL wiki page](http://wiki.ros.org/amcl).
 
 Now run the ED with this configuration file, and visualize the whole thing in RViz. You should be able to select the 'map' frame a global frame, and see a transform from the map frame to your robot. You might notice that the robot is badly localized at first. That is because you need to tell the localization plugin the **initial pose** of the robot. You can either specify this in the configuration file, or your can use the initial pose topic to set it (you can do this in RViz if you correctly set the initial pose topic). Now drive around your robot. You should notice how the robot keeps itself localized with respect to the environment.
 
