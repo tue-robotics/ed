@@ -67,6 +67,6 @@ Plugins for integrating sensor data into ED, e.g. Lidar, RGBD
 Extension for classifying entities based on their attached RGBD measurements.
 - https://github.com/tue-robotics/ed_perception.git
 
-## Tutorial
+## Tutorials
 
-All ED tutorials can be found in the ed_tutorials package: https://github.com/tue-robotics/ed_t
+All ED tutorials can be found in the ed_tutorials package: https://github.com/tue-robotics/ed_tutorials
