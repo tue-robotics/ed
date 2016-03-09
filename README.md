@@ -142,6 +142,22 @@ You probably won't see a lot happening. But ED *is* running. To visualize the wo
 
 Now start RViz, and listen to the Marker topic '/ed/rviz'. You should see two blocks appearing: the blocks you specified in the configuration file.
 
+#### Update ED Rviz plugins
+
+It is also possible to query ED and update the visualization directly from RVIZ without using ed_rviz_publisher that publishes a markerarary by installing the ed_rviz_plugins package:
+
+Check out the following packages in your workspace:
+
+    cd <your_catkin_workspace>/src
+    git clone https://github.com/tue-robotics/ed_rviz_plugins.git
+
+And compile
+
+    cd <your_catkin_workspace>:
+    catkin_make
+    
+Start rviz and add yhe ed_rviz_plugins/WorldModel display. Configure the service for querying the meshes and the ED entities topic, e.g. /ed/gui/entities and /ed/gui/query_meshes
+
 ### Specifying a more complex world
 
 So far, we have created a configuration file which tells ED to create a world consisting of two blocks, and running a plugin which helps visualizing this world in RViz. That's nice, but not very useful. We need to create a model of the world the robot is living in, and that will be a bit more work than just adding a couple of boxes. Fortunately, ED allows you to use quite some powerful expressions to create the shapes you need. On of those is particularly useful if you already have a 2D map of the robots' environment: the height map. If you have used some sort of SLAM method (e.g., http://wiki.ros.org/gmapping) to create a 2D occupancy map of the environment, then you can almost directly use this map to specify the shape of an entity in ED.
