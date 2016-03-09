@@ -85,6 +85,20 @@ And compile
 
     cd <your_catkin_workspace>:
     catkin_make
+    
+#### (Optional) ED Rviz plugins
+
+It is also possible to query ED and update the visualization directly from RVIZ without using ed_rviz_publisher node in the ed_gui_server package that publishes a markerarary. This can be done with use of the rviz display (rviz plugin) in the ed_rviz_plugins package.
+
+Check out the following packages in your workspace:
+
+    cd <your_catkin_workspace>/src
+    git clone https://github.com/tue-robotics/ed_rviz_plugins.git
+
+And compile
+
+    cd <your_catkin_workspace>:
+    catkin_make
 
 ## Tutorial
 
@@ -140,23 +154,7 @@ You probably won't see a lot happening. But ED *is* running. To visualize the wo
 
     rosrun ed_gui_server ed_rviz_publisher
 
-Now start RViz, and listen to the Marker topic '/ed/rviz'. You should see two blocks appearing: the blocks you specified in the configuration file.
-
-#### Update ED Rviz plugins
-
-It is also possible to query ED and update the visualization directly from RVIZ without using ed_rviz_publisher that publishes a markerarary by installing the ed_rviz_plugins package:
-
-Check out the following packages in your workspace:
-
-    cd <your_catkin_workspace>/src
-    git clone https://github.com/tue-robotics/ed_rviz_plugins.git
-
-And compile
-
-    cd <your_catkin_workspace>:
-    catkin_make
-    
-Start rviz and add yhe ed_rviz_plugins/WorldModel display. Configure the service for querying the meshes and the ED entities topic, e.g. /ed/gui/entities and /ed/gui/query_meshes
+Now start RViz, and listen to the Marker topic '/ed/rviz'. You should see two blocks appearing: the blocks you specified in the configuration file. Or use the rviz_plugin from the ed_rviz_plugins package to visualize.
 
 ### Specifying a more complex world
 
@@ -199,6 +197,8 @@ To visualize the world model specified in the config file above, simply run ED a
 
     rosrun ed ed <path/to/my-ed-config.yaml>
     rosrun ed_gui_server ed_rviz_publisher
+    
+You can also use the rviz plugin: Start rviz and add the ed_rviz_plugins/WorldModel display. Configure the service for querying the meshes and the ED entities topic, e.g. /ed/gui/entities and /ed/gui/query_meshes
 
 ### Creating re-usable models
 
