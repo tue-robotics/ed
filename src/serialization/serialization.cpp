@@ -12,6 +12,9 @@
 #include <geolib/Shape.h>
 #include <geolib/Box.h>
 
+#include <tue/config/configuration.h>
+#include <tue/config/loaders/yaml.h>
+
 namespace ed
 {
 
@@ -88,6 +91,14 @@ bool deserialize(io::Reader &r, UpdateRequest& req)
                 ed::deserialize(r, *shape);
                 req.setShape(id, shape);
                 r.endGroup();
+            }
+
+            std::string data_str;
+            if (r.readValue("data", data_str))
+            {
+                tue::Configuration cfg;
+                if (tue::config::loadFromYAMLString(data_str, cfg))
+                    req.addData(id, cfg.data());
             }
 
 //            if (r.readArray("properties"))
