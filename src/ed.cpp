@@ -319,6 +319,12 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
                 tue::config::YAMLEmitter emitter;
                 std::stringstream out;
                 emitter.emit(e->data(), out);
+
+                std::string data_str = out.str();
+
+                std::replace(data_str.begin(), data_str.end(), '"', '|');
+                std::replace(data_str.begin(), data_str.end(), '\n', '^');
+
                 w.writeValue("data", out.str());
             }
 

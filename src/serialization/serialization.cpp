@@ -96,6 +96,9 @@ bool deserialize(io::Reader &r, UpdateRequest& req)
             std::string data_str;
             if (r.readValue("data", data_str))
             {
+                std::replace(data_str.begin(), data_str.end(), '|', '"');
+                std::replace(data_str.begin(), data_str.end(), '^', '\n');
+
                 tue::Configuration cfg;
                 if (tue::config::loadFromYAMLString(data_str, cfg))
                     req.addData(id, cfg.data());
