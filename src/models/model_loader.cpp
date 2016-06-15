@@ -266,6 +266,17 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.endGroup();
     }
 
+    if (r.readArray("flags"))
+    {
+        while (r.nextArrayItem())
+        {
+            std::string flag;
+            if (r.value("flag", flag))
+                req.setFlag(id, flag);
+        }
+        r.endArray();
+    }
+
     // Add additional data
     req.addData(id, r.data());
 
