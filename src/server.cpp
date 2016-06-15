@@ -176,9 +176,9 @@ void Server::reset()
     ErrorContext errc("Server", "reset");
 
     // Create init world request, such that we can check which entities we have to keep in the world model
-    ed::UpdateRequest req_init_world;
+    UpdateRequestPtr req_init_world(new UpdateRequest);
     std::stringstream error;
-    if (!model_loader_.create("_root", world_name_, req_init_world, error))
+    if (!model_loader_.create("_root", world_name_, *req_init_world, error))
     {
         ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
     }
@@ -193,7 +193,7 @@ void Server::reset()
         if (e->id().str().substr(0, 6) == "sergio" || e->id().str().substr(0, 5) == "amigo") // TODO: robocup hack
             continue;
 
-        if (req_init_world.updated_entities.find(e->id()) == req_init_world.updated_entities.end())
+        if (req_init_world->updated_entities.find(e->id()) == req_init_world->updated_entities.end())
             req_delete->removeEntity((*it)->id());
     }
 
@@ -201,6 +201,7 @@ void Server::reset()
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
     // Apply the deletion request
+    new_world_model->update(*req_init_world);
     new_world_model->update(*req_delete);
 
     // Swap to new world model
@@ -210,6 +211,7 @@ void Server::reset()
     for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
         const PluginContainerPtr& c = it->second;
+        c->addDelta(req_init_world);
         c->addDelta(req_delete);
         c->setWorld(new_world_model);
     }
