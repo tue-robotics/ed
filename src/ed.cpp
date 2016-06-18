@@ -136,6 +136,15 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
                 continue;
             }
 
+            std::string action;
+            if (r.readValue("action", action))
+            {
+                if (action == "remove")
+                    update_req.removeEntity(id);
+                else
+                    res.response += "Unknown action '" + action + "'.\n";
+            }
+
             std::string type;
             if (r.readValue("type", type))
             {
