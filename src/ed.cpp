@@ -19,7 +19,7 @@
 #include "ed/update_request.h"
 
 // Reset
-#include <std_srvs/Empty.h>
+#include <ed/Reset.h>
 
 // Configure
 #include <ed/Configure.h>
@@ -105,9 +105,9 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+bool srvReset(ed::Reset::Request& req, ed::Reset::Response& res)
 {
-    ed_wm->reset();
+    ed_wm->reset(req.keep_all_shapes);
     return true;
 }
 
@@ -654,7 +654,7 @@ int main(int argc, char** argv)
     ros::ServiceServer srv_simple_query = nh_private.advertiseService(opt_simple_query);
 
     ros::AdvertiseServiceOptions opt_reset =
-            ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
+            ros::AdvertiseServiceOptions::create<ed::Reset>(
                 "reset", srvReset, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_reset = nh_private.advertiseService(opt_reset);
 

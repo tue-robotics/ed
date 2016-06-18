@@ -171,7 +171,7 @@ void Server::initialize()
 
 // ----------------------------------------------------------------------------------------------------
 
-void Server::reset()
+void Server::reset(bool keep_all_shapes)
 {
     ErrorContext errc("Server", "reset");
 
@@ -191,6 +191,9 @@ void Server::reset()
         const ed::EntityConstPtr& e = *it;
 
         if (e->id().str().substr(0, 6) == "sergio" || e->id().str().substr(0, 5) == "amigo") // TODO: robocup hack
+            continue;
+
+        if (keep_all_shapes && e->shape())
             continue;
 
         if (req_init_world->updated_entities.find(e->id()) == req_init_world->updated_entities.end())

@@ -32,7 +32,7 @@ public:
 
     void initialize();
 
-    void reset();
+    void reset(bool keep_all_shapes = false);
 
     void update();
 
