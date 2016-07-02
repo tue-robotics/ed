@@ -278,9 +278,6 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
         if (!ids.empty() && ids.find(e->id().str()) == ids.end())
             continue;
 
-        if (e->id().str().substr(0, 6) == "sergio") // TODO: robocup hack
-            continue;
-
         if (e)
         {
             w.addArrayItem();
