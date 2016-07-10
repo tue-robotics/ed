@@ -63,6 +63,10 @@ Extension for visualizing the current world model state. The GUI server exposes 
 Plugins for integrating sensor data into ED, e.g. Lidar, RGBD
 - https://github.com/tue-robotics/ed_sensor_integration.git
 
+### Navigation
+Extension for publishing occupancy grids and calculating map navigation constraints.
+- https://github.com/tue-robotics/ed_navigation.git
+
 ### Perception
 Extension for classifying entities based on their attached RGBD measurements.
 - https://github.com/tue-robotics/ed_perception.git
