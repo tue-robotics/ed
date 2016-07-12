@@ -5,6 +5,10 @@ ED : Environment Descriptor [![Build Status](https://travis-ci.org/tue-robotics/
 
 ED - Environment Description - is a 3D geometric, object-based world representation system for robots. At the moment different ED modules exist which enable robots to localize themselves, update positions of known objects based on recent sensor data, segment and store newly encountered objects and visualize all this through a web-based GUI.
 
+### Tutorials
+
+All ED tutorials can be found in the ed_tutorials package: https://github.com/tue-robotics/ed_tutorials
+
 ### Why use ED?
 
 * ED is **one re-usable environment description** that can be used for a multitude of needed functionalities. Instead of having different environment representations for localization, navigation, manipulation, interaction, etc, you now only need *one*. An improvement in this single, central world model will reflect in the performances of the separate robot capabilities.
@@ -70,7 +74,3 @@ Extension for publishing occupancy grids and calculating map navigation constrai
 ### Perception
 Extension for classifying entities based on their attached RGBD measurements.
 - https://github.com/tue-robotics/ed_perception.git
-
-## Tutorials
-
-All ED tutorials can be found in the ed_tutorials package: https://github.com/tue-robotics/ed_tutorials
