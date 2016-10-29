@@ -21,7 +21,7 @@ install:
 
 before_script:
   # remove the tue-get version of our repo with the travis one
-  - cd "$TUE_ENV_DIR/repos/https:/github.com/tue-robotics"
+  - cd "$TUE_ENV_DIR/repos/https_/github.com/tue-robotics"
   - mv "$REPOSITORY_NAME.git" "$REPOSITORY_NAME.old"
   - ln -s "$CI_SOURCE_PATH" "$REPOSITORY_NAME.git"
 
