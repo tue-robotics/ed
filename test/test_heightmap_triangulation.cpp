@@ -2,7 +2,8 @@
 #include "../src/models/shape_loader.h"
 
 // Visualization
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 // Shape traversal
 #include <geolib/Shape.h>
