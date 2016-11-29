@@ -166,6 +166,7 @@ target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES})
 
 add_library(ed_sync_plugin plugins/sync_plugin.cpp)
 target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
+add_dependencies(ed_sync_plugin ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
