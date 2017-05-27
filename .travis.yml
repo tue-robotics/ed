@@ -35,7 +35,5 @@ before_script:
   - cd "$TUE_SYSTEM_DIR"
 
 script:
-  - catkin_make -j2
-  - catkin_make install   # installing the package
-  - catkin_make tests     # build the tests
-  - catkin_make run_tests # and run them
+  - catkin build
+  - catkin run_tests
