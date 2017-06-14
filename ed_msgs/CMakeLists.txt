@@ -3,7 +3,7 @@ project(ed_recognition_msgs)
 
 find_package(catkin REQUIRED COMPONENTS
   message_generation
-  sensor_msgs
+  geometry_msgs
 )
 
 # Generate messages in the 'msg' folder
