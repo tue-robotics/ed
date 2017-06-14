@@ -21,4 +21,3 @@ string[] flags
 geometry_msgs/Point[] convex_hull
 float32 z_min
 float32 z_max
-
