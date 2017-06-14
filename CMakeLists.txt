@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   class_loader
   cv_bridge
   ed_object_models
+  ed_msgs
   geolib2
   geometry_msgs
   rgbd
@@ -22,12 +23,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
-
-# Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-    EntityInfo.msg
-)
 
 # Generate services in the 'srv' folder
 add_service_files(
