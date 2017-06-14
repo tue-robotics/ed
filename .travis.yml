@@ -1,39 +1,17 @@
-sudo: required
-dist: trusty
-language: generic
-env:
-  - ROS_DISTRO=indigo
-  - ROS_DISTRO=jade
-notifications:
-  email:
-    on_success: change # [always|never|change], default=change
-    on_failure: change # [always|never|change], default=always
+sudo: true
+
+language: cpp
+
+services:
+  - docker
 
 before_install:
-  - CI_SOURCE_PATH=$(pwd)
-  - REPOSITORY_NAME=${PWD##*/}
-  - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
+  - wget https://raw.githubusercontent.com/tue-robotics/tue-env/master/ci/install-package.sh
+  - wget https://raw.githubusercontent.com/tue-robotics/tue-env/master/ci/build-package.sh
+  - export PACKAGE=${TRAVIS_REPO_SLUG#*/}
 
 install:
-  - source <(wget -O- https://raw.githubusercontent.com/tue-robotics/tue-env/master/installer/scripts/bootstrap-ros-$ROS_DISTRO)
-  - tue-get install ros-$REPOSITORY_NAME
-  - source ~/.tue/setup.bash # source all target setup files
+  - bash install-package.sh --package=$PACKAGE --branch=$TRAVIS_BRANCH --commit=$TRAVIS_COMMIT --pullrequest=$TRAVIS_PULL_REQUEST
 
-before_script:
-  # remove the tue-get version of our repo with the travis one
-  - cd "$TUE_ENV_DIR/repos/https_/github.com/tue-robotics"
-  - mv "$REPOSITORY_NAME.git" "$REPOSITORY_NAME.old"
-  - ln -s "$CI_SOURCE_PATH" "$REPOSITORY_NAME.git"
-
-  # install travis' package dependencies
-  - cd "$TUE_SYSTEM_DIR/src"
-  - rm *
-  - tue-get update ros-$REPOSITORY_NAME
-  - ls -l
-
-  # go to the catkin workspace
-  - cd "$TUE_SYSTEM_DIR"
-
-script:
-  - catkin build
-  - catkin run_tests
+script: 
+  - bash build-package.sh --package=$PACKAGE
