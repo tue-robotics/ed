@@ -1,5 +1,0 @@
-string name
-string[] param_names
-string[] param_values
----
-string msg

@@ -8,48 +8,48 @@ find_package(catkin REQUIRED COMPONENTS
   ed_object_models
   ed_msgs
   geolib2
-  geometry_msgs
+  #geometry_msgs
   rgbd
   pcl_conversions
   roscpp
   roslib
-  std_srvs
+  #std_srvs
   tue_config
   tue_filesystem
   tue_serialization
-  message_generation
+  #message_generation
   tue_config
 )
 
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 
-# Generate services in the 'srv' folder
-add_service_files(
-  FILES
-    GetGUICommand.srv
-    GetMeasurements.srv
-    RaiseEvent.srv
-    SetClick.srv
-    SetLabel.srv
-    SimpleQuery.srv
-    LoadPlugin.srv
+## Generate services in the 'srv' folder
+#add_service_files(
+  #FILES
+    #GetGUICommand.srv
+    #GetMeasurements.srv
+    #RaiseEvent.srv
+    #SetClick.srv
+    #SetLabel.srv
+    #SimpleQuery.srv
+    #LoadPlugin.srv
 
-    Query.srv
-    UpdateSrv.srv
-    Configure.srv
-    Reset.srv
+    #Query.srv
+    #UpdateSrv.srv
+    #Configure.srv
+    #Reset.srv
 
-    # For builder plugin
-    SetEntity.srv
-)
+    ## For builder plugin
+    #SetEntity.srv
+#)
 
-# Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-    geometry_msgs
-    tue_serialization
-)
+## Generate added messages and services with any dependencies listed here
+#generate_messages(
+  #DEPENDENCIES
+    #geometry_msgs
+    #tue_serialization
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -57,7 +57,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_visualization
-  CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models
+  CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models ed_msgs
   # DEPENDS system_lib
 )
 

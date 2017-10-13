@@ -5,31 +5,31 @@
 
 // Query
 #include <ed/entity.h>
-#include <ed/SimpleQuery.h>
+#include <ed_msgs/SimpleQuery.h>
 #include <geolib/ros/msg_conversions.h>
 #include <tue/config/yaml_emitter.h>
 #include <ed/serialization/serialization.h>
 
-#include "ed/Query.h"
+#include <ed_msgs/Query.h>
 #include "ed/io/json_writer.h"
 
 // Update
-#include <ed/UpdateSrv.h>
+#include <ed_msgs/UpdateSrv.h>
 #include "ed/io/json_reader.h"
 #include "ed/update_request.h"
 
 // Reset
-#include <ed/Reset.h>
+#include <ed_msgs/Reset.h>
 
 // Configure
-#include <ed/Configure.h>
+#include <ed_msgs/Configure.h>
 
 // Loop
 #include <ed/event_clock.h>
 
 // Plugin loading
 #include <ed/plugin.h>
-#include <ed/LoadPlugin.h>
+#include <ed_msgs/LoadPlugin.h>
 #include <tue/config/loaders/yaml.h>
 
 #include <geolib/Shape.h>
@@ -55,7 +55,7 @@ std::string update_request_;
 
 // ----------------------------------------------------------------------------------------------------
 
-void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
+void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
 {
     msg.id = e.id().str();
     msg.type = e.type();
@@ -105,7 +105,7 @@ void entityToMsg(const ed::Entity& e, ed::EntityInfo& msg)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvReset(ed::Reset::Request& req, ed::Reset::Response& res)
+bool srvReset(ed_msgs::Reset::Request& req, ed_msgs::Reset::Response& res)
 {
     ed_wm->reset(req.keep_all_shapes);
     return true;
@@ -113,7 +113,7 @@ bool srvReset(ed::Reset::Request& req, ed::Reset::Response& res)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
+bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& res)
 {
     ed::io::JSONReader r(req.request.c_str());
 
@@ -239,7 +239,7 @@ bool srvUpdate(ed::UpdateSrv::Request& req, ed::UpdateSrv::Response& res)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
+bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 {
     tue::Timer timer;
     timer.start();
@@ -401,7 +401,7 @@ bool srvQuery(ed::Query::Request& req, ed::Query::Response& res)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& res)
+bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Response& res)
 {
     double radius = req.radius;
     geo::Vector3 center_point;
@@ -440,7 +440,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 
         if (geom_ok)
         {
-            res.entities.push_back(ed::EntityInfo());
+            res.entities.push_back(ed_msgs::EntityInfo());
             entityToMsg(*e, res.entities.back());
         }
     }
@@ -450,7 +450,7 @@ bool srvSimpleQuery(ed::SimpleQuery::Request& req, ed::SimpleQuery::Response& re
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvConfigure(ed::Configure::Request& req, ed::Configure::Response& res)
+bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response& res)
 {
     tue::Configuration config;
     if (!tue::config::loadFromYAMLString(req.request, config))
@@ -646,12 +646,12 @@ int main(int argc, char** argv)
     ros::CallbackQueue cb_queue;
 
     ros::AdvertiseServiceOptions opt_simple_query =
-            ros::AdvertiseServiceOptions::create<ed::SimpleQuery>(
+            ros::AdvertiseServiceOptions::create<ed_msgs::SimpleQuery>(
                 "simple_query", srvSimpleQuery, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_simple_query = nh_private.advertiseService(opt_simple_query);
 
     ros::AdvertiseServiceOptions opt_reset =
-            ros::AdvertiseServiceOptions::create<ed::Reset>(
+            ros::AdvertiseServiceOptions::create<ed_msgs::Reset>(
                 "reset", srvReset, ros::VoidPtr(), &cb_queue);
     ros::ServiceServer srv_reset = nh_private.advertiseService(opt_reset);
 

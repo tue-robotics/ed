@@ -196,7 +196,7 @@ void GUIPlugin::configure(tue::Configuration config)
     if (srv_get_measurements_.getService() != srv_get_measurements)
     {
         ros::AdvertiseServiceOptions opt_get_measurements =
-                ros::AdvertiseServiceOptions::create<ed::GetMeasurements>(
+                ros::AdvertiseServiceOptions::create<ed_msgs::GetMeasurements>(
                     srv_get_measurements, boost::bind(&GUIPlugin::srvGetMeasurements, this, _1, _2), ros::VoidPtr(), &cb_queue_);
         srv_get_measurements_ = nh.advertiseService(opt_get_measurements);
     }
@@ -204,7 +204,7 @@ void GUIPlugin::configure(tue::Configuration config)
     if (srv_set_label_.getService() != srv_set_label)
     {
         ros::AdvertiseServiceOptions opt_set_label =
-                ros::AdvertiseServiceOptions::create<ed::SetLabel>(
+                ros::AdvertiseServiceOptions::create<ed_msgs::SetLabel>(
                     srv_set_label, boost::bind(&GUIPlugin::srvSetLabel, this, _1, _2), ros::VoidPtr(), &cb_queue_);
         srv_set_label_ = nh.advertiseService(opt_set_label);
     }
@@ -212,7 +212,7 @@ void GUIPlugin::configure(tue::Configuration config)
     if (srv_raise_event_.getService() != srv_raise_event)
     {
         ros::AdvertiseServiceOptions opt_raise_event =
-                ros::AdvertiseServiceOptions::create<ed::RaiseEvent>(
+                ros::AdvertiseServiceOptions::create<ed_msgs::RaiseEvent>(
                     srv_raise_event, boost::bind(&GUIPlugin::srvRaiseEvent, this, _1, _2), ros::VoidPtr(), &cb_queue_);
         srv_raise_event_ = nh.advertiseService(opt_raise_event);
     }
@@ -220,7 +220,7 @@ void GUIPlugin::configure(tue::Configuration config)
     if (srv_get_command_.getService() != srv_get_command)
     {
         ros::AdvertiseServiceOptions opt_get_command =
-                ros::AdvertiseServiceOptions::create<ed::GetGUICommand>(
+                ros::AdvertiseServiceOptions::create<ed_msgs::GetGUICommand>(
                     srv_get_command, boost::bind(&GUIPlugin::srvGetCommand, this, _1, _2), ros::VoidPtr(), &cb_queue_);
         srv_get_command_ = nh.advertiseService(opt_get_command);
     }
@@ -450,7 +450,7 @@ void GUIPlugin::handleRequests()
 // ----------------------------------------------------------------------------------------------------
 
 // Returns measurement of currently selected id
-bool GUIPlugin::srvGetMeasurements(ed::GetMeasurements::Request& req, ed::GetMeasurements::Response& res)
+bool GUIPlugin::srvGetMeasurements(ed_msgs::GetMeasurements::Request& req, ed_msgs::GetMeasurements::Response& res)
 {
     if (selected_id_.empty())
         return true;
@@ -485,7 +485,7 @@ bool GUIPlugin::srvGetMeasurements(ed::GetMeasurements::Request& req, ed::GetMea
 
 // ----------------------------------------------------------------------------------------------------
 
-bool GUIPlugin::srvSetLabel(ed::SetLabel::Request& req, ed::SetLabel::Response& res)
+bool GUIPlugin::srvSetLabel(ed_msgs::SetLabel::Request& req, ed_msgs::SetLabel::Response& res)
 {
     ed::UUID id = req.id;
     if (id.empty())
@@ -548,7 +548,7 @@ bool parseParam(const std::map<std::string, std::string>& params, const std::str
 
 // ----------------------------------------------------------------------------------------------------
 
-bool GUIPlugin::srvRaiseEvent(ed::RaiseEvent::Request& req, ed::RaiseEvent::Response& res)
+bool GUIPlugin::srvRaiseEvent(ed_msgs::RaiseEvent::Request& req, ed_msgs::RaiseEvent::Response& res)
 {
     std::map<std::string, std::string> params;
     for(unsigned int i = 0; i < req.param_names.size(); ++i)
@@ -648,7 +648,7 @@ bool GUIPlugin::srvRaiseEvent(ed::RaiseEvent::Request& req, ed::RaiseEvent::Resp
 
 // ----------------------------------------------------------------------------------------------------
 
-bool GUIPlugin::srvGetCommand(ed::GetGUICommand::Request& req, ed::GetGUICommand::Response& res)
+bool GUIPlugin::srvGetCommand(ed_msgs::GetGUICommand::Request& req, ed_msgs::GetGUICommand::Response& res)
 {
     if (!command_.empty())
     {
