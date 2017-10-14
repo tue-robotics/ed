@@ -19,7 +19,7 @@ The plugins living withing ED can expose interfaces to the outside world. The de
 
 ### ed (https://github.com/tue-robotics/ed)
 - Topic: Transform from entities to map (geometry_msgs/TransformStamped)
-- Service: Reset service to reset the world state to the initial state (ed/Reset)
+- Service: Reset service to reset the world state to the initial state (ed_msgs/Reset)
 - Service: Query service to get data from ED and/or modify ED (ed_msgs/Query)
 
 ### ed_navigation (https://github.com/tue-robotics/ed_navigation)
