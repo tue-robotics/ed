@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <tue_serialization/Binary.h>
-#include <ed/RaiseEvent.h>
+#include <ed_msgs/RaiseEvent.h>
 
 ros::ServiceClient client;
 
@@ -18,7 +18,7 @@ void mouseCallback(int event, int x, int y, int flags, void* ptr)
 {
     if (event == CV_EVENT_LBUTTONDOWN)
     {
-        ed::RaiseEvent srv_ev;
+        ed_msgs::RaiseEvent srv_ev;
         srv_ev.request.name = "click";
         srv_ev.request.param_names.push_back("x");
         srv_ev.request.param_names.push_back("y");
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
     ros::Subscriber sub_image = nh.subscribe("/ed/gui/map_image", 1, imageCallback);
-    client = nh.serviceClient<ed::RaiseEvent>("/ed/gui/raise_event");
+    client = nh.serviceClient<ed_msgs::RaiseEvent>("/ed/gui/raise_event");
 
     click_type = "navigate";
     if (argc >= 2)

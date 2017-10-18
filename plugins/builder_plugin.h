@@ -14,7 +14,7 @@
 #include <tue/config/configuration.h>
 
 // Services
-#include <ed/SetEntity.h>
+#include <ed_msgs/SetEntity.h>
 
 class BuilderPlugin : public ed::Plugin
 {
@@ -44,7 +44,7 @@ private:
     ros::ServiceServer srv_set_entity_;
 
 
-    bool srvSetEntity(ed::SetEntity::Request& req, ed::SetEntity::Response& res);
+    bool srvSetEntity(ed_msgs::SetEntity::Request& req, ed_msgs::SetEntity::Response& res);
 
 };
 

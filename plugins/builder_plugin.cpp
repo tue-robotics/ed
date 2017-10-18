@@ -35,7 +35,7 @@ void BuilderPlugin::initialize()
 {
     ros::NodeHandle nh;
     ros::AdvertiseServiceOptions opt_set_entity =
-            ros::AdvertiseServiceOptions::create<ed::SetEntity>(
+            ros::AdvertiseServiceOptions::create<ed_msgs::SetEntity>(
                 "/ed/set_entity", boost::bind(&BuilderPlugin::srvSetEntity, this, _1, _2), ros::VoidPtr(), &cb_queue_);
     srv_set_entity_ = nh.advertiseService(opt_set_entity);
 }
@@ -51,9 +51,9 @@ void BuilderPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 
 // ----------------------------------------------------------------------------------------------------
 
-bool BuilderPlugin::srvSetEntity(ed::SetEntity::Request& req, ed::SetEntity::Response& res)
+bool BuilderPlugin::srvSetEntity(ed_msgs::SetEntity::Request& req, ed_msgs::SetEntity::Response& res)
 {
-    if (req.action == ed::SetEntity::Request::ADD)
+    if (req.action == ed_msgs::SetEntity::Request::ADD)
     {
         ed::models::Loader l;
         geo::ShapePtr shape = l.loadShape(req.type);
@@ -74,11 +74,11 @@ bool BuilderPlugin::srvSetEntity(ed::SetEntity::Request& req, ed::SetEntity::Res
             res.error_msg = "No shape could be loaded for type '" + req.type + "'.";
         }
     }
-    else if (req.action == ed::SetEntity::Request::DELETE)
+    else if (req.action == ed_msgs::SetEntity::Request::DELETE)
     {
         update_req_->removeEntity(req.id);
     }
-    else if (req.action == ed::SetEntity::Request::UPDATE_POSE)
+    else if (req.action == ed_msgs::SetEntity::Request::UPDATE_POSE)
     {
         ed::EntityConstPtr e = world_model_->getEntity(req.id);
         if (e)

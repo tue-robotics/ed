@@ -4,7 +4,7 @@ import tue_config
 import sys
 
 import rospy
-from ed.srv import *
+from ed_msgs.srv import *
 
 if __name__ == "__main__":
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     rospy.wait_for_service('ed/configure')
 
     try:
-        client = rospy.ServiceProxy('ed/configure', ed.srv.Configure)
+        client = rospy.ServiceProxy('ed/configure', ed_msgs.srv.Configure)
         resp = client(yaml_str)
 
         if resp.error_msg:

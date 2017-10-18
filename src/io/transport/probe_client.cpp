@@ -1,7 +1,7 @@
 #include "ed/io/transport/probe_client.h"
 
 // ROS services
-#include "ed/Configure.h"
+#include <ed_msgs/Configure.h>
 #include "tue_serialization/BinaryService.h"
 
 #include <ros/node_handle.h>
@@ -35,10 +35,10 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     }
 
     nh_ = new ros::NodeHandle();
-    ros::ServiceClient client = nh_->serviceClient<ed::Configure>("ed/configure");
+    ros::ServiceClient client = nh_->serviceClient<ed_msgs::Configure>("ed/configure");
     client.waitForExistence();
 
-    ed::Configure srv;
+    ed_msgs::Configure srv;
 
     double freq = 1000; // default
     tue::Configuration config;

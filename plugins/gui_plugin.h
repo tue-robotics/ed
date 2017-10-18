@@ -14,10 +14,10 @@
 #include <tue/config/configuration.h>
 
 // Services
-#include <ed/GetMeasurements.h>
-#include <ed/SetLabel.h>
-#include <ed/RaiseEvent.h>
-#include <ed/GetGUICommand.h>
+#include <ed_msgs/GetMeasurements.h>
+#include <ed_msgs/SetLabel.h>
+#include <ed_msgs/RaiseEvent.h>
+#include <ed_msgs/GetGUICommand.h>
 
 // Map drawing
 #include <geolib/sensors/DepthCamera.h>
@@ -66,13 +66,13 @@ public:
 
     ros::Publisher pub_image_map_;
 
-    bool srvGetMeasurements(ed::GetMeasurements::Request& req, ed::GetMeasurements::Response& res);
+    bool srvGetMeasurements(ed_msgs::GetMeasurements::Request& req, ed_msgs::GetMeasurements::Response& res);
 
-    bool srvSetLabel(ed::SetLabel::Request& req, ed::SetLabel::Response& res);
+    bool srvSetLabel(ed_msgs::SetLabel::Request& req, ed_msgs::SetLabel::Response& res);
 
-    bool srvRaiseEvent(ed::RaiseEvent::Request& req, ed::RaiseEvent::Response& res);
+    bool srvRaiseEvent(ed_msgs::RaiseEvent::Request& req, ed_msgs::RaiseEvent::Response& res);
 
-    bool srvGetCommand(ed::GetGUICommand::Request& req, ed::GetGUICommand::Response& res);
+    bool srvGetCommand(ed_msgs::GetGUICommand::Request& req, ed_msgs::GetGUICommand::Response& res);
 
 
     void handleRequests();

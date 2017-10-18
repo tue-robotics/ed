@@ -2,7 +2,7 @@
 
 #include <ros/node_handle.h>
 
-#include "ed/Query.h"
+#include "ed_msgs/Query.h"
 #include "ed/update_request.h"
 #include "ed/world_model.h"
 #include "ed/serialization/serialization.h"
@@ -28,14 +28,14 @@ void SyncPlugin::initialize(ed::InitData& init)
     init.config.value("server", server_name);
 
     ros::NodeHandle nh;
-    sync_client_ = nh.serviceClient<ed::Query>(server_name);
+    sync_client_ = nh.serviceClient<ed_msgs::Query>(server_name);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
 {
-    ed::Query query;
+    ed_msgs::Query query;
     query.request.since_revision = rev_number_;
 
     if (!sync_client_.call(query))

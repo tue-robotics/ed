@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 import rospy
-from ed.srv import UpdateSrv
+from ed_msgs.srv import UpdateSrv
 
 rospy.wait_for_service('ed/update')
 

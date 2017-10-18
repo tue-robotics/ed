@@ -1,9 +1,9 @@
-#include <ed/SetLabel.h>
-#include <ed/SimpleQuery.h>
-#include <ed/SetClick.h>
-#include <ed/GetGUICommand.h>
-#include <ed/GetMeasurements.h>
-#include <ed/RaiseEvent.h>
+#include <ed_msgs/SetLabel.h>
+#include <ed_msgs/SimpleQuery.h>
+#include <ed_msgs/SetClick.h>
+#include <ed_msgs/GetGUICommand.h>
+#include <ed_msgs/GetMeasurements.h>
+#include <ed_msgs/RaiseEvent.h>
 
 #include <ros/ros.h>
 
@@ -17,9 +17,9 @@ int main(int argc, char **argv) {
     int N = 1;
 
     {
-        ros::ServiceClient client = nh.serviceClient<ed::SimpleQuery>("/ed/simple_query");
+        ros::ServiceClient client = nh.serviceClient<ed_msgs::SimpleQuery>("/ed/simple_query");
         client.waitForExistence();
-        ed::SimpleQuery srv;
+        ed_msgs::SimpleQuery srv;
 
         tue::Timer t;
         t.start();
@@ -37,9 +37,9 @@ int main(int argc, char **argv) {
     }
 
     {
-        ros::ServiceClient client = nh.serviceClient<ed::SetLabel>("/ed/gui/set_label");
+        ros::ServiceClient client = nh.serviceClient<ed_msgs::SetLabel>("/ed/gui/set_label");
         client.waitForExistence();
-        ed::SetLabel srv;
+        ed_msgs::SetLabel srv;
 
         tue::Timer t;
         t.start();
@@ -57,9 +57,9 @@ int main(int argc, char **argv) {
     }
 
     {
-        ros::ServiceClient client = nh.serviceClient<ed::GetMeasurements>("/ed/gui/get_measurements");
+        ros::ServiceClient client = nh.serviceClient<ed_msgs::GetMeasurements>("/ed/gui/get_measurements");
         client.waitForExistence();
-        ed::GetMeasurements srv;
+        ed_msgs::GetMeasurements srv;
 
         tue::Timer t;
         t.start();
@@ -77,9 +77,9 @@ int main(int argc, char **argv) {
     }
 
     {
-        ros::ServiceClient client = nh.serviceClient<ed::GetGUICommand>("/ed/gui/get_gui_command");
+        ros::ServiceClient client = nh.serviceClient<ed_msgs::GetGUICommand>("/ed/gui/get_gui_command");
         client.waitForExistence();
-        ed::GetGUICommand srv;
+        ed_msgs::GetGUICommand srv;
 
         tue::Timer t;
         t.start();
@@ -97,9 +97,9 @@ int main(int argc, char **argv) {
     }
 
     {
-        ros::ServiceClient client = nh.serviceClient<ed::RaiseEvent>("/ed/gui/raise_event");
+        ros::ServiceClient client = nh.serviceClient<ed_msgs::RaiseEvent>("/ed/gui/raise_event");
         client.waitForExistence();
-        ed::RaiseEvent srv;
+        ed_msgs::RaiseEvent srv;
 
         tue::Timer t;
         t.start();
