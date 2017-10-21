@@ -84,7 +84,6 @@ add_library(ed_core
   ${HEADER_FILES}
 )
 target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-add_dependencies(ed_core ${PROJECT_NAME}_gencpp)
 
 add_library(ed_io
   src/serialization/serialization.cpp
@@ -97,14 +96,12 @@ add_library(ed_io
   src/io/json_reader.cpp
 )
 target_link_libraries(ed_io ed_core)
-add_dependencies(ed_io ${PROJECT_NAME}_gencpp)
 
 add_library(ed_visualization
   include/ed/helpers/image_publisher.h
   src/helpers/image_publisher.cpp
 )
 target_link_libraries(ed_visualization ${catkin_LIBRARIES})
-add_dependencies(ed_visualization ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                               SERVER
@@ -117,7 +114,6 @@ add_executable(ed
   src/plugin_container.cpp
 )
 target_link_libraries(ed ed_core ed_io ed_visualization)
-add_dependencies(ed ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
@@ -131,7 +127,6 @@ target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES})
 
 add_library(ed_sync_plugin plugins/sync_plugin.cpp)
 target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
-add_dependencies(ed_sync_plugin ${PROJECT_NAME}_gencpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
@@ -161,15 +156,12 @@ target_link_libraries(ed_test_wm ed_core ${OpenCV_LIBRARIES})
 
 add_executable(test_mask test/test_mask.cpp)
 target_link_libraries(test_mask ed_core ${OpenCV_LIBRARIES})
-add_dependencies(test_mask ${PROJECT_NAME}_gencpp)
 
 add_executable(test_service_speed test/test_service_speed.cpp)
 target_link_libraries(test_service_speed ed_core)
-add_dependencies(test_service_speed ${PROJECT_NAME}_gencpp)
 
 add_executable(show_gui test/show_gui.cpp)
 target_link_libraries(show_gui ed_core ${OpenCV_LIBRARIES})
-add_dependencies(show_gui ${PROJECT_NAME}_gencpp)
 
 add_executable(ed_test_heightmap_triangulation
   test/test_heightmap_triangulation.cpp
