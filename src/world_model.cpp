@@ -149,11 +149,6 @@ void WorldModel::update(const UpdateRequest& req)
         params.add(e->data());
         params.add(it->second);
 
-        tue::config::Reader r(params);
-        std::string type;
-        if (r.value("type", type, tue::config::OPTIONAL))
-            e->setType(type);
-
         e->setData(params);
     }
 
