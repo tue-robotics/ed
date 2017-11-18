@@ -38,6 +38,7 @@ public:
 
     const std::set<TYPE>& types() const { return types_; }
     void addType(const TYPE& type) { types_.insert(type); }
+    void removeType(const TYPE& type) { types_.erase(type); }
     bool hasType(const TYPE& type) const { return types_.find(type) != types_.end(); }
 
     void measurements(std::vector<MeasurementConstPtr>& measurements, double min_timestamp = 0) const;
