@@ -74,8 +74,12 @@ public:
     public:
 
         const_iterator(const cv::Point2i* ptr, int factor)
-            : ptr_(ptr), p_(ptr_->x * factor, ptr_->y * factor), dx_(0), dy_(0), factor_(factor)
+            : ptr_(ptr), dx_(0), dy_(0), factor_(factor)
         {
+            if (factor <= 0)
+                p_ = cv::Point2i(0, 0);
+            else
+                p_ = cv::Point2i(ptr_->x * factor, ptr_->y * factor);
         }
 
         // post increment operator
@@ -123,10 +127,10 @@ public:
 
     const_iterator begin(int width = 0) const
     {
-        if (width <= 0)
-            return const_iterator(&points_.front(), 1);
-        else if (points_.empty())
+        if (points_.empty())
             return end();
+        else if (width <= 0)
+            return const_iterator(&points_.front(), 1);
         else
             return const_iterator(&points_.front(), width / width_);
     }
