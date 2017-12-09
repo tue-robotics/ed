@@ -85,12 +85,20 @@ void WorldModel::update(const UpdateRequest& req)
         e->setType(it->second);
     }
 
-    for(std::map<UUID, std::set<std::string> >::const_iterator it = req.type_sets_.begin(); it != req.type_sets_.end(); ++it)
+    for(std::map<UUID, std::set<std::string> >::const_iterator it = req.type_sets_added.begin(); it != req.type_sets_added.end(); ++it)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         const std::set<std::string>& type_set = it->second;
         for(std::set<std::string>::const_iterator it2 = type_set.begin(); it2 != type_set.end(); ++it2)
             e->addType(*it2);
+    }
+
+    for(std::map<UUID, std::set<std::string> >::const_iterator it = req.type_sets_removed.begin(); it != req.type_sets_removed.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        const std::set<std::string>& type_set = it->second;
+        for(std::set<std::string>::const_iterator it2 = type_set.begin(); it2 != type_set.end(); ++it2)
+            e->removeType(*it2);
     }
 
     // Update existence probabilities

@@ -77,8 +77,11 @@ public:
     std::map<UUID, std::string> types;
     void setType(const UUID& id, const std::string& type) { types[id] = type; flagUpdated(id); }
 
-    std::map<UUID, std::set<std::string> > type_sets_;
-    void addType(const UUID& id, const std::string& type) { type_sets_[id].insert(type); flagUpdated(id); }
+    std::map<UUID, std::set<std::string> > type_sets_added;
+    void addType(const UUID& id, const std::string& type) { type_sets_added[id].insert(type); flagUpdated(id); }
+
+    std::map<UUID, std::set<std::string> > type_sets_removed;
+    void removeType(const UUID& id, const std::string& type) { type_sets_removed[id].insert(type); flagUpdated(id); }
 
 
     // PROBABILITY OF EXISTENCE
