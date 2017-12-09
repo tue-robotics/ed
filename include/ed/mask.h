@@ -114,12 +114,15 @@ public:
     public:
         /**
          * Iterator constructor.
-         * @param ptr Base points of the sub-images.
+         * @param points Base points of the sub-images.
+         * @param index Index of the first sub-image to scan.
          * @param factor Size of a rectangular sub-image.
          */
-        const_iterator(const cv::Point2i* ptr, int factor)
-            : ptr_(ptr), p_(ptr_->x * factor, ptr_->y * factor), dx_(0), dy_(0), factor_(factor)
+        const_iterator(const std::vector<cv::Point2i> &points, size_t index, int factor)
+            : points_(points), index_(index), dx_(0), dy_(0), factor_(factor)
         {
+            const cv::Point2i &pt = points_[index_];
+            p_ = cv::Point2i(pt.x * factor_, pt.y * factor_);
         }
 
         // post increment operator
@@ -152,11 +155,12 @@ public:
             {
                 dx_ = 0;
                 dy_ = 0;
-                ++ptr_;
+                ++index_;
             }
 
             // Compute point of the new position.
-            p_ = cv::Point2i(ptr_->x * factor_ + dx_, ptr_->y * factor_ + dy_);
+            const cv::Point2i &pt = points_[index_];
+            p_ = cv::Point2i(pt.x * factor_ + dx_, pt.y * factor_ + dy_);
 
             return *this;
         }
@@ -164,33 +168,35 @@ public:
         inline const cv::Point2i& operator*() { return p_; }
         inline const cv::Point2i* operator->() { return &p_; }
 
-        inline bool operator==(const const_iterator& rhs) { return ptr_ == rhs.ptr_; }
-        inline bool operator!=(const const_iterator& rhs) { return ptr_ != rhs.ptr_; }
+        // Note: iterator equality only checks base-point index, and not dx/dy
+        // sub-image position.
+        inline bool operator==(const const_iterator& rhs) { return index_ == rhs.index_; }
+        inline bool operator!=(const const_iterator& rhs) { return index_ != rhs.index_; }
     private:
 
-        const cv::Point2i* ptr_;
+        const std::vector<cv::Point2i> &points_; ///< Base points of the sub-images.
+        size_t index_;  ///< Current sub-image being scanned.
         cv::Point2i p_; ///< Base position of the current sub-image.
-        int dx_, dy_; ///< Variables tracking the x/y position in the current sub-image.
-        int factor_; ///< Sub-image X/Y size (sub-image is rectangular).
+        int dx_, dy_;   ///< Variables tracking the x/y position in the current sub-image.
+        int factor_;    ///< Sub-image X/Y size (sub-image is rectangular).
     };
 
     const_iterator begin(int width = 0) const
     {
         if (width <= 0)
-            return const_iterator(&points_.front(), 1);
+            return const_iterator(points_, 0, 1);
         else if (points_.empty())
             return end();
         else
-            return const_iterator(&points_.front(), width / width_);
+            return const_iterator(points_, 0, width / width_);
     }
 
     const_iterator end() const
     {
-        return const_iterator(&points_.back() + 1, 0);
+        return const_iterator(points_, points_.size(), 0);
     }
 
 private:
-
     int width_;  ///< Width of the mask.
     int height_; ///< Height of the mask.
     std::vector<cv::Point2i> points_; ///< Base points of the sub-images.
