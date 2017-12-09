@@ -300,7 +300,8 @@ void getDepthImageFromMask(const rgbd::View& view, const ImageMask& mask, cv::Ma
     masked_depth_image = cv::Mat(view.getHeight(), view.getWidth(), CV_32FC1, 0.0);
     for(ImageMask::const_iterator it = mask.begin(view.getWidth()); it != mask.end(); ++it)
     {
-        masked_depth_image.at<float>(*it) = view.getDepth(it->x,it->y);
+        cv::Point2i pt = it();
+        masked_depth_image.at<float>(pt) = view.getDepth(pt.x,pt.y);
     }
 }
 

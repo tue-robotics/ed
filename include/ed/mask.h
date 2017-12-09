@@ -121,8 +121,6 @@ public:
         const_iterator(const std::vector<cv::Point2i> &points, size_t index, int factor)
             : points_(points), index_(index), dx_(0), dy_(0), factor_(factor)
         {
-            const cv::Point2i &pt = points_[index_];
-            p_ = cv::Point2i(pt.x * factor_, pt.y * factor_);
         }
 
         // post increment operator
@@ -157,16 +155,15 @@ public:
                 dy_ = 0;
                 ++index_;
             }
-
-            // Compute point of the new position.
-            const cv::Point2i &pt = points_[index_];
-            p_ = cv::Point2i(pt.x * factor_ + dx_, pt.y * factor_ + dy_);
-
             return *this;
         }
 
-        inline const cv::Point2i& operator*() { return p_; }
-        inline const cv::Point2i* operator->() { return &p_; }
+        /** Compute the xy mask position of the iterator. */
+        inline cv::Point2i operator()()
+        {
+            const cv::Point2i &pt = points_[index_];
+            return cv::Point2i(pt.x * factor_ + dx_, pt.y * factor_ + dy_);
+        }
 
         // Note: iterator equality only checks base-point index, and not dx/dy
         // sub-image position.
@@ -176,7 +173,6 @@ public:
 
         const std::vector<cv::Point2i> &points_; ///< Base points of the sub-images.
         size_t index_;  ///< Current sub-image being scanned.
-        cv::Point2i p_; ///< Base position of the current sub-image.
         int dx_, dy_;   ///< Variables tracking the x/y position in the current sub-image.
         int factor_;    ///< Sub-image X/Y size (sub-image is rectangular).
     };

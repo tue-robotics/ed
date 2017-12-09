@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
             for(ed::ImageMask::const_iterator it = m.begin(); it != m.end(); ++it)
             {
 //                std::cout << *it << std::endl;
-                i += rgb_image.at<cv::Vec3b>(*it)[0];
+                i += rgb_image.at<cv::Vec3b>(it())[0];
             }
         }
 

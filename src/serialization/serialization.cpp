@@ -457,7 +457,10 @@ void serialize(const ImageMask& mask, tue::serialization::OutputArchive& m)
     m << size;
 
     for(ImageMask::const_iterator it = mask.begin(); it != mask.end(); ++it)
-        m << it->y * mask.width() + it->x;
+    {
+        cv::Point2i pt = it();
+        m << pt.y * mask.width() + pt.x;
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------

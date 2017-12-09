@@ -468,7 +468,10 @@ bool GUIPlugin::srvGetMeasurements(ed_msgs::GetMeasurements::Request& req, ed_ms
         cv::Mat rgb_image_masked(rgb_image.rows, rgb_image.cols, CV_8UC3, cv::Scalar(0, 0, 0));
 
         for(ed::ImageMask::const_iterator it = image_mask.begin(rgb_image.cols); it != image_mask.end(); ++it)
-            rgb_image_masked.at<cv::Vec3b>(*it) = rgb_image.at<cv::Vec3b>(*it);
+        {
+            cv::Point2i pt = it();
+            rgb_image_masked.at<cv::Vec3b>(pt) = rgb_image.at<cv::Vec3b>(pt);
+        }
 
         res.images.push_back(tue_serialization::Binary());
         if (imageToBinary(rgb_image_masked, res.images.back().data, IMAGE_COMPRESSION_JPG))
