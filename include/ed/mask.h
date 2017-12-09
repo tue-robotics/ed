@@ -185,10 +185,8 @@ public:
     {
         if (width <= 0)
             return const_iterator(points_, 0, 1);
-        else if (points_.empty())
-            return end();
-        else
-            return const_iterator(points_, 0, width / width_);
+
+        return const_iterator(points_, 0, width / width_);
     }
 
     const_iterator end() const
