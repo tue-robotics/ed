@@ -427,7 +427,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                 geo::serialization::registerDeserializer<geo::Shape>();
                 shape = geo::serialization::fromFile(shape_path.string());
             }
-            else if (xt == ".3ds")
+            else if (xt == ".3ds" || ".stl" || ".dae")
             {
                 shape = geo::Importer::readMeshFile(shape_path.string());
             }
