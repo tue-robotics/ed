@@ -197,10 +197,13 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMa
     const KDL::Segment& segment = it_segment->second.segment;
 
     // Child ID is the segment (link) name
-    ed::UUID child_id = robot_name_ + "/" + segment.getName();
+    ed::UUID child_id = segment.getName();
+    if (child_id.str().find(robot_name_) == std::string::npos)
+        child_id = robot_name_ + "/" + segment.getName();
 
-    // Set the entity type (robot_link)
+    // Set the entity type (robot_link) and flag (self)
     req.setType(child_id, "robot_link");
+    req.setFlag(child_id, "self");
 
     // Create a joint relation and add id
     boost::shared_ptr<JointRelation> r(new JointRelation(segment));
@@ -336,7 +339,9 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
             geo::ShapePtr shape = linkToShape(link);
             if (shape)
             {
-                std::string id = robot_name_ + "/" + link->name;
+                std::string id = link->name;
+                if (link->name.find(robot_name_) == std::string::npos)
+                    id = robot_name_ + "/" + link->name;
                 req.setShape(id, shape);
             }
         }
