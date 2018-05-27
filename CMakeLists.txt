@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   tue_filesystem
   tue_serialization
   tue_config
+  orocos_kdl
+  kdl_parser
 )
 
 find_package(PCL REQUIRED)
