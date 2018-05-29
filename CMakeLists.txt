@@ -17,7 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
   tue_config
   tue_filesystem
   tue_serialization
-  tue_config
 )
 
 find_package(PCL REQUIRED)
