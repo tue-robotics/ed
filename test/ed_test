@@ -1,6 +1,6 @@
 #! /bin/bash
 
-OUTPUT_DIR=`rospack find ed`/test/output
+OUTPUT_DIR=$HOME/ed_test/output
 mkdir -p $OUTPUT_DIR
 
 # args: PROGRAM OUTPUT-DIR
