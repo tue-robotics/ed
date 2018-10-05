@@ -12,7 +12,25 @@
 #include <tue/config/writer.h>
 #include <tue/config/configuration.h>
 
+#include <string>
+#include <vector>
 #include <sstream>
+#include <iostream>
+
+/*
+std::string split implementation by using delimiter as a character.
+*/
+std::vector<std::string> split(std::string strToSplit, char delimeter)
+{
+    std::stringstream ss(strToSplit);
+    std::string item;
+    std::vector<std::string> splittedStrings;
+    while (std::getline(ss, item, delimeter))
+    {
+       splittedStrings.push_back(item);
+    }
+    return splittedStrings;
+}
 
 namespace ed
 {
@@ -213,15 +231,17 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     req.setType(id, type);
 
     geo::Pose3D pose = geo::Pose3D::identity();
+    std::string pose_string = "";
+    double roll = 0, pitch = 0, yaw = 0;
 
     // Get pose
     if (r.readGroup("pose"))
     {
+
         r.value("x", pose.t.x);
         r.value("y", pose.t.y);
         r.value("z", pose.t.z);
 
-        double roll = 0, pitch = 0, yaw = 0;
         r.value("X", roll,  tue::config::OPTIONAL);
         r.value("Y", pitch, tue::config::OPTIONAL);
         r.value("Z", yaw,   tue::config::OPTIONAL);
@@ -229,18 +249,31 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.value("pitch", pitch, tue::config::OPTIONAL);
         r.value("yaw",   yaw,   tue::config::OPTIONAL);
 
-        // Set rotation
-        pose.R.setRPY(roll, pitch, yaw);
-
         r.endGroup();
     }
+    else if (r.value("pose", pose_string))
+    {
+        // pose is in SDF
+        std::vector<std::string> pose_vector = split(pose_string, ' ');
+        if (pose_vector.size() != 6)
+        {
+            error << "ed::models::create() : Model '" << id << "' has a pose in sdf, but instead of 6, it has '" << pose_vector.size() << "' coordinates." << std::endl;
+            return false;
+        }
 
+    }
+
+    // Set rotation
+    pose.R.setRPY(roll, pitch, yaw);
+
+
+    // Apply pose offset
     pose = pose_offset * pose;
 
     req.setPose(id, pose);
 
     // Check the composition
-    if (r.readArray("composition"))
+    if (r.readArray("composition") || r.readArray("include"))
     {
         while (r.nextArrayItem())
         {
