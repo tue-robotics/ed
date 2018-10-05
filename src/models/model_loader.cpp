@@ -261,6 +261,12 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             return false;
         }
 
+        pose.t.x = std::stod(pose_vector[0]);
+        pose.t.y = std::stod(pose_vector[1]);
+        pose.t.z = std::stod(pose_vector[2]);
+        roll = std::stod(pose_vector[3]);
+        pitch = std::stod(pose_vector[4]);
+        yaw = std::stod(pose_vector[5]);
     }
 
     // Set rotation
