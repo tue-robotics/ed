@@ -190,7 +190,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Get Id
     UUID id;
     std::string id_str;
-    if (r.value("id", id_str, tue::config::OPTIONAL))
+    if (r.value("id", id_str, tue::config::OPTIONAL) || r.value("name", id_str, tue::config::OPTIONAL))
     {
         if (parent_id.str().empty() || parent_id.str()[0] == '_')
             id = id_str;
@@ -208,8 +208,19 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
     // Get type. If it exists, first construct an entity based on the given type.
     std::string type;
-    if (r.value("type", type, tue::config::OPTIONAL))
+    if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL)) //uri in sdf
     {
+        // remove prefix in case of sdf
+        std::string str1 = "file://";
+        std::string str2 = "model://";
+
+        std::string::size_type i = type.find(str1);
+        if (i != std::string::npos)
+           type.erase(i, str1.length());
+        i = type.find(str2);
+        if (i != std::string::npos)
+           type.erase(i, str2.length());
+
         std::vector<std::string> types;
         tue::config::DataConstPointer super_data = loadModelData(type, types, error);
 
