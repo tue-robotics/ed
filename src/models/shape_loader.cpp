@@ -520,11 +520,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             error << "[ED::MODELS::LOADSHAPE] Error while loading shape: box must contain 'min' and 'max' or 'size'.";
         }
 
-        if (cfg.readGroup("pose"))
-        {
-            readPose(cfg, pose);
-            cfg.endGroup();
-        }
+        readPose(cfg, pose);
     }
     else if (cfg.readGroup("cylinder"))
     {
@@ -593,11 +589,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
             shape = getHeightMapShape(image_filename_full, geo::Vec3(0, 0, 0), height, resolution, error);
 
-            if (cfg.readGroup("pose"))
-            {
-                readPose(cfg, pose);
-                cfg.endGroup();
-            }
+            readPose(cfg, pose);
         }
         else
         {
@@ -609,11 +601,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         error << "[ED::MODELS::LOADSHAPE] Error while loading shape: must contain one of the following 'path', 'heightmap', 'box', 'compound'." << std::endl;
     }
 
-    if (cfg.readGroup("pose"))
-    {
-        readPose(cfg, pose);
-        cfg.endGroup();
-    }
+    readPose(cfg, pose);
 
     if (shape)
     {
