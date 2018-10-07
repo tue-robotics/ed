@@ -12,25 +12,7 @@
 #include <tue/config/writer.h>
 #include <tue/config/configuration.h>
 
-#include <string>
-#include <vector>
 #include <sstream>
-#include <iostream>
-
-/*
-std::string split implementation by using delimiter as a character.
-*/
-std::vector<std::string> split(std::string strToSplit, char delimeter)
-{
-    std::stringstream ss(strToSplit);
-    std::string item;
-    std::vector<std::string> splittedStrings;
-    while (std::getline(ss, item, delimeter))
-    {
-       splittedStrings.push_back(item);
-    }
-    return splittedStrings;
-}
 
 namespace ed
 {
@@ -187,6 +169,16 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 {
     tue::config::Reader r(data);
 
+    bool sdf = r.readGroup("sdf");
+    if (sdf)
+    {
+        if ( !r.readGroup("world") && !r.readGroup("model"))
+        {
+            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
+            return false;
+        }
+    }
+
     // Get Id
     UUID id;
     std::string id_str;
@@ -210,16 +202,19 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     std::string type;
     if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL)) //uri in sdf
     {
-        // remove prefix in case of sdf
-        std::string str1 = "file://";
-        std::string str2 = "model://";
+        if (sdf)
+        {
+            // remove prefix in case of sdf
+            std::string str1 = "file://";
+            std::string str2 = "model://";
 
-        std::string::size_type i = type.find(str1);
-        if (i != std::string::npos)
-           type.erase(i, str1.length());
-        i = type.find(str2);
-        if (i != std::string::npos)
-           type.erase(i, str2.length());
+            std::string::size_type i = type.find(str1);
+            if (i != std::string::npos)
+               type.erase(i, str1.length());
+            i = type.find(str2);
+            if (i != std::string::npos)
+               type.erase(i, str2.length());
+        }
 
         std::vector<std::string> types;
         tue::config::DataConstPointer super_data = loadModelData(type, types, error);
@@ -242,8 +237,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     req.setType(id, type);
 
     geo::Pose3D pose = geo::Pose3D::identity();
-    std::string pose_string = "";
     double roll = 0, pitch = 0, yaw = 0;
+    std::string pose_string = ""; //sdf pose will be a string
 
     // Get pose
     if (r.readGroup("pose"))
@@ -262,7 +257,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         r.endGroup();
     }
-    else if (r.value("pose", pose_string))
+    else if (sdf && r.value("pose", pose_string))
     {
         // pose is in SDF
         std::vector<std::string> pose_vector = split(pose_string, ' ');
@@ -325,6 +320,12 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                 req.setFlag(id, flag);
         }
         r.endArray();
+    }
+
+    if (sdf)
+    {
+        r.endGroup(); //end world or model
+        r.endGroup(); //end sdf
     }
 
     // Add additional data

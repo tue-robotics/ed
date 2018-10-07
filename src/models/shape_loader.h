@@ -4,11 +4,16 @@
 #include <geolib/datatypes.h>
 #include <tue/config/reader.h>
 
+#include <string>
+#include <vector>
+
 namespace ed
 {
 
 namespace models
 {
+
+std::vector<std::string> split(std::string strToSplit, char delimeter);
 
 geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error);

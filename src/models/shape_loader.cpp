@@ -15,10 +15,29 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+// string split
+#include <sstream>
+#include <iostream>
+
 namespace ed
 {
 namespace models
 {
+
+/*
+std::string split implementation by using delimiter as a character.
+*/
+std::vector<std::string> split(std::string strToSplit, char delimeter)
+{
+    std::stringstream ss(strToSplit);
+    std::string item;
+    std::vector<std::string> splittedStrings;
+    while (std::getline(ss, item, delimeter))
+    {
+       splittedStrings.push_back(item);
+    }
+    return splittedStrings;
+}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -100,7 +119,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
     cv::Mat vertex_index_map(image.rows, image.cols, CV_32SC1, -1);
     cv::Mat contour_map(image.rows, image.cols, CV_8UC1, cv::Scalar(0));
 
-    boost::shared_ptr<geo::CompositeShape> shape(new geo::CompositeShape);
+    geo::CompositeShapePtr shape(new geo::CompositeShape);
 
     for(int y = 0; y < image.rows; ++y)
     {
@@ -113,7 +132,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
                 std::vector<geo::Vec2i> points, line_starts;
                 findContours(image, geo::Vec2i(x, y), 0, points, line_starts, contour_map);
 
-                unsigned int num_points = points.size();
+                unsigned int num_points = (unsigned int) points.size();
 
                 if (num_points > 2)
                 {
@@ -258,7 +277,7 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
 void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, bool create_bottom)
 {
     TPPLPoly poly;
-    poly.Init(points.size());
+    poly.Init((unsigned int) points.size());
 
     double min_z = -height / 2;
     double max_z =  height / 2;
@@ -267,8 +286,8 @@ void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, doub
 
     for(unsigned int i = 0; i < points.size(); ++i)
     {
-        poly[i].x = points[i].x;
-        poly[i].y = points[i].y;
+        poly[i].x = (unsigned int) points[i].x;
+        poly[i].y = (unsigned int) points[i].y;
 
         mesh.addPoint(geo::Vector3(points[i].x, points[i].y, min_z));
         mesh.addPoint(geo::Vector3(points[i].x, points[i].y, max_z));
@@ -370,17 +389,39 @@ void readVec3(tue::config::Reader& cfg, geo::Vec3& v)
 
 void readPose(tue::config::Reader& cfg, geo::Pose3D& pose)
 {
-    cfg.value("x", pose.t.x, tue::config::OPTIONAL);
-    cfg.value("y", pose.t.y, tue::config::OPTIONAL);
-    cfg.value("z", pose.t.z, tue::config::OPTIONAL);
-
     double roll = 0, pitch = 0, yaw = 0;
-    cfg.value("X", roll,  tue::config::OPTIONAL);
-    cfg.value("Y", pitch, tue::config::OPTIONAL);
-    cfg.value("Z", yaw,   tue::config::OPTIONAL);
-    cfg.value("roll",  roll,  tue::config::OPTIONAL);
-    cfg.value("pitch", pitch, tue::config::OPTIONAL);
-    cfg.value("yaw",   yaw,   tue::config::OPTIONAL);
+    std::string pose_string = ""; //sdf pose will be a string
+    if (cfg.readGroup("pose"))
+    {
+
+        cfg.value("x", pose.t.x, tue::config::OPTIONAL);
+        cfg.value("y", pose.t.y, tue::config::OPTIONAL);
+        cfg.value("z", pose.t.z, tue::config::OPTIONAL);
+
+        cfg.value("X", roll,  tue::config::OPTIONAL);
+        cfg.value("Y", pitch, tue::config::OPTIONAL);
+        cfg.value("Z", yaw,   tue::config::OPTIONAL);
+        cfg.value("roll",  roll,  tue::config::OPTIONAL);
+        cfg.value("pitch", pitch, tue::config::OPTIONAL);
+        cfg.value("yaw",   yaw,   tue::config::OPTIONAL);
+
+        cfg.endGroup();
+    }
+    else if (cfg.value("pose", pose_string))
+    {
+        // pose is in SDF
+        std::vector<std::string> pose_vector = split(pose_string, ' ');
+        if (pose_vector.size() == 6)
+        {
+            // ignoring pose, when incorrect/incomplete
+            pose.t.x = std::stod(pose_vector[0]);
+            pose.t.y = std::stod(pose_vector[1]);
+            pose.t.z = std::stod(pose_vector[2]);
+            roll = std::stod(pose_vector[3]);
+            pitch = std::stod(pose_vector[4]);
+            yaw = std::stod(pose_vector[5]);
+        }
+    }
 
     // Set rotation
     pose.R.setRPY(roll, pitch, yaw);
@@ -525,7 +566,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
     }
     else if (cfg.readArray("compound") || cfg.readArray("group"))
     {
-        boost::shared_ptr<geo::CompositeShape> composite(new geo::CompositeShape);
+        geo::CompositeShapePtr composite(new geo::CompositeShape);
         while(cfg.nextArrayItem())
         {
             std::map<std::string, geo::ShapePtr> dummy_shape_cache;
@@ -536,14 +577,13 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         shape = composite;
     }
-    else if (cfg.readArray("heightmap"))
+    else if (cfg.readArray("heightmap") || cfg.readArray("image"))
     {
         std::string image_filename;
         double height, resolution;
 
-        if (cfg.value("image", image_filename) && !image_filename.empty()
-                && cfg.value("resolution", resolution)
-                && cfg.value("height", height))
+        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height)) ||
+             (cfg.value("uri", image_filename) && !image_filename.empty()))
         {
             std::string image_filename_full = image_filename;
 //            if (image_filename[0] == '/')
