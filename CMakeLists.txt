@@ -7,6 +7,7 @@ add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
+  cmake_modules
   class_loader
   cv_bridge
   ed_object_models
@@ -34,7 +35,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_visualization
   CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models ed_msgs
-  # DEPENDS system_lib
+  DEPENDS orocos_kdl TinyXML #system_lib
 )
 
 ###########
@@ -46,6 +47,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreturn-type -Wsign-compare -Wreorder")
 include_directories(
   include
   3rdparty
+  ${TinyXML_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
