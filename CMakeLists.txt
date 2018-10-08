@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(orocos_kdl REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(TinyXML REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -88,7 +89,7 @@ add_library(ed_core
 
   ${HEADER_FILES}
 )
-target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(ed_io
   src/serialization/serialization.cpp
