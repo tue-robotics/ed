@@ -75,18 +75,35 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
         return data;
     }
 
-    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml");
+    bool sdf = true; //start with the assumption that we will find a sdf model
+    tue::filesystem::Path model_cfg_path(model_path + "/model.sdf");
     if (!model_cfg_path.exists())
     {
-        error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' file does not exist." << std::endl;
-        return data;
+        model_cfg_path = tue::filesystem::Path(model_path + "/model.yaml");
+        sdf = false;
+        if (!model_cfg_path.exists())
+        {
+            error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; Both model.sdf or model.yaml file don't exist." << std::endl;
+            return data;
+        }
     }
 
     tue::Configuration model_cfg;
-    if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
+    if (sdf)
     {
-        error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse yaml file." << std::endl;
-        return data;
+        if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
+        {
+            error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse sdf file." << std::endl;
+            return data;
+        }
+    }
+    else
+    {
+        if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
+        {
+            error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse yaml file." << std::endl;
+            return data;
+        }
     }
 
     std::string super_type;
