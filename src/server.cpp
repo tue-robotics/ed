@@ -122,6 +122,7 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
     }
 
     if (config.value("world_name", world_name_, tue::OPTIONAL))
+        std::cout << "World name: '" << world_name_ << "'" << std::endl;
         initializeWorld();
 
     if (config.readArray("world"))

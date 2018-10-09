@@ -10,7 +10,11 @@
 
 #include <tue/config/reader.h>
 #include <tue/config/writer.h>
+#include <tue/config/reader_writer.h>
+#include <tue/config/data_pointer.h>
 #include <tue/config/configuration.h>
+
+#include <geolib/CompositeShape.h>
 
 #include <sstream>
 
@@ -76,7 +80,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     bool sdf = true; //start with the assumption that we will find a sdf model
-    tue::filesystem::Path model_cfg_path(model_path + "/model.sdf");
+    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml");
     if (!model_cfg_path.exists())
     {
         model_cfg_path = tue::filesystem::Path(model_path + "/model.yaml");
@@ -107,7 +111,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     std::string super_type;
-    if (model_cfg.value("type", super_type, tue::OPTIONAL))
+    if (model_cfg.value("type", super_type, tue::OPTIONAL) || model_cfg.value("uri", super_type, tue::OPTIONAL))
     {
         tue::config::DataConstPointer super_data = loadModelData(super_type, types, error);
         tue::config::DataPointer combined_data;
@@ -185,6 +189,9 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                          const geo::Pose3D& pose_offset)
 {
     tue::config::Reader r(data);
+//    tue::config::DataPointer data2(data);
+//    tue::config::ReaderWriter rw(data2);
+    std::cout << data << std::endl;
 
     bool sdf = r.readGroup("sdf");
     if (sdf)
@@ -217,21 +224,18 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
     // Get type. If it exists, first construct an entity based on the given type.
     std::string type;
-    if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL)) //uri in sdf
+    if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL) || r.value("inherit", type, tue::config::OPTIONAL)) //uri in sdf; inheret for inheritance in ed
     {
-        if (sdf)
-        {
-            // remove prefix in case of sdf
-            std::string str1 = "file://";
-            std::string str2 = "model://";
+        // remove prefix in case of sdf
+        std::string str1 = "file://";
+        std::string str2 = "model://";
 
-            std::string::size_type i = type.find(str1);
-            if (i != std::string::npos)
-               type.erase(i, str1.length());
-            i = type.find(str2);
-            if (i != std::string::npos)
-               type.erase(i, str2.length());
-        }
+        std::string::size_type i = type.find(str1);
+        if (i != std::string::npos)
+           type.erase(i, str1.length());
+        i = type.find(str2);
+        if (i != std::string::npos)
+           type.erase(i, str2.length());
 
         std::vector<std::string> types;
         tue::config::DataConstPointer super_data = loadModelData(type, types, error);
@@ -314,7 +318,66 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     }
 
     // Set shape
-    if (r.readGroup("shape"))
+    if (sdf)
+    {
+        std::string shape_model_path = model_path;
+        r.value("__model_path__", shape_model_path);
+
+        geo::CompositeShapePtr composite(new geo::CompositeShape);
+        std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+        if (r.readArray("link"))
+        {
+            while (r.nextArrayItem())
+            {
+                if (r.readArray("collision"))
+                {
+                    while(r.nextArrayItem())
+                    {
+                        dummy_shape_cache.clear();
+                        geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
+                        composite->addShape(*sub_shape, geo::Pose3D::identity());
+                    }
+                    r.endArray();
+                }
+                else if(r.readGroup("collision"))
+                {
+                    dummy_shape_cache.clear();
+                    geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
+                    composite->addShape(*sub_shape, geo::Pose3D::identity());
+                    r.endGroup();
+                }
+            }
+            r.endArray();
+        }
+        else if (r.readGroup("link"))
+        {
+            if (r.readArray("collision"))
+            {
+                while(r.nextArrayItem())
+                {
+                    dummy_shape_cache.clear();
+                    geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
+                    composite->addShape(*sub_shape, geo::Pose3D::identity());
+                }
+                r.endArray();
+            }
+            else if(r.readGroup("collision"))
+            {
+                dummy_shape_cache.clear();
+                geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
+                composite->addShape(*sub_shape, geo::Pose3D::identity());
+                r.endGroup();
+            }
+            r.endGroup();
+        }
+        if (composite)
+            req.setShape(id, composite);
+        else
+            return false;
+
+
+    }
+    else if (!sdf && r.readGroup("shape"))
     {
         std::string shape_model_path = model_path;
         r.value("__model_path__", shape_model_path);
