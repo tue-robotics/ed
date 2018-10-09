@@ -10,8 +10,6 @@
 
 #include <tue/config/reader.h>
 #include <tue/config/writer.h>
-#include <tue/config/reader_writer.h>
-#include <tue/config/data_pointer.h>
 #include <tue/config/configuration.h>
 
 #include <geolib/CompositeShape.h>
@@ -111,7 +109,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     std::string super_type;
-    if (model_cfg.value("type", super_type, tue::OPTIONAL) || model_cfg.value("uri", super_type, tue::OPTIONAL))
+    if (model_cfg.value("type", super_type, tue::OPTIONAL) || model_cfg.value("uri", super_type, tue::OPTIONAL) || model_cfg.value("inherit", super_type, tue::OPTIONAL))
     {
         tue::config::DataConstPointer super_data = loadModelData(super_type, types, error);
         tue::config::DataPointer combined_data;
@@ -129,7 +127,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
     // If model loads a shape, set model path in shape data
     tue::config::ReaderWriter rw(data);
-    if (rw.readGroup("shape"))
+    if (rw.readGroup("shape") || sdf) // always add the model path with an sdf. Because it is to deep to search in links for visuals/collisions
     {
         rw.setValue("__model_path__", model_path);
         rw.endGroup();
@@ -189,9 +187,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                          const geo::Pose3D& pose_offset)
 {
     tue::config::Reader r(data);
-//    tue::config::DataPointer data2(data);
-//    tue::config::ReaderWriter rw(data2);
-    std::cout << data << std::endl;
 
     bool sdf = r.readGroup("sdf");
     if (sdf)
@@ -224,7 +219,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
     // Get type. If it exists, first construct an entity based on the given type.
     std::string type;
-    if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL) || r.value("inherit", type, tue::config::OPTIONAL)) //uri in sdf; inheret for inheritance in ed
+    if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL) || r.value("inherit", type, tue::config::OPTIONAL)) //uri in sdf; inheret for inheritance in sdf
     {
         // remove prefix in case of sdf
         std::string str1 = "file://";
@@ -278,7 +273,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         r.endGroup();
     }
-    else if (sdf && r.value("pose", pose_string))
+    else if (r.value("pose", pose_string))
     {
         // pose is in SDF
         std::vector<std::string> pose_vector = split(pose_string, ' ');
