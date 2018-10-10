@@ -78,7 +78,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     bool sdf = true; //start with the assumption that we will find a sdf model
-    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml");
+    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml"); //TODO reading sdf as yaml at the moment.
     if (!model_cfg_path.exists())
     {
         model_cfg_path = tue::filesystem::Path(model_path + "/model.yaml");
@@ -365,11 +365,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             }
             r.endGroup();
         }
-        if (composite)
+        if (composite->getMesh().size()>0)
             req.setShape(id, composite);
-        else
-            return false;
-
 
     }
     else if (!sdf && r.readGroup("shape"))
