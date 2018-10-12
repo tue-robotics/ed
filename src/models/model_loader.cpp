@@ -252,48 +252,12 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Set type
     req.setType(id, type);
 
-    geo::Pose3D pose = geo::Pose3D::identity();
-    double roll = 0, pitch = 0, yaw = 0;
-    std::string pose_string = ""; //sdf pose will be a string
-
     // Get pose
-    if (r.readGroup("pose"))
+    geo::Pose3D pose = geo::Pose3D::identity();
+    if (!ed::models::readPose(r, pose))
     {
-
-        r.value("x", pose.t.x);
-        r.value("y", pose.t.y);
-        r.value("z", pose.t.z);
-
-        r.value("X", roll,  tue::config::OPTIONAL);
-        r.value("Y", pitch, tue::config::OPTIONAL);
-        r.value("Z", yaw,   tue::config::OPTIONAL);
-        r.value("roll",  roll,  tue::config::OPTIONAL);
-        r.value("pitch", pitch, tue::config::OPTIONAL);
-        r.value("yaw",   yaw,   tue::config::OPTIONAL);
-
-        r.endGroup();
+        return false;
     }
-    else if (r.value("pose", pose_string))
-    {
-        // pose is in SDF
-        std::vector<std::string> pose_vector = split(pose_string, ' ');
-        if (pose_vector.size() != 6)
-        {
-            error << "ed::models::create() : Model '" << id << "' has a pose in sdf, but instead of 6, it has '" << pose_vector.size() << "' coordinates." << std::endl;
-            return false;
-        }
-
-        pose.t.x = std::stod(pose_vector[0]);
-        pose.t.y = std::stod(pose_vector[1]);
-        pose.t.z = std::stod(pose_vector[2]);
-        roll = std::stod(pose_vector[3]);
-        pitch = std::stod(pose_vector[4]);
-        yaw = std::stod(pose_vector[5]);
-    }
-
-    // Set rotation
-    pose.R.setRPY(roll, pitch, yaw);
-
 
     // Apply pose offset
     pose = pose_offset * pose;
@@ -304,10 +268,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     if (r.readArray("composition") || r.readArray("include"))
     {
         while (r.nextArrayItem())
-        {
             if (!create(r.data(), "", id, req, error, "", pose))
                 return false;
-        }
 
         r.endArray();
     }
