@@ -422,9 +422,9 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
             pitch = std::stod(pose_vector[4]);
             yaw = std::stod(pose_vector[5]);
         }
+        else
+            return false;
     }
-    else
-        return false;
 
     // Set rotation
     pose.R.setRPY(roll, pitch, yaw);
