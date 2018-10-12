@@ -25,7 +25,7 @@ namespace models
 {
 
 /*
-std::string split implementation by using delimiter as a character.
+std::string split implementation by using delimiter as a character. Multiple delimeters are removed.
 */
 std::vector<std::string> split(std::string strToSplit, char delimeter)
 {
@@ -34,7 +34,8 @@ std::vector<std::string> split(std::string strToSplit, char delimeter)
     std::vector<std::string> splittedStrings;
     while (std::getline(ss, item, delimeter))
     {
-       splittedStrings.push_back(item);
+        if (!item.empty() && item[0] != delimeter)
+            splittedStrings.push_back(item);
     }
     return splittedStrings;
 }
@@ -387,27 +388,27 @@ void readVec3(tue::config::Reader& cfg, geo::Vec3& v)
 
 // ----------------------------------------------------------------------------------------------------
 
-void readPose(tue::config::Reader& cfg, geo::Pose3D& pose)
+bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::RequiredOrOoptional pos_req, tue::config::RequiredOrOoptional rot_req)
 {
     double roll = 0, pitch = 0, yaw = 0;
     std::string pose_string = ""; //sdf pose will be a string
     if (cfg.readGroup("pose"))
     {
 
-        cfg.value("x", pose.t.x, tue::config::OPTIONAL);
-        cfg.value("y", pose.t.y, tue::config::OPTIONAL);
-        cfg.value("z", pose.t.z, tue::config::OPTIONAL);
+        cfg.value("x", pose.t.x, pos_req);
+        cfg.value("y", pose.t.y, pos_req);
+        cfg.value("z", pose.t.z, pos_req);
 
-        cfg.value("X", roll,  tue::config::OPTIONAL);
-        cfg.value("Y", pitch, tue::config::OPTIONAL);
-        cfg.value("Z", yaw,   tue::config::OPTIONAL);
-        cfg.value("roll",  roll,  tue::config::OPTIONAL);
-        cfg.value("pitch", pitch, tue::config::OPTIONAL);
-        cfg.value("yaw",   yaw,   tue::config::OPTIONAL);
+        cfg.value("X", roll,  rot_req);
+        cfg.value("Y", pitch, rot_req);
+        cfg.value("Z", yaw,   rot_req);
+        cfg.value("roll",  roll,  rot_req);
+        cfg.value("pitch", pitch, rot_req);
+        cfg.value("yaw",   yaw,   rot_req);
 
         cfg.endGroup();
     }
-    else if (cfg.value("pose", pose_string))
+    else if (cfg.value("pose", pose_string, pos_req))
     {
         // pose is in SDF
         std::vector<std::string> pose_vector = split(pose_string, ' ');
@@ -422,9 +423,12 @@ void readPose(tue::config::Reader& cfg, geo::Pose3D& pose)
             yaw = std::stod(pose_vector[5]);
         }
     }
+    else
+        return false;
 
     // Set rotation
     pose.R.setRPY(roll, pitch, yaw);
+    return true;
 }
 
 // ----------------------------------------------------------------------------------------------------
