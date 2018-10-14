@@ -433,7 +433,7 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader& cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
     geo::ShapePtr shape;
@@ -583,7 +583,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         double height, resolution;
 
         if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height)) ||
-             (cfg.value("uri", image_filename) && !image_filename.empty()))
+             (cfg.value("uri", image_filename) && !image_filename.empty())) //TODO: add sdf parameters
         {
             std::string image_filename_full = image_filename;
 //            if (image_filename[0] == '/')
