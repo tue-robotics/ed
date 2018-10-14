@@ -22,6 +22,15 @@ namespace ed
 namespace models
 {
 
+bool readSDFGeometry(const std::string& model_path, tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error)
+{
+    r.readGroup("geometry");
+    std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+    geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
+    composite->addShape(*sub_shape, geo::Pose3D::identity());
+    r.endGroup();
+}
+
 // ----------------------------------------------------------------------------------------------------
 
 ModelLoader::ModelLoader()
@@ -282,6 +291,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         geo::CompositeShapePtr composite(new geo::CompositeShape);
         std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+        // TODO: this could be simplified depending on the xml implementation in tue_config
         if (r.readArray("link"))
         {
             while (r.nextArrayItem())
@@ -290,17 +300,13 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                 {
                     while(r.nextArrayItem())
                     {
-                        dummy_shape_cache.clear();
-                        geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
-                        composite->addShape(*sub_shape, geo::Pose3D::identity());
+                        readSDFGeometry(shape_model_path, r, composite, error);
                     }
                     r.endArray();
                 }
                 else if(r.readGroup("collision"))
                 {
-                    dummy_shape_cache.clear();
-                    geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
-                    composite->addShape(*sub_shape, geo::Pose3D::identity());
+                    readSDFGeometry(shape_model_path, r, composite, error);
                     r.endGroup();
                 }
             }
@@ -312,17 +318,13 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             {
                 while(r.nextArrayItem())
                 {
-                    dummy_shape_cache.clear();
-                    geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
-                    composite->addShape(*sub_shape, geo::Pose3D::identity());
+                    readSDFGeometry(shape_model_path, r, composite, error);
                 }
                 r.endArray();
             }
             else if(r.readGroup("collision"))
             {
-                dummy_shape_cache.clear();
-                geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
-                composite->addShape(*sub_shape, geo::Pose3D::identity());
+                readSDFGeometry(shape_model_path, r, composite, error);
                 r.endGroup();
             }
             r.endGroup();

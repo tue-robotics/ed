@@ -15,7 +15,7 @@ namespace models
 
 std::vector<std::string> split(std::string strToSplit, char delimeter);
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader& cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error);
 
 bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose,
