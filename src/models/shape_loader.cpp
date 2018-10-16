@@ -27,7 +27,7 @@ namespace models
 /*
 std::string split implementation by using delimiter as a character. Multiple delimeters are removed.
 */
-std::vector<std::string> split(std::string strToSplit, char delimeter)
+std::vector<std::string> split(std::string& strToSplit, char delimeter)
 {
     std::stringstream ss(strToSplit);
     std::string item;
@@ -388,6 +388,29 @@ void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOop
 
 // ----------------------------------------------------------------------------------------------------
 
+bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& vector_name, tue::config::RequiredOrOoptional pos_req = tue::config::REQUIRED)
+{
+    std::string vector_string;
+    if (cfg.readGroup(vector_name))
+    {
+        readVec3(cfg, v);
+        cfg.endGroup();
+    }
+    else if (cfg.value(vector_name, vector_string))
+    {
+        std::vector<std::string> vector_vector = split(vector_string, ' ');
+        v.x = std::stod(vector_vector[0]);
+        v.y = std::stod(vector_vector[1]);
+        v.z = std::stod(vector_vector[2]);
+    }
+    else
+        return false;
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::RequiredOrOoptional pos_req, tue::config::RequiredOrOoptional rot_req)
 {
     double roll = 0, pitch = 0, yaw = 0;
@@ -492,30 +515,18 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
     }
     else if (cfg.readGroup("box"))
     {
-        geo::Vec3 min, max;
-        if (cfg.readGroup("min"))
+        geo::Vec3 min, max, size;
+        if (readVec3Group(cfg, min, "min"))
         {
-            readVec3(cfg, min);
-            cfg.endGroup();
-
-            if (cfg.readGroup("max"))
-            {
-                readVec3(cfg, max);
+            if (readVec3Group(cfg, max, "max"))
                 shape.reset(new geo::Box(min, max));
-                cfg.endGroup();
-            }
             else
             {
                 error << "[ED::MODELS::LOADSHAPE] Error while loading shape: box must contain 'min' and 'max' (only 'min' specified)";
             }
         }
-        else if (cfg.readGroup("size"))
-        {
-            geo::Vec3 size;
-            readVec3(cfg, size);
+        else if (readVec3Group(cfg, size, "size"))
             shape.reset(new geo::Box(-0.5 * size, 0.5 * size));
-            cfg.endGroup();
-        }
         else
         {
             error << "[ED::MODELS::LOADSHAPE] Error while loading shape: box must contain 'min' and 'max' or 'size'.";
