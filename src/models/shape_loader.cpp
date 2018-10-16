@@ -379,11 +379,11 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
 
 // ----------------------------------------------------------------------------------------------------
 
-void readVec3(tue::config::Reader& cfg, geo::Vec3& v)
+void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOoptional pos_req = tue::config::REQUIRED)
 {
-    cfg.value("x", v.x);
-    cfg.value("y", v.y);
-    cfg.value("z", v.z);
+    cfg.value("x", v.x, pos_req);
+    cfg.value("y", v.y, pos_req);
+    cfg.value("z", v.z, pos_req);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -394,10 +394,7 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
     std::string pose_string = ""; //sdf pose will be a string
     if (cfg.readGroup("pose"))
     {
-
-        cfg.value("x", pose.t.x, pos_req);
-        cfg.value("y", pose.t.y, pos_req);
-        cfg.value("z", pose.t.z, pos_req);
+        readVec3(cfg, pose.t, pos_req);
 
         cfg.value("X", roll,  rot_req);
         cfg.value("Y", pitch, rot_req);
@@ -433,7 +430,7 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader& cfg,
+geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
     geo::ShapePtr shape;
