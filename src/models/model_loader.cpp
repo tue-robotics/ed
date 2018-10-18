@@ -24,11 +24,17 @@ namespace models
 
 bool readSDFGeometry(const std::string& model_path, tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error)
 {
-    r.readGroup("geometry");
-    std::map<std::string, geo::ShapePtr> dummy_shape_cache;
-    geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
-    composite->addShape(*sub_shape, geo::Pose3D::identity());
-    r.endGroup();
+    std::cout << "readSDFGeometry" << std::endl;
+    if (r.readGroup("geometry"))
+    {
+        std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+        geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
+        composite->addShape(*sub_shape, geo::Pose3D::identity());
+        r.endGroup();
+        return true;
+    }
+    else
+        return false;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -197,16 +203,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 {
     tue::config::Reader r(data);
 
-    bool sdf = r.readGroup("sdf");
-    if (sdf)
-    {
-        if ( !r.readGroup("world") && !r.readGroup("model"))
-        {
-            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
-            return false;
-        }
-    }
-
     // Get Id
     UUID id;
     std::string id_str;
@@ -283,9 +279,22 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.endArray();
     }
 
-    // Set shape
+
+    bool sdf = r.readGroup("sdf");
     if (sdf)
     {
+        if ( !r.readGroup("world") && !r.readGroup("model"))
+        {
+            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
+            return false;
+        }
+    }
+    // Set shape
+    std::cout << "BEFORE SDF CHECK" << std::endl;
+    std::cout << r.data() << std::endl;
+    if (sdf)
+    {
+        std::cout << "SDF" << std::endl;
         std::string shape_model_path = model_path;
         r.value("__model_path__", shape_model_path);
 
@@ -294,10 +303,14 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         // TODO: this could be simplified depending on the xml implementation in tue_config
         if (r.readArray("link"))
         {
+            std::cout << "LINK ARRAY" << std::endl;
+            std::cout << r.data() << std::endl;
             while (r.nextArrayItem())
             {
+                std::cout << r.data() << std::endl;
                 if (r.readArray("collision"))
                 {
+                    std::cout << "COLL ARRAY" << std::endl;
                     while(r.nextArrayItem())
                     {
                         readSDFGeometry(shape_model_path, r, composite, error);
@@ -306,23 +319,30 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                 }
                 else if(r.readGroup("collision"))
                 {
+                    std::cout << "COLL GROUP" << std::endl;
                     readSDFGeometry(shape_model_path, r, composite, error);
                     r.endGroup();
                 }
+                else
+                    std::cout << "COLL BROKEN" << std::endl;
+
             }
             r.endArray();
         }
-        else if (r.readGroup("link"))
+        if (r.readGroup("link"))
         {
+            std::cout << "LINK GROUP" << std::endl;
+            std::cout << r.data() << std::endl;
             if (r.readArray("collision"))
             {
+                std::cout << r.data() << std::endl;
                 while(r.nextArrayItem())
                 {
                     readSDFGeometry(shape_model_path, r, composite, error);
                 }
                 r.endArray();
             }
-            else if(r.readGroup("collision"))
+            if(r.readGroup("collision"))
             {
                 readSDFGeometry(shape_model_path, r, composite, error);
                 r.endGroup();
