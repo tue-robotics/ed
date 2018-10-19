@@ -456,7 +456,7 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
 geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
-    geo::ShapePtr shape;
+    geo::ShapePtr shape(new geo::Shape);
     geo::Pose3D pose = geo::Pose3D::identity();
 
     std::string path;
@@ -536,16 +536,13 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
     }
     else if (cfg.readGroup("cylinder"))
     {
-        std::cout << "CYLINDER" << std::endl;
         int num_points = 12;
         cfg.value("num_points", num_points, tue::config::OPTIONAL);
 
         double radius, height;
         if (cfg.value("radius", radius) && (cfg.value("height", height) || cfg.value("length", height))) //length is used in SDF
         {
-            std::cout << "IK leeft nog" << std::endl;
             shape.reset(new geo::Shape);
-            std::cout << "I AM STILL ALIVE" << std::endl;
             createCylinder(*shape, radius, height, num_points);
         }
 

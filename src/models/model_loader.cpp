@@ -24,13 +24,11 @@ namespace models
 
 bool readSDFGeometry(const std::string& model_path, tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error, geo::Pose3D pose_offset = geo::Pose3D::identity())
 {
-    std::cout << "readSDFGeometry" << std::endl;
     geo::Pose3D pose = geo::Pose3D::identity();
     readPose(r, pose);
     pose = pose_offset * pose;
     if (r.readGroup("geometry"))
     {
-        std::cout << "Geometry" << std::endl;
         std::map<std::string, geo::ShapePtr> dummy_shape_cache;
         geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
         composite->addShape(*sub_shape, pose);
@@ -300,7 +298,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Set shape
     if (sdf)
     {
-        std::cout << "SDF" << std::endl;
         std::string shape_model_path = model_path;
         r.value("__model_path__", shape_model_path);
 
@@ -309,14 +306,12 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         // TODO: this could be simplified depending on the xml implementation in tue_config
         if (r.readArray("link"))
         {
-            std::cout << "LINK ARRAY" << std::endl;
             while (r.nextArrayItem())
             {
                 geo::Pose3D link_pose = geo::Pose3D::identity();
                 readPose(r, link_pose);
                 if (r.readArray("collision"))
                 {
-                    std::cout << "COLL ARRAY" << std::endl;
                     while(r.nextArrayItem())
                     {
                         readSDFGeometry(shape_model_path, r, composite, error, link_pose);
@@ -325,19 +320,15 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                 }
                 if(r.readGroup("collision"))
                 {
-                    std::cout << "COLL GROUP" << std::endl;
                     readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                     r.endGroup();
                 }
-                else
-                    std::cout << "COLL BROKEN" << std::endl;
 
             }
             r.endArray();
         }
         if (r.readGroup("link"))
         {
-            std::cout << "LINK GROUP" << std::endl;
             geo::Pose3D link_pose = geo::Pose3D::identity();
             readPose(r, link_pose);
             if (r.readArray("collision"))
