@@ -140,8 +140,6 @@ target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
 #                                                TOOLS
 # ------------------------------------------------------------------------------------------------
 
-add_executable(ed-list-ids tools/list_ids.cpp)
-
 add_executable(ed_view_model tools/view_model.cpp)
 target_link_libraries(ed_view_model ed_core ed_io)
 
