@@ -22,14 +22,18 @@ namespace ed
 namespace models
 {
 
-bool readSDFGeometry(const std::string& model_path, tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error)
+bool readSDFGeometry(const std::string& model_path, tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error, geo::Pose3D pose_offset = geo::Pose3D::identity())
 {
     std::cout << "readSDFGeometry" << std::endl;
+    geo::Pose3D pose = geo::Pose3D::identity();
+    readPose(r, pose);
+    pose = pose_offset * pose;
     if (r.readGroup("geometry"))
     {
+        std::cout << "Geometry" << std::endl;
         std::map<std::string, geo::ShapePtr> dummy_shape_cache;
         geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
-        composite->addShape(*sub_shape, geo::Pose3D::identity());
+        composite->addShape(*sub_shape, pose);
         r.endGroup();
         return true;
     }
@@ -223,6 +227,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     }
 
     // Get type. If it exists, first construct an entity based on the given type.
+
     std::string type;
     if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL) || r.value("inherit", type, tue::config::OPTIONAL)) //uri in sdf; inheret for inheritance in sdf
     {
@@ -253,6 +258,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         for(std::vector<std::string>::const_iterator it = types.begin(); it != types.end(); ++it)
             req.addType(id, *it);
     }
+    std::cout << "ALL DATA" << std::endl;
+    std::cout << r.data() << std::endl;
 
     // Set type
     req.setType(id, type);
@@ -269,6 +276,16 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
     req.setPose(id, pose);
 
+    bool sdf = r.readGroup("sdf");
+    if (sdf)
+    {
+        if ( !r.readGroup("world") && !r.readGroup("model"))
+        {
+            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
+            return false;
+        }
+    }
+
     // Check the composition
     if (r.readArray("composition") || r.readArray("include"))
     {
@@ -280,18 +297,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     }
 
 
-    bool sdf = r.readGroup("sdf");
-    if (sdf)
-    {
-        if ( !r.readGroup("world") && !r.readGroup("model"))
-        {
-            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
-            return false;
-        }
-    }
     // Set shape
-    std::cout << "BEFORE SDF CHECK" << std::endl;
-    std::cout << r.data() << std::endl;
     if (sdf)
     {
         std::cout << "SDF" << std::endl;
@@ -304,23 +310,23 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         if (r.readArray("link"))
         {
             std::cout << "LINK ARRAY" << std::endl;
-            std::cout << r.data() << std::endl;
             while (r.nextArrayItem())
             {
-                std::cout << r.data() << std::endl;
+                geo::Pose3D link_pose = geo::Pose3D::identity();
+                readPose(r, link_pose);
                 if (r.readArray("collision"))
                 {
                     std::cout << "COLL ARRAY" << std::endl;
                     while(r.nextArrayItem())
                     {
-                        readSDFGeometry(shape_model_path, r, composite, error);
+                        readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                     }
                     r.endArray();
                 }
-                else if(r.readGroup("collision"))
+                if(r.readGroup("collision"))
                 {
                     std::cout << "COLL GROUP" << std::endl;
-                    readSDFGeometry(shape_model_path, r, composite, error);
+                    readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                     r.endGroup();
                 }
                 else
@@ -332,19 +338,19 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         if (r.readGroup("link"))
         {
             std::cout << "LINK GROUP" << std::endl;
-            std::cout << r.data() << std::endl;
+            geo::Pose3D link_pose = geo::Pose3D::identity();
+            readPose(r, link_pose);
             if (r.readArray("collision"))
             {
-                std::cout << r.data() << std::endl;
                 while(r.nextArrayItem())
                 {
-                    readSDFGeometry(shape_model_path, r, composite, error);
+                    readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                 }
                 r.endArray();
             }
             if(r.readGroup("collision"))
             {
-                readSDFGeometry(shape_model_path, r, composite, error);
+                readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                 r.endGroup();
             }
             r.endGroup();
@@ -352,6 +358,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         if (composite->getMesh().size()>0)
             req.setShape(id, composite);
 
+        r.endGroup(); //end world or model
+        r.endGroup(); //end sdf
     }
     else if (!sdf && r.readGroup("shape"))
     {
@@ -376,12 +384,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                 req.setFlag(id, flag);
         }
         r.endArray();
-    }
-
-    if (sdf)
-    {
-        r.endGroup(); //end world or model
-        r.endGroup(); //end sdf
     }
 
     // Add additional data

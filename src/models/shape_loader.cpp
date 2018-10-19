@@ -536,22 +536,25 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
     }
     else if (cfg.readGroup("cylinder"))
     {
+        std::cout << "CYLINDER" << std::endl;
         int num_points = 12;
         cfg.value("num_points", num_points, tue::config::OPTIONAL);
 
         double radius, height;
-        if (cfg.value("radius", radius) && cfg.value("height", height))
+        if (cfg.value("radius", radius) && (cfg.value("height", height) || cfg.value("length", height))) //length is used in SDF
         {
+            std::cout << "IK leeft nog" << std::endl;
             shape.reset(new geo::Shape);
+            std::cout << "I AM STILL ALIVE" << std::endl;
             createCylinder(*shape, radius, height, num_points);
         }
 
         cfg.endGroup();
     }
-    else if (cfg.readGroup("polygon"))
+    else if (cfg.readGroup("polygon") || cfg.readGroup("polyline"))
     {
         std::vector<geo::Vec2> points;
-        if (cfg.readArray("points", tue::config::REQUIRED))
+        if (cfg.readArray("points", tue::config::REQUIRED) || cfg.readArray("point", tue::config::REQUIRED))
         {
             while(cfg.nextArrayItem())
             {
