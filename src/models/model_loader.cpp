@@ -310,7 +310,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             {
                 geo::Pose3D link_pose = geo::Pose3D::identity();
                 readPose(r, link_pose);
-                if (r.readArray("collision"))
+                if (r.readArray("visual"))
                 {
                     while(r.nextArrayItem())
                     {
@@ -318,7 +318,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                     }
                     r.endArray();
                 }
-                if(r.readGroup("collision"))
+                if(r.readGroup("visual"))
                 {
                     readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                     r.endGroup();
@@ -331,7 +331,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         {
             geo::Pose3D link_pose = geo::Pose3D::identity();
             readPose(r, link_pose);
-            if (r.readArray("collision"))
+            if (r.readArray("visual"))
             {
                 while(r.nextArrayItem())
                 {
@@ -339,7 +339,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                 }
                 r.endArray();
             }
-            if(r.readGroup("collision"))
+            if(r.readGroup("visual"))
             {
                 readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                 r.endGroup();
