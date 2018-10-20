@@ -548,7 +548,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         cfg.endGroup();
     }
-    else if (cfg.readGroup("polygon") || cfg.readGroup("polyline"))
+    else if (cfg.readGroup("polygon"))
     {
         std::vector<geo::Vec2> points;
         if (cfg.readArray("points", tue::config::REQUIRED) || cfg.readArray("point", tue::config::REQUIRED))
@@ -571,6 +571,31 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         }
 
         cfg.endGroup();
+    }
+    else if (cfg.readArray("polyline"))
+    {
+        std::vector<geo::Vec2> points;
+        double height = 0.0;
+        while(cfg.nextArrayItem())
+        {
+            std::string point_string;
+            if (cfg.value("point", point_string))
+            {
+                points.push_back(geo::Vec2());
+                geo::Vec2& p = points.back();
+                std::vector<std::string> point_vector = split(point_string, ' ');
+                p.x = std::stod(point_vector[0]);
+                p.y = std::stod(point_vector[1]);
+            }
+            else
+                cfg.value("height", height);
+        }
+        cfg.endArray();
+        if (height > 0 && std::abs<double>(height) >= 0.01)
+        {
+            shape.reset(new geo::Shape);
+            createPolygon(*shape, points, height, true);
+        }
     }
     else if (cfg.readArray("compound") || cfg.readArray("group"))
     {
