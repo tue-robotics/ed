@@ -42,6 +42,31 @@ std::vector<std::string> split(std::string& strToSplit, char delimeter)
 
 // ----------------------------------------------------------------------------------------------------
 
+std::string getFilePath(const std::string& type)
+{
+    const char * mpath = ::getenv("ED_MODEL_PATH");
+    if (!mpath)
+        return "";
+
+    std::stringstream ss(mpath);
+    std::string item;
+    std::vector<std::string> model_paths;
+    while (std::getline(ss, item, ':'))
+        model_paths.push_back(item);
+
+    for(std::vector<std::string>::const_iterator it = model_paths.begin(); it != model_paths.end(); ++it)
+    {
+        tue::filesystem::Path file_path(*it + "/" + type);
+        if (file_path.exists())
+            return file_path.string();
+    }
+
+    return "";
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+
 void findContours(const cv::Mat& image, const geo::Vec2i& p_start, int d_start, std::vector<geo::Vec2i>& points,
                   std::vector<geo::Vec2i>& line_starts, cv::Mat& contour_map)
 {
@@ -572,7 +597,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         cfg.endGroup();
     }
-    else if (cfg.readArray("polyline"))
+    else if (cfg.readArray("polyline")) // SDF ONLY
     {
         std::vector<geo::Vec2> points;
         double height = 0.0;
@@ -596,6 +621,31 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             shape.reset(new geo::Shape);
             createPolygon(*shape, points, height, true);
         }
+    }
+    else if (cfg.readGroup("mesh")) // SDF ONLY
+    {
+        std::string uri_path;
+        if (cfg.value("uri", uri_path))
+        {
+            // remove prefix in case of sdf
+            std::string str1 = "file://";
+            std::string str2 = "model://";
+
+            std::string::size_type i = uri_path.find(str1);
+            if (i != std::string::npos)
+               uri_path.erase(i, str1.length());
+            i = uri_path.find(str2);
+            if (i != std::string::npos)
+               uri_path.erase(i, str2.length());
+
+            std::string file_path = getFilePath(uri_path);
+            shape = geo::Importer::readMeshFile(file_path);
+        }
+        std::string dummy;
+        if (cfg.value("submesh", dummy))
+            error << "[ED::MODELS::LOADSHAPE] 'submesh' of mesh is not supported by ED " << std::endl;
+
+
     }
     else if (cfg.readArray("compound") || cfg.readArray("group"))
     {
