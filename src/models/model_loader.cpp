@@ -125,6 +125,13 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
         }
     }
 
+    if (sdf)
+    {
+        model_cfg.readGroup("sdf");
+        model_cfg.readGroup("world");
+        model_cfg.readGroup("model");
+    }
+
     std::string super_type;
     if (model_cfg.value("type", super_type, tue::OPTIONAL) || model_cfg.value("uri", super_type, tue::OPTIONAL) || model_cfg.value("inherit", super_type, tue::OPTIONAL))
     {
@@ -296,7 +303,9 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
 
     // Set shape
-    if (sdf)
+    std::cout << "BEFORE SDF CHECK" << std::endl;
+    std::cout << r.data() << std::endl;
+    if (true)
     {
         std::string shape_model_path = model_path;
         r.value("__model_path__", shape_model_path);
