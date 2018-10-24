@@ -403,28 +403,35 @@ int main(int argc, char **argv)
                 geo::Shape shape;
                 tue::config::Reader r(e->data());
 
-                if (show_areas && r.readArray("areas"))
+                std::map<std::string, geo::ShapeConstPtr> areas = e->areas();
+                if (show_areas && !areas.empty())
                 {
-                    while(r.nextArrayItem())
+                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = areas.begin(); it != areas.end(); ++it)
                     {
-//                        std::cout << r.data() << std::endl;
-
-                        std::string a_name;
-                        if (!r.value("name", a_name))
-                            continue;
-
-//                        std::cout << a_name << std::endl;
-
-                        if (ed::deserialize(r, "shape", shape))
-                        {
-//                            geo::Pose3D pose = geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0).inverse() * (geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose());
-
-                            res.color = cv::Vec3b(0, 0, 255);
-                            opt.setMesh(shape.getMesh(), pose);
-                            cam.render(opt, res);
-                        }
+                        res.color = cv::Vec3b(0, 0, 255);
+                        opt.setMesh(it->second->getMesh(), pose);
+                        cam.render(opt, res);
                     }
-                    r.endArray();
+//                    while(r.nextArrayItem())
+//                    {
+////                        std::cout << r.data() << std::endl;
+
+//                        std::string a_name;
+//                        if (!r.value("name", a_name))
+//                            continue;
+
+////                        std::cout << a_name << std::endl;
+
+//                        if (ed::deserialize(r, "shape", shape))
+//                        {
+////                            geo::Pose3D pose = geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0).inverse() * (geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose());
+
+//                            res.color = cv::Vec3b(0, 0, 255);
+//                            opt.setMesh(shape.getMesh(), pose);
+//                            cam.render(opt, res);
+//                        }
+//                    }
+//                    r.endArray();
                 }
 
 
