@@ -205,6 +205,16 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 {
     tue::config::Reader r(data);
 
+    bool sdf = r.readGroup("sdf");
+    if (sdf)
+    {
+        if ( !r.readGroup("world") && !r.readGroup("model"))
+        {
+            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
+            return false;
+        }
+    }
+
     // Get Id
     UUID id;
     std::string id_str;
@@ -273,16 +283,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     pose = pose_offset * pose;
 
     req.setPose(id, pose);
-
-    bool sdf = r.readGroup("sdf");
-    if (sdf)
-    {
-        if ( !r.readGroup("world") && !r.readGroup("model"))
-        {
-            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
-            return false;
-        }
-    }
 
     // Check the composition
     if (r.readArray("composition") || r.readArray("include"))

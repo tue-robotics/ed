@@ -660,13 +660,12 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         shape = composite;
     }
-    else if (cfg.readArray("heightmap") || cfg.readArray("image"))
+    else if (cfg.readArray("heightmap"))
     {
         std::string image_filename;
         double height, resolution;
 
-        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height)) ||
-             (cfg.value("uri", image_filename) && !image_filename.empty())) //TODO: add sdf parameters
+        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height)))
         {
             std::string image_filename_full = image_filename;
 //            if (image_filename[0] == '/')
