@@ -361,7 +361,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.endGroup(); //end world or model
         r.endGroup(); //end sdf
     }
-    else if (!sdf && r.readGroup("shape"))
+    if (r.readGroup("shape"))
     {
         std::string shape_model_path = model_path;
         r.value("__model_path__", shape_model_path);

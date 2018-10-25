@@ -508,7 +508,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         if (shape_path.exists())
         {
             std::string xt = shape_path.extension();
-            if (xt == ".pgm")
+            if (xt == ".pgm" || xt == ".png")
             {
                 shape = getHeightMapShape(shape_path, cfg, error);
             }
