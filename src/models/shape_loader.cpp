@@ -485,7 +485,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
     geo::Pose3D pose = geo::Pose3D::identity();
 
     std::string path;
-    if (cfg.value("path", path))
+    if (cfg.value("path", path)) // ED YAML ONLY
     {
         if (path.empty())
         {
@@ -538,7 +538,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             error << "[ED::MODELS::LOADSHAPE] Error while loading shape at " << shape_path.string() << " ; file does not exist" << std::endl;
         }
     }
-    else if (cfg.readGroup("box"))
+    else if (cfg.readGroup("box")) // SDF AND ED YAML
     {
         geo::Vec3 min, max, size;
         if (readVec3Group(cfg, min, "min"))
@@ -559,7 +559,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         readPose(cfg, pose);
     }
-    else if (cfg.readGroup("cylinder"))
+    else if (cfg.readGroup("cylinder")) // SDF AND ED YAML
     {
         int num_points = 12;
         cfg.value("num_points", num_points, tue::config::OPTIONAL);
@@ -573,7 +573,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         cfg.endGroup();
     }
-    else if (cfg.readGroup("polygon"))
+    else if (cfg.readGroup("polygon")) // ED YAML ONLY
     {
         std::vector<geo::Vec2> points;
         if (cfg.readArray("points", tue::config::REQUIRED) || cfg.readArray("point", tue::config::REQUIRED))
@@ -638,8 +638,18 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             if (i != std::string::npos)
                uri_path.erase(i, str2.length());
 
-            std::string file_path = getFilePath(uri_path);
-            shape = geo::Importer::readMeshFile(file_path);
+            tue::filesystem::Path mesh_path;
+            if (model_path.empty() || uri_path[0] == '/')
+                mesh_path = uri_path;
+            else
+                mesh_path = model_path + "/" + uri_path;
+
+            if (!mesh_path.exists())
+                    mesh_path = getFilePath(uri_path);
+            if (mesh_path.exists())
+                shape = geo::Importer::readMeshFile(mesh_path.string());
+            else
+                error << "[ED::MODELS::LOADSHAPE] File: '" << mesh_path.string() << "' doesn't exist." << std::endl;
         }
         std::string dummy;
         if (cfg.value("submesh", dummy))
@@ -647,26 +657,12 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
 
     }
-    else if (cfg.readArray("compound") || cfg.readArray("group"))
-    {
-        geo::CompositeShapePtr composite(new geo::CompositeShape);
-        while(cfg.nextArrayItem())
-        {
-            std::map<std::string, geo::ShapePtr> dummy_shape_cache;
-            geo::ShapePtr sub_shape = loadShape(model_path, cfg, dummy_shape_cache, error);
-            composite->addShape(*sub_shape, geo::Pose3D::identity());
-        }
-        cfg.endArray();
-
-        shape = composite;
-    }
-    else if (cfg.readArray("heightmap") || cfg.readArray("image"))
+    else if (cfg.readArray("heightmap")) // SDF AND ED YAML
     {
         std::string image_filename;
         double height, resolution;
 
-        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height)) ||
-             (cfg.value("uri", image_filename) && !image_filename.empty())) //TODO: add sdf parameters
+        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height)))
         {
             std::string image_filename_full = image_filename;
 //            if (image_filename[0] == '/')
@@ -682,6 +678,19 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         {
             error << "[ED::MODELS::LOADSHAPE] Error while loading shape: heightmap must contain 'image', 'resolution' and 'height'." << std::endl;
         }
+    }
+    else if (cfg.readArray("compound") || cfg.readArray("group")) // ED YAML ONLY
+    {
+        geo::CompositeShapePtr composite(new geo::CompositeShape);
+        while(cfg.nextArrayItem())
+        {
+            std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+            geo::ShapePtr sub_shape = loadShape(model_path, cfg, dummy_shape_cache, error);
+            composite->addShape(*sub_shape, geo::Pose3D::identity());
+        }
+        cfg.endArray();
+
+        shape = composite;
     }
     else
     {
