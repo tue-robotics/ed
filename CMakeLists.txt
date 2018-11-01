@@ -35,7 +35,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_visualization
   CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models ed_msgs
-  DEPENDS orocos_kdl TinyXML #system_lib
+  DEPENDS orocos_kdl #system_lib
 )
 
 ###########
