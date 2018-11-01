@@ -90,7 +90,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     std::string super_type;
-    if (model_cfg.value("type", super_type, tue::OPTIONAL))
+    if (model_cfg.value("type", super_type, tue::config::OPTIONAL))
     {
         tue::config::DataConstPointer super_data = loadModelData(super_type, types, error);
         tue::config::DataPointer combined_data;

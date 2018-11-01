@@ -74,7 +74,7 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
                 return;
 
             int enabled = 1;
-            config.value("enabled", enabled, tue::OPTIONAL);
+            config.value("enabled", enabled, tue::config::OPTIONAL);
 
             PluginContainerPtr plugin_container;
 
@@ -121,7 +121,7 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
         config.endArray();
     }
 
-    if (config.value("world_name", world_name_, tue::OPTIONAL))
+    if (config.value("world_name", world_name_, tue::config::OPTIONAL))
         initializeWorld();
 
     if (config.readArray("world"))
@@ -417,9 +417,9 @@ void Server::update(const std::string& update_str, std::string& error)
                     continue;
 
                 double rx = 0, ry = 0, rz = 0;
-                cfg.value("rx", rx, tue::OPTIONAL);
-                cfg.value("ry", ry, tue::OPTIONAL);
-                cfg.value("rz", rz, tue::OPTIONAL);
+                cfg.value("rx", rx, tue::config::OPTIONAL);
+                cfg.value("ry", ry, tue::config::OPTIONAL);
+                cfg.value("rz", rz, tue::config::OPTIONAL);
 
                 pose.R.setRPY(rx, ry, rz);
 

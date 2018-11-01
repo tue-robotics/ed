@@ -24,7 +24,7 @@ void TFPublisherPlugin::configure(tue::Configuration config)
 {
     config.value("root_frame_id", root_frame_id_);
 
-    config.value("exclude", exclude_, tue::OPTIONAL);
+    config.value("exclude", exclude_, tue::config::OPTIONAL);
 
     // Remove possible beginning slash
     if (!exclude_.empty() && exclude_[0] == '/')

@@ -80,7 +80,7 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
 {
     // Read optional frequency
     double freq = 10; // default
-    init.config.value("frequency", freq, tue::OPTIONAL);
+    init.config.value("frequency", freq, tue::config::OPTIONAL);
 
     // Set plugin loop frequency
     setLoopFrequency(freq);
@@ -94,7 +94,7 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
         plugin_->initialize(scoped_init);
 
         // Read optional frequency (inside parameters is obsolete)
-        if (init.config.value("frequency", freq, tue::OPTIONAL))
+        if (init.config.value("frequency", freq, tue::config::OPTIONAL))
         {
             std::cout << "[ED]: Warning while loading plugin '" << name_ << "': please specify parameter 'frequency' outside 'parameters'." << std::endl;
         }
