@@ -95,7 +95,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     bool sdf = true; //start with the assumption that we will find a sdf model
-    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml"); //TODO reading sdf as yaml at the moment.
+    tue::filesystem::Path model_cfg_path(model_path + "/model.sdf");
     if (!model_cfg_path.exists())
     {
         model_cfg_path = tue::filesystem::Path(model_path + "/model.yaml");
@@ -110,7 +110,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     tue::Configuration model_cfg;
     if (sdf)
     {
-        if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
+        if (!model_cfg.loadFromXMLFile(model_cfg_path.string()))
         {
             error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse sdf file." << std::endl;
             return data;
@@ -127,9 +127,16 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
     if (sdf)
     {
-        model_cfg.readGroup("sdf");
-        model_cfg.readGroup("world");
-        model_cfg.readGroup("model");
+        if (!model_cfg.readGroup("sdf"))
+        {
+            error << "ed::models::create() : ERROR reading group 'SDF' in model '" << type << "'; '" << model_cfg_path.string() << "'." << std::endl;
+            return tue::config::DataPointer();
+        }
+        if (!(model_cfg.readGroup("world") || model_cfg.readGroup("model")))
+        {
+            error << "ed::models::create() : ERROR reading group 'WORLD' or 'MODEL' in model '" << type << "'; '" << model_cfg_path.string() << "'." << std::endl;
+            return tue::config::DataPointer();
+        }
     }
 
     std::string super_type;
@@ -154,7 +161,8 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     if (rw.readGroup("shape") || sdf) // always add the model path with an sdf. Because it is to deep to search in links for visuals/collisions
     {
         rw.setValue("__model_path__", model_path);
-        rw.endGroup();
+        if (!sdf)
+            rw.endGroup();
     }
 
     // Store data in cache
@@ -303,8 +311,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
 
     // Set shape
-    std::cout << "BEFORE SDF CHECK" << std::endl;
-    std::cout << r.data() << std::endl;
     if (true)
     {
         std::string shape_model_path = model_path;
@@ -312,7 +318,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         geo::CompositeShapePtr composite(new geo::CompositeShape);
         std::map<std::string, geo::ShapePtr> dummy_shape_cache;
-        // TODO: this could be simplified depending on the xml implementation in tue_config
         if (r.readArray("link"))
         {
             while (r.nextArrayItem())
@@ -357,9 +362,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         }
         if (composite->getMesh().size()>0)
             req.setShape(id, composite);
-
-        r.endGroup(); //end world or model
-        r.endGroup(); //end sdf
     }
     if (r.readGroup("shape"))
     {

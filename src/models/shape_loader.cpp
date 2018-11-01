@@ -404,7 +404,7 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
 
 // ----------------------------------------------------------------------------------------------------
 
-void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOoptional pos_req = tue::config::REQUIRED)
+void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOptional pos_req = tue::config::REQUIRED)
 {
     cfg.value("x", v.x, pos_req);
     cfg.value("y", v.y, pos_req);
@@ -413,7 +413,7 @@ void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOop
 
 // ----------------------------------------------------------------------------------------------------
 
-bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& vector_name, tue::config::RequiredOrOoptional pos_req = tue::config::REQUIRED)
+bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& vector_name, tue::config::RequiredOrOptional pos_req = tue::config::REQUIRED)
 {
     std::string vector_string;
     if (cfg.readGroup(vector_name))
@@ -436,7 +436,7 @@ bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& ve
 
 // ----------------------------------------------------------------------------------------------------
 
-bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::RequiredOrOoptional pos_req, tue::config::RequiredOrOoptional rot_req)
+bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::RequiredOrOptional pos_req, tue::config::RequiredOrOptional rot_req)
 {
     double roll = 0, pitch = 0, yaw = 0;
     std::string pose_string = ""; //sdf pose will be a string

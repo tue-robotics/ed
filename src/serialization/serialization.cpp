@@ -408,8 +408,10 @@ bool deserialize(tue::config::Reader& r_orig, const std::string& group, geo::Sha
                 pose = geo::Pose3D::identity();
 
             mesh.add(geo::Box(min, max).getMesh().getTransformed(pose));
+            r.endGroup();
         }
     }
+    r.endArray();
 
     if (mesh.getTriangleIs().empty())
         return false;
