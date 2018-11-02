@@ -220,10 +220,13 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 {
     tue::config::Reader r(data);
 
+    std::cout << "Opt ID: " << id_opt.str() << std::endl;
+    std::cout << "Parent ID: " << parent_id.str() << std::endl;
+
     // Get Id
     UUID id;
     std::string id_str;
-    if (r.value("id", id_str, tue::config::OPTIONAL) || r.value("name", id_str, tue::config::OPTIONAL))
+    if (r.value("id", id_str, tue::config::OPTIONAL) || (r.value("name", id_str, tue::config::OPTIONAL) && (!id_opt.str().empty() && id_opt.str()[0] != '_')))
     {
         if (parent_id.str().empty() || parent_id.str()[0] == '_')
             id = id_str;
@@ -238,6 +241,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     {
         id = ed::Entity::generateID();
     }
+
 
     // Get type. If it exists, first construct an entity based on the given type.
 
@@ -289,16 +293,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
     req.setPose(id, pose);
 
-    bool sdf = r.readGroup("sdf");
-    if (sdf)
-    {
-        if ( !r.readGroup("world") && !r.readGroup("model"))
-        {
-            error << "ed::models::create() : Loading a sdf model, but it has no world or model element." << std::endl;
-            return false;
-        }
-    }
-
     // Check the composition
     if (r.readArray("composition") || r.readArray("include"))
     {
@@ -308,10 +302,29 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         r.endArray();
     }
+    else if (r.readGroup("include"))
+    {
+        if (!create(r.data(), "", id, req, error, "", pose))
+            return false;
+        r.endGroup();
+    }
 
 
     // Set shape
-    if (true)
+    if (r.readGroup("shape"))
+    {
+        std::string shape_model_path = model_path;
+        r.value("__model_path__", shape_model_path);
+
+        geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
+        if (shape)
+            req.setShape(id, shape);
+        else
+            return false;
+
+        r.endGroup();
+    }
+    else // SDF
     {
         std::string shape_model_path = model_path;
         r.value("__model_path__", shape_model_path);
@@ -332,7 +345,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                     }
                     r.endArray();
                 }
-                if(r.readGroup("visual"))
+                else if(r.readGroup("visual"))
                 {
                     readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                     r.endGroup();
@@ -341,7 +354,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             }
             r.endArray();
         }
-        if (r.readGroup("link"))
+        else if (r.readGroup("link"))
         {
             geo::Pose3D link_pose = geo::Pose3D::identity();
             readPose(r, link_pose);
@@ -353,7 +366,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                 }
                 r.endArray();
             }
-            if(r.readGroup("visual"))
+            else if(r.readGroup("visual"))
             {
                 readSDFGeometry(shape_model_path, r, composite, error, link_pose);
                 r.endGroup();
@@ -362,19 +375,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         }
         if (composite->getMesh().size()>0)
             req.setShape(id, composite);
-    }
-    if (r.readGroup("shape"))
-    {
-        std::string shape_model_path = model_path;
-        r.value("__model_path__", shape_model_path);
-
-        geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
-        if (shape)
-            req.setShape(id, shape);
-        else
-            return false;
-
-        r.endGroup();
     }
 
     if (r.readArray("flags"))
