@@ -226,7 +226,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Get Id
     UUID id;
     std::string id_str;
-    if (r.value("id", id_str, tue::config::OPTIONAL) || (r.value("name", id_str, tue::config::OPTIONAL) && (!id_opt.str().empty() && id_opt.str()[0] != '_')))
+    // force transition to id_opt in case of "_root". Only needed for SDF,  because then name is available for 'world' models. Which is not the case for ED YAML
+    if (r.value("id", id_str, tue::config::OPTIONAL) || (r.value("name", id_str, tue::config::OPTIONAL) && (id_opt.str().empty() || id_opt.str()[0] != '_')))
     {
         if (parent_id.str().empty() || parent_id.str()[0] == '_')
             id = id_str;
@@ -297,12 +298,13 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     if (r.readArray("composition") || r.readArray("include"))
     {
         while (r.nextArrayItem())
+        {
             if (!create(r.data(), "", id, req, error, "", pose))
                 return false;
-
+        }
         r.endArray();
     }
-    else if (r.readGroup("include"))
+    else if (r.readGroup("include")) // SDF can both be Group or Array
     {
         if (!create(r.data(), "", id, req, error, "", pose))
             return false;

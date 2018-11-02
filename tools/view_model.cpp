@@ -18,8 +18,8 @@
 #include <ros/init.h>
 #include <ros/node_handle.h>
 
-double CANVAS_WIDTH = 1280;
-double CANVAS_HEIGHT = 720;
+double CANVAS_WIDTH = 800;
+double CANVAS_HEIGHT = 600;
 
 geo::DepthCamera cam;
 
@@ -384,10 +384,6 @@ int main(int argc, char **argv)
                 else
                 {
                     int i_color = djb2(id) % 27;
-                    if (id == "robotics_testlabs/walls")
-                    {
-                        std::cout << "Color i: " << i_color << std::endl;
-                    }
                     res.color = cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]);
                 }
 
