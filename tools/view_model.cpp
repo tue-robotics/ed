@@ -15,9 +15,6 @@
 
 #include <tue/config/reader.h>
 
-#include <ros/init.h>
-#include <ros/node_handle.h>
-
 double CANVAS_WIDTH = 800;
 double CANVAS_HEIGHT = 600;
 
@@ -206,7 +203,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         }
         else if (flags & cv::EVENT_FLAG_MBUTTON)
         {
-            cam_dist += cam_dist * dy * 0.002;
+            cam_dist += cam_dist * dy * 0.003;
         }
         else if (flags & cv::EVENT_FLAG_RBUTTON)
         {
@@ -221,9 +218,6 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
 int main(int argc, char **argv)
 {
-//    ros::init(argc, argv, "ed_view_model");  // <- TODO: GET RID OF THIS!
-//    ros::NodeHandle nh;
-
     if (argc != 3)
     {
         usage();
@@ -284,25 +278,28 @@ int main(int argc, char **argv)
     }
 
     double dist = 2 * std::max(p_max.z - p_min.z, std::max(p_max.x - p_min.x, p_max.y - p_min.y));
-    double h = (p_max.z - p_min.z) / 2;
 
-    std::cout << "Model loaded successfully:" << std::endl;
-    std::cout << "    " << n_vertices << " vertices" << std::endl;
-    std::cout << "    " << n_triangles << " triangles" << std::endl;
+    std::stringstream info_msg;
+    info_msg << "Model loaded successfully:" << std::endl;
+    info_msg << "    " << n_vertices << " vertices" << std::endl;
+    info_msg << "    " << n_triangles << " triangles" << std::endl;
 
-    std::cout << std::endl;
-    std::cout << "Mouse:" << std::endl;
-    std::cout << "    left         - orbit" << std::endl;
-    std::cout << "    middle       - zoom" << std::endl;
-    std::cout << "    right        - pan" << std::endl;
-    std::cout << "    double click - fly to" << std::endl;
+    info_msg << std::endl;
+    info_msg << "Mouse:" << std::endl;
+    info_msg << "    left         - orbit" << std::endl;
+    info_msg << "    middle       - zoom" << std::endl;
+    info_msg << "    right        - pan" << std::endl;
+    info_msg << "    double click - fly to" << std::endl;
 
-    std::cout << std::endl;
-    std::cout << "Keys:" << std::endl;
-    std::cout << "    r - reload model" << std::endl;
-    std::cout << "    a - show / hide model areas" << std::endl;
-    std::cout << "    c - circle rotate" << std::endl;
-    std::cout << "    q - quit" << std::endl;
+    info_msg << std::endl;
+    info_msg << "Keys:" << std::endl;
+    info_msg << "    r - reload model" << std::endl;
+    info_msg << "    a - show / hide model areas" << std::endl;
+    info_msg << "    c - circle rotate" << std::endl;
+    info_msg << "    p - snap pitch" << std::endl;
+    info_msg << "    q - quit" << std::endl;
+
+    std::cout << info_msg.str();
 
     bool show_areas = true;
 
@@ -389,8 +386,6 @@ int main(int argc, char **argv)
 
                 res.setMesh(&e->shape()->getMesh());
 
-//                cam_pose.inverse() * obj_pose
-
                 geo::Pose3D pose = cam_pose.inverse() * e->pose();
                 geo::RenderOptions opt;
                 opt.setMesh(e->shape()->getMesh(), pose);
@@ -407,18 +402,12 @@ int main(int argc, char **argv)
                 {
                     while(r.nextArrayItem())
                     {
-//                        std::cout << r.data() << std::endl;
-
                         std::string a_name;
                         if (!r.value("name", a_name))
                             continue;
 
-//                        std::cout << a_name << std::endl;
-
                         if (ed::deserialize(r, "shape", shape))
                         {
-//                            geo::Pose3D pose = geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0).inverse() * (geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose());
-
                             res.color = cv::Vec3b(0, 0, 255);
                             opt.setMesh(shape.getMesh(), pose);
                             cam.render(opt, res);
@@ -443,13 +432,6 @@ int main(int argc, char **argv)
 
             }
         }
-
-//        for(int i = 0; i < depth_image.rows * depth_image.cols; ++i)
-//        {
-//            float& d = depth_image.at<float>(i);
-//            if (d > 0)
-//                d = 1 - (d / (dist * 2));
-//        }
 
         cv::imshow("visualization", image);
         char key = cv::waitKey(10);
@@ -478,25 +460,17 @@ int main(int argc, char **argv)
         else if (key == 'p')
         {
             // Snap pitch to 90 degrees
-//            if (cam_pitch < -0.785)
-//                cam_pitch = -1.57;
-//            else if (cam_pitch > 0.785)
-//                cam_pitch = 1.57;
+            if (cam_pitch < 1.57)
+                cam_pitch = std::round(cam_pitch / 1.57 + 0.51) * 1.57;
+            else
+                cam_pitch = std::round(cam_pitch / 1.57 - 0.51) * 1.57;
+
+//            // Snap yaw to 90 degrees
+//            if (cam_yaw < 0)
+//                cam_yaw = std::round(cam_yaw / 1.57 + 0.51) * 1.57;
 //            else
-//                cam_pitch = 0;
-
-            if (cam_pitch > 0)
-                cam_pitch = (int)(cam_pitch / 1.57 + 0.5) * 1.57;
-            else
-                cam_pitch = (int)(cam_pitch / 1.57 - 0.5) * 1.57;
-
-            // Snap yaw to 90 degrees
-            if (cam_yaw > 0)
-                cam_yaw = (int)(cam_yaw / 1.57 + 0.5) * 1.57;
-            else
-                cam_yaw = (int)(cam_yaw / 1.57 - 0.5) * 1.57;
+//                cam_yaw = std::round(cam_yaw / 1.57 - 0.51) * 1.57;
         }
-//        std::cout  << (int)key << std::endl;
 
         if (do_rotate)
             cam_yaw += 0.03;
@@ -506,7 +480,6 @@ int main(int argc, char **argv)
             geo::Vector3 diff = cam_lookat_flyto - cam_lookat;
             double dist = diff.length();
 
-//            double max_dist = 0.02 * cam_dist;
             double max_dist = std::max(0.001 * cam_dist, dist * 0.1);
             if (dist < max_dist)
             {
