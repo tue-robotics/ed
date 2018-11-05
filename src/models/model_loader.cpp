@@ -110,23 +110,11 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     tue::Configuration model_cfg;
     if (sdf)
     {
-        if (!model_cfg.loadFromXMLFile(model_cfg_path.string()))
+        if (!model_cfg.loadFromSDFFile(model_cfg_path.string()))
         {
             error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse sdf file." << std::endl;
             return data;
         }
-    }
-    else
-    {
-        if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
-        {
-            error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse yaml file." << std::endl;
-            return data;
-        }
-    }
-
-    if (sdf)
-    {
         if (!model_cfg.readGroup("sdf"))
         {
             error << "ed::models::create() : ERROR reading group 'SDF' in model '" << type << "'; '" << model_cfg_path.string() << "'." << std::endl;
@@ -138,9 +126,19 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
             return tue::config::DataPointer();
         }
     }
+    else
+    {
+        if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
+        {
+            error << "ed::models::create() : ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse yaml file." << std::endl;
+            return data;
+        }
+    }
 
     std::string super_type;
-    if (model_cfg.value("type", super_type, tue::config::OPTIONAL) || model_cfg.value("uri", super_type, tue::config::OPTIONAL) || model_cfg.value("inherit", super_type, tue::config::OPTIONAL))
+    if (model_cfg.value("type", super_type, tue::config::OPTIONAL) ||
+            model_cfg.value("uri", super_type, tue::config::OPTIONAL) ||
+            model_cfg.value("inherit", super_type, tue::config::OPTIONAL))
     {
         tue::config::DataConstPointer super_data = loadModelData(super_type, types, error);
         tue::config::DataPointer combined_data;
@@ -206,10 +204,7 @@ bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest&
 
 bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateRequest& req, std::stringstream& error)
 {
-    if (!create(data, "", "", req, error, ""))
-        return false;
-
-    return true;
+    return create(data, "", "", req, error, "");
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -219,9 +214,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                          const geo::Pose3D& pose_offset)
 {
     tue::config::Reader r(data);
-
-    std::cout << "Opt ID: " << id_opt.str() << std::endl;
-    std::cout << "Parent ID: " << parent_id.str() << std::endl;
 
     // Get Id
     UUID id;
@@ -304,13 +296,6 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         }
         r.endArray();
     }
-    else if (r.readGroup("include")) // SDF can both be Group or Array
-    {
-        if (!create(r.data(), "", id, req, error, "", pose))
-            return false;
-        r.endGroup();
-    }
-
 
     // Set shape
     if (r.readGroup("shape"))
@@ -347,35 +332,10 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                     }
                     r.endArray();
                 }
-                else if(r.readGroup("visual"))
-                {
-                    readSDFGeometry(shape_model_path, r, composite, error, link_pose);
-                    r.endGroup();
-                }
-
             }
             r.endArray();
         }
-        else if (r.readGroup("link"))
-        {
-            geo::Pose3D link_pose = geo::Pose3D::identity();
-            readPose(r, link_pose);
-            if (r.readArray("visual"))
-            {
-                while(r.nextArrayItem())
-                {
-                    readSDFGeometry(shape_model_path, r, composite, error, link_pose);
-                }
-                r.endArray();
-            }
-            else if(r.readGroup("visual"))
-            {
-                readSDFGeometry(shape_model_path, r, composite, error, link_pose);
-                r.endGroup();
-            }
-            r.endGroup();
-        }
-        if (composite->getMesh().size()>0)
+        if (!composite->getMesh().empty())
             req.setShape(id, composite);
     }
 
