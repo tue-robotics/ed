@@ -35,8 +35,6 @@
 #include <geolib/Shape.h>
 #include <geolib/Mesh.h>
 
-#include <ros/package.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <execinfo.h>
