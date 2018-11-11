@@ -29,7 +29,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_visualization
   CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_object_models ed_msgs tue_config tue_serialization rgbd
-  DEPENDS opencv
+  DEPENDS OpenCV
 )
 
 ###########
