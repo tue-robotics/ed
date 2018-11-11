@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   geolib2
   kdl_parser
   rgbd
-  pcl_conversions
+  pcl_ros
   roscpp
   tue_config
   tue_filesystem

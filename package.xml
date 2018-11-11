@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>ed</name>
   <version>0.0.0</version>
   <description>Environment Description (ED)</description>
@@ -10,34 +10,19 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>class_loader</build_depend>
-  <build_depend>code_profiler</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>ed_msgs</build_depend>
-  <build_depend>ed_object_models</build_depend>
-  <build_depend>geolib2</build_depend>
-  <build_depend>kdl_parser</build_depend>
-  <build_depend>orocos_kdl</build_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <build_depend>rgbd</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>tue_config</build_depend>
-  <build_depend>tue_filesystem</build_depend>
-  <build_depend>tue_serialization</build_depend>
-
-  <run_depend>class_loader</run_depend>
-  <run_depend>code_profiler</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>ed_msgs</run_depend>
-  <run_depend>ed_object_models</run_depend>
-  <run_depend>geolib2</run_depend>
-  <run_depend>kdl_parser</run_depend>
-  <run_depend>orocos_kdl</run_depend>
-  <run_depend>pcl_conversions</run_depend>
-  <run_depend>rgbd</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>tue_config</run_depend>
-  <run_depend>tue_filesystem</run_depend>
-  <run_depend>tue_serialization</run_depend>
+  <depend>class_loader</depend>
+  <depend>code_profiler</depend>
+  <depend>cv_bridge</depend>
+  <depend>ed_msgs</depend>
+  <depend>ed_object_models</depend>
+  <depend>geolib2</depend>
+  <depend>kdl_parser</depend>
+  <depend>orocos_kdl</depend>
+  <depend>pcl_ros</depend>
+  <depend>rgbd</depend>
+  <depend>roscpp</depend>
+  <depend>tue_config</depend>
+  <depend>tue_filesystem</depend>
+  <depend>tue_serialization</depend>
 
 </package>
