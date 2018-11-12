@@ -37,21 +37,21 @@ We assume you have successfully installed ROS and set-up a Catkin workspace. Che
     git clone https://github.com/tue-robotics/ed.git
     git clone https://github.com/tue-robotics/ed_object_models.git
     git clone https://github.com/tue-robotics/ed_msgs.git
-    git clone https://github.com/tue-robotics/code_profiler
-    git clone https://github.com/tue-robotics/geolib2
-    git clone https://github.com/tue-robotics/rgbd
+    git clone https://github.com/tue-robotics/code_profiler.git
+    git clone https://github.com/tue-robotics/geolib2.git
+    git clone https://github.com/tue-robotics/rgbd.git
     git clone https://github.com/tue-robotics/tue_config.git
-    git clone https://github.com/tue-robotics/tue_filesystem
-    git clone https://github.com/tue-robotics/tue_serialization
+    git clone https://github.com/tue-robotics/tue_filesystem.git
+    git clone https://github.com/tue-robotics/tue_serialization.git
 
-You will also need the following system dependencies (ROS kinetic, Ubuntu 14.04):
+You will also need the following system dependencies (ROS kinetic, Ubuntu 16.04):
 
     sudo apt-get install ros-kinetic-geometry-msgs ros-kinetic-pcl-ros ros-kinetic-message-filters ros-kinetic-image-geometry ros-kinetic-kdl-parser ros-kinetic-roslib ros-kinetic-std-srvs libyaml-cpp-dev ros-kinetic-cv-bridge ros-kinetic-tf libassimp-dev ros-kinetic-message-generation ros-kinetic-roscpp ros-kinetic-message-runtime ros-kinetic-class-loader
 
 This should be sufficient to successfully compile ED:
 
     cd <your_catkin_workspace>
-    catkin_make
+    catkin_make/catkin build
 
 ## ED Extensions
 
