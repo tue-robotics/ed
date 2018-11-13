@@ -9,15 +9,15 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   class_loader
+  code_profiler
   cv_bridge
   ed_object_models
   ed_msgs
   geolib2
   kdl_parser
   rgbd
-  pcl_conversions
+  pcl_ros
   roscpp
-  roslib
   tue_config
   tue_filesystem
   tue_serialization
@@ -34,8 +34,8 @@ find_package(TinyXML REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_visualization
-  CATKIN_DEPENDS tue_config tue_serialization rgbd ed_object_models ed_msgs
-  DEPENDS orocos_kdl #system_lib
+  CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_object_models ed_msgs tue_config tue_serialization rgbd
+  DEPENDS OpenCV
 )
 
 ###########
