@@ -398,38 +398,16 @@ int main(int argc, char **argv)
                 geo::Shape shape;
                 tue::config::Reader r(e->data());
 
-                if (show_areas && r.readArray("areas"))
+                std::map<std::string, geo::ShapeConstPtr> areas = e->areas();
+                if (show_areas && !areas.empty())
                 {
-                    while(r.nextArrayItem())
-                    {
-                        std::string a_name;
-                        if (!r.value("name", a_name))
-                            continue;
-
-                        if (ed::deserialize(r, "shape", shape))
-                        {
-                            res.color = cv::Vec3b(0, 0, 255);
-                            opt.setMesh(shape.getMesh(), pose);
-                            cam.render(opt, res);
-                        }
-                    }
-                    r.endArray();
-                }
-                else if (show_areas && r.readGroup("areas"))
-                {
-                    std::string a_name;
-                    if (!r.value("name", a_name))
-                        continue;
-
-                    if (ed::deserialize(r, "shape", shape))
+                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = areas.begin(); it != areas.end(); ++it)
                     {
                         res.color = cv::Vec3b(0, 0, 255);
-                        opt.setMesh(shape.getMesh(), pose);
+                        opt.setMesh(it->second->getMesh(), pose);
                         cam.render(opt, res);
                     }
                 }
-
-
             }
         }
 

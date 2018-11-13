@@ -5,11 +5,4 @@
 namespace ed
 {
 
-// ----------------------------------------------------------------------------------------------------
-
-//void UpdateRequest::setEntity(const EntityConstPtr& e)
-//{
-//    entities[e->id()] = e;
-//}
-
 }

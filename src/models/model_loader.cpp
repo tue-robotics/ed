@@ -135,6 +135,13 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
         }
     }
 
+    if (sdf)
+    {
+        model_cfg.readGroup("sdf");
+        model_cfg.readGroup("world");
+        model_cfg.readGroup("model");
+    }
+
     std::string super_type;
     if (model_cfg.value("type", super_type, tue::config::OPTIONAL) ||
             model_cfg.value("uri", super_type, tue::config::OPTIONAL) ||
@@ -290,12 +297,11 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     if (r.readArray("composition") || r.readArray("include"))
     {
         while (r.nextArrayItem())
-        {
             if (!create(r.data(), "", id, req, error, "", pose))
                 return false;
-        }
         r.endArray();
     }
+
 
     // Set shape
     if (r.readGroup("shape"))
@@ -318,6 +324,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         geo::CompositeShapePtr composite(new geo::CompositeShape);
         std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+        // TODO: this could be simplified depending on the xml implementation in tue_config
         if (r.readArray("link"))
         {
             while (r.nextArrayItem())

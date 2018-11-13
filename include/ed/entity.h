@@ -52,6 +52,10 @@ public:
     inline geo::ShapeConstPtr shape() const { return shape_; }
     void setShape(const geo::ShapeConstPtr& shape);
 
+    inline std::map<std::string, geo::ShapeConstPtr> areas() const { return areas_; }
+    void addArea(const std::string& area_name, const geo::ShapeConstPtr& area_shape) { areas_[area_name] = area_shape; ++shape_revision_; }
+    void removeArea(const std::string& area_name) { areas_.erase(area_name); ++shape_revision_; }
+
     inline int shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
 
     inline const ConvexHull& convexHull() const { return convex_hull_new_; }
@@ -230,6 +234,7 @@ private:
     unsigned int measurements_seq_;
 
     geo::ShapeConstPtr shape_;
+    std::map<std::string, geo::ShapeConstPtr> areas_;
     int shape_revision_;
 
     std::map<std::string, MeasurementConvexHull> convex_hull_map_;
