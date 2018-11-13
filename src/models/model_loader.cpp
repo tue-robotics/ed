@@ -339,6 +339,20 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                     }
                     r.endArray();
                 }
+                geo::CompositeShapePtr area_composite(new geo::CompositeShape);
+                std::string area_name;
+                if (r.value("name", area_name))
+                {
+                    if (r.readArray("virtual_area"))
+                    {
+                        while(r.nextArrayItem())
+                        {
+                            readSDFGeometry(shape_model_path, r, area_composite, error, link_pose);
+                        }
+                        r.endArray();
+                    }
+                    req.addArea(id, area_name, area_composite);
+                 }
             }
             r.endArray();
         }
