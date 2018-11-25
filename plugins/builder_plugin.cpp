@@ -57,7 +57,7 @@ bool BuilderPlugin::srvSetEntity(ed_msgs::SetEntity::Request& req, ed_msgs::SetE
     {
         ed::models::Loader l;
         geo::ShapePtr shape = l.loadShape(req.type);
-        if (shape)
+        if (!shape->empty())
         {
             ed::EntityPtr e(new ed::Entity(req.id, req.type));
             e->setShape(shape);

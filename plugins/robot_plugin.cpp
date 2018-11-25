@@ -68,7 +68,7 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 
 geo::ShapePtr linkToShape(const boost::shared_ptr<urdf::Link>& link)
 {
-    geo::ShapePtr shape;
+    geo::ShapePtr shape(new geo::Shape());
 
     if (!link->visual || !link->visual->geometry)
         return shape;
@@ -101,7 +101,7 @@ geo::ShapePtr linkToShape(const boost::shared_ptr<urdf::Link>& link)
             geo::Importer importer;
             shape = importer.readMeshFile(abs_filename, mesh->scale.x);
 
-            if (!shape)
+            if (shape->empty())
                 std::cout << "RobotPlugin: Could not load shape" << std::endl;
         }
     }
@@ -319,7 +319,7 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
             const boost::shared_ptr<urdf::Link>& link = *it;
 
             geo::ShapePtr shape = linkToShape(link);
-            if (shape)
+            if (!shape->empty())
             {
                 std::string id = robot_name_ + "/" + link->name;
                 req.setShape(id, shape);
