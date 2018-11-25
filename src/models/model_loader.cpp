@@ -310,7 +310,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.value("__model_path__", shape_model_path);
 
         geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
-        if (shape)
+        if (!shape->empty())
             req.setShape(id, shape);
         else
             return false;
@@ -356,7 +356,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             }
             r.endArray();
         }
-        if (!composite->getMesh().empty())
+        if (!composite->empty())
             req.setShape(id, composite);
     }
 

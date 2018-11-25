@@ -50,10 +50,10 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
     if (!model_xml)
     {
         s_error << "Could not find 'model' element" << std::endl;
-        return geo::ShapePtr();
+        return geo::ShapePtr(new geo::Shape());
     }
 
-    boost::shared_ptr<geo::CompositeShape> shape(new geo::CompositeShape);
+    geo::CompositeShapePtr shape(new geo::CompositeShape);
 
     const TiXmlElement* shape_xml = model_xml->FirstChildElement();
     while (shape_xml)

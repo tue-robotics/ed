@@ -5,7 +5,6 @@
 #include <tue/filesystem/path.h>
 
 #include <geolib/serialization.h>
-#include <geolib/HeightMap.h>
 #include <geolib/Shape.h>
 #include <geolib/CompositeShape.h>
 #include <geolib/Importer.h>
@@ -27,6 +26,12 @@ namespace models
 /*
 std::string split implementation by using delimiter as a character. Multiple delimeters are removed.
 */
+/**
+ * @brief split Implementation by using delimiter as a character. Multiple delimeters are removed.
+ * @param strToSplit input string, which is splitted
+ * @param delimeter char on which the string is split
+ * @return vector of sub-strings
+ */
 std::vector<std::string> split(std::string& strToSplit, char delimeter)
 {
     std::stringstream ss(strToSplit);
@@ -42,11 +47,27 @@ std::vector<std::string> split(std::string& strToSplit, char delimeter)
 
 // ----------------------------------------------------------------------------------------------------
 
-std::string getFilePath(const std::string& type)
+/**
+ * @brief getFilePath
+ * @param type
+ * @return
+ */
+std::string getFilePath(std::string type)
 {
     const char * mpath = ::getenv("ED_MODEL_PATH");
     if (!mpath)
         return "";
+
+    // remove prefix in case of sdf
+    std::string str1 = "file://";
+    std::string str2 = "model://";
+
+    std::string::size_type i = type.find(str1);
+    if (i != std::string::npos)
+       type.erase(i, str1.length());
+    i = type.find(str2);
+    if (i != std::string::npos)
+       type.erase(i, str2.length());
 
     std::stringstream ss(mpath);
     std::string item;
@@ -67,6 +88,15 @@ std::string getFilePath(const std::string& type)
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief findContours
+ * @param image Grayscale image
+ * @param p_start starting point
+ * @param d_start starting direction
+ * @param points
+ * @param line_starts
+ * @param contour_map
+ */
 void findContours(const cv::Mat& image, const geo::Vec2i& p_start, int d_start, std::vector<geo::Vec2i>& points,
                   std::vector<geo::Vec2i>& line_starts, cv::Mat& contour_map)
 {
@@ -128,14 +158,31 @@ void findContours(const cv::Mat& image, const geo::Vec2i& p_start, int d_start, 
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, double blockheight, double resolution, std::stringstream& error)
+/**
+ * @brief getHeightMapShape convert grayscale image in a heigtmap mesh
+ * @param image_orig grayscale image
+ * @param pos position of the origin of the heigtmap
+ * @param size dimensions of the final mesh
+ * @param inverted false: CV/ROS standard (black = height); true: SDF/GAZEBO (White = height)
+ * @param error errorstream
+ * @return final mesh; or empty mesh in case of error
+ */
+geo::ShapePtr getHeightMapShape(cv::Mat& image_orig, const geo::Vec3& pos, const geo::Vec3& size, const bool inverted, std::stringstream& error)
 {
-    cv::Mat image_orig = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+    double resolution_x = size.x/image_orig.cols;
+    double resolution_y = size.y/image_orig.rows;
+    double blockheight = size.z;
 
-    if (!image_orig.data)
+    // invert grayscale for SDF
+    if (inverted)
     {
-        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap '" << image_filename << "'. Image could not be loaded." << std::endl;
-        return geo::ShapePtr();
+        for (int i = 0; i < image_orig.rows; i++)
+        {
+            for (int j = 0; j < image_orig.cols; j++)
+            {
+                image_orig.at<uchar>(i, j) = 255 - image_orig.at<uchar>(i, j);
+            }
+        }
     }
 
     // Add borders
@@ -178,8 +225,8 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
                         poly[i].y = points[i].y;
 
                         // Convert to world coordinates
-                        double wx = points[i].x * resolution + pos.x;
-                        double wy = (image.rows - points[i].y - 2) * resolution + pos.y;
+                        double wx = points[i].x * resolution_x + pos.x;
+                        double wy = (image.rows - points[i].y - 2) * resolution_y + pos.y;
 
                         vertex_index_map.at<int>(points[i].y, points[i].x) = mesh.addPoint(geo::Vector3(wx, wy, min_z));
                         mesh.addPoint(geo::Vector3(wx, wy, max_z));
@@ -221,8 +268,8 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
                                     poly_hole[j].y = hole_points[j].y;
 
                                     // Convert to world coordinates
-                                    double wx = hole_points[j].x * resolution + pos.x;
-                                    double wy = (image.rows - hole_points[j].y - 2) * resolution + pos.y;
+                                    double wx = hole_points[j].x * resolution_x + pos.x;
+                                    double wy = (image.rows - hole_points[j].y - 2) * resolution_y + pos.y;
 
                                     vertex_index_map.at<int>(hole_points[j].y, hole_points[j].x) = mesh.addPoint(geo::Vector3(wx, wy, min_z));
                                     mesh.addPoint(geo::Vector3(wx, wy, max_z));
@@ -281,7 +328,72 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::Reader cfg, std::stringstream& error)
+/**
+ * @brief getHeightMapShape convert grayscale image in a heigtmap mesh
+ * @param image_filename full path of grayscale image
+ * @param pos position of the origin of the heigtmap
+ * @param size dimensions of the final mesh
+ * @param inverted false: CV/ROS standard (black = height); true: SDF/GAZEBO (White = height)
+ * @param errorerrorstream
+ * @return final mesh; or empty mesh in case of error
+ */
+geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, const geo::Vec3& size,
+                                const bool inverted, std::stringstream& error)
+{
+    cv::Mat image_orig = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+
+    if (!image_orig.data)
+    {
+        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap '" << image_filename << "'. Image could not be loaded." << std::endl;
+        return geo::ShapePtr(new geo::Shape());
+    }
+
+    return getHeightMapShape(image_orig, pos, size, inverted, error);
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+
+/**
+ * @brief getHeightMapShape convert grayscale image in a heigtmap mesh
+ * @param image_filename full path of grayscale image
+ * @param pos position of the origin of the heigtmap
+ * @param blockheight height of the heightmap of max grayscale value
+ * @param resolution_x resolution in x direction in meters
+ * @param resolution_y resolution in y direction in meters
+ * @param inverted false: CV/ROS standard (black = height); true: SDF/GAZEBO (White = height)
+ * @param errorerrorstream
+ * @return final mesh; or empty mesh in case of error
+ */
+geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, const double blockheight,
+                                const double resolution_x, const double resolution_y, const bool inverted, std::stringstream& error)
+{
+    cv::Mat image_orig = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+
+    if (!image_orig.data)
+    {
+        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap '" << image_filename << "'. Image could not be loaded." << std::endl;
+        return geo::ShapePtr(new geo::Shape());
+    }
+
+    double size_x = resolution_x * image_orig.cols;
+    double size_y = resolution_y * image_orig.rows;
+    geo::Vec3 size(size_x, size_y, blockheight);
+
+    return getHeightMapShape(image_orig, pos, size, inverted, error);
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+
+/**
+ * @brief getHeightMapShape convert grayscale image in a heigtmap mesh
+ * @param image_filename image_filename full path of grayscale image
+ * @param cfg reader with model/shape information
+ * @param error errorstream
+ * @return final mesh; or empty mesh in case of error
+ */
+geo::ShapePtr getHeightMapShape(const std::string& image_filename, tue::config::Reader cfg, std::stringstream& error)
 {
     double resolution, origin_x, origin_y, origin_z, blockheight;
     if (!(cfg.value("origin_x", origin_x) &&
@@ -290,16 +402,27 @@ geo::ShapePtr getHeightMapShape(const tue::filesystem::Path& path, tue::config::
             cfg.value("resolution", resolution) &&
             cfg.value("blockheight", blockheight)))
     {
-        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap parameters at '" << path.string()
+        error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap parameters at '" << image_filename
               << "'. Required shape parameters: resolution, origin_x, origin_y, origin_z, blockheight" << std::endl;
-        return geo::ShapePtr();
+        return geo::ShapePtr(new geo::Shape());
     }
 
-    return getHeightMapShape(path.string(), geo::Vec3(origin_x, origin_y, origin_z), blockheight, resolution, error);
+    int inverted = 1;
+    cfg.value("inverted", inverted);
+
+    return getHeightMapShape(image_filename, geo::Vec3(origin_x, origin_y, origin_z), blockheight, resolution, resolution,
+                             (bool) inverted, error);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief createPolygon create polygon mesh from points
+ * @param shape filled mesh
+ * @param points 2D points which define the mesh
+ * @param height height of the mesh
+ * @param create_bottom false: open bottom; true: closed bottom
+ */
 void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, bool create_bottom)
 {
     TPPLPoly poly;
@@ -364,6 +487,13 @@ void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, doub
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief createCylinder create a mesh from radius and height
+ * @param shape filled mesh
+ * @param radius radius of the cylinder
+ * @param height height of the cylinder
+ * @param num_corners divided the circumference in N points and N+1 lines
+ */
 void createCylinder(geo::Shape& shape, double radius, double height, int num_corners)
 {
     geo::Mesh mesh;
@@ -404,6 +534,12 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief readVec3 read x, y and z into a vector
+ * @param cfg reader
+ * @param v filled Vec3 vector
+ * @param pos_req RequiredOrOptional
+ */
 void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOptional pos_req = tue::config::REQUIRED)
 {
     cfg.value("x", v.x, pos_req);
@@ -413,6 +549,14 @@ void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOpt
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief readVec3Group read a config group into a Vec3 group
+ * @param cfg reader
+ * @param v filled Vec3 vector
+ * @param vector_name name of the reader group to be read
+ * @param pos_req RequiredOrOptional
+ * @return indicates succes
+ */
 bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& vector_name, tue::config::RequiredOrOptional pos_req = tue::config::REQUIRED)
 {
     std::string vector_string;
@@ -436,6 +580,14 @@ bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& ve
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief readPose read pose into Pose3D. Both ED yaml and SDF. Also reads pos(position) of SDF.
+ * @param cfg reader
+ * @param pose filled Pose3D pose
+ * @param pos_req position RequiredOrOptional
+ * @param rot_req rotation RequiredOrOptional
+ * @return indicates succes
+ */
 bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::RequiredOrOptional pos_req, tue::config::RequiredOrOptional rot_req)
 {
     double roll = 0, pitch = 0, yaw = 0;
@@ -470,6 +622,20 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
         else
             return false;
     }
+    else if (cfg.value("pos", pose_string, pos_req))
+    {
+        // position is in SDF
+        std::vector<std::string> pose_vector = split(pose_string, ' ');
+        if (pose_vector.size() == 3)
+        {
+            // ignoring pose, when incorrect/incomplete
+            pose.t.x = std::stod(pose_vector[0]);
+            pose.t.y = std::stod(pose_vector[1]);
+            pose.t.z = std::stod(pose_vector[2]);
+        }
+        else
+            return false;
+    }
 
     // Set rotation
     pose.R.setRPY(roll, pitch, yaw);
@@ -478,10 +644,18 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief loadShape load the shape of a model.
+ * @param model_path path of the model
+ * @param cfg reader
+ * @param shape_cache cache for complex models
+ * @param error errorstream
+ * @return final mesh; or empty mesh in case of error
+ */
 geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
-    geo::ShapePtr shape(new geo::Shape);
+    geo::ShapePtr shape(new geo::Shape());
     geo::Pose3D pose = geo::Pose3D::identity();
 
     std::string path;
@@ -510,7 +684,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             std::string xt = shape_path.extension();
             if (xt == ".pgm" || xt == ".png")
             {
-                shape = getHeightMapShape(shape_path, cfg, error);
+                shape = getHeightMapShape(shape_path.string(), cfg, error);
             }
             else if (xt == ".geo")
             {
@@ -527,7 +701,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                 shape = parseXMLShape(shape_path.string(), error);
             }
 
-            if (!shape)
+            if (shape->empty())
                 error << "[ED::MODELS::LOADSHAPE] Error while loading shape at " << shape_path.string() << std::endl;
             else
                 // Add to cache
@@ -567,7 +741,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         double radius, height;
         if (cfg.value("radius", radius) && (cfg.value("height", height) || cfg.value("length", height))) //length is used in SDF
         {
-            shape.reset(new geo::Shape);
+            shape.reset(new geo::Shape());
             createCylinder(*shape, radius, height, num_points);
         }
 
@@ -591,7 +765,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         double height;
         if (cfg.value("height", height))
         {
-            shape.reset(new geo::Shape);
+            shape.reset(new geo::Shape());
             createPolygon(*shape, points, height, true);
         }
 
@@ -618,7 +792,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         cfg.endArray();
         if (height > 0 && std::abs<double>(height) >= 0.01)
         {
-            shape.reset(new geo::Shape);
+            shape.reset(new geo::Shape());
             createPolygon(*shape, points, height, true);
         }
     }
@@ -655,14 +829,14 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         if (cfg.value("submesh", dummy))
             error << "[ED::MODELS::LOADSHAPE] 'submesh' of mesh is not supported by ED " << std::endl;
 
-
     }
-    else if (cfg.readArray("heightmap")) // SDF AND ED YAML
+    else if (cfg.readGroup("heightmap")) // SDF AND ED YAML
     {
         std::string image_filename;
         double height, resolution;
 
-        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height)))
+        geo::Vec3 size;
+        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height))) // ED YAML ONLY
         {
             std::string image_filename_full = image_filename;
 //            if (image_filename[0] == '/')
@@ -670,8 +844,19 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 //            else
 //                image_filename_full = model_path + "/" + image_filename;
 
-            shape = getHeightMapShape(image_filename_full, geo::Vec3(0, 0, 0), height, resolution, error);
+            shape = getHeightMapShape(image_filename_full, geo::Vec3(0, 0, 0), height, resolution, resolution, false, error);
 
+            readPose(cfg, pose);
+        }
+        else if(cfg.value("uri", image_filename) && readVec3Group(cfg, size, "size")) // SDF ONLY
+        {
+            image_filename = getFilePath(image_filename);
+
+            // by default center should be in the middle.
+            geo::Vec3 pos = -size/2;
+            pos.z = 0;
+
+            shape = getHeightMapShape(image_filename, pos, size, true, error);
             readPose(cfg, pose);
         }
         else
@@ -699,10 +884,10 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
     readPose(cfg, pose);
 
-    if (shape)
+    if (!shape->empty())
     {
         // Transform shape according to pose
-        geo::ShapePtr shape_tr(new geo::Shape);
+        geo::ShapePtr shape_tr(new geo::Shape());
         shape_tr->setMesh(shape->getMesh().getTransformed(pose));
         shape = shape_tr;
     }
