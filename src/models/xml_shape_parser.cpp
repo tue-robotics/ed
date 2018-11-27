@@ -119,8 +119,8 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
     }
 
     error = s_error.str();
-    if (error.empty())
-        return shape;
+    if (!error.empty())
+        return geo::ShapePtr();
 
-    return geo::ShapePtr();
+    return shape;
 }

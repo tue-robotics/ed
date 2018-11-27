@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     std::stringstream error;
     geo::ShapePtr shape = ed::models::loadShape("", cfg, shape_cache, error);
 
-    if (shape->empty())
+    if (!shape)
     {
         std::cout << "Could not generate mesh from file:" << std::endl;
         std::cout << error.str() << std::endl;

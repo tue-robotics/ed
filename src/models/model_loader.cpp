@@ -31,7 +31,12 @@ bool readSDFGeometry(const std::string& model_path, tue::config::Reader r, geo::
     {
         std::map<std::string, geo::ShapePtr> dummy_shape_cache;
         geo::ShapePtr sub_shape = loadShape(model_path, r, dummy_shape_cache, error);
-        composite->addShape(*sub_shape, pose);
+        if (sub_shape)
+        {
+            if (!composite)
+                composite.reset(new geo::CompositeShape);
+            composite->addShape(*sub_shape, pose);
+        }
         r.endGroup();
         return true;
     }
@@ -310,7 +315,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.value("__model_path__", shape_model_path);
 
         geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
-        if (!shape->empty())
+        if (shape)
             req.setShape(id, shape);
         else
             return false;
@@ -356,7 +361,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             }
             r.endArray();
         }
-        if (!composite->empty())
+        if (composite)
             req.setShape(id, composite);
     }
 

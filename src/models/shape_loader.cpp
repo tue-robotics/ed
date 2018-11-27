@@ -298,7 +298,7 @@ geo::ShapePtr getHeightMapShape(cv::Mat& image_orig, const geo::Vec3& pos, const
                     if (!pp.Triangulate_EC(&testpolys, &result))
                     {
                         error << "[ED::MODELS::LOADSHAPE] Error while creating heightmap: could not triangulate polygon." << std::endl;
-                        return shape;
+                        return geo::ShapePtr();
                     }
 
                     for(std::list<TPPLPoly>::iterator it = result.begin(); it != result.end(); ++it)
@@ -345,7 +345,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
     if (!image_orig.data)
     {
         error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap '" << image_filename << "'. Image could not be loaded." << std::endl;
-        return geo::ShapePtr(new geo::Shape());
+        return geo::ShapePtr();
     }
 
     return getHeightMapShape(image_orig, pos, size, inverted, error);
@@ -373,7 +373,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
     if (!image_orig.data)
     {
         error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap '" << image_filename << "'. Image could not be loaded." << std::endl;
-        return geo::ShapePtr(new geo::Shape());
+        return geo::ShapePtr();
     }
 
     double size_x = resolution_x * image_orig.cols;
@@ -404,7 +404,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, tue::config::
     {
         error << "[ED::MODELS::LOADSHAPE] Error while loading heightmap parameters at '" << image_filename
               << "'. Required shape parameters: resolution, origin_x, origin_y, origin_z, blockheight" << std::endl;
-        return geo::ShapePtr(new geo::Shape());
+        return geo::ShapePtr();
     }
 
     int inverted = 1;
@@ -655,7 +655,7 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
 geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
-    geo::ShapePtr shape(new geo::Shape());
+    geo::ShapePtr shape;
     geo::Pose3D pose = geo::Pose3D::identity();
 
     std::string path;
@@ -701,7 +701,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                 shape = parseXMLShape(shape_path.string(), error);
             }
 
-            if (shape->empty())
+            if (!shape)
                 error << "[ED::MODELS::LOADSHAPE] Error while loading shape at " << shape_path.string() << std::endl;
             else
                 // Add to cache
@@ -884,7 +884,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
     readPose(cfg, pose);
 
-    if (!shape->empty())
+    if (shape)
     {
         // Transform shape according to pose
         geo::ShapePtr shape_tr(new geo::Shape());
