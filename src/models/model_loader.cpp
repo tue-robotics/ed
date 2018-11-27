@@ -168,11 +168,11 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
     // If model loads a shape, set model path in shape data
     tue::config::ReaderWriter rw(data);
-    if (rw.readGroup("shape") || sdf) // always add the model path with an sdf. Because it is to deep to search in links for visuals/collisions
+    if (rw.readGroup("shape") || rw.readArray("areas") || sdf) // always add the model path with an sdf. Because it is to deep to search in links for visuals/collisions
     {
         rw.setValue("__model_path__", model_path);
         if (!sdf)
-            rw.endGroup();
+            rw.endGroup(); // This is the same as endArray. Ugly but it works.
     }
 
     // Store data in cache
@@ -363,6 +363,29 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         }
         if (composite)
             req.setShape(id, composite);
+    }
+
+    // Set areas
+    if (r.readArray("areas"))
+    {
+        std::string shape_model_path = model_path;
+        r.value("__model_path__", shape_model_path);
+        while (r.nextArrayItem())
+        {
+            std::string area_name;
+            if (!r.value("name", area_name) && r.readGroup("shape"))
+                continue;
+
+            std::cout << r.data() << std::endl;
+
+            geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
+            if (shape)
+                req.setShape(id, shape);
+            else
+                return false;
+            r.endGroup();
+        }
+        r.endArray();
     }
 
     if (r.readArray("flags"))
