@@ -373,17 +373,24 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         while (r.nextArrayItem())
         {
             std::string area_name;
-            if (!r.value("name", area_name) && r.readGroup("shape"))
+            if (!(r.value("name", area_name) && r.readArray("shape")))
                 continue;
 
-            std::cout << r.data() << std::endl;
+            geo::CompositeShapePtr shape;
+            while (r.nextArrayItem())
+            {
+                geo::ShapePtr sub_shape = loadShape(shape_model_path, r, shape_cache_, error);
+                if (sub_shape)
+                {
+                    if(!shape)
+                        shape.reset(new geo::CompositeShape);
+                    shape->addShape(*sub_shape, geo::Pose3D::identity());
+                }
+            }
+            r.endArray();
 
-            geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
             if (shape)
-                req.setShape(id, shape);
-            else
-                return false;
-            r.endGroup();
+                req.addArea(id, area_name, shape);
         }
         r.endArray();
     }

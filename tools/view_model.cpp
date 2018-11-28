@@ -399,7 +399,7 @@ int main(int argc, char **argv)
                 tue::config::Reader r(e->data());
 
                 std::map<std::string, geo::ShapeConstPtr> areas = e->areas();
-                if (show_areas && !areas.empty())
+                if (show_areas && !areas.empty() && e->type() != "room")
                 {
                     for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = areas.begin(); it != areas.end(); ++it)
                     {
