@@ -80,7 +80,7 @@ public:
     void renderPixel(int x, int y, float depth, int i_triangle)
     {
         float old_depth = z_buffer.at<float>(y, x);
-        if (old_depth == 0 || depth < old_depth)
+        if (old_depth == 0. || depth < old_depth)
         {
             z_buffer.at<float>(y, x) = depth;
 
