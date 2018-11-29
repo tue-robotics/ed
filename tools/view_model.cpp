@@ -395,15 +395,13 @@ int main(int argc, char **argv)
 
 
                 // Render areas
-                geo::Shape shape;
-                tue::config::Reader r(e->data());
-
                 std::map<std::string, geo::ShapeConstPtr> areas = e->areas();
-                if (show_areas && !areas.empty() && e->type() != "room")
+                if (show_areas && !areas.empty())
                 {
                     for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = areas.begin(); it != areas.end(); ++it)
                     {
                         res.color = cv::Vec3b(0, 0, 255);
+                        res.setMesh(&it->second->getMesh());
                         opt.setMesh(it->second->getMesh(), pose);
                         cam.render(opt, res);
                     }
