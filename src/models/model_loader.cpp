@@ -309,6 +309,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
 
     // Set shape
+    std::string shape_model_path = model_path;
     if (r.readGroup("shape"))
     {
         std::string shape_model_path = model_path;
@@ -322,14 +323,10 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
 
         r.endGroup();
     }
-    else // SDF
+    else if (r.value("__model_path__", shape_model_path)) // SDF
     {
-        std::string shape_model_path = model_path;
-        r.value("__model_path__", shape_model_path);
-
-        geo::CompositeShapePtr composite(new geo::CompositeShape);
+        geo::CompositeShapePtr composite;
         std::map<std::string, geo::ShapePtr> dummy_shape_cache;
-        // TODO: this could be simplified depending on the xml implementation in tue_config
         if (r.readArray("link"))
         {
             while (r.nextArrayItem())
@@ -344,7 +341,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                     }
                     r.endArray();
                 }
-                geo::CompositeShapePtr area_composite(new geo::CompositeShape);
+                geo::CompositeShapePtr area_composite;
                 std::string area_name;
                 if (r.value("name", area_name))
                 {
@@ -356,7 +353,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
                         }
                         r.endArray();
                     }
-                    req.addArea(id, area_name, area_composite);
+                    if (area_composite)
+                        req.addArea(id, area_name, area_composite);
                  }
             }
             r.endArray();
