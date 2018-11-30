@@ -10,6 +10,14 @@ namespace convex_hull
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief create fill a ConvexHull a put its origin in the middle of the Convexhull
+ * @param points points describing the shape. Points should be in map frame.
+ * @param z_min min height
+ * @param z_max max height
+ * @param c filled ConvexHull
+ * @param pose new pose of the convexhull
+ */
 void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& chull, geo::Pose3D& pose)
 {
     cv::Mat_<cv::Vec2f> points_2d(1, points.size());
@@ -65,6 +73,13 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief createAbsolute fill a ConvexHull with its origin in map frame.
+ * @param points points describing the shape. Points should be in map frame.
+ * @param z_min min height
+ * @param z_max max height
+ * @param c filled ConvexHull
+ */
 void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& c)
 {
     cv::Mat_<cv::Vec2f> points_2d(1, points.size());
@@ -116,6 +131,16 @@ void calculateEdgesAndNormals(ConvexHull& c)
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief collide Check of two ConvexHull collide with padding in xy and in z.
+ * @param c1 ConvexHull 1
+ * @param pos1 position of ConvexHull 1
+ * @param c2 ConvexHull 2
+ * @param pos2 position of ConvexHull 2
+ * @param xy_padding padding in xy-plane
+ * @param z_padding padding in z-plane
+ * @return
+ */
 bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
              const ConvexHull& c2, const geo::Vector3& pos2,
              float xy_padding, float z_padding)
@@ -189,6 +214,10 @@ bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
 
 // ----------------------------------------------------------------------------------------------------
 
+/**
+ * @brief calculateArea calculate the area of the ConvexHull in xy-plane.
+ * @param c ConvexHull
+ */
 void calculateArea(ConvexHull& c)
 {
     c.area = 0;
