@@ -1,5 +1,5 @@
-#ifndef entity_h_
-#define entity_h_
+#ifndef ED_ENTITY_H_
+#define ED_ENTITY_H_
 
 #include "ed/types.h"
 #include "ed/convex_hull_2d.h"
@@ -17,6 +17,8 @@
 #include "ed/logging.h"
 
 #include "ed/measurement_convex_hull.h"
+
+#include <map>
 
 namespace ed
 {
