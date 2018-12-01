@@ -99,6 +99,8 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
 
     if (!e.areas().empty())
     {
+        msg.areas.resize(e.areas().size());
+        int i=0;
         for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.areas().begin(); it != e.areas().end(); ++it)
         {
             ed_msgs::Area area;
@@ -118,7 +120,9 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
             area.geometry.dimensions[area.geometry.BOX_Y] = size.y;
             area.geometry.dimensions[area.geometry.BOX_Z] = size.z;
 
-            msg.areas.push_back(area);
+//            msg.areas.push_back(area); This creates a segfault. Why is unknown.
+            msg.areas[i] = area;
+            ++i;
         }
     }
 
@@ -433,8 +437,6 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
 
     for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
     {
-//        std::cout << it->first << std::endl;
-
         const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;
