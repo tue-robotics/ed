@@ -104,9 +104,19 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
             ed_msgs::Area area;
             area.name = it->first;
 
-            area.geometry.type = area.geometry.BOX;
             geo::Vector3 min = it->second->getBoundingBox().getMin();
             geo::Vector3 max = it->second->getBoundingBox().getMax();
+
+            geo::Vector3 pos = (min + max)/2;
+            geo::Vector3 size = max - min;
+
+            geo::convert(pos, area.center_point);
+
+            area.geometry.type = area.geometry.BOX;
+            area.geometry.dimensions.resize(3, 0);
+            area.geometry.dimensions[area.geometry.BOX_X] = size.x;
+            area.geometry.dimensions[area.geometry.BOX_Y] = size.y;
+            area.geometry.dimensions[area.geometry.BOX_Z] = size.z;
 
             msg.areas.push_back(area);
         }
