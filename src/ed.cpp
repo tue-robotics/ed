@@ -103,24 +103,11 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
         {
             ed_msgs::Area area;
             area.name = it->first;
-            const geo::Mesh& mesh = it->second->getMesh();
 
-            std::vector<geo::Vector3> points = mesh.getPoints();
+            area.geometry.type = area.geometry.BOX;
+            geo::Vector3 min = it->second->getBoundingBox().getMin();
+            geo::Vector3 max = it->second->getBoundingBox().getMax();
 
-            double x_min, y_min, z_min = 1e9;
-            double x_max, y_max, z_max = -1e9;
-
-            for (std::vector<geo::Vector3>::const_iterator it = points.begin(); it != points.end(); ++it)
-            {
-                x_min = std::min<double>(it->x, x_min);
-                x_max = std::max<double>(it->x, x_max);
-                y_min = std::min<double>(it->y, y_min);
-                y_max = std::max<double>(it->y, y_max);
-                z_min = std::min<double>(it->z, z_min);
-                z_max = std::max<double>(it->z, z_max);
-            }
-
-            geo::Box bounding_box = geo::Box(geo::Vector3(x_min, y_min, z_min), geo::Vector3(x_max, y_max, z_max));
             msg.areas.push_back(area);
         }
     }
