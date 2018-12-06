@@ -42,7 +42,9 @@ catkin_package(
 ## Build ##
 ###########
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreturn-type -Wsign-compare -Wreorder")
+add_compile_options(-Wreturn-type)
+add_compile_options(-Wsign-compare)
+add_compile_options(-Wreorder)
 
 include_directories(
   include
