@@ -35,6 +35,7 @@
 #include <geolib/Shape.h>
 #include <geolib/Box.h>
 #include <geolib/Mesh.h>
+#include <shape_msgs/SolidPrimitive.h>
 
 #include <signal.h>
 #include <stdio.h>
@@ -114,11 +115,14 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
 
             geo::convert(pos, area.center_point);
 
-            area.geometry.type = area.geometry.BOX;
-            area.geometry.dimensions.resize(3, 0);
-            area.geometry.dimensions[area.geometry.BOX_X] = size.x;
-            area.geometry.dimensions[area.geometry.BOX_Y] = size.y;
-            area.geometry.dimensions[area.geometry.BOX_Z] = size.z;
+            shape_msgs::SolidPrimitive solid;
+            solid.type = solid.BOX;
+            solid.dimensions.resize(3, 0);
+            solid.dimensions[solid.BOX_X] = size.x;
+            solid.dimensions[solid.BOX_Y] = size.y;
+            solid.dimensions[solid.BOX_Z] = size.z;
+            area.geometry.resize(1);
+            area.geomerty[0] = solid;
 
 //            msg.areas.push_back(area); This creates a segfault. Why is unknown.
             msg.areas[i] = area;
