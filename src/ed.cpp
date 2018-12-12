@@ -33,8 +33,10 @@
 #include <tue/config/loaders/yaml.h>
 
 #include <geolib/Shape.h>
+#include <geolib/CompositeShape.h>
 #include <geolib/Box.h>
 #include <geolib/Mesh.h>
+#include <geolib/datatypes.h>
 #include <shape_msgs/SolidPrimitive.h>
 
 #include <signal.h>
@@ -107,6 +109,20 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
             ed_msgs::Area area;
             area.name = it->first;
 
+            geo::CompositeShapeConstPtr composite = boost::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
+            std::cout << "blaat" << std::endl << std::endl << std::endl << std::endl << std::endl;
+            if(composite)
+            {
+                std::vector<std::pair<geo::ShapePtr, geo::Transform> >  shapes = composite->getShapes();
+                area.geometry.resize(shapes.size());
+                for (std::vector<std::pair<geo::ShapePtr, geo::Transform> >::const_iterator it2 = shapes.begin();
+                     it2 != shapes.end(); ++it2)
+                {
+                    true;
+                }
+                continue;
+            }
+
             geo::Vector3 min = it->second->getBoundingBox().getMin();
             geo::Vector3 max = it->second->getBoundingBox().getMax();
 
@@ -122,7 +138,7 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
             solid.dimensions[solid.BOX_Y] = size.y;
             solid.dimensions[solid.BOX_Z] = size.z;
             area.geometry.resize(1);
-            area.geomerty[0] = solid;
+            area.geometry[0] = solid;
 
 //            msg.areas.push_back(area); This creates a segfault. Why is unknown.
             msg.areas[i] = area;
