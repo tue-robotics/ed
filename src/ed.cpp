@@ -57,6 +57,26 @@ std::string update_request_;
 
 // ----------------------------------------------------------------------------------------------------
 
+void shapeToSubArea(const geo::ShapeConstPtr shape, ed_msgs::SubArea& sub_area)
+{
+    geo::Vector3 min = shape->getBoundingBox().getMin();
+    geo::Vector3 max = shape->getBoundingBox().getMax();
+
+    geo::Vector3 pos = (min + max)/2;
+    geo::Vector3 size = max - min;
+
+    geo::convert(pos, sub_area.center_point);
+
+    shape_msgs::SolidPrimitive solid;
+    sub_area.geometry.type = sub_area.geometry.BOX;
+    sub_area.geometry.dimensions.resize(3, 0);
+    sub_area.geometry.dimensions[solid.BOX_X] = size.x;
+    sub_area.geometry.dimensions[solid.BOX_Y] = size.y;
+    sub_area.geometry.dimensions[solid.BOX_Z] = size.z;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
 {
     msg.id = e.id().str();
@@ -110,37 +130,33 @@ void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
             area.name = it->first;
 
             geo::CompositeShapeConstPtr composite = boost::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
-            std::cout << "blaat" << std::endl << std::endl << std::endl << std::endl << std::endl;
             if(composite)
             {
                 std::vector<std::pair<geo::ShapePtr, geo::Transform> >  shapes = composite->getShapes();
-                area.geometry.resize(shapes.size());
+                area.subareas.resize(shapes.size());
+                int i2 = 0;
                 for (std::vector<std::pair<geo::ShapePtr, geo::Transform> >::const_iterator it2 = shapes.begin();
                      it2 != shapes.end(); ++it2)
                 {
-                    true;
+                    geo::ShapePtr shape_tr(new geo::Shape());
+                    shape_tr->setMesh(it2->first->getMesh().getTransformed(it2->second.inverse()));
+
+                    ed_msgs::SubArea sub_area;
+                    shapeToSubArea(shape_tr, sub_area);
+                    area.subareas[i2] = sub_area;
+                    ++i2;
                 }
-                continue;
+            }
+            else
+            {
+                area.subareas.resize(1);
+                ed_msgs::SubArea sub_area;
+
+                shapeToSubArea(it->second, sub_area);
+
+                area.subareas[0] = sub_area;
             }
 
-            geo::Vector3 min = it->second->getBoundingBox().getMin();
-            geo::Vector3 max = it->second->getBoundingBox().getMax();
-
-            geo::Vector3 pos = (min + max)/2;
-            geo::Vector3 size = max - min;
-
-            geo::convert(pos, area.center_point);
-
-            shape_msgs::SolidPrimitive solid;
-            solid.type = solid.BOX;
-            solid.dimensions.resize(3, 0);
-            solid.dimensions[solid.BOX_X] = size.x;
-            solid.dimensions[solid.BOX_Y] = size.y;
-            solid.dimensions[solid.BOX_Z] = size.z;
-            area.geometry.resize(1);
-            area.geometry[0] = solid;
-
-//            msg.areas.push_back(area); This creates a segfault. Why is unknown.
             msg.areas[i] = area;
             ++i;
         }
