@@ -6,7 +6,9 @@
 // Query
 #include <ed/entity.h>
 #include <ed_msgs/SimpleQuery.h>
+#include <ed/helpers/msg_conversions.h>
 #include <geolib/ros/msg_conversions.h>
+#include <geolib/datatypes.h>
 #include <tue/config/yaml_emitter.h>
 #include <ed/serialization/serialization.h>
 
@@ -32,13 +34,6 @@
 #include <ed_msgs/LoadPlugin.h>
 #include <tue/config/loaders/yaml.h>
 
-#include <geolib/Shape.h>
-#include <geolib/CompositeShape.h>
-#include <geolib/Box.h>
-#include <geolib/Mesh.h>
-#include <geolib/datatypes.h>
-#include <shape_msgs/SolidPrimitive.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <execinfo.h>
@@ -54,118 +49,6 @@ boost::thread::id main_thread_id;
 
 ed::Server* ed_wm;
 std::string update_request_;
-
-// ----------------------------------------------------------------------------------------------------
-
-void shapeToSubArea(const geo::ShapeConstPtr shape, ed_msgs::SubArea& sub_area)
-{
-    geo::Vector3 min = shape->getBoundingBox().getMin();
-    geo::Vector3 max = shape->getBoundingBox().getMax();
-
-    geo::Vector3 pos = (min + max)/2;
-    geo::Vector3 size = max - min;
-
-    geo::convert(pos, sub_area.center_point);
-
-    shape_msgs::SolidPrimitive solid;
-    sub_area.geometry.type = sub_area.geometry.BOX;
-    sub_area.geometry.dimensions.resize(3, 0);
-    sub_area.geometry.dimensions[solid.BOX_X] = size.x;
-    sub_area.geometry.dimensions[solid.BOX_Y] = size.y;
-    sub_area.geometry.dimensions[solid.BOX_Z] = size.z;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
-{
-    msg.id = e.id().str();
-    msg.type = e.type();
-
-    for(std::set<std::string>::const_iterator it = e.types().begin(); it != e.types().end(); ++it)
-        msg.types.push_back(*it);
-
-    msg.existence_probability = e.existenceProbability();
-//    msg.creation_time = ros::Time(e.creationTime());
-
-    // Convex hull
-    const ed::ConvexHull& convex_hull = e.convexHull();
-    if (!convex_hull.points.empty())
-    {
-        msg.z_min = convex_hull.z_min;
-        msg.z_max = convex_hull.z_max;
-
-        msg.convex_hull.resize(convex_hull.points.size());
-        for(unsigned int i = 0; i < msg.convex_hull.size(); ++i)
-        {
-            msg.convex_hull[i].x = convex_hull.points[i].x;
-            msg.convex_hull[i].y = convex_hull.points[i].y;
-            msg.convex_hull[i].z = 0;
-        }
-    }
-
-    msg.has_shape = e.shape() ? true : false;
-    msg.has_pose = e.has_pose();
-    if (e.has_pose())
-        geo::convert(e.pose(), msg.pose);
-
-    msg.last_update_time =  ros::Time(e.lastUpdateTimestamp());
-
-    if (!e.data().empty())
-    {
-        std::stringstream ss;
-        tue::config::YAMLEmitter emitter;
-        emitter.emit(e.data(), ss);
-
-        msg.data = ss.str();
-    }
-
-    if (!e.areas().empty())
-    {
-        msg.areas.resize(e.areas().size());
-        int i=0;
-        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.areas().begin(); it != e.areas().end(); ++it)
-        {
-            ed_msgs::Area area;
-            area.name = it->first;
-
-            geo::CompositeShapeConstPtr composite = boost::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
-            if(composite)
-            {
-                std::vector<std::pair<geo::ShapePtr, geo::Transform> >  shapes = composite->getShapes();
-                area.subareas.resize(shapes.size());
-                int i2 = 0;
-                for (std::vector<std::pair<geo::ShapePtr, geo::Transform> >::const_iterator it2 = shapes.begin();
-                     it2 != shapes.end(); ++it2)
-                {
-                    geo::ShapePtr shape_tr(new geo::Shape());
-                    shape_tr->setMesh(it2->first->getMesh().getTransformed(it2->second.inverse()));
-
-                    ed_msgs::SubArea sub_area;
-                    shapeToSubArea(shape_tr, sub_area);
-                    area.subareas[i2] = sub_area;
-                    ++i2;
-                }
-            }
-            else
-            {
-                area.subareas.resize(1);
-                ed_msgs::SubArea sub_area;
-
-                shapeToSubArea(it->second, sub_area);
-
-                area.subareas[0] = sub_area;
-            }
-
-            msg.areas[i] = area;
-            ++i;
-        }
-    }
-
-    // Flags
-    for(std::set<std::string>::const_iterator it = e.flags().begin(); it != e.flags().end(); ++it)
-        msg.flags.push_back(*it);
-}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -503,7 +386,7 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
         if (geom_ok)
         {
             res.entities.push_back(ed_msgs::EntityInfo());
-            entityToMsg(*e, res.entities.back());
+            convert(*e, res.entities.back());
         }
     }
 
