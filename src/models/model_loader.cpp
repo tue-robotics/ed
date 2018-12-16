@@ -149,8 +149,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 
     std::string super_type;
     if (model_cfg.value("type", super_type, tue::config::OPTIONAL) ||
-            model_cfg.value("uri", super_type, tue::config::OPTIONAL) ||
-            model_cfg.value("inherit", super_type, tue::config::OPTIONAL))
+        model_cfg.value("uri", super_type, tue::config::OPTIONAL))
     {
         tue::config::DataConstPointer super_data = loadModelData(super_type, types, error);
         tue::config::DataPointer combined_data;
@@ -251,7 +250,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Get type. If it exists, first construct an entity based on the given type.
 
     std::string type;
-    if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL) || r.value("inherit", type, tue::config::OPTIONAL)) //uri in sdf; inheret for inheritance in sdf
+    if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL)) //uri in sdf; inheret for inheritance in sdf
     {
         // remove prefix in case of sdf
         std::string str1 = "file://";
