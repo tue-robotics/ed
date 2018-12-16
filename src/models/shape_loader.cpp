@@ -48,14 +48,16 @@ std::vector<std::string> split(std::string& strToSplit, char delimeter)
 // ----------------------------------------------------------------------------------------------------
 
 /**
- * @brief getFilePath
- * @param type
- * @return
+ * @brief getFilePath searches GAZEBO_MODEL_PATH and GAZEBO_RESOURCH_PATH for file
+ * @param type subpath+filename incl. extension
+ * @return full path or empty string if case not found
  */
 std::string getFilePath(std::string type)
 {
-    const char * mpath = ::getenv("ED_MODEL_PATH");
-    if (!mpath)
+    //ToDo: don't do this for every call. Very ineffecient.
+    const char * mpath = ::getenv("GAZEBO_MODEL_PATH");
+    const char * rpath = ::getenv("GAZEBO_RESOURCE_PATH");
+    if (!mpath && !rpath)
         return "";
 
     // remove prefix in case of sdf
@@ -69,11 +71,17 @@ std::string getFilePath(std::string type)
     if (i != std::string::npos)
        type.erase(i, str2.length());
 
-    std::stringstream ss(mpath);
+    std::stringstream ssm(mpath), ssr(rpath);
     std::string item;
     std::vector<std::string> model_paths;
-    while (std::getline(ss, item, ':'))
+    while (std::getline(ssm, item, ':'))
         model_paths.push_back(item);
+    while (std::getline(ssr, item, ':'))
+        model_paths.push_back(item);
+
+    // romove duplicate elements
+    std::sort( model_paths.begin(), model_paths.end() );
+    model_paths.erase( unique( model_paths.begin(), model_paths.end() ), model_paths.end() );
 
     for(std::vector<std::string>::const_iterator it = model_paths.begin(); it != model_paths.end(); ++it)
     {

@@ -48,7 +48,7 @@ bool readSDFGeometry(const std::string& model_path, tue::config::Reader r, geo::
 
 ModelLoader::ModelLoader()
 {
-    const char * mpath = ::getenv("ED_MODEL_PATH");
+    const char * mpath = ::getenv("GAZEBO_MODEL_PATH");
     if (mpath)
     {
         std::stringstream ss(mpath);
