@@ -14,6 +14,8 @@
 
 #include <geolib/CompositeShape.h>
 
+#include <sdf/parser.hh>
+
 #include <sstream>
 
 namespace ed
@@ -100,7 +102,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
     }
 
     bool sdf = true; //start with the assumption that we will find a sdf model
-    tue::filesystem::Path model_cfg_path(model_path + "/model.sdf");
+    tue::filesystem::Path model_cfg_path(sdf::getModelFilePath(model_path));
     if (!model_cfg_path.exists())
     {
         model_cfg_path = tue::filesystem::Path(model_path + "/model.yaml");

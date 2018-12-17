@@ -50,7 +50,7 @@ std::vector<std::string> split(std::string& strToSplit, char delimeter)
 /**
  * @brief getFilePath searches GAZEBO_MODEL_PATH and GAZEBO_RESOURCH_PATH for file
  * @param type subpath+filename incl. extension
- * @return full path or empty string if case not found
+ * @return full path or empty string in case not found
  */
 std::string getFilePath(std::string type)
 {
@@ -65,19 +65,35 @@ std::string getFilePath(std::string type)
     std::string str2 = "model://";
 
     std::string::size_type i = type.find(str1);
+    bool file = true, model = true;
+    // Start by both true. So both paths are checked in case of ED yaml.
+    // In case of SDF, the other one is set to false.
     if (i != std::string::npos)
+    {
        type.erase(i, str1.length());
+       model = false;
+    }
     i = type.find(str2);
     if (i != std::string::npos)
+    {
        type.erase(i, str2.length());
+       file = false;
+    }
 
-    std::stringstream ssm(mpath), ssr(rpath);
     std::string item;
     std::vector<std::string> model_paths;
-    while (std::getline(ssm, item, ':'))
-        model_paths.push_back(item);
-    while (std::getline(ssr, item, ':'))
-        model_paths.push_back(item);
+    if (model)
+    {
+        std::stringstream ssm(mpath);
+        while (std::getline(ssm, item, ':'))
+            model_paths.push_back(item);
+    }
+    if (file)
+    {
+        std::stringstream ssr(rpath);
+        while (std::getline(ssr, item, ':'))
+            model_paths.push_back(item);
+    }
 
     // romove duplicate elements
     std::sort( model_paths.begin(), model_paths.end() );

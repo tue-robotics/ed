@@ -27,6 +27,7 @@ find_package(orocos_kdl REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(TinyXML REQUIRED)
+find_package(SDFormat REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -52,6 +53,7 @@ include_directories(
   ${TinyXML_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
+  ${SDFormat_INCLUDE_DIRS}
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -93,7 +95,7 @@ add_library(ed_core
 
   ${HEADER_FILES}
 )
-target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES})
 
 add_library(ed_io
   src/serialization/serialization.cpp

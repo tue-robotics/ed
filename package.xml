@@ -23,6 +23,7 @@
   <depend>pcl_ros</depend>
   <depend>rgbd</depend>
   <depend>roscpp</depend>
+  <depend>sdfformat</depend>
   <depend>tinyxml</depend>
   <depend>tue_config</depend>
   <depend>tue_filesystem</depend>
