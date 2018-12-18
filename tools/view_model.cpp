@@ -14,6 +14,12 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <tue/config/reader.h>
+#include <tue/config/reader_writer.h>
+#include "tue/config/loaders/sdf.h"
+#include "tue/config/loaders/xml.h"
+#include "tue/config/loaders/yaml.h"
+
+#include <tue/filesystem/path.h>
 
 double CANVAS_WIDTH = 800;
 double CANVAS_HEIGHT = 600;
@@ -120,27 +126,41 @@ void usage()
 
 bool loadModel(const std::string& load_type, const std::string& source, ed::UpdateRequest& req)
 {
+    ed::models::ModelLoader model_loader;
+    std::stringstream error;
     if (load_type == "--file")
     {
-        std::ifstream f_in;
-        f_in.open(source.c_str());
-
-        if (!f_in.is_open())
+        tue::filesystem::Path path(source);
+        if (!path.exists())
         {
-            std::cerr << "Could not open file '" << source << "'." << std::endl;
+            std::cerr << "Couldn't open: '" << path << "', because it doesn't exist" << std::endl;
             return false;
         }
 
-        std::stringstream buffer;
-        buffer << f_in.rdbuf();
-        std::string str = buffer.str();
-        ed::io::JSONReader r(str.c_str());
-        ed::deserialize(r, req);
+        tue::config::ReaderWriter config;
+        std::string extension = tue::filesystem::Path(source).extension();
+        if ( extension == ".sdf" || extension == ".world")
+        {
+            tue::config::loadFromSDFFile(source, config);
+            config.readGroup("sdf");
+            config.readGroup("model");
+        }
+        else if (extension == ".xml")
+            tue::config::loadFromXMLFile(source, config);
+        else if (extension == ".yml" || extension == ".yaml")
+            tue::config::loadFromYAMLFile(source, config);
+        else
+            std::cout << "[model_viewer] extension: '" << extension << "'  is not supported." << std::endl;
+
+        if (!model_loader.create(config.data(), req, error))
+        {
+            std::cerr << "File '" << source << "' could not be loaded:" << std::endl << std::endl;
+            std::cerr << error.str() << std::endl;
+            return false;
+        }
     }
     else if (load_type == "--model")
     {
-        ed::models::ModelLoader model_loader;
-        std::stringstream error;
         if (!model_loader.create("_root", source, req, error))
         {
             std::cerr << "Model '" << source << "' could not be loaded:" << std::endl << std::endl;
