@@ -61,8 +61,8 @@ std::string getFilePath(std::string type)
         return "";
 
     // remove prefix in case of sdf
-    std::string str1 = "file://";
-    std::string str2 = "model://";
+    static std::string str1 = "file://";
+    static std::string str2 = "model://";
 
     std::string::size_type i = type.find(str1);
     bool file = true, model = true;
@@ -96,8 +96,8 @@ std::string getFilePath(std::string type)
     }
 
     // romove duplicate elements
-    std::sort( model_paths.begin(), model_paths.end() );
-    model_paths.erase( unique( model_paths.begin(), model_paths.end() ), model_paths.end() );
+    std::sort(model_paths.begin(), model_paths.end());
+    model_paths.erase(unique(model_paths.begin(), model_paths.end()), model_paths.end());
 
     for(std::vector<std::string>::const_iterator it = model_paths.begin(); it != model_paths.end(); ++it)
     {

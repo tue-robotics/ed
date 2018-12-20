@@ -52,8 +52,8 @@ include_directories(
   3rdparty
   ${TinyXML_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS}
   ${SDFormat_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ add_library(ed_core
 
   ${HEADER_FILES}
 )
-target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES})
+target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(ed_io
   src/serialization/serialization.cpp

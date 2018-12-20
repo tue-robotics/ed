@@ -142,13 +142,6 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
         }
     }
 
-    if (sdf)
-    {
-        model_cfg.readGroup("sdf");
-        model_cfg.readGroup("world");
-        model_cfg.readGroup("model");
-    }
-
     std::string super_type;
     if (model_cfg.value("type", super_type, tue::config::OPTIONAL) ||
         model_cfg.value("uri", super_type, tue::config::OPTIONAL))
@@ -255,8 +248,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     if (r.value("type", type, tue::config::OPTIONAL) || r.value("uri", type, tue::config::OPTIONAL)) //uri in sdf; inheret for inheritance in sdf
     {
         // remove prefix in case of sdf
-        std::string str1 = "file://";
-        std::string str2 = "model://";
+        static std::string str1 = "file://";
+        static std::string str2 = "model://";
 
         std::string::size_type i = type.find(str1);
         if (i != std::string::npos)

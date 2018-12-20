@@ -20,10 +20,10 @@ std::vector<double> parseArray(const TiXmlElement* xml_elem)
     std::stringstream stream(txt);
     while(getline(stream, word, ' '))
     {
-        float f = 0;
+        double d = 0;
         std::istringstream istr(word);
-        istr >> f;
-        v.push_back(f);
+        istr >> d;
+        v.push_back(d);
     }
 
     return v;
