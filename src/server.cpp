@@ -141,13 +141,13 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
 
             new_world_model->update(*req);
 
-            // Temporarily for Javier
-            for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
-            {
-                PluginContainerPtr c = it->second;
-                c->addDelta(req);
-                c->setWorld(new_world_model);
-            }
+//            // Temporarily for Javier
+//            for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+//            {
+//                PluginContainerPtr c = it->second;
+//                c->addDelta(req);
+//                c->setWorld(new_world_model);
+//            }
 
             world_model_ = new_world_model;
         }
@@ -296,12 +296,12 @@ void Server::stepPlugins()
             new_world_model->update(*c->updateRequest());
             plugins_with_requests.push_back(c);
 
-            // Temporarily for Javier
-            for(std::map<std::string, PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
-            {
-                PluginContainerPtr c2 = it2->second;
-                c2->addDelta(c->updateRequest());
-            }
+//            // Temporarily for Javier
+//            for(std::map<std::string, PluginContainerPtr>::iterator it2 = plugin_containers_.begin(); it2 != plugin_containers_.end(); ++it2)
+//            {
+//                PluginContainerPtr c2 = it2->second;
+//                c2->addDelta(c->updateRequest());
+//            }
         }
     }
 
@@ -476,13 +476,13 @@ void Server::initializeWorld()
 
     new_world_model->update(*req);
 
-    // Temporarily for Javier
-    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
-    {
-        PluginContainerPtr c = it->second;
-        c->addDelta(req);
-        c->setWorld(new_world_model);
-    }
+//    // Temporarily for Javier
+//    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+//    {
+//        PluginContainerPtr c = it->second;
+//        c->addDelta(req);
+//        c->setWorld(new_world_model);
+//    }
 
     world_model_ = new_world_model;
 }
