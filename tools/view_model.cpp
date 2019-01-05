@@ -142,29 +142,30 @@ bool loadModel(const std::string& load_type, const std::string& source, ed::Upda
         if ( extension == ".sdf" || extension == ".world")
         {
             tue::config::loadFromSDFFile(source, config);
-            config.readGroup("sdf");
-            config.readGroup("model");
         }
         else if (extension == ".xml")
             tue::config::loadFromXMLFile(source, config);
         else if (extension == ".yml" || extension == ".yaml")
             tue::config::loadFromYAMLFile(source, config);
         else
-            std::cout << "[model_viewer] extension: '" << extension << "'  is not supported." << std::endl;
+        {
+            std::cerr << "[model_viewer] extension: '" << extension << "'  is not supported." << std::endl;
+            return false;
+        }
 
         if (!model_loader.create(config.data(), req, error))
         {
             std::cerr << "File '" << source << "' could not be loaded:" << std::endl << std::endl;
-            std::cerr << error.str() << std::endl;
+            std::cerr << "Error: " << std::endl << error.str() << std::endl;
             return false;
         }
     }
     else if (load_type == "--model")
     {
-        if (!model_loader.create("_root", source, req, error))
+        if (!model_loader.create("_root", source, req, error, true))
         {
             std::cerr << "Model '" << source << "' could not be loaded:" << std::endl << std::endl;
-            std::cerr << error.str() << std::endl;
+            std::cerr << "Error: " << std::endl << error.str() << std::endl;
             return false;
         }
     }

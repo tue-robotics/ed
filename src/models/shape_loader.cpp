@@ -47,61 +47,82 @@ std::vector<std::string> split(std::string& strToSplit, char delimeter)
 
 // ----------------------------------------------------------------------------------------------------
 
+std::string parseURI(const std::string& uri, ModelOrFile& uri_type)
+{
+    static const std::string model_prefix = "model://";
+    static const std::string file_prefix = "file://";
+
+    std::string type(uri);
+    std::string::size_type i = type.find(file_prefix);
+    if (i != std::string::npos)
+    {
+       uri_type = FILE;
+       type.erase(i, file_prefix.length());
+       return type;
+    }
+    i = uri.find(model_prefix);
+    if (i != std::string::npos)
+    {
+       uri_type = MODEL;
+       type.erase(i, model_prefix.length());
+       return type;
+    }
+    return "";
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 /**
- * @brief getFilePath searches GAZEBO_MODEL_PATH and GAZEBO_RESOURCH_PATH for file
+ * @brief getUriPath searches GAZEBO_MODEL_PATH and GAZEBO_RESOURCH_PATH for file
  * @param type subpath+filename incl. extension
  * @return full path or empty string in case not found
  */
-std::string getFilePath(std::string type)
+static std::string getUriPath(std::string type)
 {
-    //ToDo: don't do this for every call. Very ineffecient.
-    const char * mpath = ::getenv("GAZEBO_MODEL_PATH");
-    const char * rpath = ::getenv("GAZEBO_RESOURCE_PATH");
+    static const char * mpath = ::getenv("GAZEBO_MODEL_PATH");
+    static const char * rpath = ::getenv("GAZEBO_RESOURCE_PATH");
     if (!mpath && !rpath)
         return "";
 
-    // remove prefix in case of sdf
-    static std::string str1 = "file://";
-    static std::string str2 = "model://";
+    static std::vector<std::string> model_paths;
+    static std::vector<std::string> file_paths;
 
-    std::string::size_type i = type.find(str1);
-    bool file = true, model = true;
-    // Start by both true. So both paths are checked in case of ED yaml.
-    // In case of SDF, the other one is set to false.
-    if (i != std::string::npos)
+    if (model_paths.empty() && file_paths.empty())
     {
-       type.erase(i, str1.length());
-       model = false;
-    }
-    i = type.find(str2);
-    if (i != std::string::npos)
-    {
-       type.erase(i, str2.length());
-       file = false;
-    }
-
-    std::string item;
-    std::vector<std::string> model_paths;
-    if (model)
-    {
+        std::string item;
         std::stringstream ssm(mpath);
         while (std::getline(ssm, item, ':'))
             model_paths.push_back(item);
-    }
-    if (file)
-    {
+
+        // romove duplicate elements
+        std::sort(model_paths.begin(), model_paths.end());
+        model_paths.erase(unique(model_paths.begin(), model_paths.end()), model_paths.end());
+
         std::stringstream ssr(rpath);
         while (std::getline(ssr, item, ':'))
-            model_paths.push_back(item);
+            file_paths.push_back(item);
+
+        // remove duplicate elements
+        std::sort(file_paths.begin(), file_paths.end());
+        file_paths.erase(unique(file_paths.begin(), file_paths.end()), file_paths.end());
     }
 
-    // romove duplicate elements
-    std::sort(model_paths.begin(), model_paths.end());
-    model_paths.erase(unique(model_paths.begin(), model_paths.end()), model_paths.end());
 
-    for(std::vector<std::string>::const_iterator it = model_paths.begin(); it != model_paths.end(); ++it)
+    ModelOrFile uri_type;
+    std::string parsed_uri = parseURI(type, uri_type);
+    if (parsed_uri.empty())
+        return "";
+
+
+    std::vector<std::string>* type_paths;
+    if (uri_type == MODEL)
+        type_paths = &model_paths;
+    else
+        type_paths = &file_paths;
+
+    for(std::vector<std::string>::const_iterator it = type_paths->begin(); it != type_paths->end(); ++it)
     {
-        tue::filesystem::Path file_path(*it + "/" + type);
+        tue::filesystem::Path file_path(*it + "/" + parsed_uri);
         if (file_path.exists())
             return file_path.string();
     }
@@ -445,9 +466,10 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, tue::config::
  * @param shape filled mesh
  * @param points 2D points which define the mesh
  * @param height height of the mesh
+ * @param error error stream
  * @param create_bottom false: open bottom; true: closed bottom
  */
-void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, bool create_bottom)
+void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, std::stringstream& error, bool create_bottom)
 {
     TPPLPoly poly;
     poly.Init((unsigned int) points.size());
@@ -482,7 +504,7 @@ void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, doub
 
     if (!pp.Triangulate_EC(&polys, &result))
     {
-        std::cout << "TRIANGULATION FAILED" << std::endl;
+        error << "[ED::MODELS::LOADSHAPE](createPolygon) TRIANGULATION FAILED" << std::endl;
         return;
     }
 
@@ -553,6 +575,111 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
         mesh.addTriangle(i * 2 + 1, j * 2 + 1, j * 2);
     }
 
+    shape.setMesh(mesh);
+}
+
+int getMiddlePoint(geo::Mesh& mesh, int i1, int i2, std::map<long, int> cache, double radius)
+{
+       // first check if we have it already
+       bool firstIsSmaller = i1 < i2;
+       long smallerIndex = firstIsSmaller ? i1 : i2;
+       long greaterIndex = firstIsSmaller ? i2 : i1;
+       long key = (smallerIndex << 32) + greaterIndex;
+
+       std::map<long, int>::const_iterator it = cache.find(key);
+       if (it != cache.end())
+           return it->second;
+
+       // not in cache, calculate it
+       const std::vector<geo::Vec3>& points = mesh.getPoints();
+       geo::Vec3 p1 = points[i1];
+       geo::Vec3 p2 = points[i2];
+       geo::Vec3 p3((p1+p2)/2);
+       p3 = p3.normalized() * radius;
+
+       // add vertex makes sure point is on unit sphere
+       int i3 = mesh.addPoint(p3);
+
+       // store it, return index
+       cache.insert(std::pair<long, int>(key, i3));
+       return i3;
+}
+
+void createSphere(geo::Shape& shape, double radius, int recursion_level)
+{
+    geo::Mesh mesh;
+
+    // create 12 vertices of a icosahedron
+    double t = (1.0 + sqrt(5.0)) / 2.0;
+
+    mesh.addPoint(geo::Vec3(-1,  t,  0).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 1,  t,  0).normalized()*radius);
+    mesh.addPoint(geo::Vec3(-1, -t,  0).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 1, -t,  0).normalized()*radius);
+
+    mesh.addPoint(geo::Vec3( 0, -1,  t).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 0,  1,  t).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 0, -1, -t).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 0,  1, -t).normalized()*radius);
+
+    mesh.addPoint(geo::Vec3( t,  0, -1).normalized()*radius);
+    mesh.addPoint(geo::Vec3( t,  0,  1).normalized()*radius);
+    mesh.addPoint(geo::Vec3(-t,  0, -1).normalized()*radius);
+    mesh.addPoint(geo::Vec3(-t,  0,  1).normalized()*radius);
+
+    // create 20 triangles of the icosahedron
+    // 5 faces around point 0
+    mesh.addTriangle(0, 11, 5);
+    mesh.addTriangle(0, 5, 1);
+    mesh.addTriangle(0, 1, 7);
+    mesh.addTriangle(0, 7, 10);
+    mesh.addTriangle(0, 10, 11);
+
+    // 5 adjacent faces
+    mesh.addTriangle(1, 5, 9);
+    mesh.addTriangle(5, 11, 4);
+    mesh.addTriangle(11, 10, 2);
+    mesh.addTriangle(10, 7, 6);
+    mesh.addTriangle(7, 1, 8);
+
+    // 5 faces around point 3
+    mesh.addTriangle(3, 9, 4);
+    mesh.addTriangle(3, 4, 2);
+    mesh.addTriangle(3, 2, 6);
+    mesh.addTriangle(3, 6, 8);
+    mesh.addTriangle(3, 8, 9);
+
+    // 5 adjacent faces
+    mesh.addTriangle(4, 9, 5);
+    mesh.addTriangle(2, 4, 11);
+    mesh.addTriangle(6, 2, 10);
+    mesh.addTriangle(8, 6, 7);
+    mesh.addTriangle(9, 8, 1);
+
+    for (int i = 0; i < recursion_level; i++)
+    {
+        geo::Mesh mesh2;
+        std::map<long, int> cache;
+
+        const std::vector<geo::Vec3>& points = mesh.getPoints();
+        for (std::vector<geo::Vec3>::const_iterator it = points.begin(); it != points.end(); ++it)
+            mesh2.addPoint(*it);
+
+        const std::vector<geo::TriangleI>& triangleIs = mesh.getTriangleIs();
+        for (std::vector<geo::TriangleI>::const_iterator it = triangleIs.begin(); it != triangleIs.end(); ++it)
+        {
+            // replace triangle by 4 triangles
+            int a = getMiddlePoint(mesh2, it->i1_, it->i2_, cache, radius);
+            int b = getMiddlePoint(mesh2, it->i2_, it->i3_, cache, radius);
+            int c = getMiddlePoint(mesh2, it->i3_, it->i1_, cache, radius);
+
+            mesh2.addTriangle(it->i1_, a, c);
+            mesh2.addTriangle(it->i2_, b, a);
+            mesh2.addTriangle(it->i3_, c, b);
+            mesh2.addTriangle(a, b, c);
+        }
+        mesh = mesh2;
+    }
     shape.setMesh(mesh);
 }
 
@@ -790,7 +917,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         if (cfg.value("height", height))
         {
             shape.reset(new geo::Shape());
-            createPolygon(*shape, points, height, true);
+            createPolygon(*shape, points, height, error, true);
         }
 
         cfg.endGroup();
@@ -817,7 +944,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         if (height > 0 && std::abs<double>(height) >= 0.01)
         {
             shape.reset(new geo::Shape());
-            createPolygon(*shape, points, height, true);
+            createPolygon(*shape, points, height, error, true);
         }
     }
     else if (cfg.readGroup("mesh")) // SDF ONLY
@@ -825,29 +952,11 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         std::string uri_path;
         if (cfg.value("uri", uri_path))
         {
-            // remove prefix in case of sdf
-            std::string str1 = "file://";
-            std::string str2 = "model://";
-
-            std::string::size_type i = uri_path.find(str1);
-            if (i != std::string::npos)
-               uri_path.erase(i, str1.length());
-            i = uri_path.find(str2);
-            if (i != std::string::npos)
-               uri_path.erase(i, str2.length());
-
-            tue::filesystem::Path mesh_path;
-            if (model_path.empty() || uri_path[0] == '/')
-                mesh_path = uri_path;
-            else
-                mesh_path = model_path + "/" + uri_path;
-
-            if (!mesh_path.exists())
-                    mesh_path = getFilePath(uri_path);
+            tue::filesystem::Path mesh_path = getUriPath(uri_path);
             if (mesh_path.exists())
                 shape = geo::Importer::readMeshFile(mesh_path.string());
             else
-                error << "[ED::MODELS::LOADSHAPE] File: '" << mesh_path.string() << "' doesn't exist." << std::endl;
+                error << "[ED::MODELS::LOADSHAPE] Mesh File: '" << mesh_path.string() << "' doesn't exist." << std::endl;
         }
         std::string dummy;
         if (cfg.value("submesh", dummy))
@@ -860,7 +969,8 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         double height, resolution;
 
         geo::Vec3 size;
-        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) && cfg.value("height", height))) // ED YAML ONLY
+        if ((cfg.value("image", image_filename) && !image_filename.empty() && cfg.value("resolution", resolution) &&
+             cfg.value("height", height))) // ED YAML ONLY
         {
             std::string image_filename_full = image_filename;
 //            if (image_filename[0] == '/')
@@ -874,7 +984,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         }
         else if(cfg.value("uri", image_filename) && readVec3Group(cfg, size, "size")) // SDF ONLY
         {
-            image_filename = getFilePath(image_filename);
+            image_filename = getUriPath(image_filename);
 
             // by default center should be in the middle.
             geo::Vec3 pos = -size/2;
@@ -887,6 +997,15 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         {
             error << "[ED::MODELS::LOADSHAPE] Error while loading shape: heightmap must contain 'image', 'resolution' and 'height'." << std::endl;
         }
+    }
+    else if (cfg.readGroup("sphere")) // SDF
+    {
+        double radius;
+        if (!cfg.value("radius", radius))
+            error << "[ED::MODELS::LOADSHAPE] Error while loading shape: sphere must contain 'radius'." << std::endl;
+        int recursion_level = 1;
+        shape.reset(new geo::Shape);
+        createSphere(*shape, radius, recursion_level);
     }
     else if (cfg.readArray("compound") || cfg.readArray("group")) // ED YAML ONLY
     {
@@ -903,7 +1022,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
     }
     else
     {
-        error << "[ED::MODELS::LOADSHAPE] Error while loading shape: must contain one of the following 'path', 'heightmap', 'box', 'compound'." << std::endl;
+        error << "[ED::MODELS::LOADSHAPE] Error while loading shape with data:" << std::endl << cfg.data() << std::endl;
     }
 
     readPose(cfg, pose);
