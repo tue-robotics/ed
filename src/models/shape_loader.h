@@ -13,7 +13,11 @@ namespace ed
 namespace models
 {
 
-enum ModelOrFile{
+/**
+ * @brief The ModelOrFile enum This is used to determine the URI type in SDF.
+ */
+enum ModelOrFile
+{
     MODEL,
     FILE
 };
