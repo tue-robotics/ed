@@ -140,9 +140,7 @@ bool loadModel(const std::string& load_type, const std::string& source, ed::Upda
         tue::config::ReaderWriter config;
         std::string extension = tue::filesystem::Path(source).extension();
         if ( extension == ".sdf" || extension == ".world")
-        {
             tue::config::loadFromSDFFile(source, config);
-        }
         else if (extension == ".xml")
             tue::config::loadFromXMLFile(source, config);
         else if (extension == ".yml" || extension == ".yaml")
