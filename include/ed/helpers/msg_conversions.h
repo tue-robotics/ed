@@ -54,7 +54,6 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
         msg.types.push_back(*it);
 
     msg.existence_probability = e.existenceProbability();
-//    msg.creation_time = ros::Time(e.creationTime());
 
     // Convex hull
     const ed::ConvexHull& convex_hull = e.convexHull();
@@ -98,7 +97,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
             volume.name = it->first;
 
             geo::CompositeShapeConstPtr composite = boost::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
-            if(composite)
+            if (composite)
             {
                 std::vector<std::pair<geo::ShapePtr, geo::Transform> >  shapes = composite->getShapes();
                 volume.subvolumes.resize(shapes.size());
@@ -110,8 +109,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
                     shape_tr->setMesh(it2->first->getMesh().getTransformed(it2->second.inverse()));
 
                     ed_msgs::SubVolume sub_volume;
-                    convert(shape_tr, sub_volume);
-                    volume.subvolumes[i2] = sub_volume;
+                    convert(shape_tr,  volume.subvolumes[i2]);
                     ++i2;
                 }
             }
