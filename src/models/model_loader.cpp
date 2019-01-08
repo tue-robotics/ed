@@ -221,7 +221,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(std::string type, std::
         rw.setValue("__model_path__", model_path);
         rw.endGroup();
     }
-    if(rw.readArray("areas"))
+    if(rw.readArray("volumes"))
     {
         while(rw.nextArrayItem())
         {
@@ -432,13 +432,13 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.endGroup();
     }
 
-    // Set areas
-    if (r.readArray("areas"))
+    // Set volumes
+    if (r.readArray("volumes"))
     {
         while (r.nextArrayItem())
         {
-            std::string area_name;
-            if (!(r.value("name", area_name) && r.readArray("shape")))
+            std::string volume_name;
+            if (!(r.value("name", volume_name) && r.readArray("shape")))
                 continue;
 
             geo::CompositeShapePtr shape;
@@ -455,7 +455,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             r.endArray();
 
             if (shape)
-                req.addArea(id, area_name, shape);
+                req.addVolume(id, volume_name, shape);
         }
         r.endArray();
     }
@@ -570,7 +570,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
     }
 
 
-    // Shape && Areas
+    // Shape && volumes
     geo::CompositeShapePtr composite;
     std::map<std::string, geo::ShapePtr> dummy_shape_cache;
     if (r.readArray("link"))
@@ -587,20 +587,20 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
                 }
                 r.endArray();
             }
-            geo::CompositeShapePtr area_composite;
-            std::string area_name;
-            if (r.value("name", area_name))
+            geo::CompositeShapePtr volume_composite;
+            std::string volume_name;
+            if (r.value("name", volume_name))
             {
-                if (r.readArray("virtual_area"))
+                if (r.readArray("virtual_volume"))
                 {
                     while(r.nextArrayItem())
                     {
-                        readSDFGeometry(r, area_composite, error, link_pose);
+                        readSDFGeometry(r, volume_composite, error, link_pose);
                     }
                     r.endArray();
                 }
-                if (area_composite)
-                    req.addArea(id, area_name, area_composite);
+                if (volume_composite)
+                    req.addVolume(id, volume_name, volume_composite);
              }
         }
         r.endArray(); // end array link

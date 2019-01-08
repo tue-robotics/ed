@@ -315,14 +315,14 @@ int main(int argc, char **argv)
     info_msg << std::endl;
     info_msg << "Keys:" << std::endl;
     info_msg << "    r - reload model" << std::endl;
-    info_msg << "    a - show / hide model areas" << std::endl;
+    info_msg << "    v - show / hide model volumes" << std::endl;
     info_msg << "    c - circle rotate" << std::endl;
     info_msg << "    p - snap pitch" << std::endl;
     info_msg << "    q - quit" << std::endl;
 
     std::cout << info_msg.str();
 
-    bool show_areas = true;
+    bool show_volumes = true;
 
     cam_dist = dist;
     cam_lookat = (p_min + p_max) / 2;
@@ -415,11 +415,11 @@ int main(int argc, char **argv)
                 cam.render(opt, res);
 
 
-                // Render areas
-                std::map<std::string, geo::ShapeConstPtr> areas = e->areas();
-                if (show_areas && !areas.empty())
+                // Render volumes
+                std::map<std::string, geo::ShapeConstPtr> volumes = e->volumes();
+                if (show_volumes && !volumes.empty())
                 {
-                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = areas.begin(); it != areas.end(); ++it)
+                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = volumes.begin(); it != volumes.end(); ++it)
                     {
                         res.color = cv::Vec3b(0, 0, 255);
                         res.setMesh(&it->second->getMesh());
@@ -442,9 +442,9 @@ int main(int argc, char **argv)
                 world_model.update(req);
             }
         }
-        else if (key == 'a')
+        else if (key == 'v')
         {
-            show_areas = !show_areas;
+            show_volumes = !show_volumes;
         }
         else if (key == 'q')
         {

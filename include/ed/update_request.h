@@ -51,30 +51,30 @@ public:
     void setShape(const UUID& id, const geo::ShapeConstPtr& shape) { shapes[id] = shape; flagUpdated(id); }
 
 
-    //AREAS
+    //VOLUMES
 
-    std::map<UUID, std::map<std::string, geo::ShapeConstPtr> > areas_added;
-    void addArea(const UUID& id, const std::string area_name, const geo::ShapeConstPtr& area_shape)
-    {   std::map<UUID, std::map<std::string, geo::ShapeConstPtr> >::iterator it = areas_added.find(id);
-        if (it != areas_added.end())
+    std::map<UUID, std::map<std::string, geo::ShapeConstPtr> > volumes_added;
+    void addVolume(const UUID& id, const std::string Volume_name, const geo::ShapeConstPtr& Volume_shape)
+    {   std::map<UUID, std::map<std::string, geo::ShapeConstPtr> >::iterator it = volumes_added.find(id);
+        if (it != volumes_added.end())
         {
-            std::map<std::string, geo::ShapeConstPtr>::iterator it2 = it->second.find(area_name);
+            std::map<std::string, geo::ShapeConstPtr>::iterator it2 = it->second.find(Volume_name);
             if (it2 != it->second.end())
-                it2->second = area_shape;
+                it2->second = Volume_shape;
             else
-                it->second[area_name] = area_shape;
+                it->second[Volume_name] = Volume_shape;
         }
         else
         {
-            std::map<std::string, geo::ShapeConstPtr> area_map;
-            area_map[area_name] = area_shape;
-            areas_added[id] = area_map;
+            std::map<std::string, geo::ShapeConstPtr> volume_map;
+            volume_map[Volume_name] = Volume_shape;
+            volumes_added[id] = volume_map;
         }
         flagUpdated(id);
     }
 
-    std::map<UUID, std::set<std::string> > areas_removed;
-    void removeArea(const UUID& id, const std::string area_name) { areas_removed[id].insert(area_name); flagUpdated(id); }
+    std::map<UUID, std::set<std::string> > volumes_removed;
+    void removeVolume(const UUID& id, const std::string Volume_name) { volumes_removed[id].insert(Volume_name); flagUpdated(id); }
 
 
     // CONVEX HULLS NEW

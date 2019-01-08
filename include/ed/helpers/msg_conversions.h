@@ -19,11 +19,11 @@ namespace ed {
 // ------------------------------ TO ROS ------------------------------
 
 /**
- * @brief converting geo::ShapeConstPtr to ed_msgs::SubArea message
+ * @brief converting geo::ShapeConstPtr to ed_msgs::SubVolume message
  * @param shape geo::ShapeConstPtr as input
- * @param msg filled ed_msgs::SubArea message as output
+ * @param msg filled ed_msgs::SubVolume message as output
  */
-void convert(const geo::ShapeConstPtr shape, ed_msgs::SubArea& sub_area)
+void convert(const geo::ShapeConstPtr shape, ed_msgs::SubVolume& sub_Volume)
 {
     geo::Vector3 min = shape->getBoundingBox().getMin();
     geo::Vector3 max = shape->getBoundingBox().getMax();
@@ -31,14 +31,14 @@ void convert(const geo::ShapeConstPtr shape, ed_msgs::SubArea& sub_area)
     geo::Vector3 pos = (min + max)/2;
     geo::Vector3 size = max - min;
 
-    geo::convert(pos, sub_area.center_point);
+    geo::convert(pos, sub_Volume.center_point);
 
     shape_msgs::SolidPrimitive solid;
-    sub_area.geometry.type = sub_area.geometry.BOX;
-    sub_area.geometry.dimensions.resize(3, 0);
-    sub_area.geometry.dimensions[solid.BOX_X] = size.x;
-    sub_area.geometry.dimensions[solid.BOX_Y] = size.y;
-    sub_area.geometry.dimensions[solid.BOX_Z] = size.z;
+    sub_Volume.geometry.type = sub_Volume.geometry.BOX;
+    sub_Volume.geometry.dimensions.resize(3, 0);
+    sub_Volume.geometry.dimensions[solid.BOX_X] = size.x;
+    sub_Volume.geometry.dimensions[solid.BOX_Y] = size.y;
+    sub_Volume.geometry.dimensions[solid.BOX_Z] = size.z;
 }
 
 /**
@@ -88,20 +88,20 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
         msg.data = ss.str();
     }
 
-    if (!e.areas().empty())
+    if (!e.volumes().empty())
     {
-        msg.areas.resize(e.areas().size());
+        msg.volumes.resize(e.volumes().size());
         int i=0;
-        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.areas().begin(); it != e.areas().end(); ++it)
+        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.volumes().begin(); it != e.volumes().end(); ++it)
         {
-            ed_msgs::Area area;
-            area.name = it->first;
+            ed_msgs::Volume volume;
+            volume.name = it->first;
 
             geo::CompositeShapeConstPtr composite = boost::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
             if(composite)
             {
                 std::vector<std::pair<geo::ShapePtr, geo::Transform> >  shapes = composite->getShapes();
-                area.subareas.resize(shapes.size());
+                volume.subvolumes.resize(shapes.size());
                 int i2 = 0;
                 for (std::vector<std::pair<geo::ShapePtr, geo::Transform> >::const_iterator it2 = shapes.begin();
                      it2 != shapes.end(); ++it2)
@@ -109,23 +109,23 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
                     geo::ShapePtr shape_tr(new geo::Shape());
                     shape_tr->setMesh(it2->first->getMesh().getTransformed(it2->second.inverse()));
 
-                    ed_msgs::SubArea sub_area;
-                    convert(shape_tr, sub_area);
-                    area.subareas[i2] = sub_area;
+                    ed_msgs::SubVolume sub_volume;
+                    convert(shape_tr, sub_volume);
+                    volume.subvolumes[i2] = sub_volume;
                     ++i2;
                 }
             }
             else
             {
-                area.subareas.resize(1);
-                ed_msgs::SubArea sub_area;
+                volume.subvolumes.resize(1);
+                ed_msgs::SubVolume sub_volume;
 
-                convert(it->second, sub_area);
+                convert(it->second, sub_volume);
 
-                area.subareas[0] = sub_area;
+                volume.subvolumes[0] = sub_volume;
             }
 
-            msg.areas[i] = area;
+            msg.volumes[i] = volume;
             ++i;
         }
     }

@@ -78,26 +78,26 @@ void WorldModel::update(const UpdateRequest& req)
         }
     }
 
-    // Update areas
-    for (std::map<UUID, std::set<std::string> >::const_iterator it = req.areas_removed.begin(); it != req.areas_removed.end(); ++it )
+    // Update volumes
+    for (std::map<UUID, std::set<std::string> >::const_iterator it = req.volumes_removed.begin(); it != req.volumes_removed.end(); ++it )
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::set<std::string>& area_names = it->second;
-        for (std::set<std::string>::const_iterator it2 = area_names.begin(); it2 != area_names.end(); ++it2)
-            e->removeArea(*it2);
+        const std::set<std::string>& volume_names = it->second;
+        for (std::set<std::string>::const_iterator it2 = volume_names.begin(); it2 != volume_names.end(); ++it2)
+            e->removeVolume(*it2);
         Idx idx;
         if (findEntityIdx(e->id(), idx))
         {
             entity_shape_revisions_[idx] = revision_;
         }
     }
-    for (std::map<UUID, std::map<std::string, geo::ShapeConstPtr> >::const_iterator it = req.areas_added.begin(); it != req.areas_added.end(); ++it)
+    for (std::map<UUID, std::map<std::string, geo::ShapeConstPtr> >::const_iterator it = req.volumes_added.begin(); it != req.volumes_added.end(); ++it)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::map<std::string, geo::ShapeConstPtr>& areas = it->second;
-        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it2 = areas.begin(); it2 != areas.end(); ++it2)
+        const std::map<std::string, geo::ShapeConstPtr>& volumes = it->second;
+        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it2 = volumes.begin(); it2 != volumes.end(); ++it2)
         {
-            e->addArea(it2->first, it2->second);
+            e->addVolume(it2->first, it2->second);
         }
         Idx idx;
         if (findEntityIdx(e->id(), idx))
