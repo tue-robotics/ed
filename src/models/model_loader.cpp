@@ -433,7 +433,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     }
 
     // Set volumes
-    if (r.readArray("volumes"))
+    if (r.readArray("areas") || rw.readArray("volumes"))
     {
         while (r.nextArrayItem())
         {
