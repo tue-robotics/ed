@@ -216,19 +216,6 @@ tue::config::DataConstPointer ModelLoader::loadModelData(std::string type, std::
     // If model loads a shape, set model path in shape data
     tue::config::ReaderWriter rw(data);
     rw.setValue("__model_path__", model_path);
-    if (rw.readGroup("shape") && !rw.hasArray("compound"))
-    {
-        rw.setValue("__model_path__", model_path);
-        rw.endGroup();
-    }
-    if(rw.readArray("volumes"))
-    {
-        while(rw.nextArrayItem())
-        {
-            rw.setValue("__model_path__", model_path);
-        }
-        rw.endArray();
-    }
 
     // Store data in cache
     model_cache_[type] = ModelData(data, types);
