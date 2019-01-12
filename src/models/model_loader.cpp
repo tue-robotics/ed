@@ -515,6 +515,11 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
         req.setPose(id, pose);
     }
 
+    // set type if defined, no recursive type is done.
+    std::string type;
+    if (r.value("type", type))
+        req.setType(id, type);
+
     // composed models
     if (r.readArray("model"))
     {
