@@ -80,52 +80,52 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
  * @param z_max max height
  * @param c filled ConvexHull
  */
-void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& c)
+void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& chull)
 {
     cv::Mat_<cv::Vec2f> points_2d(1, points.size());
     for(unsigned int i = 0; i < points.size(); ++i)
         points_2d.at<cv::Vec2f>(i) = cv::Vec2f(points[i].x, points[i].y);
 
-    c.z_min = z_min;
-    c.z_max = z_max;
+    chull.z_min = z_min;
+    chull.z_max = z_max;
 
     std::vector<int> chull_indices;
     cv::convexHull(points_2d, chull_indices);
 
-    c.points.resize(chull_indices.size());
+    chull.points.resize(chull_indices.size());
     for(unsigned int i = 0; i < chull_indices.size(); ++i)
     {
         const cv::Vec2f& p_cv = points_2d.at<cv::Vec2f>(chull_indices[i]);
-        c.points[i] = geo::Vec2f(p_cv[0], p_cv[1]);
+        chull.points[i] = geo::Vec2f(p_cv[0], p_cv[1]);
     }
 
     // Calculate normals and edges
-    convex_hull::calculateEdgesAndNormals(c);
+    convex_hull::calculateEdgesAndNormals(chull);
 
     // Calculate area
-    calculateArea(c);
+    calculateArea(chull);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void calculateEdgesAndNormals(ConvexHull& c)
+void calculateEdgesAndNormals(ConvexHull& chull)
 {
-    c.edges.resize(c.points.size());
-    c.normals.resize(c.points.size());
+    chull.edges.resize(chull.points.size());
+    chull.normals.resize(chull.points.size());
 
-    for(unsigned int i = 0; i < c.points.size(); ++i)
+    for(unsigned int i = 0; i < chull.points.size(); ++i)
     {
-        unsigned int j = (i + 1) % c.points.size();
+        unsigned int j = (i + 1) % chull.points.size();
 
-        const geo::Vec2f& p1 = c.points[i];
-        const geo::Vec2f& p2 = c.points[j];
+        const geo::Vec2f& p1 = chull.points[i];
+        const geo::Vec2f& p2 = chull.points[j];
 
         // Calculate edge
         geo::Vec2f e = p2 - p1;
-        c.edges[i] = e;
+        chull.edges[i] = e;
 
         // Calculate normal
-        c.normals[i] = geo::Vec2f(e.y, -e.x).normalized();
+        chull.normals[i] = geo::Vec2f(e.y, -e.x).normalized();
     }
 }
 
