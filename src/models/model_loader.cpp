@@ -56,7 +56,8 @@ ModelLoader::ModelLoader()
         std::stringstream ss(edmpath);
         std::string item;
         while (std::getline(ss, item, ':'))
-            ed_model_paths_.push_back(item);
+            if (!item.empty())
+                ed_model_paths_.push_back(item);
     }
     const char * mpath = ::getenv("GAZEBO_MODEL_PATH");
     if (mpath)
@@ -64,7 +65,8 @@ ModelLoader::ModelLoader()
         std::stringstream ss(mpath);
         std::string item;
         while (std::getline(ss, item, ':'))
-            model_paths_.push_back(item);
+            if (!item.empty())
+                model_paths_.push_back(item);
     }
     const char * fpath = ::getenv("GAZEBO_RESOURCE_PATH");
     if (fpath)
@@ -72,7 +74,8 @@ ModelLoader::ModelLoader()
         std::stringstream ss(fpath);
         std::string item;
         while (std::getline(ss, item, ':'))
-            file_paths_.push_back(item);
+            if (!item.empty())
+                file_paths_.push_back(item);
     }
 }
 
@@ -92,7 +95,7 @@ ModelLoader::~ModelLoader()
 
 std::string ModelLoader::getModelPath(const std::string& type) const
 {
-    for(std::vector<std::string>::const_iterator it = ed_model_paths_.begin(); it != ed_model_paths_.end(); ++it)
+    for(std::vector<std::string>::const_reverse_iterator it = ed_model_paths_.crbegin(); it != ed_model_paths_.crend(); ++it)
     {
         tue::filesystem::Path model_path(*it + "/" + type);
         if (model_path.exists())
@@ -113,7 +116,7 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
 
     if (uri_type == MODEL)
     {
-        for(std::vector<std::string>::const_iterator it = model_paths_.begin(); it != model_paths_.end(); ++it)
+        for(std::vector<std::string>::const_reverse_iterator it = model_paths_.crbegin(); it != model_paths_.crend(); ++it)
         {
             tue::filesystem::Path model_dir(*it + "/" + parsed_uri);
             if (model_dir.exists())
@@ -130,7 +133,7 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
     }
     if (uri_type == FILE)
     {
-        for(std::vector<std::string>::const_iterator it = file_paths_.begin(); it != file_paths_.end(); ++it)
+        for(std::vector<std::string>::const_reverse_iterator it = file_paths_.crbegin(); it != file_paths_.crend(); ++it)
         {
             tue::filesystem::Path file_path(*it + "/" + parsed_uri);
             if (file_path.exists())
