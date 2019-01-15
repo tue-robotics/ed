@@ -31,7 +31,7 @@ void convert(const geo::ShapeConstPtr shape, ed_msgs::SubVolume& sub_Volume)
     geo::Vector3 pos = (min + max)/2;
     geo::Vector3 size = max - min;
 
-    geo::convert(pos, sub_Volume.center_point);
+    geo::convert(pos, sub_Volume.center_point.point);
 
     shape_msgs::SolidPrimitive solid;
     sub_Volume.geometry.type = sub_Volume.geometry.BOX;
@@ -74,7 +74,9 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
     msg.has_shape = e.shape() ? true : false;
     msg.has_pose = e.has_pose();
     if (e.has_pose())
+    {
         geo::convert(e.pose(), msg.pose);
+    }
 
     msg.last_update_time =  ros::Time(e.lastUpdateTimestamp());
 
@@ -110,6 +112,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
 
                     ed_msgs::SubVolume sub_volume;
                     convert(shape_tr,  volume.subvolumes[i2]);
+                    volume.subvolumes[i2].center_point.header.frame_id = "/" + e.id().str();
                     ++i2;
                 }
             }
