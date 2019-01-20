@@ -42,7 +42,11 @@ public:
 
     void storeEntityMeasurements(const std::string& path) const;
 
-    WorldModelConstPtr world_model() const { return world_model_; }
+    WorldModelConstPtr world_model() const
+    {
+        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        return boost::make_shared<const WorldModel>(*world_model_);
+    }
 
     void addPluginPath(const std::string& path) { plugin_paths_.push_back(path); }
 
@@ -59,6 +63,7 @@ public:
 
 private:
 
+    mutable boost::mutex mutex_world_;
     // World model datastructure
     WorldModelConstPtr world_model_;
 

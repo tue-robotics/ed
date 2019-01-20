@@ -137,11 +137,13 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
             }
 
             // Create world model copy (shallow)
+            boost::unique_lock<boost::mutex> ul(mutex_world_);
             WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
             new_world_model->update(*req);
 
             world_model_ = new_world_model;
+            ul.unlock();
         }
     }
 }
@@ -177,7 +179,8 @@ void Server::reset(bool keep_all_shapes)
 
     // Prepare deletion request
     UpdateRequestPtr req_delete(new UpdateRequest);
-    for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
+    WorldModelConstPtr wm = world_model();
+    for(WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
     {
         // Only remove entities that are NOT in the initial world model
         const ed::EntityConstPtr& e = *it;
@@ -193,14 +196,18 @@ void Server::reset(bool keep_all_shapes)
     }
 
     // Create world model copy
+    boost::unique_lock<boost::mutex> ul(mutex_world_);
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    ul.unlock();
 
     // Apply the deletion request
     new_world_model->update(*req_init_world);
     new_world_model->update(*req_delete);
 
     // Swap to new world model
+    ul.lock();
     world_model_ = new_world_model;
+    ul.unlock();
 
     // Notify plugins
     for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
@@ -282,6 +289,7 @@ void Server::stepPlugins()
             if (!new_world_model)
             {
                 // Create world model copy (shallow)
+                boost::unique_lock<boost::mutex> ul(mutex_world_);
                 new_world_model = boost::make_shared<WorldModel>(*world_model_);
             }
 
@@ -298,8 +306,9 @@ void Server::stepPlugins()
             const PluginContainerPtr& c = it->second;
             c->setWorld(new_world_model);
         }
-
+        boost::unique_lock<boost::mutex> ul(mutex_world_);
         world_model_ = new_world_model;
+        ul.unlock();
 
         // Clear the requests of all plugins that had requests (which flags them to continue processing)
         for(std::vector<PluginContainerPtr>::iterator it = plugins_with_requests.begin(); it != plugins_with_requests.end(); ++it)
@@ -318,7 +327,9 @@ void Server::update()
     ErrorContext errc("Server", "update");
 
     // Create world model copy (shallow)
+    boost::unique_lock<boost::mutex> ul(mutex_world_);
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    ul.unlock();
 
 //    // Look if we can merge some not updates entities
 //    {
@@ -338,7 +349,9 @@ void Server::update()
     }
 
     // Set the new (updated) world
+    ul.lock();
     world_model_ = new_world_model;
+    ul.unlock();
 
     pub_profile_.publish();
 }
@@ -348,7 +361,9 @@ void Server::update()
 void Server::update(const ed::UpdateRequest& req)
 {
     // Create world model copy (shallow)
+    boost::unique_lock<boost::mutex> ul(mutex_world_);
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    ul.unlock();
 
     // Update the world model
     new_world_model->update(req);
@@ -361,6 +376,7 @@ void Server::update(const ed::UpdateRequest& req)
     }
 
     // Set the new (updated) world
+    ul.lock();
     world_model_ = new_world_model;
 }
 
@@ -427,7 +443,9 @@ void Server::update(const std::string& update_str, std::string& error)
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     // Create world model copy (shallow)
+    boost::unique_lock<boost::mutex> ul(mutex_world_);
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    ul.unlock();
 
     // Update the world model
     new_world_model->update(req);
@@ -440,6 +458,7 @@ void Server::update(const std::string& update_str, std::string& error)
     }
 
     // Set the new (updated) world
+    ul.lock();
     world_model_ = new_world_model;
 
 }
@@ -457,6 +476,7 @@ void Server::initializeWorld()
     }
 
     // Create world model copy (shallow)
+    boost::unique_lock<boost::mutex> ul(mutex_world_);
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
     new_world_model->update(*req);
@@ -468,7 +488,8 @@ void Server::initializeWorld()
 
 void Server::storeEntityMeasurements(const std::string& path) const
 {
-    for(WorldModel::const_iterator it = world_model_->begin(); it != world_model_->end(); ++it)
+    WorldModelConstPtr wm =  world_model();
+    for(WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
     {
         const EntityConstPtr& e = *it;
         MeasurementConstPtr msr = e->lastMeasurement();

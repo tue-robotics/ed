@@ -188,8 +188,8 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
 
 bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 {
-    tue::Timer timer;
-    timer.start();
+//    tue::Timer timer;
+//    timer.start();
 
     // Set of queried ids
     std::set<std::string> ids(req.ids.begin(), req.ids.end());
@@ -203,8 +203,10 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             property_idxs.push_back(entry->idx);
     }
 
-    const std::vector<unsigned long>& entity_revs = ed_wm->world_model()->entity_revisions();
-    const std::vector<ed::EntityConstPtr>&  entities = ed_wm->world_model()->entities();
+    ed::WorldModelConstPtr wm = ed_wm->world_model();
+
+    const std::vector<unsigned long>& entity_revs = wm->entity_revisions();
+    const std::vector<ed::EntityConstPtr>&  entities = wm->entities();
 
     std::vector<std::string> removed_entities;
 
@@ -243,7 +245,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Write convex hull
-            if (!e->convexHull().points.empty() && ed_wm->world_model()->entity_shape_revisions()[i] > req.since_revision)
+            if (!e->convexHull().points.empty() && wm->entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("convex_hull");
                 ed::serialize(e->convexHull(), w);
@@ -259,7 +261,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Mesh
-            if (e->shape() && ed_wm->world_model()->entity_shape_revisions()[i] > req.since_revision)
+            if (e->shape() && wm->entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("mesh");
                 ed::serialize(*e->shape(), w);
@@ -339,7 +341,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
     w.finish();
 
     res.human_readable = out.str();
-    res.new_revision = ed_wm->world_model()->revision();
+    res.new_revision = wm->revision();
 
 //    std::cout << "[ED] Quering took " << timer.getElapsedTimeInMilliSec() << " ms." << std::endl;
 
@@ -354,7 +356,9 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
     geo::Vector3 center_point;
     geo::convert(req.center_point, center_point);
 
-    for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
+    ed::WorldModelConstPtr wm = ed_wm->world_model();
+
+    for(ed::WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
     {
         const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
@@ -421,7 +425,7 @@ bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response
 bool getEnvironmentVariable(const std::string& var, std::string& value)
 {
     const char * val = ::getenv(var.c_str());
-    if ( val == 0 )
+    if ( val == nullptr )
         return false;
 
     value = val;
