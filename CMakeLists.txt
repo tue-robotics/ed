@@ -66,7 +66,6 @@ file(GLOB_RECURSE HEADER_FILES include/*.h)
 add_library(ed_core
   src/entity.cpp
   src/measurement.cpp
-  src/update_request.cpp
   src/world_model.cpp
   src/transform_cache.cpp
   src/convex_hull_2d.cpp
