@@ -198,14 +198,12 @@ void Server::reset(bool keep_all_shapes)
     // Create world model copy
     boost::unique_lock<boost::mutex> ul(mutex_world_);
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
-    ul.unlock();
 
     // Apply the deletion request
     new_world_model->update(*req_init_world);
     new_world_model->update(*req_delete);
 
     // Swap to new world model
-    ul.lock();
     world_model_ = new_world_model;
     ul.unlock();
 
