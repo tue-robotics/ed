@@ -142,6 +142,7 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
                     if (!r.readValue("name", prop_name))
                         continue;
 
+                    // ToDo: is this thread safe?
                     const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(prop_name);
                     if (!entry)
                     {
@@ -198,6 +199,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
     std::vector<ed::Idx> property_idxs;
     for(std::vector<std::string>::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
     {
+        // ToDo: is this thread safe?
         const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(*it);
         if (entry)
             property_idxs.push_back(entry->idx);
@@ -362,7 +364,7 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
 
     for(ed::WorldModel::const_iterator it = wm.begin(); it != wm.end(); ++it)
     {
-        const ed::EntityConstPtr e = *it;
+        const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;
 
@@ -427,7 +429,7 @@ bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response
 bool getEnvironmentVariable(const std::string& var, std::string& value)
 {
     const char * val = ::getenv(var.c_str());
-    if ( val == nullptr )
+    if ( val == 0 )
         return false;
 
     value = val;

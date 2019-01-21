@@ -91,8 +91,6 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
 
     if (!e.volumes().empty())
     {
-        msg.volumes.resize(e.volumes().size());
-        int i=0;
         for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.volumes().begin(); it != e.volumes().end(); ++it)
         {
             ed_msgs::Volume volume;
@@ -102,8 +100,6 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
             if (composite)
             {
                 std::vector<std::pair<geo::ShapePtr, geo::Transform> >  shapes = composite->getShapes();
-                volume.subvolumes.resize(shapes.size());
-                int i2 = 0;
                 for (std::vector<std::pair<geo::ShapePtr, geo::Transform> >::const_iterator it2 = shapes.begin();
                      it2 != shapes.end(); ++it2)
                 {
@@ -111,23 +107,18 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
                     shape_tr->setMesh(it2->first->getMesh().getTransformed(it2->second.inverse()));
 
                     ed_msgs::SubVolume sub_volume;
-                    convert(shape_tr,  volume.subvolumes[i2]);
-                    volume.subvolumes[i2].center_point.header.frame_id = "/" + e.id().str();
-                    ++i2;
+                    convert(shape_tr,  sub_volume);
+                    sub_volume.center_point.header.frame_id = "/" + e.id().str();
+                    volume.subvolumes.push_back(sub_volume);
                 }
             }
             else
             {
-                volume.subvolumes.resize(1);
                 ed_msgs::SubVolume sub_volume;
-
                 convert(it->second, sub_volume);
-
-                volume.subvolumes[0] = sub_volume;
+                volume.subvolumes.push_back(sub_volume);
             }
-
-            msg.volumes[i] = volume;
-            ++i;
+            msg.volumes.push_back(volume);
         }
     }
 
