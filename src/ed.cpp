@@ -203,10 +203,11 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             property_idxs.push_back(entry->idx);
     }
 
-    ed::WorldModelConstPtr wm = ed_wm->world_model();
+    // Make a copy of the WM, to keep it thead safe
+    ed::WorldModel wm = *ed_wm->world_model();
 
-    const std::vector<unsigned long>& entity_revs = wm->entity_revisions();
-    const std::vector<ed::EntityConstPtr>&  entities = wm->entities();
+    const std::vector<unsigned long>& entity_revs = wm.entity_revisions();
+    const std::vector<ed::EntityConstPtr>&  entities = wm.entities();
 
     std::vector<std::string> removed_entities;
 
@@ -245,7 +246,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Write convex hull
-            if (!e->convexHull().points.empty() && wm->entity_shape_revisions()[i] > req.since_revision)
+            if (!e->convexHull().points.empty() && wm.entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("convex_hull");
                 ed::serialize(e->convexHull(), w);
@@ -261,7 +262,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Mesh
-            if (e->shape() && wm->entity_shape_revisions()[i] > req.since_revision)
+            if (e->shape() && wm.entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("mesh");
                 ed::serialize(*e->shape(), w);
@@ -341,7 +342,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
     w.finish();
 
     res.human_readable = out.str();
-    res.new_revision = wm->revision();
+    res.new_revision = wm.revision();
 
 //    std::cout << "[ED] Quering took " << timer.getElapsedTimeInMilliSec() << " ms." << std::endl;
 
@@ -356,11 +357,12 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
     geo::Vector3 center_point;
     geo::convert(req.center_point, center_point);
 
-    ed::WorldModelConstPtr wm = ed_wm->world_model();
+    // Make a copy of the WM, to keep it thead safe
+    ed::WorldModel wm = *ed_wm->world_model();
 
-    for(ed::WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
+    for(ed::WorldModel::const_iterator it = wm.begin(); it != wm.end(); ++it)
     {
-        const ed::EntityConstPtr& e = *it;
+        const ed::EntityConstPtr e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;
 
