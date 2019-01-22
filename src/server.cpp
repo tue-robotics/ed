@@ -172,7 +172,7 @@ void Server::reset(bool keep_all_shapes)
     // Create init world request, such that we can check which entities we have to keep in the world model
     UpdateRequestPtr req_init_world(new UpdateRequest);
     std::stringstream error;
-    if (!model_loader_.create("_root", world_name_, *req_init_world, error))
+    if (!model_loader_.create("_root", world_name_, *req_init_world, error, true))
     {
         ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
     }
