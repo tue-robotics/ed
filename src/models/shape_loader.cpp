@@ -120,7 +120,7 @@ static std::string getUriPath(std::string type)
     else
         type_paths = &file_paths;
 
-    for(std::vector<std::string>::const_reverse_iterator it = type_paths->crbegin(); it != type_paths->crend(); ++it)
+    for(std::vector<std::string>::const_iterator it = type_paths->begin(); it != type_paths->end(); ++it)
     {
         tue::filesystem::Path file_path(*it + "/" + parsed_uri);
         if (file_path.exists())
