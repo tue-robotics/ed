@@ -70,7 +70,6 @@ add_library(ed_core
   src/transform_cache.cpp
   src/convex_hull_2d.cpp
   src/convex_hull_calc.cpp
-  include/ed/convex_hull.h
 
   # World model querying
   src/world_model/transform_crawler.cpp
@@ -89,7 +88,6 @@ add_library(ed_core
   src/logging.cpp
 
   src/error_context.cpp
-  include/ed/error_context.h
 
   ${HEADER_FILES}
 )
@@ -143,7 +141,10 @@ target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
 # ------------------------------------------------------------------------------------------------
 
 add_executable(ed_view_model tools/view_model.cpp)
-target_link_libraries(ed_view_model ed_core ed_io)
+target_link_libraries(ed_view_model ed_core)
+
+add_executable(ed_heightmap_to_mesh tools/heightmap_to_mesh.cpp)
+target_link_libraries(ed_heightmap_to_mesh ed_core)
 
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)

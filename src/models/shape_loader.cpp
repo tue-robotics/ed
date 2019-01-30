@@ -423,6 +423,8 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
 
     double size_x = resolution_x * image_orig.cols;
     double size_y = resolution_y * image_orig.rows;
+    std::cout << "size x: " << size_x << std::endl << "size y: " << size_y << std::endl <<
+                 "pixels x: " << image_orig.cols << std::endl << "pixels y: " << image_orig.rows << std::endl;
     geo::Vec3 size(size_x, size_y, blockheight);
 
     return getHeightMapShape(image_orig, pos, size, inverted, error);
