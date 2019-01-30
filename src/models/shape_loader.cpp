@@ -960,6 +960,9 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             else
                 error << "[ED::MODELS::LOADSHAPE] Mesh File: '" << mesh_path.string() << "' doesn't exist." << std::endl;
         }
+        else
+            error << "[ED::MODELS::LOADSHAPE] No uri found for mesh." << std::endl;
+
         std::string dummy;
         if (cfg.value("submesh", dummy))
             error << "[ED::MODELS::LOADSHAPE] 'submesh' of mesh is not supported by ED " << std::endl;

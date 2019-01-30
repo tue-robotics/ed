@@ -1,7 +1,7 @@
 #include "../src/models/shape_loader.h"
 #include <geolib/Exporter.h>
-
-//#include <opencv2/highgui/highgui.hpp>
+//#include <geolib/Mesh.h>
+//#include <geolib/Triangle.h>
 
 int main(int argc, char **argv) {
 
@@ -41,13 +41,34 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Add bottom to mesh.
+//    geo::Mesh mesh = shape->getMesh();
+//    const std::vector<geo::Triangle> triangles = mesh.getTriangles();
+//    for (auto it = triangles.begin(); it != triangles.end(); ++it)
+//    {
+//        if (abs(it->p1_.z -it->p2_.z) <= 0.001 && abs(it->p2_.z - it->p3_.z) <= 0.001 && abs(it->p1_.z) <= 0.001)
+//        {
+//            geo::Vector3 p1(it->p1_);
+//            p1.z = 0;
+//            geo::Vector3 p2(it->p2_);
+//            p2.z = 0;
+//            geo::Vector3 p3(it->p3_);
+//            p3.z = 0;
+//            int i1 = mesh.addPoint(geo::Vector3(it->p1_.x, it->p1_.y, 0.));
+//            int i2 = mesh.addPoint(geo::Vector3(it->p2_.x, it->p2_.y, 0.));
+//            int i3 = mesh.addPoint(geo::Vector3(it->p3_.x, it->p3_.y, 0.));
+//            mesh.addTriangle(i3, i2, i1);
+//        }
+//    }
+//    mesh.filterOverlappingVertices();
+//    shape->setMesh(mesh);
+
     geo::Exporter exp;
     if (!exp.writeMeshFile(output_file, *shape))
     {
         std::cout << "Could not convert loaded shape to mesh file: " << output_file << std::endl;
         return 1;
     }
-
 
     std::cout << "Succesfully converted: '" << input_file << "' to '" << output_file <<"'. With " <<
                  shape->getMesh().getPoints().size() << " points and " << shape->getMesh().getTriangleIs().size() <<
