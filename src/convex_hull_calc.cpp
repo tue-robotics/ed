@@ -11,7 +11,7 @@ namespace convex_hull
 // ----------------------------------------------------------------------------------------------------
 
 /**
- * @brief create fill a ConvexHull a put its origin in the middle of the Convexhull
+ * @brief create fill a ConvexHull and put its origin in the middle of the Convexhull
  * @param points points describing the shape. Points should be in map frame.
  * @param z_min min height
  * @param z_max max height
