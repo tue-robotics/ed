@@ -941,7 +941,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                 cfg.value("height", height);
         }
         cfg.endArray();
-        if (height > 0 && std::abs<double>(height) >= 0.01)
+        if (height > 0 && height >= 0.01)
         {
             shape.reset(new geo::Shape());
             createPolygon(*shape, points, height, error, true);
