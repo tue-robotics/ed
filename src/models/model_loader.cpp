@@ -305,7 +305,7 @@ bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest&
             return false;
     }
 
-    // First to get data before trying to create models
+    // First try to get data before trying to create models.
     if (sdf)
     {
         if (!createSDF(data, "", geo::Pose3D::identity(), id, boost::shared_ptr<const geo::Pose3D>(), req, error))
