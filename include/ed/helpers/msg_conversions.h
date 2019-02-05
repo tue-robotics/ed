@@ -71,7 +71,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
         }
     }
 
-    msg.has_shape = e.shape() ? true : false;
+    msg.has_shape = (e.shape() != nullptr);
     msg.has_pose = e.has_pose();
     if (e.has_pose())
     {
