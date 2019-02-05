@@ -32,7 +32,7 @@ std::string split implementation by using delimiter as a character. Multiple del
  * @param delimeter char on which the string is split
  * @return vector of sub-strings
  */
-std::vector<std::string> split(std::string& strToSplit, char delimeter)
+std::vector<std::string> split(const std::string& strToSplit, char delimeter)
 {
     std::stringstream ss(strToSplit);
     std::string item;
@@ -989,7 +989,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         {
             image_filename = getUriPath(image_filename);
 
-            // by default center should be in the middle.
+            // Center is in the middle.
             geo::Vec3 pos = -size/2;
             pos.z = 0;
 

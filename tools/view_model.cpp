@@ -457,12 +457,6 @@ int main(int argc, char **argv)
                 cam_pitch = std::round(cam_pitch / 1.57 + 0.51) * 1.57;
             else
                 cam_pitch = std::round(cam_pitch / 1.57 - 0.51) * 1.57;
-
-//            // Snap yaw to 90 degrees
-//            if (cam_yaw < 0)
-//                cam_yaw = std::round(cam_yaw / 1.57 + 0.51) * 1.57;
-//            else
-//                cam_yaw = std::round(cam_yaw / 1.57 - 0.51) * 1.57;
         }
 
         if (do_rotate)

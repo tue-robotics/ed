@@ -50,29 +50,23 @@ ModelLoader::ModelLoader()
     const char * edmpath = ::getenv("ED_MODEL_PATH");
     if (edmpath)
     {
-        std::stringstream ss(edmpath);
-        std::string item;
-        while (std::getline(ss, item, ':'))
-            if (!item.empty())
-                ed_model_paths_.push_back(item);
+        std::vector<std::string> paths_vector = ed::models::split(edmpath, ':');
+        for (std::vector<std::string>::const_iterator it = paths_vector.begin(); it != paths_vector.end(); ++it)
+            ed_model_paths_.push_back(*it);
     }
     const char * mpath = ::getenv("GAZEBO_MODEL_PATH");
     if (mpath)
     {
-        std::stringstream ss(mpath);
-        std::string item;
-        while (std::getline(ss, item, ':'))
-            if (!item.empty())
-                model_paths_.push_back(item);
+        std::vector<std::string> paths_vector = ed::models::split(mpath, ':');
+        for (std::vector<std::string>::const_iterator it = paths_vector.begin(); it != paths_vector.end(); ++it)
+            model_paths_.push_back(*it);
     }
     const char * fpath = ::getenv("GAZEBO_RESOURCE_PATH");
     if (fpath)
     {
-        std::stringstream ss(fpath);
-        std::string item;
-        while (std::getline(ss, item, ':'))
-            if (!item.empty())
-                file_paths_.push_back(item);
+        std::vector<std::string> paths_vector = ed::models::split(fpath, ':');
+        for (std::vector<std::string>::const_iterator it = paths_vector.begin(); it != paths_vector.end(); ++it)
+            file_paths_.push_back(*it);
     }
 }
 

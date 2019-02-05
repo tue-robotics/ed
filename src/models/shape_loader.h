@@ -23,7 +23,7 @@ enum ModelOrFile
     FILE
 };
 
-std::vector<std::string> split(std::string& strToSplit, char delimeter);
+std::vector<std::string> split(const std::string& strToSplit, char delimeter);
 
 std::string parseURI(const std::string& uri, ModelOrFile& uri_type);
 
