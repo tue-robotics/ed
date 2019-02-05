@@ -189,9 +189,6 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
 
 bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 {
-//    tue::Timer timer;
-//    timer.start();
-
     // Set of queried ids
     std::set<std::string> ids(req.ids.begin(), req.ids.end());
 
@@ -207,7 +204,6 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 
     // Make a copy of the WM, to keep it thead safe
     ed::WorldModel wm = *ed_wm->world_model();
-
     const std::vector<unsigned long>& entity_revs = wm.entity_revisions();
     const std::vector<ed::EntityConstPtr>&  entities = wm.entities();
 
@@ -334,8 +330,6 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
         }
     }
 
-//    std::cout << out.str() << std::endl;
-
     w.endArray();
 
     if (!removed_entities.empty())
@@ -345,8 +339,6 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 
     res.human_readable = out.str();
     res.new_revision = wm.revision();
-
-//    std::cout << "[ED] Quering took " << timer.getElapsedTimeInMilliSec() << " ms." << std::endl;
 
     return true;
 }
@@ -361,7 +353,6 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
 
     // Make a copy of the WM, to keep it thead safe
     ed::WorldModel wm = *ed_wm->world_model();
-
     for(ed::WorldModel::const_iterator it = wm.begin(); it != wm.end(); ++it)
     {
         const ed::EntityConstPtr& e = *it;

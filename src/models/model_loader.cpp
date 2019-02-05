@@ -24,26 +24,23 @@ namespace ed
 namespace models
 {
 
-bool readSDFGeometry(tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error, geo::Pose3D pose_offset = geo::Pose3D::identity())
+bool readSDFGeometry(tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error, geo::Pose3D pose_offset=geo::Pose3D::identity())
 {
     geo::Pose3D pose = geo::Pose3D::identity();
     readPose(r, pose);
     pose = pose_offset * pose;
-    if (r.readGroup("geometry"))
-    {
-        std::map<std::string, geo::ShapePtr> dummy_shape_cache;
-        geo::ShapePtr sub_shape = loadShape("", r, dummy_shape_cache, error);
-        if (sub_shape)
-        {
-            if (!composite)
-                composite.reset(new geo::CompositeShape);
-            composite->addShape(*sub_shape, pose);
-        }
-        r.endGroup();
-        return true;
-    }
-    else
+    if (!r.readGroup("geometry"))
         return false;
+    std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+    geo::ShapePtr sub_shape = loadShape("", r, dummy_shape_cache, error);
+    if (sub_shape)
+    {
+        if (!composite) // if pointer is empty, create new instance.
+            composite.reset(new geo::CompositeShape);
+        composite->addShape(*sub_shape, pose);
+    }
+    r.endGroup();
+    return true;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -241,7 +238,6 @@ tue::config::DataConstPointer ModelLoader::loadSDFData(std::string uri, std::str
     ModelData cache_data = readModelCache(parsed_uri + "_sdf");
     if (!cache_data.first.empty())
     {
-//        types = cache_data.second;
         return cache_data.first;
     }
 
@@ -268,7 +264,7 @@ tue::config::DataConstPointer ModelLoader::loadSDFData(std::string uri, std::str
 
 // ----------------------------------------------------------------------------------------------------
 
-bool ModelLoader::exists(std::string type) const
+bool ModelLoader::exists(const std::string& type) const
 {
     ModelData cache_data = readModelCache(type + "_sdf");
     if(!cache_data.first.empty())

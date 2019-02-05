@@ -78,7 +78,7 @@ public:
      * @param type model type
      * @return bool, which indicates of type exist
      */
-    bool exists(std::string type) const;
+    bool exists(const std::string& type) const;
 
 private:
 

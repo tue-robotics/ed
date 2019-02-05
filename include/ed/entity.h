@@ -54,7 +54,7 @@ public:
     inline geo::ShapeConstPtr shape() const { return shape_; }
     void setShape(const geo::ShapeConstPtr& shape);
 
-    inline std::map<std::string, geo::ShapeConstPtr> volumes() const { return volumes_; }
+    inline const std::map<std::string, geo::ShapeConstPtr> volumes() const { return volumes_; }
     void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++shape_revision_; }
     void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++shape_revision_; }
 
