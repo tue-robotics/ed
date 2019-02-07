@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ed)
 
+## Compile as C++11, supported in ROS Kinetic and newer
+add_compile_options(-std=c++11)
+
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
+  cmake_modules
   class_loader
   code_profiler
   cv_bridge
@@ -21,6 +25,8 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(orocos_kdl REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(TinyXML REQUIRED)
+find_package(SDFormat REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -36,12 +42,16 @@ catkin_package(
 ## Build ##
 ###########
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wreturn-type -Wsign-compare -Wreorder")
+add_compile_options(-Wreturn-type)
+add_compile_options(-Wsign-compare)
+add_compile_options(-Wreorder)
 
 include_directories(
   include
   3rdparty
+  ${TinyXML_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${SDFormat_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -56,12 +66,10 @@ file(GLOB_RECURSE HEADER_FILES include/*.h)
 add_library(ed_core
   src/entity.cpp
   src/measurement.cpp
-  src/update_request.cpp
   src/world_model.cpp
   src/transform_cache.cpp
   src/convex_hull_2d.cpp
   src/convex_hull_calc.cpp
-  include/ed/convex_hull.h
 
   # World model querying
   src/world_model/transform_crawler.cpp
@@ -80,11 +88,10 @@ add_library(ed_core
   src/logging.cpp
 
   src/error_context.cpp
-  include/ed/error_context.h
 
   ${HEADER_FILES}
 )
-target_link_libraries(ed_core ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(ed_io
   src/serialization/serialization.cpp
@@ -133,10 +140,11 @@ target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
 #                                                TOOLS
 # ------------------------------------------------------------------------------------------------
 
-add_executable(ed-list-ids tools/list_ids.cpp)
-
 add_executable(ed_view_model tools/view_model.cpp)
-target_link_libraries(ed_view_model ed_core ed_io)
+target_link_libraries(ed_view_model ed_core)
+
+add_executable(ed_heightmap_to_mesh tools/heightmap_to_mesh.cpp)
+target_link_libraries(ed_heightmap_to_mesh ed_core)
 
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)

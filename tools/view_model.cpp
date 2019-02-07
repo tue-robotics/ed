@@ -2,8 +2,6 @@
 #include <ed/world_model.h>
 #include <ed/update_request.h>
 #include <ed/entity.h>
-#include <ed/serialization/serialization.h>
-#include <ed/io/json_reader.h>
 
 #include <fstream>
 
@@ -14,12 +12,15 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <tue/config/reader.h>
+#include <tue/config/reader_writer.h>
+#include "tue/config/loaders/sdf.h"
+#include "tue/config/loaders/xml.h"
+#include "tue/config/loaders/yaml.h"
 
-#include <ros/init.h>
-#include <ros/node_handle.h>
+#include <tue/filesystem/path.h>
 
-double CANVAS_WIDTH = 640;
-double CANVAS_HEIGHT = 480;
+double CANVAS_WIDTH = 800;
+double CANVAS_HEIGHT = 600;
 
 geo::DepthCamera cam;
 
@@ -83,7 +84,7 @@ public:
     void renderPixel(int x, int y, float depth, int i_triangle)
     {
         float old_depth = z_buffer.at<float>(y, x);
-        if (old_depth == 0 || depth < old_depth)
+        if (old_depth == 0. || depth < old_depth)
         {
             z_buffer.at<float>(y, x) = depth;
 
@@ -123,31 +124,44 @@ void usage()
 
 bool loadModel(const std::string& load_type, const std::string& source, ed::UpdateRequest& req)
 {
+    ed::models::ModelLoader model_loader;
+    std::stringstream error;
     if (load_type == "--file")
     {
-        std::ifstream f_in;
-        f_in.open(source.c_str());
-
-        if (!f_in.is_open())
+        tue::filesystem::Path path(source);
+        if (!path.exists())
         {
-            std::cerr << "Could not open file '" << source << "'." << std::endl;
+            std::cerr << "Couldn't open: '" << path << "', because it doesn't exist" << std::endl;
             return false;
         }
 
-        std::stringstream buffer;
-        buffer << f_in.rdbuf();
-        std::string str = buffer.str();
-        ed::io::JSONReader r(str.c_str());
-        ed::deserialize(r, req);
+        tue::config::ReaderWriter config;
+        std::string extension = tue::filesystem::Path(source).extension();
+        if ( extension == ".sdf" || extension == ".world")
+            tue::config::loadFromSDFFile(source, config);
+        else if (extension == ".xml")
+            tue::config::loadFromXMLFile(source, config);
+        else if (extension == ".yml" || extension == ".yaml")
+            tue::config::loadFromYAMLFile(source, config);
+        else
+        {
+            std::cerr << "[model_viewer] extension: '" << extension << "'  is not supported." << std::endl;
+            return false;
+        }
+
+        if (!model_loader.create(config.data(), req, error))
+        {
+            std::cerr << "File '" << source << "' could not be loaded:" << std::endl << std::endl;
+            std::cerr << "Error: " << std::endl << error.str() << std::endl;
+            return false;
+        }
     }
     else if (load_type == "--model")
     {
-        ed::models::ModelLoader model_loader;
-        std::stringstream error;
-        if (!model_loader.create("_root", source, req, error))
+        if (!model_loader.create("_root", source, req, error, true))
         {
             std::cerr << "Model '" << source << "' could not be loaded:" << std::endl << std::endl;
-            std::cerr << error.str() << std::endl;
+            std::cerr << "Error: " << std::endl << error.str() << std::endl;
             return false;
         }
     }
@@ -206,7 +220,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
         }
         else if (flags & cv::EVENT_FLAG_MBUTTON)
         {
-            cam_dist += cam_dist * dy * 0.002;
+            cam_dist += cam_dist * dy * 0.003;
         }
         else if (flags & cv::EVENT_FLAG_RBUTTON)
         {
@@ -221,9 +235,6 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
 int main(int argc, char **argv)
 {
-//    ros::init(argc, argv, "ed_view_model");  // <- TODO: GET RID OF THIS!
-//    ros::NodeHandle nh;
-
     if (argc != 3)
     {
         usage();
@@ -284,27 +295,30 @@ int main(int argc, char **argv)
     }
 
     double dist = 2 * std::max(p_max.z - p_min.z, std::max(p_max.x - p_min.x, p_max.y - p_min.y));
-    double h = (p_max.z - p_min.z) / 2;
 
-    std::cout << "Model loaded successfully:" << std::endl;
-    std::cout << "    " << n_vertices << " vertices" << std::endl;
-    std::cout << "    " << n_triangles << " triangles" << std::endl;
+    std::stringstream info_msg;
+    info_msg << "Model loaded successfully:" << std::endl;
+    info_msg << "    " << n_vertices << " vertices" << std::endl;
+    info_msg << "    " << n_triangles << " triangles" << std::endl;
 
-    std::cout << std::endl;
-    std::cout << "Mouse:" << std::endl;
-    std::cout << "    left         - orbit" << std::endl;
-    std::cout << "    middle       - zoom" << std::endl;
-    std::cout << "    right        - pan" << std::endl;
-    std::cout << "    double click - fly to" << std::endl;
+    info_msg << std::endl;
+    info_msg << "Mouse:" << std::endl;
+    info_msg << "    left         - orbit" << std::endl;
+    info_msg << "    middle       - zoom" << std::endl;
+    info_msg << "    right        - pan" << std::endl;
+    info_msg << "    double click - fly to" << std::endl;
 
-    std::cout << std::endl;
-    std::cout << "Keys:" << std::endl;
-    std::cout << "    r - reload model" << std::endl;
-    std::cout << "    a - show / hide model areas" << std::endl;
-    std::cout << "    c - circle rotate" << std::endl;
-    std::cout << "    q - quit" << std::endl;
+    info_msg << std::endl;
+    info_msg << "Keys:" << std::endl;
+    info_msg << "    r - reload model" << std::endl;
+    info_msg << "    v - show / hide model volumes" << std::endl;
+    info_msg << "    c - circle rotate" << std::endl;
+    info_msg << "    p - snap pitch" << std::endl;
+    info_msg << "    q - quit" << std::endl;
 
-    bool show_areas = true;
+    std::cout << info_msg.str();
+
+    bool show_volumes = true;
 
     cam_dist = dist;
     cam_lookat = (p_min + p_max) / 2;
@@ -389,8 +403,6 @@ int main(int argc, char **argv)
 
                 res.setMesh(&e->shape()->getMesh());
 
-//                cam_pose.inverse() * obj_pose
-
                 geo::Pose3D pose = cam_pose.inverse() * e->pose();
                 geo::RenderOptions opt;
                 opt.setMesh(e->shape()->getMesh(), pose);
@@ -399,44 +411,20 @@ int main(int argc, char **argv)
                 cam.render(opt, res);
 
 
-                // Render areas
-                geo::Shape shape;
-                tue::config::Reader r(e->data());
-
-                if (show_areas && r.readArray("areas"))
+                // Render volumes
+                std::map<std::string, geo::ShapeConstPtr> volumes = e->volumes();
+                if (show_volumes && !volumes.empty())
                 {
-                    while(r.nextArrayItem())
+                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = volumes.begin(); it != volumes.end(); ++it)
                     {
-//                        std::cout << r.data() << std::endl;
-
-                        std::string a_name;
-                        if (!r.value("name", a_name))
-                            continue;
-
-//                        std::cout << a_name << std::endl;
-
-                        if (ed::deserialize(r, "shape", shape))
-                        {
-//                            geo::Pose3D pose = geo::Pose3D(0, -dist, h + dist, 0.8, 0, 0).inverse() * (geo::Pose3D(0, 0, 0, 0, 0, angle) * e->pose());
-
-                            res.color = cv::Vec3b(0, 0, 255);
-                            opt.setMesh(shape.getMesh(), pose);
-                            cam.render(opt, res);
-                        }
+                        res.color = cv::Vec3b(0, 0, 255);
+                        res.setMesh(&it->second->getMesh());
+                        opt.setMesh(it->second->getMesh(), pose);
+                        cam.render(opt, res);
                     }
-                    r.endArray();
                 }
-
-
             }
         }
-
-//        for(int i = 0; i < depth_image.rows * depth_image.cols; ++i)
-//        {
-//            float& d = depth_image.at<float>(i);
-//            if (d > 0)
-//                d = 1 - (d / (dist * 2));
-//        }
 
         cv::imshow("visualization", image);
         char key = cv::waitKey(10);
@@ -450,9 +438,9 @@ int main(int argc, char **argv)
                 world_model.update(req);
             }
         }
-        else if (key == 'a')
+        else if (key == 'v')
         {
-            show_areas = !show_areas;
+            show_volumes = !show_volumes;
         }
         else if (key == 'q')
         {
@@ -465,25 +453,11 @@ int main(int argc, char **argv)
         else if (key == 'p')
         {
             // Snap pitch to 90 degrees
-//            if (cam_pitch < -0.785)
-//                cam_pitch = -1.57;
-//            else if (cam_pitch > 0.785)
-//                cam_pitch = 1.57;
-//            else
-//                cam_pitch = 0;
-
-            if (cam_pitch > 0)
-                cam_pitch = (int)(cam_pitch / 1.57 + 0.5) * 1.57;
+            if (cam_pitch < 1.57)
+                cam_pitch = std::round(cam_pitch / 1.57 + 0.51) * 1.57;
             else
-                cam_pitch = (int)(cam_pitch / 1.57 - 0.5) * 1.57;
-
-            // Snap yaw to 90 degrees
-            if (cam_yaw > 0)
-                cam_yaw = (int)(cam_yaw / 1.57 + 0.5) * 1.57;
-            else
-                cam_yaw = (int)(cam_yaw / 1.57 - 0.5) * 1.57;
+                cam_pitch = std::round(cam_pitch / 1.57 - 0.51) * 1.57;
         }
-//        std::cout  << (int)key << std::endl;
 
         if (do_rotate)
             cam_yaw += 0.03;
@@ -493,7 +467,6 @@ int main(int argc, char **argv)
             geo::Vector3 diff = cam_lookat_flyto - cam_lookat;
             double dist = diff.length();
 
-//            double max_dist = 0.02 * cam_dist;
             double max_dist = std::max(0.001 * cam_dist, dist * 0.1);
             if (dist < max_dist)
             {

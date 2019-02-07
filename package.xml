@@ -10,6 +10,8 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>cmake_modules</build_depend>
+
   <depend>class_loader</depend>
   <depend>code_profiler</depend>
   <depend>cv_bridge</depend>
@@ -21,6 +23,8 @@
   <depend>pcl_ros</depend>
   <depend>rgbd</depend>
   <depend>roscpp</depend>
+  <depend>sdfformat</depend>
+  <depend>tinyxml</depend>
   <depend>tue_config</depend>
   <depend>tue_filesystem</depend>
   <depend>tue_serialization</depend>

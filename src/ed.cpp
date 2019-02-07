@@ -6,7 +6,9 @@
 // Query
 #include <ed/entity.h>
 #include <ed_msgs/SimpleQuery.h>
+#include <ed/helpers/msg_conversions.h>
 #include <geolib/ros/msg_conversions.h>
+#include <geolib/datatypes.h>
 #include <tue/config/yaml_emitter.h>
 #include <ed/serialization/serialization.h>
 
@@ -32,9 +34,6 @@
 #include <ed_msgs/LoadPlugin.h>
 #include <tue/config/loaders/yaml.h>
 
-#include <geolib/Shape.h>
-#include <geolib/Mesh.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <execinfo.h>
@@ -50,56 +49,6 @@ boost::thread::id main_thread_id;
 
 ed::Server* ed_wm;
 std::string update_request_;
-
-// ----------------------------------------------------------------------------------------------------
-
-void entityToMsg(const ed::Entity& e, ed_msgs::EntityInfo& msg)
-{
-    msg.id = e.id().str();
-    msg.type = e.type();
-
-    for(std::set<std::string>::const_iterator it = e.types().begin(); it != e.types().end(); ++it)
-        msg.types.push_back(*it);
-
-    msg.existence_probability = e.existenceProbability();
-//    msg.creation_time = ros::Time(e.creationTime());
-
-    // Convex hull
-    const ed::ConvexHull& convex_hull = e.convexHull();
-    if (!convex_hull.points.empty())
-    {
-        msg.z_min = convex_hull.z_min;
-        msg.z_max = convex_hull.z_max;
-
-        msg.convex_hull.resize(convex_hull.points.size());
-        for(unsigned int i = 0; i < msg.convex_hull.size(); ++i)
-        {
-            msg.convex_hull[i].x = convex_hull.points[i].x;
-            msg.convex_hull[i].y = convex_hull.points[i].y;
-            msg.convex_hull[i].z = 0;
-        }
-    }
-
-    msg.has_shape = e.shape() ? true : false;
-    msg.has_pose = e.has_pose();
-    if (e.has_pose())
-        geo::convert(e.pose(), msg.pose);
-
-    msg.last_update_time =  ros::Time(e.lastUpdateTimestamp());
-
-    if (!e.data().empty())
-    {
-        std::stringstream ss;
-        tue::config::YAMLEmitter emitter;
-        emitter.emit(e.data(), ss);
-
-        msg.data = ss.str();
-    }
-
-    // Flags
-    for(std::set<std::string>::const_iterator it = e.flags().begin(); it != e.flags().end(); ++it)
-        msg.flags.push_back(*it);
-}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -193,6 +142,7 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
                     if (!r.readValue("name", prop_name))
                         continue;
 
+                    // ToDo: is this thread safe?
                     const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(prop_name);
                     if (!entry)
                     {
@@ -239,9 +189,6 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
 
 bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 {
-    tue::Timer timer;
-    timer.start();
-
     // Set of queried ids
     std::set<std::string> ids(req.ids.begin(), req.ids.end());
 
@@ -249,13 +196,16 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
     std::vector<ed::Idx> property_idxs;
     for(std::vector<std::string>::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
     {
+        // ToDo: is this thread safe?
         const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(*it);
         if (entry)
             property_idxs.push_back(entry->idx);
     }
 
-    const std::vector<unsigned long>& entity_revs = ed_wm->world_model()->entity_revisions();
-    const std::vector<ed::EntityConstPtr>&  entities = ed_wm->world_model()->entities();
+    // Make a copy of the WM, to keep it thead safe
+    ed::WorldModel wm = *ed_wm->world_model();
+    const std::vector<unsigned long>& entity_revs = wm.entity_revisions();
+    const std::vector<ed::EntityConstPtr>&  entities = wm.entities();
 
     std::vector<std::string> removed_entities;
 
@@ -294,7 +244,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Write convex hull
-            if (!e->convexHull().points.empty() && ed_wm->world_model()->entity_shape_revisions()[i] > req.since_revision)
+            if (!e->convexHull().points.empty() && wm.entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("convex_hull");
                 ed::serialize(e->convexHull(), w);
@@ -310,7 +260,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Mesh
-            if (e->shape() && ed_wm->world_model()->entity_shape_revisions()[i] > req.since_revision)
+            if (e->shape() && wm.entity_shape_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("mesh");
                 ed::serialize(*e->shape(), w);
@@ -380,8 +330,6 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
         }
     }
 
-//    std::cout << out.str() << std::endl;
-
     w.endArray();
 
     if (!removed_entities.empty())
@@ -390,9 +338,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
     w.finish();
 
     res.human_readable = out.str();
-    res.new_revision = ed_wm->world_model()->revision();
-
-//    std::cout << "[ED] Quering took " << timer.getElapsedTimeInMilliSec() << " ms." << std::endl;
+    res.new_revision = wm.revision();
 
     return true;
 }
@@ -405,10 +351,10 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
     geo::Vector3 center_point;
     geo::convert(req.center_point, center_point);
 
-    for(ed::WorldModel::const_iterator it = ed_wm->world_model()->begin(); it != ed_wm->world_model()->end(); ++it)
+    // Make a copy of the WM, to keep it thead safe
+    ed::WorldModel wm = *ed_wm->world_model();
+    for(ed::WorldModel::const_iterator it = wm.begin(); it != wm.end(); ++it)
     {
-//        std::cout << it->first << std::endl;
-
         const ed::EntityConstPtr& e = *it;
         if (!req.id.empty() && e->id() != ed::UUID(req.id))
             continue;
@@ -439,7 +385,7 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
         if (geom_ok)
         {
             res.entities.push_back(ed_msgs::EntityInfo());
-            entityToMsg(*e, res.entities.back());
+            convert(*e, res.entities.back());
         }
     }
 
