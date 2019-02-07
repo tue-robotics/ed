@@ -50,6 +50,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
     msg.id = e.id().str();
     msg.type = e.type();
 
+    msg.types.resize(0);
     for(std::set<std::string>::const_iterator it = e.types().begin(); it != e.types().end(); ++it)
         msg.types.push_back(*it);
 
@@ -70,6 +71,12 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
             msg.convex_hull[i].z = 0;
         }
     }
+    else
+    {
+        msg.convex_hull.resize(0);
+        msg.z_min = 0;
+        msg.z_max = 0;
+    }
 
     msg.has_shape = (e.shape() != nullptr);
     msg.has_pose = e.has_pose();
@@ -87,6 +94,10 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
         emitter.emit(e.data(), ss);
 
         msg.data = ss.str();
+    }
+    else
+    {
+        msg.data = "";
     }
 
     if (!e.volumes().empty())
@@ -121,8 +132,13 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
             msg.volumes.push_back(volume);
         }
     }
+    else
+    {
+        msg.volumes.resize(0);
+    }
 
     // Flags
+    msg.flags.resize(0);
     for(std::set<std::string>::const_iterator it = e.flags().begin(); it != e.flags().end(); ++it)
         msg.flags.push_back(*it);
 }
