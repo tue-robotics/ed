@@ -158,7 +158,8 @@ geo::ShapePtr linkToShape(const boost::shared_ptr<urdf::Link>& link)
     }
 
     // Transform using visual offset
-    shape->setMesh(shape->getMesh().getTransformed(offset));
+    if (shape)
+        shape->setMesh(shape->getMesh().getTransformed(offset));
 
     return shape;
 }
