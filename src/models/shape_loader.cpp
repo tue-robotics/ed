@@ -952,9 +952,18 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         std::string uri_path;
         if (cfg.value("uri", uri_path))
         {
+            geo::Vec3 scale(1, 1, 1);
+            std::string scale_str;
+            if (cfg.value("scale", scale_str))
+            {
+                std::vector<std::string> scale_vector = split(scale_str, ' ');
+                scale.x = std::stod(scale_vector[0]);
+                scale.y = std::stod(scale_vector[1]);
+                scale.z = std::stod(scale_vector[2]);
+            }
             tue::filesystem::Path mesh_path = getUriPath(uri_path);
             if (mesh_path.exists())
-                shape = geo::Importer::readMeshFile(mesh_path.string());
+                shape = geo::Importer::readMeshFile(mesh_path.string(), scale);
             else
                 error << "[ED::MODELS::LOADSHAPE] Mesh File: '" << mesh_path.string() << "' doesn't exist." << std::endl;
         }
