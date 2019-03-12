@@ -1,5 +1,5 @@
-#ifndef ED_HELLO_WORLD_PLUGIN_H_
-#define ED_HELLO_WORLD_PLUGIN_H_
+#ifndef ED_SYNC_PLUGIN_H_
+#define ED_SYNC_PLUGIN_H_
 
 #include <ed/plugin.h>
 
@@ -26,4 +26,4 @@ private:
 
 };
 
-#endif
+#endif //ED_SYNC_PLUGIN_H_
