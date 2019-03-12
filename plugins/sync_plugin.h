@@ -26,4 +26,4 @@ private:
 
 };
 
-#endif
+#endif //ED_SYNC_PLUGIN_H_
