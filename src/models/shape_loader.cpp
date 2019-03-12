@@ -957,6 +957,11 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             if (cfg.value("scale", scale_str))
             {
                 std::vector<std::string> scale_vector = split(scale_str, ' ');
+                if(scale_vector.size() != 3)
+                {
+                    error << "[ED::MODELS::LOADSHAPE] Mesh scale: '" << scale_str << "' should have 3 members." << std::endl;
+                    return shape;
+                }
                 scale.x = std::stod(scale_vector[0]);
                 scale.y = std::stod(scale_vector[1]);
                 scale.z = std::stod(scale_vector[2]);
