@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   geolib2
   kdl_parser
   rgbd
+  rgbd_msgs
   pcl_ros
   roscpp
   tue_config
@@ -33,7 +34,7 @@ find_package(SDFormat REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_visualization
-  CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_msgs tue_config tue_serialization rgbd
+  CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_msgs tue_config tue_serialization rgbd rgbd_msgs
   DEPENDS OpenCV
 )
 
@@ -91,6 +92,7 @@ add_library(ed_core
   ${HEADER_FILES}
 )
 target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(ed_core ${catkin_EXPORTED_TARGETS})
 
 add_library(ed_io
   src/serialization/serialization.cpp

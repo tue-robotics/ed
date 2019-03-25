@@ -21,6 +21,7 @@
   <depend>orocos_kdl</depend>
   <depend>pcl_ros</depend>
   <depend>rgbd</depend>
+  <depend>rgbd_msgs</depend>
   <depend>roscpp</depend>
   <depend>sdfformat</depend>
   <depend>tinyxml</depend>
