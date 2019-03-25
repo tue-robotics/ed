@@ -40,6 +40,7 @@ We assume you have successfully installed ROS and set-up a Catkin workspace. Che
     git clone https://github.com/tue-robotics/code_profiler.git
     git clone https://github.com/tue-robotics/geolib2.git
     git clone https://github.com/tue-robotics/rgbd.git
+    git clone https://github.com/tue-robotics/rgbd_msgs.git
     git clone https://github.com/tue-robotics/tue_config.git
     git clone https://github.com/tue-robotics/tue_filesystem.git
     git clone https://github.com/tue-robotics/tue_serialization.git
