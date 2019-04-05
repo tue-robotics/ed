@@ -481,8 +481,8 @@ void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, doub
 
     for(unsigned int i = 0; i < points.size(); ++i)
     {
-        poly[i].x = (unsigned int) points[i].x;
-        poly[i].y = (unsigned int) points[i].y;
+        poly[i].x = points[i].x;
+        poly[i].y = points[i].y;
 
         mesh.addPoint(geo::Vector3(points[i].x, points[i].y, min_z));
         mesh.addPoint(geo::Vector3(points[i].x, points[i].y, max_z));
