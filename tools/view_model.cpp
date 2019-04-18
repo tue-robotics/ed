@@ -36,6 +36,13 @@ geo::Vector3 cam_lookat_flyto;
 cv::Mat depth_image;
 cv::Mat image;
 
+enum ShowVolumes
+{
+    NoVolumes,
+    ModelVolumes,
+    RoomVolumes
+};
+
 // ----------------------------------------------------------------------------------------------------
 
 float COLORS[27][3] = { { 0.6, 0.6, 0.6}, { 0.6, 0.6, 0.4}, { 0.6, 0.6, 0.2},
@@ -311,14 +318,14 @@ int main(int argc, char **argv)
     info_msg << std::endl;
     info_msg << "Keys:" << std::endl;
     info_msg << "    r - reload model" << std::endl;
-    info_msg << "    v - show / hide model volumes" << std::endl;
+    info_msg << "    v - hide all volumes, show model volumes, show room volumes" << std::endl;
     info_msg << "    c - circle rotate" << std::endl;
     info_msg << "    p - snap pitch" << std::endl;
     info_msg << "    q - quit" << std::endl;
 
     std::cout << info_msg.str();
 
-    bool show_volumes = true;
+    ShowVolumes show_volumes = ModelVolumes;
 
     cam_dist = dist;
     cam_lookat = (p_min + p_max) / 2;
@@ -387,6 +394,10 @@ int main(int argc, char **argv)
 
             if (e->shape() && e->has_pose() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
             {
+
+                if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall"))
+                    continue;
+
                 tue::config::Reader config(e->data());
                 if (config.readGroup("color"))
                 {
@@ -412,16 +423,27 @@ int main(int argc, char **argv)
 
 
                 // Render volumes
-                std::map<std::string, geo::ShapeConstPtr> volumes = e->volumes();
-                if (show_volumes && !volumes.empty())
+                if (show_volumes == ModelVolumes && !e->volumes().empty())
                 {
-                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = volumes.begin(); it != volumes.end(); ++it)
+                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
                     {
                         res.color = cv::Vec3b(0, 0, 255);
                         res.setMesh(&it->second->getMesh());
                         opt.setMesh(it->second->getMesh(), pose);
                         cam.render(opt, res);
                     }
+                }
+            }
+            else if (show_volumes == RoomVolumes && e->types().find("room") != e->types().end())
+            {
+                geo::Pose3D pose = cam_pose.inverse() * e->pose();
+                geo::RenderOptions opt;
+                for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
+                {
+                    res.color = cv::Vec3b(0, 0, 255);
+                    res.setMesh(&it->second->getMesh());
+                    opt.setMesh(it->second->getMesh(), pose);
+                    cam.render(opt, res);
                 }
             }
         }
@@ -440,7 +462,7 @@ int main(int argc, char **argv)
         }
         else if (key == 'v')
         {
-            show_volumes = !show_volumes;
+            show_volumes = ShowVolumes((show_volumes + 1) % 3);
         }
         else if (key == 'q')
         {
