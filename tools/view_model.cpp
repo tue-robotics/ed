@@ -36,6 +36,13 @@ geo::Vector3 cam_lookat_flyto;
 cv::Mat depth_image;
 cv::Mat image;
 
+enum ShowVolumes
+{
+    NoVolumes,
+    ModelVolumes,
+    RoomVolumes
+};
+
 // ----------------------------------------------------------------------------------------------------
 
 float COLORS[27][3] = { { 0.6, 0.6, 0.6}, { 0.6, 0.6, 0.4}, { 0.6, 0.6, 0.2},
@@ -318,7 +325,7 @@ int main(int argc, char **argv)
 
     std::cout << info_msg.str();
 
-    int show_volumes = 1; // 0= no volumes, 1=entity volumes, 2=room volumes
+    ShowVolumes show_volumes = ModelVolumes;
 
     cam_dist = dist;
     cam_lookat = (p_min + p_max) / 2;
@@ -388,7 +395,7 @@ int main(int argc, char **argv)
             if (e->shape() && e->has_pose() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
             {
 
-                if (show_volumes == 2 && (id.size() < 4 || id.substr(0, 4) != "wall"))
+                if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall"))
                     continue;
 
                 tue::config::Reader config(e->data());
@@ -416,7 +423,7 @@ int main(int argc, char **argv)
 
 
                 // Render volumes
-                if (show_volumes == 1 && !e->volumes().empty())
+                if (show_volumes == ModelVolumes && !e->volumes().empty())
                 {
                     for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
                     {
@@ -427,7 +434,7 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            else if (show_volumes == 2 && e->types().find("room") != e->types().end())
+            else if (show_volumes == RoomVolumes && e->types().find("room") != e->types().end())
             {
                 geo::Pose3D pose = cam_pose.inverse() * e->pose();
                 geo::RenderOptions opt;
@@ -455,7 +462,7 @@ int main(int argc, char **argv)
         }
         else if (key == 'v')
         {
-            show_volumes = (show_volumes + 1) % 3;
+            show_volumes = ShowVolumes((show_volumes + 1) % 3);
         }
         else if (key == 'q')
         {
