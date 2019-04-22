@@ -922,30 +922,32 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
 
         cfg.endGroup();
     }
-    else if (cfg.readArray("polyline")) // SDF ONLY
+    else if (cfg.readGroup("polyline")) // SDF ONLY
     {
         std::vector<geo::Vec2> points;
-        double height = 0.0;
-        while(cfg.nextArrayItem())
+        if (cfg.readArray("point", tue::config::REQUIRED))
         {
-            std::string point_string;
-            if (cfg.value("point", point_string))
+            while (cfg.nextArrayItem())
             {
+                std::string point_string;
+                cfg.value("point", point_string);
                 points.push_back(geo::Vec2());
                 geo::Vec2& p = points.back();
                 std::vector<std::string> point_vector = split(point_string, ' ');
                 p.x = std::stod(point_vector[0]);
                 p.y = std::stod(point_vector[1]);
             }
-            else
-                cfg.value("height", height);
+            cfg.endArray();
         }
-        cfg.endArray();
-        if (height > 0 && height >= 0.01)
+
+        double height;
+        if (cfg.value("height", height))
         {
             shape.reset(new geo::Shape());
             createPolygon(*shape, points, height, error, true);
         }
+
+        cfg.endGroup();
     }
     else if (cfg.readGroup("mesh")) // SDF ONLY
     {
