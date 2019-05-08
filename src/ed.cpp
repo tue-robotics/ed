@@ -397,10 +397,15 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
 bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response& res)
 {
     tue::Configuration config;
-    if (!tue::config::loadFromYAMLString(req.request, config))
+    if (!tue::config::loadFromYAMLFile(req.request, config))
     {
-        res.error_msg = config.error();
-        return true;
+        std::string config_error = config.error();
+        config = tue::Configuration();
+        if(!tue::config::loadFromYAMLString(req.request, config))
+        {
+            res.error_msg = config_error + "\n\n" + config.error();
+            return true;
+        }
     }
 
     // Configure ED
