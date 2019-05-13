@@ -9,14 +9,14 @@ std::string click_type;
 
 void imageCallback(const tue_serialization::Binary::ConstPtr& msg)
 {
-    cv::Mat image = cv::imdecode(msg->data, CV_LOAD_IMAGE_UNCHANGED);
+    cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_UNCHANGED);
     cv::imshow("map", image);
     cv::waitKey(3);
 }
 
 void mouseCallback(int event, int x, int y, int flags, void* ptr)
 {
-    if (event == CV_EVENT_LBUTTONDOWN)
+    if (event == cv::EVENT_LBUTTONDOWN)
     {
         ed_msgs::RaiseEvent srv_ev;
         srv_ev.request.name = "click";
