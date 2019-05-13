@@ -386,7 +386,7 @@ geo::ShapePtr getHeightMapShape(cv::Mat& image_orig, const geo::Vec3& pos, const
 geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, const geo::Vec3& size,
                                 const bool inverted, std::stringstream& error)
 {
-    cv::Mat image_orig = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+    cv::Mat image_orig = cv::imread(image_filename, cv::IMREAD_GRAYSCALE);   // Read the file
 
     if (!image_orig.data)
     {
@@ -414,7 +414,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
 geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, const double blockheight,
                                 const double resolution_x, const double resolution_y, const bool inverted, std::stringstream& error)
 {
-    cv::Mat image_orig = cv::imread(image_filename, CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+    cv::Mat image_orig = cv::imread(image_filename, cv::IMREAD_GRAYSCALE);   // Read the file
 
     if (!image_orig.data)
     {
