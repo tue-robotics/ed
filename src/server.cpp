@@ -73,7 +73,7 @@ void Server::configure(tue::Configuration& config, bool reconfigure)
             if (!config.value("name", name))
                 return;
 
-            int enabled = 1;
+            bool enabled = true;
             config.value("enabled", enabled, tue::config::OPTIONAL);
 
             PluginContainerPtr plugin_container;
