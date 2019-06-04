@@ -6,7 +6,7 @@
 
 #include <tue/filesystem/path.h>
 
-#include "shape_loader.h"
+#include "shape_loader_private.h"
 
 #include <tue/config/reader.h>
 #include <tue/config/writer.h>

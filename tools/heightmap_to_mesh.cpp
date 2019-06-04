@@ -1,4 +1,4 @@
-#include "../src/models/shape_loader.h"
+#include "../src/models/shape_loader_private.h"
 #include <geolib/Exporter.h>
 //#include <geolib/Mesh.h>
 //#include <geolib/Triangle.h>

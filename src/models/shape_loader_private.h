@@ -1,5 +1,9 @@
-#ifndef ED_MODELS_SHAPE_LOADER_H_
-#define ED_MODELS_SHAPE_LOADER_H_
+#ifndef ED_MODELS_SHAPE_LOADER_PRIVATE_H_
+#define ED_MODELS_SHAPE_LOADER_PRIVATE_H_
+
+// Some functions are moved to the include folder. So these can be included in other packages. There has been no need for the remaining
+// functions in this file to be used in other packages. Therefore, these are kept here. But there is no reason for the functions not to
+// be moved, if needed to be include somewhere else.
 
 #include <geolib/datatypes.h>
 #include <tue/config/reader.h>
@@ -38,10 +42,6 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose,
               tue::config::RequiredOrOptional rot_req = tue::config::OPTIONAL);
 
 void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, std::stringstream& error, bool create_bottom = true);
-
-void createCylinder(geo::Shape& shape, double radius, double height, int num_corners = 12);
-
-void createSphere(geo::Shape& shape, double radius, int recursion_level = 2);
 
 } // end models namespace
 

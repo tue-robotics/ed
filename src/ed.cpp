@@ -230,7 +230,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
         {
             w.addArrayItem();
             w.writeValue("id", e->id().str());
-            w.writeValue("idx", (int)i);
+            w.writeValue("idx", (int) i);
 
             // Write type
             w.writeValue("type", e->type());
@@ -397,10 +397,15 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
 bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response& res)
 {
     tue::Configuration config;
-    if (!tue::config::loadFromYAMLString(req.request, config))
+    if (!tue::config::loadFromYAMLFile(req.request, config))
     {
-        res.error_msg = config.error();
-        return true;
+        std::string config_error = config.error();
+        config = tue::Configuration();
+        if(!tue::config::loadFromYAMLString(req.request, config))
+        {
+            res.error_msg = config_error + "\n\n" + config.error();
+            return true;
+        }
     }
 
     // Configure ED
@@ -420,7 +425,7 @@ bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response
 bool getEnvironmentVariable(const std::string& var, std::string& value)
 {
     const char * val = ::getenv(var.c_str());
-    if ( val == 0 )
+    if ( val == nullptr )
         return false;
 
     value = val;
