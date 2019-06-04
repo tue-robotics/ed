@@ -1,6 +1,10 @@
 #ifndef ED_MODELS_SHAPE_LOADER_PRIVATE_H_
 #define ED_MODELS_SHAPE_LOADER_PRIVATE_H_
 
+// Some functions are moved to the include folder. So these can be included in other packages. There has been no need for the remaining
+// functions in this file to be used in other packages. Therefore, these are kept here. But there is no reason for the functions not to
+// be moved, if needed to be include somewhere else.
+
 #include <geolib/datatypes.h>
 #include <tue/config/reader.h>
 
