@@ -58,7 +58,16 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
 
     shape.setMesh(mesh);
 }
-
+/**
+ * @brief getMiddlePoint Gets the middle point of two points in a mesh of a sphere. Uses a cache to not create double points.
+ * The new point is placed on the radius of the sphere.
+ * @param mesh Mesh of the sphere
+ * @param i1 index of first point
+ * @param i2 index of second point
+ * @param cache cache of the middle points
+ * @param radius radius of teh sphere
+ * @return index of the inserted point
+ */
 int getMiddlePoint(geo::Mesh& mesh, int i1, int i2, std::map<long, int> cache, double radius)
 {
        // first check if we have it already
@@ -85,7 +94,12 @@ int getMiddlePoint(geo::Mesh& mesh, int i1, int i2, std::map<long, int> cache, d
        cache.insert(std::pair<long, int>(key, i3));
        return i3;
 }
-
+/**
+ * @brief createSphere Create a shape of sphere
+ * @param shape Shape object to be filled
+ * @param radius radius of the sphere
+ * @param recursion_level number of recursions to smooth the mesh, but rapidly increases the mesh.
+ */
 void createSphere(geo::Shape& shape, double radius, int recursion_level = 2)
 {
     geo::Mesh mesh;
