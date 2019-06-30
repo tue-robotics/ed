@@ -134,6 +134,16 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
                 }
             }
 
+            std::string data_str;
+            if (r.readValue("data", data_str))
+            {
+              tue::Configuration data_config;
+              if (tue::config::loadFromYAMLString(data_str, data_config))
+              {
+                update_req.addData(id, data_config.data());
+              }
+            }
+
             if (r.readArray("properties"))
             {
                 while(r.nextArrayItem())
