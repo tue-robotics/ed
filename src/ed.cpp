@@ -134,6 +134,8 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
                 }
             }
 
+            // Add data of entity, which is used for extra properties
+            // ToDo: should data be used in this way? Or should other variables be introduced for this purpose
             std::string data_str;
             if (r.readValue("data", data_str))
             {
