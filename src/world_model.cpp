@@ -164,16 +164,16 @@ void WorldModel::update(const UpdateRequest& req)
     }
 
     // Update flags
-    for(std::map<UUID, std::string>::const_iterator it = req.removed_flags.begin(); it != req.removed_flags.end(); ++it)
-    {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->removeFlag(it->second);
-    }
-
     for(std::map<UUID, std::string>::const_iterator it = req.added_flags.begin(); it != req.added_flags.end(); ++it)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setFlag(it->second);
+    }
+
+    for(std::map<UUID, std::string>::const_iterator it = req.removed_flags.begin(); it != req.removed_flags.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->removeFlag(it->second);
     }
 
     // Update additional info (data)
