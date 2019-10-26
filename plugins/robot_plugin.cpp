@@ -66,7 +66,7 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr linkToShape(const boost::shared_ptr<urdf::Link>& link)
+geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
 {
     geo::ShapePtr shape;
 
@@ -312,12 +312,12 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
     if (!model_initialized_)
     {
         // Create the links
-        std::vector<boost::shared_ptr<urdf::Link> > links;
+        std::vector<urdf::LinkSharedPtr> links;
         robot_model_.getLinks(links);
 
-        for(std::vector<boost::shared_ptr<urdf::Link> >::const_iterator it = links.begin(); it != links.end(); ++it)
+        for(std::vector<urdf::LinkSharedPtr >::const_iterator it = links.begin(); it != links.end(); ++it)
         {
-            const boost::shared_ptr<urdf::Link>& link = *it;
+            const urdf::LinkSharedPtr& link = *it;
 
             geo::ShapePtr shape = linkToShape(link);
             if (shape)

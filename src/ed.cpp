@@ -134,6 +134,18 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
                 }
             }
 
+            // Add data of entity, which is used for extra properties
+            // ToDo: should data be used in this way? Or should other variables be introduced for this purpose
+            std::string data_str;
+            if (r.readValue("data", data_str))
+            {
+              tue::Configuration data_config;
+              if (tue::config::loadFromYAMLString(data_str, data_config))
+              {
+                update_req.addData(id, data_config.data());
+              }
+            }
+
             if (r.readArray("properties"))
             {
                 while(r.nextArrayItem())
@@ -230,7 +242,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
         {
             w.addArrayItem();
             w.writeValue("id", e->id().str());
-            w.writeValue("idx", (int)i);
+            w.writeValue("idx", (int) i);
 
             // Write type
             w.writeValue("type", e->type());
@@ -397,10 +409,15 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
 bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response& res)
 {
     tue::Configuration config;
-    if (!tue::config::loadFromYAMLString(req.request, config))
+    if (!tue::config::loadFromYAMLFile(req.request, config))
     {
-        res.error_msg = config.error();
-        return true;
+        std::string config_error = config.error();
+        config = tue::Configuration();
+        if(!tue::config::loadFromYAMLString(req.request, config))
+        {
+            res.error_msg = config_error + "\n\n" + config.error();
+            return true;
+        }
     }
 
     // Configure ED
@@ -420,7 +437,7 @@ bool srvConfigure(ed_msgs::Configure::Request& req, ed_msgs::Configure::Response
 bool getEnvironmentVariable(const std::string& var, std::string& value)
 {
     const char * val = ::getenv(var.c_str());
-    if ( val == 0 )
+    if ( val == nullptr )
         return false;
 
     value = val;

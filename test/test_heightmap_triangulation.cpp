@@ -1,5 +1,5 @@
 // Shape loader, contains heightmap meshing algorithm
-#include "../src/models/shape_loader.h"
+#include "../src/models/shape_loader_private.h"
 
 // Visualization
 #include <opencv2/highgui/highgui.hpp>
