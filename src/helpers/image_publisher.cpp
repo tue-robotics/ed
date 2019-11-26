@@ -2,7 +2,7 @@
 
 #include <ros/node_handle.h>
 #include <rgbd/serialization.h>
-#include <rgbd/RGBDMsg.h>
+#include <rgbd_msgs/RGBD.h>
 
 #include <tue/serialization/conversions.h>
 
@@ -26,7 +26,7 @@ ImagePublisher::~ImagePublisher()
 void ImagePublisher::initialize(const char* name)
 {
     ros::NodeHandle nh("~");
-    pub_ = nh.advertise<rgbd::RGBDMsg>(name, 1);
+    pub_ = nh.advertise<rgbd_msgs::RGBD>(name, 1);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ void ImagePublisher::publish(const cv::Mat& img) const
     tue::serialization::OutputArchive a(stream);
     rgbd::serialize(image, a, rgbd::RGB_STORAGE_JPG, rgbd::DEPTH_STORAGE_NONE);
 
-    rgbd::RGBDMsg msg;
+    rgbd_msgs::RGBD msg;
     msg.version = 2;
     tue::serialization::convert(stream, msg.rgb);
 

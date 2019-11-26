@@ -13,7 +13,7 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-ProbeClient::ProbeClient() : nh_(0)
+ProbeClient::ProbeClient() : nh_(nullptr)
 {
 }
 
