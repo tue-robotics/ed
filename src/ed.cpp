@@ -394,6 +394,18 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
             geom_ok = (radius * radius > (e->pose().t - center_point).length2());
         }
 
+
+        geo::ShapeConstPtr shape = e->shape();
+        if (shape){
+            geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
+            if (!shape->intersect(center_point_e)){
+                continue;
+            }
+        }
+        else{
+            continue;
+        }
+
         if (geom_ok)
         {
             res.entities.push_back(ed_msgs::EntityInfo());
