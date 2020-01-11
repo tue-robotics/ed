@@ -357,6 +357,8 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 
 // ----------------------------------------------------------------------------------------------------
 
+#define INFRADIUS 100000
+
 bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Response& res)
 {
     double radius = req.radius;
@@ -388,29 +390,26 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
             }
         }
 
-        bool geom_ok = true;
-        if (radius > 0)
-        {
-            geom_ok = (radius * radius > (e->pose().t - center_point).length2());
-        }
+        if (radius < INFRADIUS) {
+            bool geom_ok = true;
 
-
-        geo::ShapeConstPtr shape = e->shape();
-        if (shape){
-            geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
-            if (!shape->intersect(center_point_e)){
-                continue;
+            geo::ShapeConstPtr shape = e->shape();
+            if (shape){
+                geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
+                geom_ok = shape->intersect(center_point_e, radius);
             }
-        }
-        else{
-            continue;
+            else{
+                geom_ok = (radius * radius > (e->pose().t - center_point).length2());
+            }
+
+            if (!geom_ok)
+                continue;
         }
 
-        if (geom_ok)
-        {
-            res.entities.push_back(ed_msgs::EntityInfo());
-            convert(*e, res.entities.back());
-        }
+
+        res.entities.push_back(ed_msgs::EntityInfo());
+        convert(*e, res.entities.back());
+
     }
 
     return true;
