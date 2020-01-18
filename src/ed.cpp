@@ -357,8 +357,6 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
 
 // ----------------------------------------------------------------------------------------------------
 
-#define INFRADIUS 100000
-
 bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Response& res)
 {
     double radius = req.radius;
@@ -390,7 +388,7 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
             }
         }
 
-        if (radius < INFRADIUS) {
+        if (radius < std::numeric_limits<double>::infinity()) {
             bool geom_ok = true;
 
             geo::ShapeConstPtr shape = e->shape();
