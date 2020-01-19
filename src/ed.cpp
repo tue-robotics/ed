@@ -389,15 +389,20 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
         }
 
         if (radius < std::numeric_limits<double>::infinity()) {
-            bool geom_ok = true;
-
+            bool geom_ok = false;
             geo::ShapeConstPtr shape = e->shape();
-            if (shape){
-                geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
-                geom_ok = shape->intersect(center_point_e, radius);
+            if (radius > 0){
+                if (shape){
+                    geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
+                    geom_ok = shape->intersect(center_point_e, radius);
+                }
+                else{
+                    geom_ok = (radius * radius > (e->pose().t - center_point).length2());
+                }
             }
-            else{
-                geom_ok = (radius * radius > (e->pose().t - center_point).length2());
+            else if (shape){
+                geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
+                geom_ok = shape->contains(center_point_e);
             }
 
             if (!geom_ok)
