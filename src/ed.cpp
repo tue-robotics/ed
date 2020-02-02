@@ -388,19 +388,24 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
             }
         }
 
-        if (radius < std::numeric_limits<double>::infinity()) {
+        if (radius < std::numeric_limits<double>::infinity())
+        {
             bool geom_ok = false;
             geo::ShapeConstPtr shape = e->shape();
-            if (radius > 0){
-                if (shape){
+            if (radius > 0)
+            {
+                if (shape)
+                {
                     geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
                     geom_ok = shape->intersect(center_point_e, radius);
                 }
-                else{
+                else
+                {
                     geom_ok = (radius * radius > (e->pose().t - center_point).length2());
                 }
             }
-            else if (shape){
+            else if (shape)
+            {
                 geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
                 geom_ok = shape->contains(center_point_e);
             }
@@ -408,7 +413,6 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
             if (!geom_ok)
                 continue;
         }
-
 
         res.entities.push_back(ed_msgs::EntityInfo());
         convert(*e, res.entities.back());
