@@ -392,22 +392,17 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
         {
             bool geom_ok = false;
             geo::ShapeConstPtr shape = e->shape();
-            if (radius > 0)
-            {
-                if (shape)
-                {
-                    geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
-                    geom_ok = shape->intersect(center_point_e, radius);
-                }
-                else
-                {
-                    geom_ok = (radius * radius > (e->pose().t - center_point).length2());
-                }
-            }
-            else if (shape)
+            if (shape)
             {
                 geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
-                geom_ok = shape->contains(center_point_e);
+                if (radius > 0)
+                    geom_ok = shape->intersect(center_point_e, radius);
+                else
+                    geom_ok = shape->contains(center_point_e);
+            }
+            else
+            {
+                geom_ok = radius > 0 && radius * radius > (e->pose().t - center_point).length2();
             }
 
             if (!geom_ok)
