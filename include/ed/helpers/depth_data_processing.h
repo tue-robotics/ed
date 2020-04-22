@@ -9,7 +9,7 @@
 
 #include "pcl/point_types.h"
 
-#include <rgbd/View.h>
+#include <rgbd/view.h>
 
 
 namespace ed

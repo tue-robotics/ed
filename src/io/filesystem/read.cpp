@@ -3,7 +3,7 @@
 #include "ed/measurement.h"
 #include "ed/serialization/serialization.h"
 
-#include <rgbd/Image.h>
+#include <rgbd/image.h>
 #include <rgbd/serialization.h>
 
 #include <tue/serialization/input_archive.h>
