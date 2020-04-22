@@ -2,7 +2,7 @@
 #define ED_RGBD_DATA_H_
 
 #include <pcl/point_types.h>
-#include <rgbd/types.h>
+#include <rgbd/image.h>
 #include <geolib/datatypes.h>
 #include <pcl/pcl_base.h>
 
