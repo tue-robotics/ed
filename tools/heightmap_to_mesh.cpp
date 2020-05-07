@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 
     // Parse command-line arguments
     if (argc < 3 || argc > 7) {
-        std::cerr << "Usage: height_map_to_file INPUT_IMAGE OUTPUT_FILE RESOLUTION [BLOCK_HEIGHT] [ORIGIN_X ORIGIN_Y]" << std::endl;
+        std::cerr << "Usage: ed_heightmap_to_mesh INPUT_IMAGE OUTPUT_FILE RESOLUTION [BLOCK_HEIGHT] [ORIGIN_X ORIGIN_Y]" << std::endl;
         return 1;
     }
 
