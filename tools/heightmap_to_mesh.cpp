@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 
     // Parse command-line arguments
     if (argc < 3 || argc > 7) {
-        std::cerr << "Usage: ed_heightmap_to_mesh INPUT_IMAGE OUTPUT_FILE RESOLUTION [BLOCK_HEIGHT] [ORIGIN_X ORIGIN_Y]" << std::endl;
+        std::cout << "Usage: ed_heightmap_to_mesh INPUT_IMAGE OUTPUT_FILE RESOLUTION [BLOCK_HEIGHT] [ORIGIN_X ORIGIN_Y]" << std::endl;
         return 1;
     }
 
@@ -26,6 +26,10 @@ int main(int argc, char **argv) {
 
     double origin_x = 0, origin_y = 0;
     if (argc > 5) {
+        if (argc < 7) {
+            std::cout << "ORIGIN_X and ORIGIN_Y are optional, but shoud be provided together" << std::endl;
+            return 1;
+        }
         origin_x = atof(argv[5]);
         origin_y = atof(argv[6]);
     }
