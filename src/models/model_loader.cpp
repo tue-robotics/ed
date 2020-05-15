@@ -31,6 +31,7 @@ bool readSDFGeometry(tue::config::Reader r, geo::CompositeShapePtr& composite, s
     pose = pose_offset * pose;
     if (!r.readGroup("geometry"))
         return false;
+
     std::map<std::string, geo::ShapePtr> dummy_shape_cache;
     geo::ShapePtr sub_shape = loadShape("", r, dummy_shape_cache, error);
     if (sub_shape)

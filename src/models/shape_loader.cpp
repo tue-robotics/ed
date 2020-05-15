@@ -636,6 +636,10 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
         else
             return false;
     }
+    else
+    {
+        return false;
+    }
 
     // Set rotation
     pose.R.setRPY(roll, pitch, yaw);
@@ -718,7 +722,9 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         if (readVec3Group(cfg, min, "min"))
         {
             if (readVec3Group(cfg, max, "max"))
+            {
                 shape.reset(new geo::Box(min, max));
+            }
             else
             {
                 error << "[ED::MODELS::LOADSHAPE] Error while loading shape: box must contain 'min' and 'max' (only 'min' specified)";
@@ -732,6 +738,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         }
 
         readPose(cfg, pose);
+        cfg.endGroup();
     }
     else if (cfg.readGroup("cylinder")) // SDF AND ED YAML
     {
@@ -739,13 +746,21 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         cfg.value("num_points", num_points, tue::config::OPTIONAL);
 
         double radius, height;
-        if (cfg.value("radius", radius) && (cfg.value("height", height) || cfg.value("length", height))) //length is used in SDF
+        if (cfg.value("radius", radius) && cfg.value("height", height)) //length is used in SDF
         {
+            cfg.endGroup();
+            readPose(cfg, pose);
             shape.reset(new geo::Shape());
             createCylinder(*shape, radius, height, num_points);
         }
-
-        cfg.endGroup();
+        else if (cfg.value("radius", radius) && cfg.value("length", height)) // length is used in SDF
+        {
+            shape.reset(new geo::Shape());
+            createCylinder(*shape, radius, height, num_points);
+            cfg.endGroup();
+        }
+        else
+            cfg.endGroup();
     }
     else if (cfg.readGroup("polygon")) // ED YAML ONLY
     {
@@ -830,6 +845,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         if (cfg.value("submesh", dummy))
             error << "[ED::MODELS::LOADSHAPE] 'submesh' of mesh is not supported by ED " << std::endl;
 
+        cfg.endGroup();
     }
     else if (cfg.readGroup("heightmap")) // SDF AND ED YAML
     {
@@ -865,6 +881,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         {
             error << "[ED::MODELS::LOADSHAPE] Error while loading shape: heightmap must contain 'image', 'resolution' and 'height'." << std::endl;
         }
+        cfg.endGroup();
     }
     else if (cfg.readGroup("sphere")) // SDF
     {
@@ -874,6 +891,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         int recursion_level = 1;
         shape.reset(new geo::Shape);
         createSphere(*shape, radius, recursion_level);
+        cfg.endGroup();
     }
     else if (cfg.readArray("compound") || cfg.readArray("group")) // ED YAML ONLY
     {
@@ -893,9 +911,9 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         error << "[ED::MODELS::LOADSHAPE] Error while loading shape with data:" << std::endl << cfg.data() << std::endl;
     }
 
+    // Extra pose is only allowed in ED yaml.
     readPose(cfg, pose);
-
-    if (shape)
+    if (shape && pose != geo::Pose3D::identity())
     {
         // Transform shape according to pose
         geo::ShapePtr shape_tr(new geo::Shape());
