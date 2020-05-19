@@ -746,21 +746,14 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         cfg.value("num_points", num_points, tue::config::OPTIONAL);
 
         double radius, height;
-        if (cfg.value("radius", radius) && cfg.value("height", height)) //length is used in SDF
+        if (cfg.value("radius", radius) && (cfg.value("height", height) || cfg.value("length", height))) // length is used in SDF
         {
-            cfg.endGroup();
-            readPose(cfg, pose);
+
             shape.reset(new geo::Shape());
             createCylinder(*shape, radius, height, num_points);
         }
-        else if (cfg.value("radius", radius) && cfg.value("length", height)) // length is used in SDF
-        {
-            shape.reset(new geo::Shape());
-            createCylinder(*shape, radius, height, num_points);
-            cfg.endGroup();
-        }
-        else
-            cfg.endGroup();
+
+        cfg.endGroup();
     }
     else if (cfg.readGroup("polygon")) // ED YAML ONLY
     {

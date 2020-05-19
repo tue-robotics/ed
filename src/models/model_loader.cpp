@@ -1,5 +1,7 @@
 #include "ed/models/model_loader.h"
 
+#include <boost/make_shared.hpp>
+
 #include "ed/update_request.h"
 #include "ed/entity.h"
 #include "ed/relations/transform_cache.h"
