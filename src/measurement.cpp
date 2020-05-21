@@ -1,6 +1,6 @@
 #include "ed/measurement.h"
 
-#include <rgbd/Image.h>
+#include <rgbd/image.h>
 
 #include "ed/helpers/depth_data_processing.h"
 

@@ -33,7 +33,7 @@ find_package(SDFormat REQUIRED)
 ###################################
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ed_core ed_io ed_visualization
+  LIBRARIES ed_core ed_io
   CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_msgs tue_config tue_serialization rgbd rgbd_msgs
   DEPENDS OpenCV
 )
@@ -106,12 +106,6 @@ add_library(ed_io
 )
 target_link_libraries(ed_io ed_core)
 
-add_library(ed_visualization
-  include/ed/helpers/image_publisher.h
-  src/helpers/image_publisher.cpp
-)
-target_link_libraries(ed_visualization ${catkin_LIBRARIES})
-
 # ------------------------------------------------------------------------------------------------
 #                                               SERVER
 # ------------------------------------------------------------------------------------------------
@@ -122,7 +116,7 @@ add_executable(ed
   src/server.cpp
   src/plugin_container.cpp
 )
-target_link_libraries(ed ed_core ed_io ed_visualization)
+target_link_libraries(ed ed_core ed_io)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS

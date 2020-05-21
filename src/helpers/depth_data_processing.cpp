@@ -2,8 +2,8 @@
 
 #include "ed/mask.h"
 
-#include <rgbd/Image.h>
-#include <rgbd/View.h>
+#include <rgbd/image.h>
+#include <rgbd/view.h>
 
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/normal_3d_omp.h>
