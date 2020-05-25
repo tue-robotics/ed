@@ -6,7 +6,9 @@
 
 #include <geolib/datatypes.h>
 
+#include <map>
 #include <queue>
+#include <vector>
 
 namespace ed
 {

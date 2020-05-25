@@ -34,6 +34,7 @@
 #include <ed_msgs/LoadPlugin.h>
 #include <tue/config/loaders/yaml.h>
 
+#include <set>
 #include <signal.h>
 #include <stdio.h>
 #include <execinfo.h>

@@ -6,6 +6,8 @@
 #include <geolib/datatypes.h>
 #include <pcl/pcl_base.h>
 
+#include <vector>
+
 namespace ed
 {
 

@@ -11,6 +11,8 @@
 
 #include <rgbd/view.h>
 
+#include <vector>
+
 
 namespace ed
 {

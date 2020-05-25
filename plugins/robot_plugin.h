@@ -15,6 +15,8 @@
 
 #include <urdf/model.h>
 
+#include <map>
+
 // ----------------------------------------------------------------------------------------------------
 
 class JointRelation : public ed::Relation

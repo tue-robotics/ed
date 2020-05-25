@@ -8,6 +8,8 @@
 
 #include "ed/init_data.h"
 
+#include <vector>
+
 namespace ed {
 
 struct WorldModel;

@@ -3,9 +3,11 @@
 
 #include "ed/uuid.h"
 
-#include <map>
 #include <geolib/datatypes.h>
 #include <tue/config/data_pointer.h>
+
+#include <map>
+#include <vector>
 
 namespace ed
 {

@@ -3,6 +3,8 @@
 
 #include "ed/convex_hull.h"
 
+#include <vector>
+
 namespace ed
 {
 

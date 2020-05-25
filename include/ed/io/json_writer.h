@@ -4,6 +4,7 @@
 #include "ed/io/writer.h"
 
 #include <sstream>
+#include <vector>
 
 namespace ed
 {

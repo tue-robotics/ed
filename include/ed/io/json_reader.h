@@ -5,6 +5,7 @@
 #include "ed/io/data.h"
 
 #include <sstream>
+#include <vector>
 
 namespace ed
 {

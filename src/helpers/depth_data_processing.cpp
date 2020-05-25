@@ -19,6 +19,8 @@
 
 #include "ed/rgbd_data.h"
 
+#include <vector>
+
 namespace ed
 {
 

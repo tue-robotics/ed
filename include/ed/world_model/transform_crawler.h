@@ -6,6 +6,7 @@
 #include <geolib/datatypes.h>
 
 #include <queue>
+#include <set>
 
 namespace ed
 {
