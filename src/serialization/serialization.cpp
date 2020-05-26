@@ -319,9 +319,9 @@ void serialize(const geo::Shape& s, ed::io::Writer& w)
     for(unsigned int i = 0; i < triangles.size(); ++i)
     {
         w.addArrayItem();
-        w.writeValue("i1", triangles[i].i1_);
-        w.writeValue("i2", triangles[i].i2_);
-        w.writeValue("i3", triangles[i].i3_);
+        w.writeValue("i1", static_cast<int>(triangles[i].i1_));
+        w.writeValue("i2", static_cast<int>(triangles[i].i2_));
+        w.writeValue("i3", static_cast<int>(triangles[i].i3_));
         w.endArrayItem();
 
     }
