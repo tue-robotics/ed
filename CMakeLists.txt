@@ -33,7 +33,7 @@ find_package(SDFormat REQUIRED)
 ###################################
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ed_core ed_io
+  LIBRARIES ed_core ed_io ed_server
   CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_msgs tue_config tue_serialization rgbd rgbd_msgs
   DEPENDS OpenCV
 )
@@ -70,6 +70,7 @@ add_library(ed_core
   src/transform_cache.cpp
   src/convex_hull_2d.cpp
   src/convex_hull_calc.cpp
+  src/plugin_container.cpp
 
   # World model querying
   src/world_model/transform_crawler.cpp
@@ -106,17 +107,16 @@ add_library(ed_io
 )
 target_link_libraries(ed_io ed_core)
 
+add_library(ed_server src/server.cpp)
+target_link_libraries(ed_server ed_core ed_io)
+
 # ------------------------------------------------------------------------------------------------
 #                                               SERVER
 # ------------------------------------------------------------------------------------------------
 
 # Create executable
-add_executable(ed
-  src/ed.cpp
-  src/server.cpp
-  src/plugin_container.cpp
-)
-target_link_libraries(ed ed_core ed_io)
+add_executable(ed src/ed.cpp src/server.cpp)
+target_link_libraries(ed ed_core ed_io ed_server)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
