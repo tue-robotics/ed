@@ -61,7 +61,7 @@ std::string Server::getFullLibraryPath(const std::string& lib)
 
 // ----------------------------------------------------------------------------------------------------
 
-void Server::configure(tue::Configuration& config, bool reconfigure)
+void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 {
     ErrorContext errc("Server", "configure");
 
@@ -603,13 +603,6 @@ void Server::publishStatistics() const
     msg.data = s.str();
 
     pub_stats_.publish(msg);
-
-//    // TEMP
-//    tue::config::DataPointer data;
-//    tue::config::Writer w(data);
-//    ed::serialize(*world_model_, w);
-
-//    std::cout << data << std::endl;
 }
 
 }

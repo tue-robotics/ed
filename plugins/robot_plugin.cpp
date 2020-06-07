@@ -102,7 +102,7 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
             shape = importer.readMeshFile(abs_filename, mesh->scale.x);
 
             if (!shape)
-                std::cout << "RobotPlugin: Could not load shape" << std::endl;
+                ROS_ERROR("RobotPlugin: Could not load shape");
         }
     }
     else if (link->visual->geometry->type == urdf::Geometry::BOX)
@@ -213,7 +213,7 @@ void RobotPlugin::jointCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
     if (msg->name.size() != msg->position.size())
     {
-        std::cout << "[ED RobotPlugin] On joint callback: name and position vector must be of equal length." << std::endl;
+        ROS_ERROR("[ED RobotPlugin] On joint callback: name and position vector must be of equal length.");
         return;
     }
 
@@ -239,7 +239,7 @@ void RobotPlugin::jointCallback(const sensor_msgs::JointState::ConstPtr& msg)
         }
         else
         {
-            std::cout << "[ED RobotPlugin] On joint callback: unknown joint name '" << name << "'." << std::endl;
+            ROS_ERROR_STREAM("[ED RobotPlugin] On joint callback: unknown joint name '" << name << "'.");
         }
     }
 }
@@ -261,7 +261,7 @@ void RobotPlugin::configure(tue::Configuration config)
         {
             std::string topic;
             config.value("topic", topic);
-            std::cout << "[RobotPlugin] Topic: " << topic << std::endl;
+            ROS_DEBUG_STREAM("[RobotPlugin] Topic: " << topic);
 
             ros::SubscribeOptions sub_options = ros::SubscribeOptions::create<sensor_msgs::JointState>
                     (topic, 10, boost::bind(&RobotPlugin::jointCallback, this, _1), ros::VoidPtr(), &cb_queue_);
@@ -290,7 +290,7 @@ void RobotPlugin::configure(tue::Configuration config)
 
     if (!robot_model_.initString(urdf_xml))
     {
-        std::cout << "Could not load robot model." << std::endl;
+        config.addError("Could not load robot model.");
         return;
     }
 

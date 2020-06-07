@@ -464,7 +464,7 @@ Idx WorldModel::addNewEntity(const EntityConstPtr& e)
 const PropertyKeyDBEntry* WorldModel::getPropertyInfo(const std::string& name) const
 {
     if (!property_info_db_)
-        return 0;
+        return nullptr;
 
     return property_info_db_->getPropertyKeyDBEntry(name);
 }

@@ -7,13 +7,15 @@
 
 #include <ed/error_context.h>
 
+#include <ros/console.h>
+
 namespace ed
 {
 
 // --------------------------------------------------------------------------------
 
 PluginContainer::PluginContainer()
-    : class_loader_(0), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
+    : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
       total_process_time_sec_(0)
 {
     timer_.start();
@@ -29,7 +31,8 @@ PluginContainer::~PluginContainer()
         thread_->join();
 
     plugin_.reset();
-    delete class_loader_;
+    if (class_loader_)
+        delete class_loader_;
 }
 
 // --------------------------------------------------------------------------------
@@ -37,7 +40,8 @@ PluginContainer::~PluginContainer()
 PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init)
 {
     // Load the library
-    delete class_loader_;
+    if (class_loader_)
+        delete class_loader_;
     class_loader_ = new class_loader::ClassLoader(lib_filename);
 
     // Create plugin
