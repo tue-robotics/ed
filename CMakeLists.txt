@@ -115,7 +115,7 @@ target_link_libraries(ed_server ed_core ed_io)
 # ------------------------------------------------------------------------------------------------
 
 # Create executable
-add_executable(ed src/ed.cpp src/server.cpp)
+add_executable(ed src/ed.cpp)
 target_link_libraries(ed ed_core ed_io ed_server)
 
 # ------------------------------------------------------------------------------------------------
@@ -172,5 +172,4 @@ add_executable(ed_test_heightmap_triangulation
   3rdparty/polypartition/polypartition.cpp
 )
 target_link_libraries(ed_test_heightmap_triangulation ed_core ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES} ${tue_config_LIBRARIES})
-
 
