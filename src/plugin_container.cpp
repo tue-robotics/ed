@@ -25,8 +25,8 @@ PluginContainer::~PluginContainer()
 {
     request_stop_ = true;
 
-//    if (thread_)
-//        thread_->join();
+    if (thread_)
+        thread_->join();
 
     plugin_.reset();
     delete class_loader_;
@@ -138,9 +138,12 @@ void PluginContainer::run()
     ros::Rate ir(innerloop_frequency);
     while(!request_stop_)
     {
-        while (!step())
+        if (!step())
+            // If not stepped, sleep short
             ir.sleep();
-        r.sleep();
+        else
+            // stepped, sleep normal
+            r.sleep();
     }
 
     is_running_ = false;
