@@ -12,11 +12,12 @@ namespace ed
 
 struct PropertyKeyDBEntry
 {
-    PropertyKeyDBEntry() : info(0) {}
+    PropertyKeyDBEntry() : info(nullptr) {}
 
     ~PropertyKeyDBEntry()
     {
-        delete info;
+        if (info)
+            delete info;
     }
 
     std::string name;
@@ -33,7 +34,8 @@ public:
     {
         for(std::map<std::string, PropertyKeyDBEntry*>::iterator it = name_to_info_.begin(); it != name_to_info_.end(); ++it)
         {
-            delete it->second;
+            if(it->second)
+                delete it->second;
         }
     }
 

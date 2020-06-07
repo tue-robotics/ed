@@ -61,7 +61,7 @@ public:
 
     typedef EntityIterator const_iterator;
 
-    WorldModel(const PropertyKeyDB* prop_key_db = 0);
+    WorldModel(const PropertyKeyDB* prop_key_db = nullptr);
 
     inline const_iterator begin() const { return const_iterator(entities_); }
 
