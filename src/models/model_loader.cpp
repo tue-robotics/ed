@@ -503,13 +503,11 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
 
     // pose
     geo::Pose3D pose = geo::Pose3D::identity();
-    if(pose_override || readPose(r, pose))
-    {
-        if (pose_override)
-            pose = *pose_override;
-        pose = parent_pose * pose;
-        req.setPose(id, pose);
-    }
+    readPose(r, pose);
+    if (pose_override)
+        pose = *pose_override;
+    pose = parent_pose * pose;
+    req.setPose(id, pose);
 
     // set type if defined, no recursive type is done.
     std::string type;
