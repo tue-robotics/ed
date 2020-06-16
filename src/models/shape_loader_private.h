@@ -8,6 +8,7 @@
 #include <geolib/datatypes.h>
 #include <tue/config/reader.h>
 
+#include <map>
 #include <string>
 #include <vector>
 #include <sstream>

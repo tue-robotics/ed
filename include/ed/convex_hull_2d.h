@@ -8,6 +8,8 @@
 
 #include <geolib/datatypes.h>
 
+#include <vector>
+
 namespace ed
 {
 

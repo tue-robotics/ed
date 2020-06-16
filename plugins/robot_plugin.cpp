@@ -78,9 +78,6 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
     offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
     offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
 
-    //            std::cout << link->name << ": " << offset << std::endl;
-    //            std::cout << "    " << o.rotation.x << ", " << o.rotation.y<< ", " << o.rotation.z<< ", " << o.rotation.w << std::endl;
-
     if (link->visual->geometry->type == urdf::Geometry::MESH)
     {
         urdf::Mesh* mesh = static_cast<urdf::Mesh*>(link->visual->geometry.get());
@@ -158,8 +155,12 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
     }
 
     // Transform using visual offset
-    if (shape)
-        shape->setMesh(shape->getMesh().getTransformed(offset));
+    if (shape && offset != geo::Pose3D::identity())
+    {
+        geo::ShapePtr shape_tr(new geo::Shape);
+        shape_tr->setMesh(shape->getMesh().getTransformed(offset));
+        shape = shape_tr;
+    }
 
     return shape;
 }

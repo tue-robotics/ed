@@ -10,6 +10,7 @@
 #include <tue/config/data_pointer.h>
 
 #include <map>
+#include <set>
 #include <vector>
 #include <geolib/datatypes.h>
 

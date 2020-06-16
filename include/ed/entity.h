@@ -19,6 +19,8 @@
 #include "ed/measurement_convex_hull.h"
 
 #include <map>
+#include <set>
+#include <vector>
 
 namespace ed
 {

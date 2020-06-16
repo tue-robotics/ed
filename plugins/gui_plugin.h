@@ -24,6 +24,8 @@
 
 #include <ed/event_clock.h>
 
+#include <map>
+
 class GUIPlugin : public ed::Plugin
 {
 

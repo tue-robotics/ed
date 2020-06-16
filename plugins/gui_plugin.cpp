@@ -14,6 +14,9 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
+#include <map>
+#include <vector>
+
 // ----------------------------------------------------------------------------------------------------
 
 class ColorRenderResult : public geo::RenderResult

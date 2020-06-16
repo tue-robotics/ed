@@ -10,6 +10,7 @@
 #include <boost/thread.hpp>
 
 #include <queue>
+#include <vector>
 
 namespace class_loader { class ClassLoader; }
 

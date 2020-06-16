@@ -107,10 +107,10 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
             ed_msgs::Volume volume;
             volume.name = it->first;
 
-            geo::CompositeShapeConstPtr composite = boost::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
+            geo::CompositeShapeConstPtr composite = std::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
             if (composite)
             {
-                std::vector<std::pair<geo::ShapePtr, geo::Transform> >  shapes = composite->getShapes();
+                const std::vector<std::pair<geo::ShapePtr, geo::Transform> >&  shapes = composite->getShapes();
                 for (std::vector<std::pair<geo::ShapePtr, geo::Transform> >::const_iterator it2 = shapes.begin();
                      it2 != shapes.end(); ++it2)
                 {

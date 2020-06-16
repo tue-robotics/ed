@@ -5,6 +5,7 @@
 
 #include <map>
 #include <stdint.h>
+#include <vector>
 
 namespace era
 {
