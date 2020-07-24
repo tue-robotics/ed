@@ -392,6 +392,10 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
         if (radius < std::numeric_limits<double>::infinity())
         {
             bool geom_ok = false;
+
+            if(req.ignore_z)
+                center_point.z = e->pose().t.z; // Ignoring z in global frame, not in entity frame, as it can be rotated
+
             geo::ShapeConstPtr shape = e->shape();
             if (shape)
             {
