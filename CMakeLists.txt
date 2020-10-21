@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   kdl_parser
   rgbd
   rgbd_msgs
-  pcl_ros
   roscpp
   tue_config
   tue_filesystem
