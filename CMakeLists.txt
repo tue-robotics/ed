@@ -21,7 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   tue_serialization
 )
 
-find_package(PCL REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common)
 find_package(OpenCV REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(SDFormat REQUIRED)
@@ -34,7 +34,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_server
   CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_msgs tue_config tue_serialization rgbd rgbd_msgs
-  DEPENDS OpenCV
+  DEPENDS OpenCV PCL
 )
 
 ###########
