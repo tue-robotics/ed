@@ -15,18 +15,17 @@ find_package(catkin REQUIRED COMPONENTS
   kdl_parser
   rgbd
   rgbd_msgs
-  pcl_ros
   roscpp
   tue_config
   tue_filesystem
   tue_serialization
 )
 
-find_package(orocos_kdl REQUIRED)
-find_package(PCL REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common)
 find_package(OpenCV REQUIRED)
-find_package(TinyXML REQUIRED)
+find_package(orocos_kdl REQUIRED)
 find_package(SDFormat REQUIRED)
+find_package(TinyXML REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -35,7 +34,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_server
   CATKIN_DEPENDS class_loader cv_bridge code_profiler ed_msgs tue_config tue_serialization rgbd rgbd_msgs
-  DEPENDS OpenCV
+  DEPENDS OpenCV PCL
 )
 
 ###########
@@ -80,10 +79,6 @@ add_library(ed_core
   src/models/shape_loader.cpp
   src/models/xml_shape_parser.cpp
   3rdparty/polypartition/polypartition.cpp
-
-  # DDP is used by measurement.cpp, so put here
-  src/helpers/depth_data_processing.cpp
-  src/helpers/clipper/clipper.cpp
 
   # Logging
   src/logging.cpp

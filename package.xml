@@ -18,8 +18,8 @@
   <depend>ed_msgs</depend>
   <depend>geolib2</depend>
   <depend>kdl_parser</depend>
+  <depend>libpcl-all-dev</depend>
   <depend>orocos_kdl</depend>
-  <depend>pcl_ros</depend>
   <depend>rgbd</depend>
   <depend>rgbd_msgs</depend>
   <depend>roscpp</depend>

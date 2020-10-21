@@ -1,6 +1,5 @@
 #include "ed/entity.h"
 
-#include "ed/helpers/depth_data_processing.h"
 #include "ed/measurement.h"
 
 #include <geolib/Shape.h>
