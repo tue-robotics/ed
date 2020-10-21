@@ -2,7 +2,6 @@
 
 #include "ed/entity.h"
 #include "ed/measurement.h"
-#include "ed/helpers/depth_data_processing.h"
 
 #include <geolib/Box.h>
 
@@ -329,16 +328,6 @@ void Server::update()
     WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
-//    // Look if we can merge some not updates entities
-//    {
-//        // TODO: move this to a plugin
-
-//        tue::ScopedTimer t(profiler_, "merge entities");
-//        ErrorContext errc("Server::update()", "merge");
-
-//        mergeEntities(new_world_model, 5.0, 0.5);
-//    }
-
     // Notify all plugins of the updated world model
     for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
@@ -501,85 +490,6 @@ void Server::storeEntityMeasurements(const std::string& path) const
         }
     }
 }
-
-// ----------------------------------------------------------------------------------------------------
-
-//void Server::mergeEntities(const WorldModelPtr& world_model, double not_updated_time, double overlap_fraction)
-//{
-//    std::vector<UUID> ids_to_be_removed;
-//    std::vector<UUID> merge_target_ids;
-
-//    // Iter over all entities and check if the current_time - last_update_time > not_updated_time
-//    for (WorldModel::const_iterator it = world_model->begin(); it != world_model->end(); ++it)
-//    {
-//        const EntityConstPtr& e = *it;
-
-//        // skip if e is null, theres some bug somewhere
-//        if (e == NULL) continue;
-
-//        if (!e->lastMeasurement())
-//            continue;
-
-//        if (e->shape() || std::find(merge_target_ids.begin(), merge_target_ids.end(), e->id()) != merge_target_ids.end() )
-//            continue;
-
-//        if ( ros::Time::now().toSec() - e->lastMeasurement()->timestamp() > not_updated_time )
-//        {
-//            // Try to merge with other polygons (except for itself)
-//            for (WorldModel::const_iterator e_it = world_model->begin(); e_it != world_model->end(); ++e_it)
-//            {
-//                const EntityConstPtr& e_target = *e_it;
-//                const UUID& id2 = e_target->id();
-
-//                // Skip self
-//                if (id2 == e->id())
-//                    continue;
-
-//                MeasurementConstPtr last_m = e_target->lastMeasurement();
-
-//                if (!last_m)
-//                    continue;
-
-//                if (ros::Time::now().toSec() - last_m->timestamp() < not_updated_time)
-//                    continue;
-
-//                double overlap_factor;
-//                bool collision = helpers::ddp::polygonCollisionCheck(e_target->convexHull(),
-//                                                                     e->convexHull(),
-//                                                                     overlap_factor);
-
-//                if (collision && overlap_factor > 0.5) { //! TODO: NEEDS REVISION
-//                    ids_to_be_removed.push_back(e->id());
-//                    ConvexHull2D convex_hull_target = e_target->convexHull();
-//                    helpers::ddp::add2DConvexHull(e->convexHull(), convex_hull_target);
-
-//                    // Create a copy of the entity
-//                    EntityPtr e_target_updated(new Entity(*e_target));
-
-//                    // Update the convex hull
-//                    e_target_updated->setConvexHull(convex_hull_target);
-
-//                    // Update the best measurement
-//                    MeasurementConstPtr best_measurement = e->bestMeasurement();
-//                    if (best_measurement)
-//                        e_target_updated->addMeasurement(best_measurement);
-
-//                    // Set updated entity
-//                    world_model->setEntity(e_target->id(), e_target_updated);
-
-//                    merge_target_ids.push_back(e_target->id());
-//                    break;
-//                }
-//            }
-//        }
-//    }
-
-//    for (std::vector<UUID>::const_iterator it = ids_to_be_removed.begin(); it != ids_to_be_removed.end(); ++it)
-//    {
-//        world_model->removeEntity(*it);
-//    }
-//}
-
 
 // ----------------------------------------------------------------------------------------------------
 

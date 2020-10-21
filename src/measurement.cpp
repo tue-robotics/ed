@@ -2,8 +2,6 @@
 
 #include <rgbd/image.h>
 
-#include "ed/helpers/depth_data_processing.h"
-
 namespace ed
 {
 

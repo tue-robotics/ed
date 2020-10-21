@@ -80,10 +80,6 @@ add_library(ed_core
   src/models/xml_shape_parser.cpp
   3rdparty/polypartition/polypartition.cpp
 
-  # DDP is used by measurement.cpp, so put here
-  src/helpers/depth_data_processing.cpp
-  src/helpers/clipper/clipper.cpp
-
   # Logging
   src/logging.cpp
 
