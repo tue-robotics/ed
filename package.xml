@@ -23,7 +23,7 @@
   <depend>rgbd</depend>
   <depend>rgbd_msgs</depend>
   <depend>roscpp</depend>
-  <depend>sdfformat</depend>
+  <depend>sdformat</depend>
   <depend>tinyxml</depend>
   <depend>tue_config</depend>
   <depend>tue_filesystem</depend>
