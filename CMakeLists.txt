@@ -22,11 +22,11 @@ find_package(catkin REQUIRED COMPONENTS
   tue_serialization
 )
 
-find_package(orocos_kdl REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(TinyXML REQUIRED)
+find_package(orocos_kdl REQUIRED)
 find_package(SDFormat REQUIRED)
+find_package(TinyXML REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
