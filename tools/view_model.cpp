@@ -129,61 +129,6 @@ void usage()
 
 // ----------------------------------------------------------------------------------------------------
 
-bool loadModel(const std::string& load_type, const std::string& source, ed::UpdateRequest& req)
-{
-    ed::models::ModelLoader model_loader;
-    std::stringstream error;
-    if (load_type == "--file")
-    {
-        tue::filesystem::Path path(source);
-        if (!path.exists())
-        {
-            std::cerr << "Couldn't open: '" << path << "', because it doesn't exist" << std::endl;
-            return false;
-        }
-
-        tue::config::ReaderWriter config;
-        std::string extension = tue::filesystem::Path(source).extension();
-        if ( extension == ".sdf" || extension == ".world")
-            tue::config::loadFromSDFFile(source, config);
-        else if (extension == ".xml")
-            tue::config::loadFromXMLFile(source, config);
-        else if (extension == ".yml" || extension == ".yaml")
-            tue::config::loadFromYAMLFile(source, config);
-        else
-        {
-            std::cerr << "[model_viewer] extension: '" << extension << "'  is not supported." << std::endl;
-            return false;
-        }
-
-        if (!model_loader.create(config.data(), req, error))
-        {
-            std::cerr << "File '" << source << "' could not be loaded:" << std::endl << std::endl;
-            std::cerr << "Error: " << std::endl << error.str() << std::endl;
-            return false;
-        }
-    }
-    else if (load_type == "--model")
-    {
-        if (!model_loader.create("_root", source, req, error, true))
-        {
-            std::cerr << "Model '" << source << "' could not be loaded:" << std::endl << std::endl;
-            std::cerr << "Error: " << std::endl << error.str() << std::endl;
-            return false;
-        }
-    }
-    else
-    {
-        std::cerr << "Unknown load type: '" << load_type << "'." << std::endl << std::endl;
-        usage();
-        return false;
-    }
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------------------------------
-
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
     if (event == cv::EVENT_LBUTTONDBLCLK)
@@ -248,11 +193,22 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    std::string load_type = argv[1];
+    std::string load_type_str = argv[1];
+    ed::models::LoadType load_type;
+    if (load_type_str == "--model")
+        load_type = ed::models::LoadType::MODEL;
+    else if (load_type_str == "--file")
+        load_type = ed::models::LoadType::FILE;
+    else
+    {
+        std::cerr << "Load type should either be --model or --file" << std::endl;
+        usage();
+        return 1;
+    }
     std::string source = argv[2];
 
     ed::UpdateRequest req;
-    if (!loadModel(load_type, source, req))
+    if (!ed::models::loadModel(load_type, source, req))
         return 1;
 
     // Create world
@@ -454,7 +410,7 @@ int main(int argc, char **argv)
         if (key == 'r')
         {
             ed::UpdateRequest req;
-            if (loadModel(load_type, source, req))
+            if (ed::models::loadModel(load_type, source, req))
             {
                 world_model = ed::WorldModel();
                 world_model.update(req);

@@ -75,6 +75,7 @@ add_library(ed_core
   src/world_model/transform_crawler.cpp
 
   # Model loading
+  src/models/load_model.cpp
   src/models/model_loader.cpp
   src/models/shape_loader.cpp
   src/models/xml_shape_parser.cpp
