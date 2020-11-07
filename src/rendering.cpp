@@ -1,3 +1,6 @@
+// ROS
+#include <ros/console.h>
+
 // TU/e Robotics
 #include <geolib/sensors/DepthCamera.h>
 #include <geolib/Mesh.h>
@@ -92,10 +95,10 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
                       cv::Mat& depth_image, cv::Mat& image)
 {
 
-//    // Depth image
-//    depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
-//    // Image: colored image what is actually shown
-//    image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20));
+    if (depth_image.rows != image.rows || depth_image.cols != image.cols)
+    {
+       throw std::invalid_argument("Depth image and image must be of the same size");
+    }
 
     SampleRenderResult res(depth_image, image);
 
