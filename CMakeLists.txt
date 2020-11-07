@@ -70,6 +70,7 @@ add_library(ed_core
   src/convex_hull_2d.cpp
   src/convex_hull_calc.cpp
   src/plugin_container.cpp
+  src/rendering.cpp
 
   # World model querying
   src/world_model/transform_crawler.cpp
@@ -83,7 +84,6 @@ add_library(ed_core
 
   # Logging
   src/logging.cpp
-
   src/error_context.cpp
 
   ${HEADER_FILES}
