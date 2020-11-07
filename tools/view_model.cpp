@@ -185,6 +185,105 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
 // ----------------------------------------------------------------------------------------------------
 
+bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes show_volumes)
+{
+    // * * * * * * DEPTH CAMERA * * * * * *
+
+    depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
+    image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20));
+
+    SampleRenderResult res(depth_image, image);
+
+    // Draw axis
+
+    double al = 0.25; // axis length (m)
+    double at = 0.01; // axis thickness (m)
+
+    geo::Mesh x_box = geo::Box(geo::Vector3(0, -at, -at), geo::Vector3(al, at, at)).getMesh();
+    geo::Mesh y_box = geo::Box(geo::Vector3(-at, 0, -at), geo::Vector3(at, al, at)).getMesh();
+    geo::Mesh z_box = geo::Box(geo::Vector3(-at, -at, 0), geo::Vector3(at, at, al)).getMesh();
+
+    geo::RenderOptions opt;
+
+    res.color = cv::Vec3b(0, 0, 255);
+    res.setMesh(&x_box);
+    opt.setMesh(x_box, cam_pose.inverse());
+    cam.render(opt, res);
+
+    res.color = cv::Vec3b(0, 255, 0);
+    res.setMesh(&y_box);
+    opt.setMesh(y_box, cam_pose.inverse());
+    cam.render(opt, res);
+
+    res.color = cv::Vec3b(255, 0, 0);
+    res.setMesh(&z_box);
+    opt.setMesh(z_box, cam_pose.inverse());
+    cam.render(opt, res);
+
+    for(ed::WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
+    {
+        const ed::EntityConstPtr& e = *it;
+        const std::string& id = e->id().str();
+
+        if (e->shape() && e->has_pose() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
+        {
+
+            if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall")) continue;
+
+            tue::config::Reader config(e->data());
+            if (config.readGroup("color"))
+            {
+                double r, g, b;
+                if (config.value("red", r) && config.value("green", g) && config.value("blue", b))
+                res.color = cv::Vec3b(255 * b, 255 * g, 255 * r);
+                config.endGroup();
+            }
+            else
+            {
+                int i_color = djb2(id) % 27;
+                res.color = cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]);
+            }
+
+            res.setMesh(&e->shape()->getMesh());
+
+            geo::Pose3D pose = cam_pose.inverse() * e->pose();
+            geo::RenderOptions opt;
+            opt.setMesh(e->shape()->getMesh(), pose);
+
+            // Render
+            cam.render(opt, res);
+
+            // Render volumes
+            if (show_volumes == ModelVolumes && !e->volumes().empty())
+            {
+                for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
+                {
+                res.color = cv::Vec3b(0, 0, 255);
+                res.setMesh(&it->second->getMesh());
+                opt.setMesh(it->second->getMesh(), pose);
+                cam.render(opt, res);
+                }
+            }
+        }
+        else if (show_volumes == RoomVolumes && e->types().find("room") != e->types().end())
+        {
+            geo::Pose3D pose = cam_pose.inverse() * e->pose();
+            geo::RenderOptions opt;
+            for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
+            {
+                res.color = cv::Vec3b(0, 0, 255);
+                res.setMesh(&it->second->getMesh());
+                opt.setMesh(it->second->getMesh(), pose);
+                cam.render(opt, res);
+            }
+        }
+
+    }
+    return true;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 int main(int argc, char **argv)
 {
     if (argc != 3)
@@ -308,101 +407,103 @@ int main(int argc, char **argv)
                                   rx.y, ry.y, rz.y,
                                   rx.z, ry.z, rz.z);
 
-        // * * * * * * DEPTH CAMERA * * * * * *
+        renderWorldModel(world_model, show_volumes);
 
-        depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
-        image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20));
+//        // * * * * * * DEPTH CAMERA * * * * * *
 
-        SampleRenderResult res(depth_image, image);
+//        depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
+//        image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20));
 
-        {
-            // Draw axis
+//        SampleRenderResult res(depth_image, image);
 
-            double al = 0.25; // axis length (m)
-            double at = 0.01; // axis thickness (m)
+//        {
+//            // Draw axis
 
-            geo::Mesh x_box = geo::Box(geo::Vector3(0, -at, -at), geo::Vector3(al, at, at)).getMesh();
-            geo::Mesh y_box = geo::Box(geo::Vector3(-at, 0, -at), geo::Vector3(at, al, at)).getMesh();
-            geo::Mesh z_box = geo::Box(geo::Vector3(-at, -at, 0), geo::Vector3(at, at, al)).getMesh();
+//            double al = 0.25; // axis length (m)
+//            double at = 0.01; // axis thickness (m)
 
-            geo::RenderOptions opt;
+//            geo::Mesh x_box = geo::Box(geo::Vector3(0, -at, -at), geo::Vector3(al, at, at)).getMesh();
+//            geo::Mesh y_box = geo::Box(geo::Vector3(-at, 0, -at), geo::Vector3(at, al, at)).getMesh();
+//            geo::Mesh z_box = geo::Box(geo::Vector3(-at, -at, 0), geo::Vector3(at, at, al)).getMesh();
 
-            res.color = cv::Vec3b(0, 0, 255);
-            res.setMesh(&x_box);
-            opt.setMesh(x_box, cam_pose.inverse());
-            cam.render(opt, res);
+//            geo::RenderOptions opt;
 
-            res.color = cv::Vec3b(0, 255, 0);
-            res.setMesh(&y_box);
-            opt.setMesh(y_box, cam_pose.inverse());
-            cam.render(opt, res);
+//            res.color = cv::Vec3b(0, 0, 255);
+//            res.setMesh(&x_box);
+//            opt.setMesh(x_box, cam_pose.inverse());
+//            cam.render(opt, res);
 
-            res.color = cv::Vec3b(255, 0, 0);
-            res.setMesh(&z_box);
-            opt.setMesh(z_box, cam_pose.inverse());
-            cam.render(opt, res);
-        }
+//            res.color = cv::Vec3b(0, 255, 0);
+//            res.setMesh(&y_box);
+//            opt.setMesh(y_box, cam_pose.inverse());
+//            cam.render(opt, res);
 
-        for(ed::WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
-        {
-            const ed::EntityConstPtr& e = *it;
-            const std::string& id = e->id().str();
+//            res.color = cv::Vec3b(255, 0, 0);
+//            res.setMesh(&z_box);
+//            opt.setMesh(z_box, cam_pose.inverse());
+//            cam.render(opt, res);
+//        }
 
-            if (e->shape() && e->has_pose() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
-            {
+//        for(ed::WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
+//        {
+//            const ed::EntityConstPtr& e = *it;
+//            const std::string& id = e->id().str();
 
-                if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall"))
-                    continue;
+//            if (e->shape() && e->has_pose() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
+//            {
 
-                tue::config::Reader config(e->data());
-                if (config.readGroup("color"))
-                {
-                    double r, g, b;
-                    if (config.value("red", r) && config.value("green", g) && config.value("blue", b))
-                        res.color = cv::Vec3b(255 * b, 255 * g, 255 * r);
-                    config.endGroup();
-                }
-                else
-                {
-                    int i_color = djb2(id) % 27;
-                    res.color = cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]);
-                }
+//                if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall"))
+//                    continue;
 
-                res.setMesh(&e->shape()->getMesh());
+//                tue::config::Reader config(e->data());
+//                if (config.readGroup("color"))
+//                {
+//                    double r, g, b;
+//                    if (config.value("red", r) && config.value("green", g) && config.value("blue", b))
+//                        res.color = cv::Vec3b(255 * b, 255 * g, 255 * r);
+//                    config.endGroup();
+//                }
+//                else
+//                {
+//                    int i_color = djb2(id) % 27;
+//                    res.color = cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]);
+//                }
 
-                geo::Pose3D pose = cam_pose.inverse() * e->pose();
-                geo::RenderOptions opt;
-                opt.setMesh(e->shape()->getMesh(), pose);
+//                res.setMesh(&e->shape()->getMesh());
 
-                // Render
-                cam.render(opt, res);
+//                geo::Pose3D pose = cam_pose.inverse() * e->pose();
+//                geo::RenderOptions opt;
+//                opt.setMesh(e->shape()->getMesh(), pose);
+
+//                // Render
+//                cam.render(opt, res);
 
 
-                // Render volumes
-                if (show_volumes == ModelVolumes && !e->volumes().empty())
-                {
-                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
-                    {
-                        res.color = cv::Vec3b(0, 0, 255);
-                        res.setMesh(&it->second->getMesh());
-                        opt.setMesh(it->second->getMesh(), pose);
-                        cam.render(opt, res);
-                    }
-                }
-            }
-            else if (show_volumes == RoomVolumes && e->types().find("room") != e->types().end())
-            {
-                geo::Pose3D pose = cam_pose.inverse() * e->pose();
-                geo::RenderOptions opt;
-                for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
-                {
-                    res.color = cv::Vec3b(0, 0, 255);
-                    res.setMesh(&it->second->getMesh());
-                    opt.setMesh(it->second->getMesh(), pose);
-                    cam.render(opt, res);
-                }
-            }
-        }
+//                // Render volumes
+//                if (show_volumes == ModelVolumes && !e->volumes().empty())
+//                {
+//                    for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
+//                    {
+//                        res.color = cv::Vec3b(0, 0, 255);
+//                        res.setMesh(&it->second->getMesh());
+//                        opt.setMesh(it->second->getMesh(), pose);
+//                        cam.render(opt, res);
+//                    }
+//                }
+//            }
+//            else if (show_volumes == RoomVolumes && e->types().find("room") != e->types().end())
+//            {
+//                geo::Pose3D pose = cam_pose.inverse() * e->pose();
+//                geo::RenderOptions opt;
+//                for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
+//                {
+//                    res.color = cv::Vec3b(0, 0, 255);
+//                    res.setMesh(&it->second->getMesh());
+//                    opt.setMesh(it->second->getMesh(), pose);
+//                    cam.render(opt, res);
+//                }
+//            }
+//        }
 
         cv::imshow("visualization", image);
         char key = cv::waitKey(10);
