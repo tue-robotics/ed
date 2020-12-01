@@ -140,6 +140,28 @@ private:
 
 };
 
+
+/**
+ * @brief The LoadType enum indicates whether to load directly from a file
+ * or from a model that is part of the ED_MODEL_PATH
+ */
+enum class LoadType
+{
+   FILE,
+   MODEL,
+};
+
+
+/**
+ * @brief loadModel loads an ED model from file
+ * @param load_type indicates whether the provided source is a filename or an identifier
+ * of a model in the ED_MODEL_PATH
+ * @param source source filename or entity type
+ * @param req update request that will be filled with the data from the model
+ * @return success
+ */
+bool loadModel(const LoadType load_type, const std::string& source, ed::UpdateRequest& req);
+
 } // end namespace models
 
 } // end namespace ed
