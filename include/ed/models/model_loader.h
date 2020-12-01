@@ -15,8 +15,6 @@ namespace ed
 namespace models
 {
 
-
-
 class ModelLoader
 {
 
