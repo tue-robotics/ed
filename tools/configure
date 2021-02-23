@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 import tue_config
 import sys
@@ -9,7 +9,7 @@ from ed_msgs.srv import *
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print "Please specify a configuration file (.py, .yaml or .json)"
+        print("Please specify a configuration file (.py, .yaml or .json)")
         sys.exit(1)
 
     yaml_file = sys.argv[1]
@@ -30,6 +30,6 @@ if __name__ == "__main__":
                 rospy.logerr("Could not configure ED:\n\n" + resp.error_msg + "\n\n" + resp2.error_msg)
                 sys.exit(1)
 
-    except rospy.ServiceException, e:
+    except rospy.ServiceException as e:
         rospy.logerr("Could not configure ED:\n\nService call failed: %s"%e)
         sys.exit(1)
