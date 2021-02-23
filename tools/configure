@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 import tue_config
 import sys
@@ -9,7 +9,7 @@ from ed_msgs.srv import *
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print "Please specify a configuration file (.py, .yaml or .json)"
+        print("Please specify a configuration file (.py, .yaml or .json)")
         sys.exit(1)
 
     yaml_file = sys.argv[1]
