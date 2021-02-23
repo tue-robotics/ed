@@ -30,6 +30,6 @@ if __name__ == "__main__":
                 rospy.logerr("Could not configure ED:\n\n" + resp.error_msg + "\n\n" + resp2.error_msg)
                 sys.exit(1)
 
-    except rospy.ServiceException, e:
+    except rospy.ServiceException as e:
         rospy.logerr("Could not configure ED:\n\nService call failed: %s"%e)
         sys.exit(1)
