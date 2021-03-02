@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(ed)
 
-## Compile as C++14, supported in ROS Melodic and newer
-add_compile_options(-std=c++14)
-
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
