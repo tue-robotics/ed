@@ -22,7 +22,7 @@ find_package(PCL REQUIRED COMPONENTS common)
 find_package(OpenCV REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(SDFormat REQUIRED)
-find_package(TinyXML REQUIRED)
+find_package(TinyXML2 REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -45,7 +45,7 @@ add_compile_options(-Wreorder)
 include_directories(
   include
   3rdparty
-  ${TinyXML_INCLUDE_DIRS}
+  ${TinyXML2_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${SDFormat_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
@@ -85,7 +85,7 @@ add_library(ed_core
 
   ${HEADER_FILES}
 )
-target_link_libraries(ed_core ${TinyXML_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(ed_core ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(ed_core ${catkin_EXPORTED_TARGETS})
 
 add_library(ed_io
