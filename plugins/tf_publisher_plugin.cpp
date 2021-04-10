@@ -40,7 +40,7 @@ void TFPublisherPlugin::initialize()
 
 // ----------------------------------------------------------------------------------------------------
 
-void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
+void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& /*req*/)
 {
     for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
     {
