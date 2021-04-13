@@ -27,7 +27,7 @@
   <depend>rgbd_msgs</depend>
   <depend>roscpp</depend>
   <depend>sdformat</depend>
-  <depend>tinyxml</depend>
+  <depend>tinyxml2</depend>
   <depend>tue_config</depend>
   <depend>tue_filesystem</depend>
   <depend>tue_serialization</depend>

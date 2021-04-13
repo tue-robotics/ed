@@ -1,16 +1,17 @@
 #include "xml_shape_parser.h"
 
-#include <vector>
-#include <string>
-
 #include <geolib/datatypes.h>
 #include <geolib/CompositeShape.h>
 
-#include <tinyxml.h>
+#include <tinyxml2.h>
+
+#include <vector>
+#include <string>
+#include <sstream>
 
 // ----------------------------------------------------------------------------------------------------
 
-std::vector<double> parseArray(const TiXmlElement* xml_elem)
+std::vector<double> parseArray(const tinyxml2::XMLElement* xml_elem)
 {
     std::string txt = xml_elem->GetText();
 
@@ -35,18 +36,18 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
 {
     std::stringstream s_error;
 
-    TiXmlDocument doc(filename);
-    doc.LoadFile();
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(filename.c_str());
 
     if (doc.Error())
     {
         s_error << "While parsing '" << filename << "': " << std::endl << std::endl
-                << doc.ErrorDesc() << " at line " << doc.ErrorRow() << ", col " << doc.ErrorCol() << std::endl;
+                << doc.ErrorStr() << " at line " << doc.ErrorLineNum() << std::endl;
         error = s_error.str();
         return geo::ShapePtr();
     }
 
-    const TiXmlElement* model_xml = doc.FirstChildElement("model");
+    const tinyxml2::XMLElement* model_xml = doc.FirstChildElement("model");
     if (!model_xml)
     {
         s_error << "Could not find 'model' element" << std::endl;
@@ -55,20 +56,20 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
 
     geo::CompositeShapePtr shape(new geo::CompositeShape);
 
-    const TiXmlElement* shape_xml = model_xml->FirstChildElement();
+    const tinyxml2::XMLElement* shape_xml = model_xml->FirstChildElement();
     while (shape_xml)
     {
-        geo::Pose3D pose = geo::Pose3D::identity();
+        geo::Pose3D pose(geo::Pose3D::identity());
 
         // parse properties valid for all shapes
-        const TiXmlElement* xyz_xml = shape_xml->FirstChildElement("xyz");
+        const tinyxml2::XMLElement* xyz_xml = shape_xml->FirstChildElement("xyz");
         if (xyz_xml)
         {
             std::vector<double> xyz = parseArray(xyz_xml);
             pose.setOrigin(geo::Vector3(xyz[0], xyz[1], xyz[2]));
         }
 
-        const TiXmlElement* rpy_xml = shape_xml->FirstChildElement("rpy");
+        const tinyxml2::XMLElement* rpy_xml = shape_xml->FirstChildElement("rpy");
         if (rpy_xml)
         {
             std::vector<double> rpy = parseArray(rpy_xml);
@@ -81,14 +82,14 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
         }
 
         std::vector<double> size;
-        const TiXmlElement* size_xml = shape_xml->FirstChildElement("size");
+        const tinyxml2::XMLElement* size_xml = shape_xml->FirstChildElement("size");
         if (size_xml)
             size = parseArray(size_xml);
 
         std::string shape_type = shape_xml->Value();
         if (shape_type == "box") {
-            const TiXmlElement* min_xml = shape_xml->FirstChildElement("min");
-            const TiXmlElement* max_xml = shape_xml->FirstChildElement("max");
+            const tinyxml2::XMLElement* min_xml = shape_xml->FirstChildElement("min");
+            const tinyxml2::XMLElement* max_xml = shape_xml->FirstChildElement("max");
 
             if (min_xml && max_xml)
             {
