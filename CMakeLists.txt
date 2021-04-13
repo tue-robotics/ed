@@ -115,11 +115,17 @@ target_link_libraries(ed ed_core ed_io ed_server)
 #                                               PLUGINS
 # ------------------------------------------------------------------------------------------------
 
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
+target_include_directories(ed_tf_publisher_plugin PRIVATE ${tf2_geometry_msgs_INCLUDE_DIRS})
+target_link_libraries(ed_tf_publisher_plugin ${tf2_LIBRARIES} ${tf2_ros_LIBRARIES})
 
 find_package(kdl_parser REQUIRED)
 add_library(ed_robot_plugin plugins/robot_plugin.cpp)
-target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES})
+target_include_directories(ed_tf_publisher_plugin PRIVATE ${kdl_parser_INCLUDE_DIRS})
+target_link_libraries(ed_robot_plugin ${catkin_LIBRARIES} ${kdl_parser_LIBRARIES})
 
 add_library(ed_sync_plugin plugins/sync_plugin.cpp)
 target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})

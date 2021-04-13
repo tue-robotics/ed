@@ -81,7 +81,6 @@ private:
 
     //! Sensor data
     std::map<std::string, SensorModulePtr> sensors_;
-    tf::TransformListener tf_listener_;
 
     //! Property Key DB
     PropertyKeyDB property_key_db_;

@@ -3,7 +3,11 @@
 
 #include <ed/plugin.h>
 
-#include <tf/transform_broadcaster.h>
+#include <memory>
+
+namespace tf2_ros {
+    class TransformBroadcaster;
+}
 
 class TFPublisherPlugin : public ed::Plugin
 {
@@ -27,7 +31,7 @@ private:
     // Exclude all ids starting with this value
     std::string exclude_;
 
-    tf::TransformBroadcaster* tf_broadcaster_;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
 };
 

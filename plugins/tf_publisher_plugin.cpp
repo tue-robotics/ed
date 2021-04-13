@@ -3,11 +3,17 @@
 #include <ed/world_model.h>
 #include <ed/entity.h>
 
-#include <geolib/ros/tf_conversions.h>
+#include <geolib/ros/tf2_conversions.h>
+
+#include <tf2/convert.h>
+#include <tf2/transform_datatypes.h>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 // ----------------------------------------------------------------------------------------------------
 
-TFPublisherPlugin::TFPublisherPlugin() : tf_broadcaster_(0)
+TFPublisherPlugin::TFPublisherPlugin() : tf_broadcaster_(nullptr)
 {
 }
 
@@ -15,7 +21,6 @@ TFPublisherPlugin::TFPublisherPlugin() : tf_broadcaster_(0)
 
 TFPublisherPlugin::~TFPublisherPlugin()
 {
-    delete tf_broadcaster_;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -35,12 +40,12 @@ void TFPublisherPlugin::configure(tue::Configuration config)
 
 void TFPublisherPlugin::initialize()
 {
-    tf_broadcaster_ = new tf::TransformBroadcaster();
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>();
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
+void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& /*req*/)
 {
     for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
     {
@@ -61,13 +66,15 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
 
         pose_MAP = e->pose();
 
-        tf::StampedTransform t;
+        tf2::Stamped<tf2::Transform> t;
         geo::convert(pose_MAP, t);
         t.frame_id_ = root_frame_id_;
-        t.child_frame_id_ = e->id().str();
         t.stamp_ = ros::Time::now();
 
-        tf_broadcaster_->sendTransform(t);
+        geometry_msgs::TransformStamped msg;
+        tf2::convert(t, msg);
+        msg.child_frame_id = e->id().str();
+        tf_broadcaster_->sendTransform(msg);
     }
 }
 
