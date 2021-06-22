@@ -25,6 +25,7 @@
   <depend>orocos_kdl</depend>
   <depend>rgbd</depend>
   <depend>rgbd_msgs</depend>
+  <depend>rosconsole_bridge</depend>
   <depend>roscpp</depend>
   <depend>sdformat</depend>
   <depend>tf2</depend>
