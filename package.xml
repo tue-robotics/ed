@@ -36,4 +36,10 @@
   <depend>tue_filesystem</depend>
   <depend>tue_serialization</depend>
 
+  <doc_depend>doxygen</doc_depend>
+
+  <export>
+    <rosdoc config="rosdoc.yaml" />
+  </export>
+
 </package>
