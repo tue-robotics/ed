@@ -3,3 +3,4 @@
   file_patterns: '*.c *.cpp *.h *.hpp'
   tab_size:
   use_mdfile_as_mainpage: README.md
+  exclude_patterns: '3rdparty*'
