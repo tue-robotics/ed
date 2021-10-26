@@ -1,5 +1,6 @@
 # ED: Environment Descriptor
-[![Build Status](https://travis-ci.org/tue-robotics/ed.svg?branch=master)](https://travis-ci.org/tue-robotics/ed)
+
+[![CI](https://github.com/tue-robotics/ed/workflows/CI/badge.svg)](https://github.com/tue-robotics/ed/actions)
 
 ## Introduction
 
