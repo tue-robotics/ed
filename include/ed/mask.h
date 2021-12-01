@@ -22,7 +22,7 @@ public:
 
     /**
      * Construct the mask, while setting the mask size.
-     * @paran width Width of the mask.
+     * @param width Width of the mask.
      * @param height Height of the mask.
      */
     ImageMask(int width, int height) : width_(width), height_(height)
@@ -31,7 +31,7 @@ public:
 
     /**
      * Set the size of the image.
-     * @paran width Width of the mask.
+     * @param width Width of the mask.
      * @param height Height of the mask.
      */
     inline void setSize(int width, int height)
