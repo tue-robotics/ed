@@ -4,6 +4,7 @@
 //#include <rgbd/types.h>
 //#include <geolib/datatypes.h>
 
+#include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 #include <limits>
 #include <stdint.h>
@@ -13,6 +14,11 @@ namespace ed
 
 typedef uint64_t Idx;
 static const Idx INVALID_IDX = std::numeric_limits<Idx>::max();
+
+template<typename C, typename...Args>
+boost::shared_ptr<C> make_shared(Args &&...args) {
+  return boost::make_shared<C>(std::forward<Args>(args)...);
+}
 
 class Measurement;
 typedef boost::shared_ptr<Measurement> MeasurementPtr;
