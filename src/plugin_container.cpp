@@ -65,7 +65,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
 
             // If there was an error during configuration, do not start plugin
             if (init.config.hasError())
-                return PluginPtr();
+                return nullptr;
 
             // Initialize the plugin
             plugin_->initialize();
@@ -74,7 +74,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
         }
     }
 
-    return PluginPtr();
+    return nullptr;
 }
 
 // --------------------------------------------------------------------------------
