@@ -88,10 +88,9 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
         plugin_->initialize(scoped_init);
 
         // Read optional frequency (inside parameters is obsolete)
-        if (init.config.value("frequency", freq, tue::config::OPTIONAL))
-        {
-            std::cout << "[ED]: Warning while loading plugin '" << name_ << "': please specify parameter 'frequency' outside 'parameters'." << std::endl;
-        }
+        double freq_temp;
+        if (init.config.value("frequency", freq_temp, tue::config::OPTIONAL))
+            init.config.addError("Specify parameter 'frequency' outside 'parameters'.");
 
         init.config.endGroup();
     }
