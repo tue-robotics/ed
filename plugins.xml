@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<class_libraries>
+  <library path="lib/libed_hello_world_plugin">
+    <class type="HelloWorld" base_class_type="ed::Plugin">
+      <description>Plugin to print text</description>
+    </class>
+  </library>
+  <library path="lib/libed_robot_plugin">
+    <class type="RobotPlugin" base_class_type="ed::Plugin">
+      <description>Plugin to include the robot in the WM.</description>
+    </class>
+  </library>
+  <library path="lib/libed_tf_publisher_plugin">
+    <class type="TFPublisherPlugin" base_class_type="ed::Plugin">
+      <description>Plugin to publish tf frames of WM entities.</description>
+    </class>
+  </library>
+  <library path="lib/libed_sync_plugin">
+    <class type="RobotPlugin" base_class_type="ed::Plugin">
+      <description>Plugin to sync to another ED instance.</description>
+    </class>
+  </library>
+</class_libraries>
