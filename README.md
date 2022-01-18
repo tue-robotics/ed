@@ -28,8 +28,8 @@ All ED tutorials can be found in the ed_tutorials package: https://github.com/tu
 ## Installation
 
 Requirements:
-* Ubuntu (16.04 or newer)
-* ROS (Kinetic or newer)
+* Ubuntu (18.04 or newer)
+* ROS (Melodic or newer)
 
 We assume you have successfully installed ROS and set-up a Catkin workspace. Check out the following packages in your workspace:
 
