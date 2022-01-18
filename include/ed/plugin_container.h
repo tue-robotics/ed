@@ -99,8 +99,6 @@ protected:
 
     bool step_finished_;
 
-    tue::Timer timer_;
-
     double t_last_update_;
 
     mutable boost::mutex mutex_world_;

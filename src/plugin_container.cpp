@@ -18,7 +18,6 @@ PluginContainer::PluginContainer()
     : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
       total_process_time_sec_(0)
 {
-    timer_.start();
 }
 
 // --------------------------------------------------------------------------------
