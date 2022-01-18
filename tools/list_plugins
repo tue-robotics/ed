@@ -1,0 +1,62 @@
+#! /usr/bin/env python
+from itertools import chain
+import os.path
+import sys
+import xml.etree.ElementTree as ET
+
+import roslib
+import rospkg
+
+INDENT = "  "
+
+
+def list_plugins():
+    rospack = rospkg.RosPack()
+    to_check = rospack.get_depends_on('ed', implicit=False)
+    to_check.append("ed")  # also check for plugins in ed
+    first_file = True
+
+    for pkg in to_check:
+        m = rospack.get_manifest(pkg)
+        plugin_file = m.get_export('ed', 'plugin')
+        if not plugin_file:
+            continue
+        elif len(plugin_file) != 1:
+            print(f"Cannot load plugin [${pkg}]: invalid 'plugin' attribute", file=sys.stderr)
+            continue
+
+        plugin_file = plugin_file[0]
+        if not os.path.isfile(plugin_file):
+            print(f"Plugin file: '${plugin_file}' is not a file", file=sys.stderr)
+            continue
+        if not first_file:
+            print("")
+        print(f"{plugin_file}:")
+        first_file = False
+
+        # Some weird logic is needed, because plugin files don't contain a root element, which conflicts XML spec
+        with open(plugin_file, "r") as f:
+            lines = f.readlines()
+        insert_position = 0
+        if lines and lines[0].startswith("<?xml"):
+            insert_position = 1
+        lines.insert(insert_position, "<root>\n")
+        lines.append("</root>\n")
+        root = ET.fromstringlist(lines)
+
+        # Not taking the root of the tree. As plugin files don't have one root.
+        # Which is not accoriding the XML spec, but we aren't going to change ros.
+        for lib in root.iter("library"):
+            print(f"{1*INDENT}{lib.attrib['path']}")
+            for cls in lib.iter("class"):
+                description = cls.find("description")
+                if description is None:
+                    description = ""
+                else:
+                    description = description.text
+                print(f"{2*INDENT}{cls.attrib['type']}: {description}")
+
+
+if __name__ == "__main__":
+    list_plugins()
+

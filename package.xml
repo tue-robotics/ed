@@ -35,6 +35,9 @@
   <depend>tue_config</depend>
   <depend>tue_filesystem</depend>
   <depend>tue_serialization</depend>
+  
+  <exec_depend>python3-rospkg</exec_depend>
+  <exec_depend>roslib</exec_depend>
 
   <doc_depend>doxygen</doc_depend>
 
