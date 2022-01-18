@@ -1,8 +1,8 @@
 #ifndef ED_PLUGIN_H_
 #define ED_PLUGIN_H_
 
-#include <class_loader/class_loader.hpp>
-#define ED_REGISTER_PLUGIN(Derived)  CLASS_LOADER_REGISTER_CLASS(Derived, ed::Plugin)
+#include <pluginlib/class_list_macros.h>
+#define ED_REGISTER_PLUGIN(Derived)  PLUGINLIB_EXPORT_CLASS(Derived, ed::Plugin)
 
 #include <tue/config/configuration.h>
 

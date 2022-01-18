@@ -12,7 +12,10 @@
 #include <queue>
 #include <vector>
 
-namespace class_loader { class ClassLoader; }
+namespace pluginlib {
+  template<class T>
+  class ClassLoader;
+}
 
 namespace ed
 {
@@ -28,7 +31,7 @@ public:
 
     virtual ~PluginContainer();
 
-    PluginPtr loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init);
+    PluginPtr loadPlugin(const std::string& plugin_name, const std::string& plugin_type, InitData& init);
 
     PluginPtr plugin() const { return plugin_; }
 
@@ -76,7 +79,7 @@ public:
 
 protected:
 
-    class_loader::ClassLoader*  class_loader_;
+    pluginlib::ClassLoader<ed::Plugin>*  class_loader_;
 
     PluginPtr plugin_;
 

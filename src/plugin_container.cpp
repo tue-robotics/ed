@@ -1,13 +1,11 @@
 #include "ed/plugin_container.h"
 
-#include "ed/plugin.h"
-
-// TODO: get rid of ros rate
-#include <ros/rate.h>
-
 #include <ed/error_context.h>
+#include <ed/plugin.h>
 
-#include <ros/console.h>
+#include <pluginlib/class_loader.h>
+
+#include <ros/rate.h>
 
 namespace ed
 {
@@ -36,26 +34,19 @@ PluginContainer::~PluginContainer()
 
 // --------------------------------------------------------------------------------
 
-PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init)
+PluginPtr PluginContainer::loadPlugin(const std::string& plugin_name, const std::string& plugin_type, InitData& init)
 {
     // Load the library
     if (class_loader_)
         delete class_loader_;
-    class_loader_ = new class_loader::ClassLoader(lib_filename);
+    class_loader_ = new pluginlib::ClassLoader<ed::Plugin>("ed", "ed::Plugin");
 
     // Create plugin
-    class_loader_->loadLibrary();
-    std::vector<std::string> classes = class_loader_->getAvailableClasses<ed::Plugin>();
-
-    if (classes.empty())
+    if (!class_loader_->isClassAvailable(plugin_type))
+        init.config.addError("Could not find plugin with the type '" + plugin_type + "'.");
+    else
     {
-        init.config.addError("Could not find any plugins in '" + class_loader_->getLibraryPath() + "'.");
-    } else if (classes.size() > 1)
-    {
-        init.config.addError("Multiple plugins registered in '" + class_loader_->getLibraryPath() + "'.");
-    } else
-    {
-        plugin_ = class_loader_->createInstance<Plugin>(classes.front());
+        plugin_ = class_loader_->createInstance(plugin_type);
         if (plugin_)
         {
             name_ = plugin_name;

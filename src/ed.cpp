@@ -582,21 +582,6 @@ int main(int argc, char** argv)
 
     errc.change("Start ED server", "configure");
 
-    // Get plugin paths
-    std::string ed_plugin_path;
-    if (getEnvironmentVariable("ED_PLUGIN_PATH", ed_plugin_path))
-    {
-        std::stringstream ss(ed_plugin_path);
-        std::string item;
-        while (std::getline(ss, item, ':'))
-            ed_wm->addPluginPath(item);
-    }
-    else
-    {
-        std::cout << "Error: Environment variable ED_PLUGIN_PATH not set." << std::endl;
-        return 1;
-    }
-
     tue::Configuration config;
 
     // Check if a config file was provided. If so, load it. If not, load the default AMIGO config.

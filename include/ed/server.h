@@ -50,8 +50,6 @@ public:
         return boost::make_shared<const WorldModel>(*world_model_);
     }
 
-    void addPluginPath(const std::string& path) { plugin_paths_.push_back(path); }
-
     PluginContainerPtr loadPlugin(const std::string& plugin_name, tue::Configuration config);
 
     void stepPlugins();
@@ -86,7 +84,6 @@ private:
     PropertyKeyDB property_key_db_;
 
     //! Plugins
-    std::vector<std::string> plugin_paths_;
     std::map<std::string, PluginContainerPtr> plugin_containers_;
     std::map<std::string, PluginContainerPtr> inactive_plugin_containers_;
 
@@ -94,8 +91,6 @@ private:
     tue::ProfilePublisher pub_profile_;
     tue::Profiler profiler_;
     ros::Publisher pub_stats_;
-
-    std::string getFullLibraryPath(const std::string& lib);
 };
 
 }
