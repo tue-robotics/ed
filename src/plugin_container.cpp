@@ -24,7 +24,7 @@ PluginContainer::PluginContainer()
 
 PluginContainer::~PluginContainer()
 {
-    request_stop_ = true;
+    requestStop();
 
     if (thread_)
         thread_->join();
