@@ -15,5 +15,8 @@ indent_size = 2
 [**/*.md]
 trim_trailing_whitespace = false
 
-[{CMakeLists.txt,package.xml}]
+[**/*.xml]
+indent_size = 2
+
+[{CMakeLists.txt, package.xml}]
 indent_size = 2
