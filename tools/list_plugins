@@ -54,8 +54,11 @@ def print_library(lib):
             description = ""
         else:
             description = description.text
-        print(f"{2 * INDENT}{cls.attrib['type']}: {description}")
+        if "name" in cls.attrib:
+            print(f"{2 * INDENT}{cls.attrib['name']}({cls.attrib['type']}): {description}")
+        else:
+            print(f"{2 * INDENT}{cls.attrib['type']}: {description}")
 
 
 if __name__ == "__main__":
-    list_plugins()
+    sys.exit(list_plugins())
