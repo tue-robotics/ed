@@ -34,29 +34,28 @@ def list_plugins():
         print(f"{plugin_file}:")
         first_file = False
 
-        # Some weird logic is needed, because plugin files don't contain a root element, which conflicts XML spec
-        with open(plugin_file, "r") as f:
-            lines = f.readlines()
-        insert_position = 0
-        if lines and lines[0].startswith("<?xml"):
-            insert_position = 1
-        lines.insert(insert_position, "<root>\n")
-        lines.append("</root>\n")
-        root = ET.fromstringlist(lines)
+        tree = ET.parse(plugin_file)
+        root = tree.getroot()
 
-        # Not taking the root of the tree. As plugin files don't have one root.
-        # Which is not accoriding the XML spec, but we aren't going to change ros.
-        for lib in root.iter("library"):
-            print(f"{1*INDENT}{lib.attrib['path']}")
-            for cls in lib.iter("class"):
-                description = cls.find("description")
-                if description is None:
-                    description = ""
-                else:
-                    description = description.text
-                print(f"{2*INDENT}{cls.attrib['type']}: {description}")
+        if root.tag == "library":
+            print_library(root)
+        elif root.tag == "class_libraries":
+            for lib in root.iter("library"):
+                print_library(lib)
+        else:
+            raise ValueError(f"Plugin file should have 'library' or 'class_libraries' as root, not: '{root.tag}'")
+
+
+def print_library(lib):
+    print(f"{1 * INDENT}{lib.attrib['path']}")
+    for cls in lib.iter("class"):
+        description = cls.find("description")
+        if description is None:
+            description = ""
+        else:
+            description = description.text
+        print(f"{2 * INDENT}{cls.attrib['type']}: {description}")
 
 
 if __name__ == "__main__":
     list_plugins()
-
