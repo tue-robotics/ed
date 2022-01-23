@@ -1,0 +1,80 @@
+#! /usr/bin/env python
+from itertools import chain
+import os.path
+import sys
+import xml.etree.ElementTree as ET
+
+import roslib
+import rospkg
+
+INDENT = "  "
+
+
+def list_plugins():
+    """
+    Iterate over all plugin files defining ED plugins. Print the defined libraries and their plugins.
+    """
+    rospack = rospkg.RosPack()
+    to_check = rospack.get_depends_on('ed', implicit=False)
+    to_check.append("ed")  # also check for plugins in ed
+
+    for index, pkg in enumerate(to_check):
+        m = rospack.get_manifest(pkg)
+        plugin_file = m.get_export('ed', 'plugin')
+        if not plugin_file:
+            continue
+        elif len(plugin_file) != 1:
+            print(f"Cannot load plugin [${pkg}]: invalid 'plugin' attribute", file=sys.stderr)
+            continue
+
+        plugin_file = plugin_file[0]
+        if not os.path.isfile(plugin_file):
+            print(f"Plugin file: '${plugin_file}' is not a file", file=sys.stderr)
+            continue
+        if index:
+            print("")  # Empty line between different files, but not at the end
+        print_plugin_file(plugin_file)
+
+
+def print_plugin_file(plugin_file: str):
+    """
+    Print the filename of the plugin file and it's contents
+
+    :param plugin_file: filename of the plugin file
+    :raises ValueError: If the root tag is not 'library' or 'class_libraries'
+    """
+    print(f"{plugin_file}:")
+
+    tree = ET.parse(plugin_file)
+    root = tree.getroot()
+
+    if root.tag == "library":
+        print_library(root)
+    elif root.tag == "class_libraries":
+        for lib in root.iter("library"):
+            print_library(lib)
+    else:
+        raise ValueError(f"Plugin file should have 'library' or 'class_libraries' as root, not: '{root.tag}'")
+
+
+def print_library(lib: ET.Element):
+    """
+    Print the library tag based on defined attributes
+
+    :param lib: library tag element
+    """
+    print(f"{1 * INDENT}{lib.attrib['path']}")
+    for cls in lib.iter("class"):
+        description = cls.find("description")
+        if description is None:
+            description = ""
+        else:
+            description = description.text
+        if "name" in cls.attrib:
+            print(f"{2 * INDENT}{cls.attrib['name']}({cls.attrib['type']}): {description}")
+        else:
+            print(f"{2 * INDENT}{cls.attrib['type']}: {description}")
+
+
+if __name__ == "__main__":
+    sys.exit(list_plugins())

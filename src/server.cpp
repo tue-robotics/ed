@@ -44,22 +44,6 @@ Server::~Server()
 
 // ----------------------------------------------------------------------------------------------------
 
-std::string Server::getFullLibraryPath(const std::string& lib)
-{
-    for(std::vector<std::string>::const_iterator it = plugin_paths_.begin(); it != plugin_paths_.end(); ++it)
-    {
-        std::string lib_file_test = *it + "/" + lib;
-        if (tue::filesystem::Path(lib_file_test).exists())
-        {
-            return lib_file_test;
-        }
-    }
-
-    return "";
-}
-
-// ----------------------------------------------------------------------------------------------------
-
 void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 {
     ErrorContext errc("Server", "configure");
@@ -224,32 +208,14 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
 
     config.setErrorContext("While loading plugin '" + plugin_name + "': ");
 
-    std::string lib_file;
-    if (!config.value("lib", lib_file))
-        return PluginContainerPtr();
+    std::string plugin_type;
+    if (!config.value("type", plugin_type))
+        return nullptr;
 
-    if (lib_file.empty())
+    if (plugin_type.empty())
     {
-        config.addError("Empty library file given.");
-        return PluginContainerPtr();
-    }
-
-    std::string full_lib_file = lib_file;
-    if (lib_file[0] != '/')
-    {
-        // library file is relative
-        full_lib_file = getFullLibraryPath(lib_file);
-        if (full_lib_file.empty())
-        {
-            config.addError("Could not find plugin '" + lib_file + "'.");
-            return PluginContainerPtr();
-        }
-    }
-
-    if (!tue::filesystem::Path(full_lib_file).exists())
-    {
-        config.addError("Could not find plugin '" + full_lib_file + "'.");
-        return PluginContainerPtr();
+        config.addError("Empty plugin type given.");
+        return nullptr;
     }
 
     // Create a plugin container
@@ -258,7 +224,7 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
     InitData init(property_key_db_, config);
 
     // Load the plugin
-    if (!container->loadPlugin(plugin_name, full_lib_file, init))
+    if (!container->loadPlugin(plugin_name, plugin_type, init))
         return PluginContainerPtr();
 
     // Add the plugin container

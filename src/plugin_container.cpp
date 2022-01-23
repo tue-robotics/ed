@@ -1,13 +1,11 @@
 #include "ed/plugin_container.h"
 
-#include "ed/plugin.h"
-
-// TODO: get rid of ros rate
-#include <ros/rate.h>
-
 #include <ed/error_context.h>
+#include <ed/plugin.h>
 
-#include <ros/console.h>
+#include <pluginlib/class_loader.h>
+
+#include <ros/rate.h>
 
 namespace ed
 {
@@ -18,14 +16,13 @@ PluginContainer::PluginContainer()
     : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
       total_process_time_sec_(0)
 {
-    timer_.start();
 }
 
 // --------------------------------------------------------------------------------
 
 PluginContainer::~PluginContainer()
 {
-    request_stop_ = true;
+    requestStop();
 
     if (thread_)
         thread_->join();
@@ -37,26 +34,19 @@ PluginContainer::~PluginContainer()
 
 // --------------------------------------------------------------------------------
 
-PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::string& lib_filename, InitData& init)
+PluginPtr PluginContainer::loadPlugin(const std::string& plugin_name, const std::string& plugin_type, InitData& init)
 {
     // Load the library
     if (class_loader_)
         delete class_loader_;
-    class_loader_ = new class_loader::ClassLoader(lib_filename);
+    class_loader_ = new pluginlib::ClassLoader<ed::Plugin>("ed", "ed::Plugin");
 
     // Create plugin
-    class_loader_->loadLibrary();
-    std::vector<std::string> classes = class_loader_->getAvailableClasses<ed::Plugin>();
-
-    if (classes.empty())
+    if (!class_loader_->isClassAvailable(plugin_type))
+        init.config.addError("Could not find plugin with the type '" + plugin_type + "'.");
+    else
     {
-        init.config.addError("Could not find any plugins in '" + class_loader_->getLibraryPath() + "'.");
-    } else if (classes.size() > 1)
-    {
-        init.config.addError("Multiple plugins registered in '" + class_loader_->getLibraryPath() + "'.");
-    } else
-    {
-        plugin_ = class_loader_->createInstance<Plugin>(classes.front());
+        plugin_ = class_loader_->createInstance(plugin_type);
         if (plugin_)
         {
             name_ = plugin_name;
@@ -66,7 +56,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
 
             // If there was an error during configuration, do not start plugin
             if (init.config.hasError())
-                return PluginPtr();
+                return nullptr;
 
             // Initialize the plugin
             plugin_->initialize();
@@ -75,7 +65,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string plugin_name, const std::
         }
     }
 
-    return PluginPtr();
+    return nullptr;
 }
 
 // --------------------------------------------------------------------------------
@@ -98,10 +88,9 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
         plugin_->initialize(scoped_init);
 
         // Read optional frequency (inside parameters is obsolete)
-        if (init.config.value("frequency", freq, tue::config::OPTIONAL))
-        {
-            std::cout << "[ED]: Warning while loading plugin '" << name_ << "': please specify parameter 'frequency' outside 'parameters'." << std::endl;
-        }
+        double freq_temp;
+        if (init.config.value("frequency", freq_temp, tue::config::OPTIONAL))
+            init.config.addError("Specify parameter 'frequency' outside 'parameters'.");
 
         init.config.endGroup();
     }

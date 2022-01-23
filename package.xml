@@ -15,7 +15,6 @@
 
   <build_depend>cmake_modules</build_depend>
 
-  <depend>class_loader</depend>
   <depend>code_profiler</depend>
   <depend>cv_bridge</depend>
   <depend>ed_msgs</depend>
@@ -23,6 +22,7 @@
   <depend>kdl_parser</depend>
   <depend>libpcl-all-dev</depend>
   <depend>orocos_kdl</depend>
+  <depend>pluginlib</depend>
   <depend>rgbd</depend>
   <depend>rgbd_msgs</depend>
   <depend>rosconsole_bridge</depend>
@@ -35,11 +35,15 @@
   <depend>tue_config</depend>
   <depend>tue_filesystem</depend>
   <depend>tue_serialization</depend>
+  
+  <exec_depend>python3-rospkg</exec_depend>
+  <exec_depend>roslib</exec_depend>
 
   <doc_depend>doxygen</doc_depend>
 
   <export>
     <rosdoc config="rosdoc.yaml" />
+    <ed plugin="${prefix}/plugins.xml" />
   </export>
 
 </package>
