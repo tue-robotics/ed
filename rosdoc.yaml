@@ -1,6 +1,6 @@
 - builder: doxygen
   name: C++ API
   file_patterns: '*.c *.cpp *.h *.hpp'
-  tab_size:
+  tab_size: 4
   use_mdfile_as_mainpage: README.md
   exclude_patterns: '3rdparty*'
