@@ -31,47 +31,51 @@ class SampleRenderResult : public geo::RenderResult
 
 public:
 
-    SampleRenderResult(cv::Mat& z_buffer_, cv::Mat& image_)
-        : geo::RenderResult(z_buffer_.cols, z_buffer_.rows), z_buffer(z_buffer_), image(image_)
+    SampleRenderResult(cv::Mat& z_buffer, cv::Mat& image)
+        : geo::RenderResult(z_buffer.cols, z_buffer.rows), z_buffer_(z_buffer), image_(image)
     {
     }
 
-    void setMesh(const geo::Mesh* mesh_)
+    void setMesh(const geo::Mesh* mesh)
     {
-        mesh = mesh_;
-        vals.resize(mesh->getTriangleIs().size());
-        vals.assign(mesh->getTriangleIs().size(), -1);
+        mesh_ = mesh;
+        vals_.resize(mesh_->getTriangleIs().size());
+        vals_.assign(mesh_->getTriangleIs().size(), -1);
     }
+
+    inline void setColor(const cv::Vec3b& color) { color_ = color; }
 
     void renderPixel(int x, int y, float depth, int i_triangle)
     {
-        float old_depth = z_buffer.at<float>(y, x);
+        float old_depth = z_buffer_.at<float>(y, x);
         if (old_depth == 0. || depth < old_depth)
         {
-            z_buffer.at<float>(y, x) = depth;
+            z_buffer_.at<float>(y, x) = depth;
 
-            if (vals[i_triangle] < 0)
+            if (vals_[i_triangle] < 0)
             {
-                const geo::TriangleI& t = mesh->getTriangleIs()[i_triangle];
-                const geo::Vector3& p1 = mesh->getPoints()[t.i1_];
-                const geo::Vector3& p2 = mesh->getPoints()[t.i2_];
-                const geo::Vector3& p3 = mesh->getPoints()[t.i3_];
+                const geo::TriangleI& t = mesh_->getTriangleIs()[i_triangle];
+                const geo::Vector3& p1 = mesh_->getPoints()[t.i1_];
+                const geo::Vector3& p2 = mesh_->getPoints()[t.i2_];
+                const geo::Vector3& p3 = mesh_->getPoints()[t.i3_];
 
                 // calculate normal
                 geo::Vec3 n = ((p3 - p1).cross(p2 - p1)).normalized();
 
-                vals[i_triangle] = (1 + n.dot(geo::Vec3(0, 0.3, -1).normalized())) / 2;
+                vals_[i_triangle] = (1 + n.dot(geo::Vec3(0, 0.3, -1).normalized())) / 2;
             }
 
-            image.at<cv::Vec3b>(y, x) = vals[i_triangle] * color;
+            image_.at<cv::Vec3b>(y, x) = vals_[i_triangle] * color_;
         }
     }
 
-    cv::Mat& z_buffer;
-    cv::Mat& image;
-    const geo::Mesh* mesh;
-    cv::Vec3b color;
-    std::vector<double> vals;
+protected:
+
+    cv::Mat& z_buffer_;
+    cv::Mat& image_;
+    const geo::Mesh* mesh_;
+    cv::Vec3b color_;
+    std::vector<double> vals_;
 
 };
 
@@ -113,17 +117,17 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
 
     geo::RenderOptions opt;
 
-    res.color = cv::Vec3b(0, 0, 255);
+    res.setColor(cv::Vec3b(0, 0, 255));
     res.setMesh(&x_box);
     opt.setMesh(x_box, cam_pose.inverse());
     cam.render(opt, res);
 
-    res.color = cv::Vec3b(0, 255, 0);
+    res.setColor(cv::Vec3b(0, 255, 0));
     res.setMesh(&y_box);
     opt.setMesh(y_box, cam_pose.inverse());
     cam.render(opt, res);
 
-    res.color = cv::Vec3b(255, 0, 0);
+    res.setColor(cv::Vec3b(255, 0, 0));
     res.setMesh(&z_box);
     opt.setMesh(z_box, cam_pose.inverse());
     cam.render(opt, res);
@@ -143,13 +147,13 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
             {
                 double r, g, b;
                 if (config.value("red", r) && config.value("green", g) && config.value("blue", b))
-                res.color = cv::Vec3b(255 * b, 255 * g, 255 * r);
+                    res.setColor(cv::Vec3b(255 * b, 255 * g, 255 * r));
                 config.endGroup();
             }
             else
             {
                 int i_color = djb2(id) % 27;
-                res.color = cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]);
+                res.setColor(cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]));
             }
 
             res.setMesh(&e->shape()->getMesh());
@@ -166,7 +170,7 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
             {
                 for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
                 {
-                res.color = cv::Vec3b(0, 0, 255);
+                res.setColor(cv::Vec3b(0, 0, 255)); // Red
                 res.setMesh(&it->second->getMesh());
                 opt.setMesh(it->second->getMesh(), pose);
                 cam.render(opt, res);
@@ -179,7 +183,7 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
             geo::RenderOptions opt;
             for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
             {
-                res.color = cv::Vec3b(0, 0, 255);
+                res.setColor(cv::Vec3b(0, 0, 255)); // Red
                 res.setMesh(&it->second->getMesh());
                 opt.setMesh(it->second->getMesh(), pose);
                 cam.render(opt, res);
