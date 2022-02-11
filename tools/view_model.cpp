@@ -226,7 +226,7 @@ int main(int argc, char **argv)
                                   rx.z, ry.z, rz.z);
 
         depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
-        image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20));
+        image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20)); // Not completely black
         ed::renderWorldModel(world_model, show_volumes, cam, cam_pose, depth_image, image);
 
         cv::imshow("visualization", image);
