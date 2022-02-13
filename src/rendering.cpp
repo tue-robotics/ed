@@ -54,9 +54,9 @@ public:
 
             if (vals_[i_triangle] < 0)
             {
-                // calculate normal
                 geo::Vec3 n = mesh_->getTriangleNormal(i_triangle);
 
+                // Small color difference between surfaces
                 vals_[i_triangle] = (1 + n.dot(geo::Vec3(0, 0.3, -1).normalized())) / 2;
             }
 
