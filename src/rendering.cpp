@@ -54,13 +54,8 @@ public:
 
             if (vals_[i_triangle] < 0)
             {
-                const geo::TriangleI& t = mesh_->getTriangleIs()[i_triangle];
-                const geo::Vector3& p1 = mesh_->getPoints()[t.i1_];
-                const geo::Vector3& p2 = mesh_->getPoints()[t.i2_];
-                const geo::Vector3& p3 = mesh_->getPoints()[t.i3_];
-
                 // calculate normal
-                geo::Vec3 n = ((p3 - p1).cross(p2 - p1)).normalized();
+                geo::Vec3 n = mesh_->getTriangleNormal(i_triangle);
 
                 vals_[i_triangle] = (1 + n.dot(geo::Vec3(0, 0.3, -1).normalized())) / 2;
             }
