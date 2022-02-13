@@ -34,6 +34,8 @@ geo::Pose3D cam_pose;
 bool do_flyto = false;
 geo::Vector3 cam_lookat_flyto;
 
+bool render_required = true;
+
 cv::Mat depth_image;
 cv::Mat image;
 
@@ -213,6 +215,7 @@ int main(int argc, char **argv)
 
     while (true)
     {
+        const geo::Pose3D old_cam_pose = cam_pose;
         cam_pose.t = geo::Vector3(cos(cam_yaw), sin(cam_yaw), 0) * cos(cam_pitch) * cam_dist;
         cam_pose.t.z = sin(cam_pitch) * cam_dist;
         cam_pose.t += cam_lookat;
@@ -225,9 +228,18 @@ int main(int argc, char **argv)
                                   rx.y, ry.y, rz.y,
                                   rx.z, ry.z, rz.z);
 
-        depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
-        image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20)); // Not completely black
-        ed::renderWorldModel(world_model, show_volumes, cam, cam_pose, depth_image, image);
+        if (!render_required && old_cam_pose != cam_pose)
+        {
+            render_required = true;
+        }
+
+        if (render_required)
+        {
+            depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
+            image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20)); // Not completely black
+            ed::renderWorldModel(world_model, show_volumes, cam, cam_pose, depth_image, image);
+            render_required = false;
+        }
 
         cv::imshow("visualization", image);
         char key = cv::waitKey(10);
@@ -240,10 +252,12 @@ int main(int argc, char **argv)
                 world_model = ed::WorldModel();
                 world_model.update(req);
             }
+            render_required = true;
         }
         else if (key == 'v')
         {
             show_volumes = ed::ShowVolumes((show_volumes + 1) % 3);
+            render_required = true;
         }
         else if (key == 'q')
         {
@@ -260,10 +274,15 @@ int main(int argc, char **argv)
                 cam_pitch = std::round(cam_pitch / 1.57 + 0.51) * 1.57;
             else
                 cam_pitch = std::round(cam_pitch / 1.57 - 0.51) * 1.57;
+
+            render_required = true;
         }
 
         if (do_rotate)
+        {
             cam_yaw += 0.03;
+            render_required = true;
+        }
 
         if (do_flyto)
         {
