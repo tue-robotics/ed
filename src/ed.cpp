@@ -470,25 +470,25 @@ void signalHandler( int sig )
     signal(SIGSEGV, SIG_DFL);
     signal(SIGABRT, SIG_DFL);
 
-    std::cout << "\033[38;5;1m";
-    std::cout << "[ED] ED Crashed!" << std::endl << std::endl;
+    std::cerr << "\033[38;5;1m";
+    std::cerr << "[ED] ED Crashed!" << std::endl << std::endl;
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Print signal
 
-    std::cout << "    Signal: ";
+    std::cerr << "    Signal: ";
     if (sig == SIGSEGV)
-        std::cout << "segmentation fault";
+        std::cerr << "segmentation fault";
     else if (sig == SIGABRT)
-        std::cout << "abort";
+        std::cerr << "abort";
     else
-        std::cout << "unknown";
-    std::cout << std::endl << std::endl;
+        std::cerr << "unknown";
+    std::cerr << std::endl << std::endl;
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Print thread name
 
-    std::cout << "    Thread: ";
+    std::cerr << "    Thread: ";
 
     char name[1000];
     size_t name_size = 1000;
@@ -497,27 +497,27 @@ void signalHandler( int sig )
         if (std::string(name) == "ed_main")
         {
             if (boost::this_thread::get_id() == main_thread_id)
-                std::cout << "main";
+                std::cerr << "main";
             else
-                std::cout << "name unknown (id = " << boost::this_thread::get_id() << ")";
+                std::cerr << "name unknown (id = " << boost::this_thread::get_id() << ")";
         }
         else
-            std::cout << name;
+            std::cerr << name;
     }
     else
-        std::cout << "name unknown (id = " << boost::this_thread::get_id() << ")";
+        std::cerr << "name unknown (id = " << boost::this_thread::get_id() << ")";
 
-    std::cout << std::endl << std::endl;
+    std::cerr << std::endl << std::endl;
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Print error context
 
-    std::cout << "    Error context: ";
+    std::cerr << "    Error context: ";
 
     ed::ErrorContextData* edata = ed::ErrorContext::data();
     if (edata && !edata->stack.empty())
     {
-        std::cout << std::endl << std::endl;
+        std::cerr << std::endl << std::endl;
 
         for(unsigned int i = edata->stack.size(); i > 0; --i)
         {
@@ -526,23 +526,23 @@ void signalHandler( int sig )
 
             if (message)
             {
-                std::cout << "        " << message;
+                std::cerr << "        " << message;
                 if (value)
-                    std::cout << " " << value;
-                std::cout << std::endl;
+                    std::cerr << " " << value;
+                std::cerr << std::endl;
             }
         }
     }
     else
-        std::cout << "unknown";
+        std::cerr << "unknown";
 
-    std::cout << std::endl << std::endl;
+    std::cerr << std::endl << std::endl;
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Print backtrace
 
-    std::cout << "--------------------------------------------------" << std::endl;
-    std::cout << "Backtrace: " << std::endl << std::endl;
+    std::cerr << "--------------------------------------------------" << std::endl;
+    std::cerr << "Backtrace: " << std::endl << std::endl;
 
     void *array[10];
     size_t size;
@@ -552,7 +552,7 @@ void signalHandler( int sig )
 
     // print out all the frames to stderr
     backtrace_symbols_fd(array, size, STDERR_FILENO);
-    std::cout << "\033[0m" << std::endl;
+    std::cerr << "\033[0m" << std::endl;
     exit(1);
 }
 
