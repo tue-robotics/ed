@@ -1,3 +1,5 @@
+#include <ros/ros.h>
+
 #include "ed/server.h"
 
 #include <ed/world_model.h>
@@ -595,7 +597,7 @@ int main(int argc, char** argv)
 
         if (config.hasError())
         {
-            std::cout << std::endl << "Error during configuration:" << std::endl << std::endl << config.error() << std::endl;
+            ROS_ERROR_STREAM(std::endl << "Error during configuration:" << std::endl << std::endl << config.error());
             return 1;
         }
     }
