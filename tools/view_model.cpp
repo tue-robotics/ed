@@ -20,6 +20,8 @@
 
 #include <tue/filesystem/path.h>
 
+#include <math.h>
+
 double CANVAS_WIDTH = 800;
 double CANVAS_HEIGHT = 600;
 
@@ -270,10 +272,10 @@ int main(int argc, char **argv)
         else if (key == 'p')
         {
             // Snap pitch to 90 degrees
-            if (cam_pitch < 1.57)
-                cam_pitch = std::round(cam_pitch / 1.57 + 0.51) * 1.57;
+            if (cam_pitch < M_PI_2)
+                cam_pitch = std::round(cam_pitch / M_PI_2 + 0.51) * M_PI_2;
             else
-                cam_pitch = std::round(cam_pitch / 1.57 - 0.51) * 1.57;
+                cam_pitch = std::round(cam_pitch / M_PI_2 - 0.51) * M_PI_2;
 
             render_required = true;
         }
