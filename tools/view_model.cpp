@@ -22,8 +22,8 @@
 
 #include <math.h>
 
-double CANVAS_WIDTH = 800;
-double CANVAS_HEIGHT = 600;
+constexpr double CANVAS_WIDTH = 800;
+constexpr double CANVAS_HEIGHT = 600;
 
 geo::DepthCamera cam;
 
