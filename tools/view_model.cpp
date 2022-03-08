@@ -20,8 +20,10 @@
 
 #include <tue/filesystem/path.h>
 
-double CANVAS_WIDTH = 800;
-double CANVAS_HEIGHT = 600;
+#include <math.h>
+
+constexpr double CANVAS_WIDTH = 800;
+constexpr double CANVAS_HEIGHT = 600;
 
 geo::DepthCamera cam;
 
@@ -224,9 +226,7 @@ int main(int argc, char **argv)
         geo::Vector3 rx = geo::Vector3(0, 0, 1).cross(rz).normalized();
         geo::Vector3 ry = rz.cross(rx).normalized();
 
-        cam_pose.R = geo::Matrix3(rx.x, ry.x, rz.x,
-                                  rx.y, ry.y, rz.y,
-                                  rx.z, ry.z, rz.z);
+        cam_pose.R = geo::Matrix3(rx, ry, rz);
 
         if (!render_required && old_cam_pose != cam_pose)
         {
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
         {
             depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
             image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20)); // Not completely black
-            ed::renderWorldModel(world_model, show_volumes, cam, cam_pose, depth_image, image);
+            ed::renderWorldModel(world_model, show_volumes, cam, cam_pose.inverse(), depth_image, image);
             render_required = false;
         }
 
@@ -270,10 +270,10 @@ int main(int argc, char **argv)
         else if (key == 'p')
         {
             // Snap pitch to 90 degrees
-            if (cam_pitch < 1.57)
-                cam_pitch = std::round(cam_pitch / 1.57 + 0.51) * 1.57;
+            if (cam_pitch < M_PI_2)
+                cam_pitch = std::round(cam_pitch / M_PI_2 + 0.51) * M_PI_2;
             else
-                cam_pitch = std::round(cam_pitch / 1.57 - 0.51) * 1.57;
+                cam_pitch = std::round(cam_pitch / M_PI_2 - 0.51) * M_PI_2;
 
             render_required = true;
         }
@@ -302,5 +302,5 @@ int main(int argc, char **argv)
         }
     }
 
-   return 0;
+    return 0;
 }
