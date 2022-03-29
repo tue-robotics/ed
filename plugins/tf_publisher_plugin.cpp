@@ -62,12 +62,8 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
         if (!exclude_.empty() && id.size() >= exclude_.size() && id.substr(0, exclude_.size()) == exclude_)
             continue;
 
-        geo::Pose3D pose_MAP;
-
-        pose_MAP = e->pose();
-
         tf2::Stamped<tf2::Transform> t;
-        geo::convert(pose_MAP, t);
+        geo::convert(e->pose(), t);
         t.frame_id_ = root_frame_id_;
         t.stamp_ = ros::Time::now();
 
