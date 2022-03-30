@@ -471,7 +471,7 @@ void Server::publishStatistics() const
         // Calculate CPU usage percentage
         double cpu_perc = p->totalProcessingTime() * 100 / p->totalRunningTime();
 
-        s << "    " << p->name() << ": " << cpu_perc << " % (" << p->loopFrequency() << " hz)" << std::endl;
+        s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency() << " hz)" << std::endl;
     }
 
 
