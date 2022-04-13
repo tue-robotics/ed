@@ -144,6 +144,9 @@ target_link_libraries(ed_view_model ed_core)
 add_executable(ed_heightmap_to_mesh tools/heightmap_to_mesh.cpp)
 target_link_libraries(ed_heightmap_to_mesh ed_core)
 
+add_executable(configure tools/configure.cpp)
+target_link_libraries(configure ed_core)
+
 #add_executable(ed_repl tools/repl.cpp)
 #target_link_libraries(ed_repl readline)
 
