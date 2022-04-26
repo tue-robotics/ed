@@ -7,6 +7,7 @@
 
 #include <tue/config/configuration.h>
 #include <tue/config/loaders/yaml.h>
+#include <tue/config/resolve_config.h>
 
 #include <tue/filesystem/path.h>
 
@@ -41,8 +42,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    tue::config::ResolveConfig resolve_config;
+    resolve_config.file = false;
+    resolve_config.rospkg = false;
     tue::Configuration config;
-    if (!tue::config::loadFromYAMLFile(config_file.string(), config))
+    if (!tue::config::loadFromYAMLFile(config_file.string(), config, resolve_config))
     {
         ROS_ERROR_STREAM("Could not configure ED: Error during parsing of the config file '" << config_file.string() << "' "<< std::endl << std::endl << config.error());
         return 1;
