@@ -43,6 +43,7 @@ int main(int argc, char **argv)
     }
 
     tue::config::ResolveConfig resolve_config;
+    resolve_config.env = true;
     resolve_config.file = false;
     resolve_config.rospkg = false;
     tue::Configuration config;
