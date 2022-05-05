@@ -3,8 +3,7 @@
 
 #include "ed/types.h"
 
-#include <tue/profiling/profiler.h>
-#include <tue/profiling/ros/profile_publisher.h>
+#include <diagnostic_updater/diagnostic_updater.h>
 
 #include <tf/transform_listener.h>
 
@@ -54,7 +53,7 @@ public:
 
     void stepPlugins();
 
-    void publishStatistics() const;
+    void publishStatistics();
 
     const PropertyKeyDBEntry* getPropertyKeyDBEntry(const std::string& name) const
     {
@@ -88,8 +87,7 @@ private:
     std::map<std::string, PluginContainerPtr> inactive_plugin_containers_;
 
     //! Profiling
-    tue::ProfilePublisher pub_profile_;
-    tue::Profiler profiler_;
+    diagnostic_updater::Updater updater_;
     ros::Publisher pub_stats_;
 };
 

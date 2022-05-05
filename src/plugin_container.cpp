@@ -13,8 +13,8 @@ namespace ed
 // --------------------------------------------------------------------------------
 
 PluginContainer::PluginContainer()
-    : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), step_finished_(true), t_last_update_(0),
-      total_process_time_sec_(0)
+    : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), loop_frequency_max_(11), loop_frequency_min_(9), step_finished_(true), t_last_update_(0),
+      loop_usage_status_(nullptr)
 {
 }
 
@@ -79,6 +79,11 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
     // Set plugin loop frequency
     setLoopFrequency(freq);
 
+    // Setup LoopUsageStatus
+    diagnostic_updater::FrequencyStatusParam params(&loop_frequency_min_, &loop_frequency_max_);
+    params.window_size_ = 20; // Stats are published at 2 Hz, so this window is 10 seconds
+    loop_usage_status_ = std::make_unique<ed::LoopUsageStatus>(params, plugin_->name());
+
     if (init.config.readGroup("parameters"))
     {
         tue::Configuration scoped_config = init.config.limitScope();
@@ -122,8 +127,6 @@ void PluginContainer::run()
 {
     is_running_ = true;
     request_stop_ = false;
-
-    total_timer_.start();
 
     double innerloop_frequency = 1000; // TODO: magic number!
 
@@ -175,21 +178,17 @@ bool PluginContainer::step()
 
         UpdateRequestPtr update_request(new UpdateRequest);
 
-        tue::Timer timer;
-        timer.start();
-
-        // Old
+        loop_usage_status_->start();
         {
             ed::ErrorContext errc("Plugin:", name().c_str());
 
+            // Old
             plugin_->process(*world_current_, *update_request);
 
             // New
             plugin_->process(data, *update_request);
         }
-
-        timer.stop();
-        total_process_time_sec_ += timer.getElapsedTimeInSec();
+        loop_usage_status_->stop();
 
         // If the received update_request was not empty, set it
         if (!update_request->empty())

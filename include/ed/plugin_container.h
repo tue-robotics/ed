@@ -1,10 +1,10 @@
 #ifndef WIRE_VOLUME_PLUGIN_CONTAINER_H_
 #define WIRE_VOLUME_PLUGIN_CONTAINER_H_
 
+#include "ed/loop_usage_status.h"
 #include "ed/types.h"
 #include "ed/update_request.h"
 
-#include <tue/profiling/timer.h>
 #include <tue/config/configuration.h>
 
 #include <boost/thread.hpp>
@@ -61,13 +61,9 @@ public:
         world_new_ = world;
     }
 
-    void setLoopFrequency(double freq) { loop_frequency_ = freq; }
+    void setLoopFrequency(double freq) { loop_frequency_ = freq; loop_frequency_max_ = 1.05*freq; loop_frequency_min_= 0.9*freq; }
 
     double loopFrequency() const { return loop_frequency_; }
-
-    double totalRunningTime() const { return total_timer_.getElapsedTimeInSec(); }
-
-    double totalProcessingTime() const { return total_process_time_sec_; }
 
     void addDelta(const UpdateRequestConstPtr& delta)
     {
@@ -76,6 +72,8 @@ public:
     }
 
     bool isRunning() const { return is_running_; }
+
+    ed::LoopUsageStatus& getLoopUsageStatus() { return *loop_usage_status_; }
 
 protected:
 
@@ -94,6 +92,9 @@ protected:
 
     double loop_frequency_;
 
+    double loop_frequency_max_;
+    double loop_frequency_min_;
+
     mutable boost::mutex mutex_update_request_;
 
     UpdateRequestPtr update_request_;
@@ -110,9 +111,7 @@ protected:
 
     WorldModelConstPtr world_current_;
 
-    double total_process_time_sec_;
-
-    tue::Timer total_timer_;
+    std::unique_ptr<ed::LoopUsageStatus> loop_usage_status_;
 
     bool step();
 
