@@ -63,6 +63,12 @@ public:
     }
 
     /**
+     * @brief Expose const reference to loop timer. No call to the const timer will be able to influence the behaviour of this class.
+     * @return const reference to the loop timer
+     */
+    const tue::LoopTimer& getTimer() const { return timer_; }
+
+    /**
     * \brief Resets the statistics.
     */
     void clear()
