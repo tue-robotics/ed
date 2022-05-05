@@ -105,7 +105,7 @@ add_library(ed_io
 )
 target_link_libraries(ed_io ed_core)
 
-add_library(ed_server src/server.cpp)
+add_library(ed_server src/server.cpp include/ed/server.h)
 target_link_libraries(ed_server ed_core ed_io)
 
 # ------------------------------------------------------------------------------------------------
