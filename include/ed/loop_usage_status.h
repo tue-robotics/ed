@@ -30,8 +30,8 @@ private:
     const diagnostic_updater::FrequencyStatusParam params_;
 
     tue::LoopTimer timer_;
-    std::vector<long double> starts_;
-    std::vector<long double> durations_;
+    std::vector<long double> starts_; // Micro-seconds
+    std::vector<long double> durations_; // Seconds
     std::vector<int> seq_nums_;
     int hist_indx_;
     long double start_;
@@ -105,12 +105,12 @@ public:
     virtual void run(diagnostic_updater::DiagnosticStatusWrapper &stat)
     {
         boost::mutex::scoped_lock lock(lock_);
-        long double curtime = tue::Timer::nowMicroSec();
+        long double curtime = tue::Timer::nowMicroSec(); // Micro-seconds
         long double total_loop_time = timer_.getTotalLoopTime(); // Seconds
         int curseq = timer_.getIterationCount();
         int events = curseq - seq_nums_[hist_indx_];
-        double window = (curtime - starts_[hist_indx_]) * 0.000001;
-        double loop_time_window = total_loop_time - durations_[hist_indx_];
+        double window = (curtime - starts_[hist_indx_]) * 0.000001; // Micro-seconds -> Seconds
+        double loop_time_window = total_loop_time - durations_[hist_indx_]; // Seconds
         double freq = 0;
 
         if (window != 0)
@@ -118,8 +118,8 @@ public:
             freq = events / window;
         }
         seq_nums_[hist_indx_] = curseq;
-        starts_[hist_indx_] = curtime;
-        durations_[hist_indx_] = total_loop_time;
+        starts_[hist_indx_] = curtime; // Micro-seconds
+        durations_[hist_indx_] = total_loop_time; // Seconds
         hist_indx_ = (hist_indx_ + 1) % params_.window_size_;
 
         if (events == 0)
@@ -142,7 +142,7 @@ public:
         stat.addf("Events in window", "%d", events);
         stat.addf("Events since startup", "%d", curseq);
         stat.addf("Duration of window (s)", "%f", window);
-        stat.addf("Total loop time during window (s)", "%f", static_cast<double>(total_loop_time)); // Doesn't work with long double
+        stat.addf("Total loop time during window (s)", "%f", loop_time_window);
         if (window != 0)
         {
             stat.addf("Loop Usage (%)", "%f", 100*loop_time_window/window);
