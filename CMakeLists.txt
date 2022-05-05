@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   code_profiler
   cv_bridge
+  diagnostic_updater
   ed_msgs
   geolib2
   kdl_parser
