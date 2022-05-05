@@ -78,6 +78,7 @@ public:
         long double curtime = tue::Timer::nowMicroSec();
 
         std::fill(starts_.begin(), starts_.end(), curtime);
+        std::fill(durations_.begin(), durations_.end(), 0);
         std::fill(seq_nums_.begin(), seq_nums_.end(), timer_.getIterationCount());
 
         hist_indx_ = 0;
@@ -141,7 +142,7 @@ public:
         stat.addf("Events in window", "%d", events);
         stat.addf("Events since startup", "%d", curseq);
         stat.addf("Duration of window (s)", "%f", window);
-        stat.addf("Total loop time during window (s)", "%f", total_loop_time);
+        stat.addf("Total loop time during window (s)", "%f", static_cast<double>(total_loop_time)); // Doesn't work with long double
         if (window != 0)
         {
             stat.addf("Loop Usage (%)", "%f", 100*loop_time_window/window);
