@@ -61,7 +61,7 @@ public:
         world_new_ = world;
     }
 
-    void setLoopFrequency(double freq) { loop_frequency_ = freq; loop_frequency_max_ = 1.05*freq; loop_frequency_min_= 0.9*freq; }
+    void setLoopFrequency(double freq) { loop_frequency_ = freq; loop_frequency_max_ = 1.05*freq; loop_frequency_min_= 0.9*freq; } // Magic numbers; Higher bound is stricter as it shouldn't be possible to exceed the desired frequency.
 
     double loopFrequency() const { return loop_frequency_; }
 
