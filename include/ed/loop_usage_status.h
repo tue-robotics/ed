@@ -15,14 +15,14 @@
 namespace ed
 {
 
-/**
-   * \brief A diagnostic task that monitors the frequency of an event.
-   *
-   * This diagnostic task monitors the frequency and usage of a loop and creates corresponding diagnostics.
-   * It will report a warning if the frequency is outside acceptable bounds, and report an error
-   * if there have been no events in the latest window.
-   * Heavily inspired by diagnostic_updater::FrequencyStatus
-   */
+    /**
+     * @brief A diagnostic task that monitors the frequency of an event.
+     *
+     * This diagnostic task monitors the frequency and usage of a loop and creates corresponding diagnostics.
+     * It will report a warning if the frequency is outside acceptable bounds, and report an error
+     * if there have been no events in the latest window.
+     * Heavily inspired by diagnostic_updater::FrequencyStatus
+     */
 
 class LoopUsageStatus : public diagnostic_updater::DiagnosticTask
 {
@@ -41,8 +41,8 @@ private:
 
 public:
     /**
-    * \brief Constructs a LoopUsageStatus class with the given parameters.
-    */
+     * @brief Constructs a LoopUsageStatus class with the given parameters.
+     */
     LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam &params, std::string name) :
     DiagnosticTask(name), params_(params),
     starts_(params_.window_size_), durations_(params_.window_size_), seq_nums_(params_.window_size_)
@@ -51,9 +51,9 @@ public:
     }
 
     /**
-    * \brief Constructs a LoopUsageStatus class with the given parameters.
-    *        Uses a default diagnostic task name of "Loop Usage Status".
-    */
+     * @brief Constructs a LoopUsageStatus class with the given parameters.
+     *        Uses a default diagnostic task name of "Loop Usage Status".
+     */
 
     LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam &params) :
     DiagnosticTask("Loop Usage Status"), params_(params),
@@ -69,8 +69,8 @@ public:
     const tue::LoopTimer& getTimer() const { return timer_; }
 
     /**
-    * \brief Resets the statistics.
-    */
+     * @brief Resets the statistics.
+     */
     void clear()
     {
         boost::mutex::scoped_lock lock(lock_);
@@ -85,8 +85,8 @@ public:
     }
 
     /**
-    * \brief Signals that a start event has occurred.
-    */
+     * @brief Signals that a start event has occurred.
+     */
     void start()
     {
         boost::mutex::scoped_lock lock(lock_);
@@ -94,14 +94,17 @@ public:
     }
 
     /**
-    * \brief Signals that a stop event has occurred.
-    */
+     * @brief Signals that a stop event has occurred.
+     */
     void stop()
     {
         boost::mutex::scoped_lock lock(lock_);
         timer_.stop();
     }
 
+    /**
+     * @brief Fills out this Task's DiagnosticStatusWrapper.
+     */
     virtual void run(diagnostic_updater::DiagnosticStatusWrapper &stat)
     {
         boost::mutex::scoped_lock lock(lock_);
