@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   code_profiler
   cv_bridge
+  diagnostic_updater
   ed_msgs
   geolib2
   kdl_parser
@@ -104,7 +105,7 @@ add_library(ed_io
 )
 target_link_libraries(ed_io ed_core)
 
-add_library(ed_server src/server.cpp)
+add_library(ed_server src/server.cpp include/ed/server.h)
 target_link_libraries(ed_server ed_core ed_io)
 
 # ------------------------------------------------------------------------------------------------

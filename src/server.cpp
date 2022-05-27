@@ -8,8 +8,6 @@
 // Storing measurements to disk
 #include "ed/io/filesystem/write.h"
 
-#include <tue/profiling/scoped_timer.h>
-
 #include <tue/filesystem/path.h>
 
 #include "ed/plugin.h"
@@ -34,6 +32,7 @@ namespace ed
 
 Server::Server() : world_model_(new WorldModel(&property_key_db_))
 {
+    updater_.setHardwareID("none");
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -72,6 +71,8 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
                 }
 
                 plugin_container = loadPlugin(name, config);
+                if (plugin_container)
+                    updater_.add(plugin_container->getLoopUsageStatus());
             }
             else
             {
@@ -84,12 +85,14 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
                     plugin_container->requestStop();
                     inactive_plugin_containers_[name] = plugin_container;
                     plugin_containers_.erase(name);
+                    updater_.removeByName(name);
                     continue;
                 }
                 else
                 {
                     InitData init(property_key_db_, config);
                     plugin_container->configure(init, true);
+                    updater_.add(plugin_container->getLoopUsageStatus());
                 }
             }
 
@@ -135,11 +138,7 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
 void Server::initialize()
 {
-    // Initialize profiler
-    profiler_.setName("ed");
-    pub_profile_.initialize(profiler_);
-
-    if (pub_stats_.getTopic() == "")
+    if (pub_stats_.getTopic().empty())
     {
         ros::NodeHandle nh;
         pub_stats_ = nh.advertise<std_msgs::String>("ed/stats", 10);
@@ -225,7 +224,7 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
 
     // Load the plugin
     if (!container->loadPlugin(plugin_name, plugin_type, init))
-        return PluginContainerPtr();
+        return nullptr;
 
     // Add the plugin container
     plugin_containers_[plugin_name] = container;
@@ -286,7 +285,6 @@ void Server::stepPlugins()
 
 void Server::update()
 {
-    tue::ScopedTimer t(profiler_, "ed");
     ErrorContext errc("Server", "update");
 
     // Create world model copy (shallow)
@@ -305,8 +303,6 @@ void Server::update()
     ul.lock();
     world_model_ = new_world_model;
     ul.unlock();
-
-    pub_profile_.publish();
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -337,9 +333,6 @@ void Server::update(const ed::UpdateRequest& req)
 
 void Server::update(const std::string& update_str, std::string& error)
 {
-    tue::ScopedTimer t(profiler_, "ed");
-
-
     // convert update string to update request
     tue::Configuration cfg;
 
@@ -413,7 +406,6 @@ void Server::update(const std::string& update_str, std::string& error)
     // Set the new (updated) world
     ul.lock();
     world_model_ = new_world_model;
-
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -459,7 +451,7 @@ void Server::storeEntityMeasurements(const std::string& path) const
 
 // ----------------------------------------------------------------------------------------------------
 
-void Server::publishStatistics() const
+void Server::publishStatistics()
 {
     std::stringstream s;
 
@@ -469,7 +461,7 @@ void Server::publishStatistics() const
         const PluginContainerPtr& p = it->second;
 
         // Calculate CPU usage percentage
-        double cpu_perc = p->totalProcessingTime() * 100 / p->totalRunningTime();
+        double cpu_perc = p->getLoopUsageStatus().getTimer().getLoopUsagePercentage() * 100;
 
         s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency() << " hz)" << std::endl;
     }
@@ -479,6 +471,7 @@ void Server::publishStatistics() const
     msg.data = s.str();
 
     pub_stats_.publish(msg);
+    updater_.force_update();
 }
 
 }
