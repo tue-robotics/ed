@@ -347,11 +347,8 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
         for(ed::world_model::TransformCrawler tc(world, robot_name_, ros::Time::now().toSec()); tc.hasNext(); tc.next())
         {
             const ed::EntityConstPtr& e = tc.entity();
-            if (e->shape())
-            {
-                req.setPose(e->id(), e_robot->pose() * tc.transform());
-                req.setFlag(e->id(), "self"); // mark as self
-            }
+            req.setPose(e->id(), e_robot->pose() * tc.transform());
+            req.setFlag(e->id(), "self"); // mark as self
         }
     }
 }
