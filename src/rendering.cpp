@@ -87,11 +87,38 @@ unsigned int djb2(const std::string& str)
     return hash;
 }
 
+void renderMesh(const geo::DepthCamera& cam, const geo::Pose3D& pose, const geo::Mesh& mesh, const cv::Vec3b& color, SampleRenderResult& res, bool flatten = false)
+{
+    geo::RenderOptions opt;
+    res.setColor(color);
+    geo::Mesh mesh_flat;
+    if (!flatten)
+    {
+        res.setMesh(&mesh);
+        opt.setMesh(mesh, pose);
+    }
+    else
+    {
+        for (auto point : mesh.getPoints())
+        {
+            point.z = 0;
+            mesh_flat.addPoint(point);
+        }
+        for (auto triangle_indexes : mesh.getTriangleIs())
+        {
+            mesh_flat.addTriangle(triangle_indexes.i1_, triangle_indexes.i2_, triangle_indexes.i3_);
+        }
+        res.setMesh(&mesh_flat);
+        opt.setMesh(mesh_flat, pose);
+    }
+
+    cam.render(opt, res);
+}
 
 // Might it be nicer to separate rendering of the colored image and the depth image?
 bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes show_volumes,
                       const geo::DepthCamera& cam, const geo::Pose3D& cam_pose_inv,
-                      cv::Mat& depth_image, cv::Mat& image)
+                      cv::Mat& depth_image, cv::Mat& image, bool flatten)
 {
 
     if (depth_image.rows != image.rows || depth_image.cols != image.cols)
@@ -111,62 +138,45 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
     geo::Mesh y_box = geo::Box(geo::Vector3(-at, 0, -at), geo::Vector3(at, al, at)).getMesh();
     geo::Mesh z_box = geo::Box(geo::Vector3(-at, -at, 0), geo::Vector3(at, at, al)).getMesh();
 
-    res.setColor(cv::Vec3b(0, 0, 255));
-    res.setMesh(&x_box);
-    opt.setMesh(x_box, cam_pose_inv);
-    cam.render(opt, res);
-
-    res.setColor(cv::Vec3b(0, 255, 0));
-    res.setMesh(&y_box);
-    opt.setMesh(y_box, cam_pose_inv);
-    cam.render(opt, res);
-
-    res.setColor(cv::Vec3b(255, 0, 0));
-    res.setMesh(&z_box);
-    opt.setMesh(z_box, cam_pose_inv);
-    cam.render(opt, res);
+    renderMesh(cam, cam_pose_inv, x_box, cv::Vec3b(0, 0, 255), res, flatten);
+    renderMesh(cam, cam_pose_inv, y_box, cv::Vec3b(0, 255, 0), res, flatten);
+    renderMesh(cam, cam_pose_inv, z_box, cv::Vec3b(255, 0, 0), res, flatten);
 
     for(ed::WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
     {
         const ed::EntityConstPtr& e = *it;
         const std::string& id = e->id().str();
 
-        if (e->shape() && e->has_pose() && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
+        if (e->shape() && e->has_pose() && !e->hasFlag("self") && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
         {
 
             if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall")) continue;
+
+            cv::Vec3b color;
 
             tue::config::Reader config(e->data());
             if (config.readGroup("color"))
             {
                 double r, g, b;
                 if (config.value("red", r) && config.value("green", g) && config.value("blue", b))
-                    res.setColor(cv::Vec3b(255 * b, 255 * g, 255 * r));
+                    color = cv::Vec3b(255 * b, 255 * g, 255 * r);
                 config.endGroup();
             }
             else
             {
                 int i_color = djb2(id) % 27;
-                res.setColor(cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]));
+                color = cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]);
             }
 
-            res.setMesh(&e->shape()->getMesh());
-
             geo::Pose3D pose = cam_pose_inv * e->pose();
-            opt.setMesh(e->shape()->getMesh(), pose);
-
-            // Render
-            cam.render(opt, res);
+            renderMesh(cam, pose, e->shape()->getMesh(), color, res, flatten);
 
             // Render volumes
             if (show_volumes == ModelVolumes && !e->volumes().empty())
             {
                 for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
                 {
-                res.setColor(cv::Vec3b(0, 0, 255)); // Red
-                res.setMesh(&it->second->getMesh());
-                opt.setMesh(it->second->getMesh(), pose);
-                cam.render(opt, res);
+                    renderMesh(cam, pose, it->second->getMesh(), cv::Vec3b(0, 0, 255), res, flatten); // Red
                 }
             }
         }
@@ -175,10 +185,7 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
             geo::Pose3D pose = cam_pose_inv * e->pose();
             for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
             {
-                res.setColor(cv::Vec3b(0, 0, 255)); // Red
-                res.setMesh(&it->second->getMesh());
-                opt.setMesh(it->second->getMesh(), pose);
-                cam.render(opt, res);
+                renderMesh(cam, pose, it->second->getMesh(), cv::Vec3b(0, 0, 255), res, flatten); // Red
             }
         }
 

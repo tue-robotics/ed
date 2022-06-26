@@ -154,15 +154,13 @@ int main(int argc, char **argv)
 
         if (e->shape())
         {
-            const std::vector<geo::Vector3>& vertices = e->shape()->getMesh().getPoints();
-            for(unsigned int i = 0; i < vertices.size(); ++i)
+            const std::string& id = e->id().str();
+            if (id.size() < 5 || id.substr(id.size() - 5) != "floor") // Filter ground plane
             {
-                const geo::Vector3& p = vertices[i];
-                const std::string& id = e->id().str();
-
-                if (id.size() < 5 || id.substr(id.size() - 5) != "floor") // Filter ground plane
-//                if (p.z > 0.05) // Filter ground plane
+                const std::vector<geo::Vector3>& vertices = e->shape()->getMesh().getPoints();
+                for(unsigned int i = 0; i < vertices.size(); ++i)
                 {
+                    const geo::Vector3& p = e->pose() * vertices[i];
                     p_min.x = std::min(p.x, p_min.x);
                     p_min.y = std::min(p.y, p_min.y);
                     p_min.z = std::min(p.z, p_min.z);
