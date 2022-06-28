@@ -36,6 +36,7 @@ enum ShowVolumes
  * @param depth_image depth image that will be rendered
  * @param image colored 3D image that will be rendered. N.B.: needs
  * to be of the same size as the depth image
+ * @param flatten Flatten all the meshes to the groundplane (default: false)
  * @return
  */
 bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes show_volumes,
