@@ -87,6 +87,15 @@ unsigned int djb2(const std::string& str)
     return hash;
 }
 
+/**
+ * @brief Render a mesh
+ * @param cam DepthCamera to use
+ * @param pose Pose of the mesh in the camera frame
+ * @param mesh Mesh to render
+ * @param color color vector
+ * @param res Renderresult, which stores the renderer image
+ * @param flatten Flatten all the meshes to the groundplane (default: false)
+ */
 void renderMesh(const geo::DepthCamera& cam, const geo::Pose3D& pose, const geo::Mesh& mesh, const cv::Vec3b& color, SampleRenderResult& res, bool flatten = false)
 {
     geo::RenderOptions opt;
