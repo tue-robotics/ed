@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(ed)
 
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
@@ -39,10 +42,6 @@ catkin_package(
 ###########
 ## Build ##
 ###########
-
-add_compile_options(-Wreturn-type)
-add_compile_options(-Wsign-compare)
-add_compile_options(-Wreorder)
 
 include_directories(
   include
