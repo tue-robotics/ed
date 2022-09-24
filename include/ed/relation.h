@@ -18,8 +18,8 @@ public:
 
 private:
 
-    Idx parent_idx_;
-    Idx child_idx_;
+//    Idx parent_idx_;
+//    Idx child_idx_;
 
 };
 
