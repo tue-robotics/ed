@@ -55,7 +55,7 @@ std::string update_request_;
 
 // ----------------------------------------------------------------------------------------------------
 
-bool srvReset(ed_msgs::Reset::Request& req, ed_msgs::Reset::Response& res)
+bool srvReset(ed_msgs::Reset::Request& req, ed_msgs::Reset::Response& /*res*/)
 {
     ed_wm->reset(req.keep_all_shapes);
     return true;

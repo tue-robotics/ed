@@ -33,7 +33,7 @@ void SyncPlugin::initialize(ed::InitData& init)
 
 // ----------------------------------------------------------------------------------------------------
 
-void SyncPlugin::process(const ed::PluginInput& data, ed::UpdateRequest& req)
+void SyncPlugin::process(const ed::PluginInput& /*data*/, ed::UpdateRequest& req)
 {
     ed_msgs::Query query;
     query.request.since_revision = rev_number_;

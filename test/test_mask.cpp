@@ -2,8 +2,8 @@
 
 #include <profiling/Timer.h>
 
-int main(int argc, char **argv) {
-
+int main()
+{
     cv::Mat rgb_image(480, 640, CV_8UC3, cv::Scalar(1, 0, 255));
 
     ed::ImageMask m(rgb_image.cols, rgb_image.rows);

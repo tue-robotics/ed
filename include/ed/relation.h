@@ -14,7 +14,7 @@ class Relation
 
 public:
 
-    virtual bool calculateTransform(const Time& t, geo::Pose3D& tf) const { return false; }
+    virtual bool calculateTransform(const Time& /*t*/, geo::Pose3D& /*tf*/) const { return false; }
 
 private:
 

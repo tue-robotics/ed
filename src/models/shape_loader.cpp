@@ -550,14 +550,14 @@ void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOpt
 // ----------------------------------------------------------------------------------------------------
 
 /**
- * @brief readVec3Group read a config group into a Vec3 group
+ * @brief readVec3Group read a config group into a Vec3
  * @param cfg reader
  * @param v filled Vec3 vector
  * @param vector_name name of the reader group to be read
  * @param pos_req RequiredOrOptional
  * @return indicates succes
  */
-bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& vector_name, tue::config::RequiredOrOptional pos_req = tue::config::REQUIRED)
+bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& vector_name, tue::config::RequiredOrOptional /*pos_req*/ = tue::config::REQUIRED)
 {
     std::string vector_string;
     if (cfg.readGroup(vector_name))

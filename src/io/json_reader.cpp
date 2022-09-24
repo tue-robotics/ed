@@ -32,12 +32,12 @@ struct MyHandler {
 
     bool Double(double d) { w.setValue(key, d); return true; }
 
-    bool RawNumber(const char* str, rapidjson::SizeType len, bool copy)
+    bool RawNumber(const char* str, rapidjson::SizeType /*len*/, bool /*copy*/)
     {
         w.setValue(key, str);
         return true;
     }
-    bool String(const char* str, rapidjson::SizeType length, bool copy)
+    bool String(const char* str, rapidjson::SizeType /*length*/, bool /*copy*/)
     {
         w.setValue(key, str);
         return true;
@@ -64,9 +64,9 @@ struct MyHandler {
         return true;
     }
 
-    bool Key(const char* str, rapidjson::SizeType length, bool copy) { key = str; return true; }
+    bool Key(const char* str, rapidjson::SizeType /*length*/, bool /*copy*/) { key = str; return true; }
 
-    bool EndObject(rapidjson::SizeType memberCount)
+    bool EndObject(rapidjson::SizeType /*memberCount*/)
     {
         if (stack.empty())
             return true;
@@ -87,7 +87,7 @@ struct MyHandler {
         return true;
     }
 
-    bool EndArray(rapidjson::SizeType elementCount)
+    bool EndArray(rapidjson::SizeType /*elementCount*/)
     {
         w.endArray();
         stack.pop_back();

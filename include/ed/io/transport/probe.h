@@ -34,12 +34,12 @@ public:
 
     // Probe interface
 
-    virtual void configure(tue::Configuration config) {}
+    virtual void configure(tue::Configuration /*config*/) {}
 
-    virtual void process(const WorldModel& world,
-                         UpdateRequest& update,
-                         tue::serialization::InputArchive& req,
-                         tue::serialization::OutputArchive& res) {}
+    virtual void process(const WorldModel& /*world*/,
+                         UpdateRequest& /*update*/,
+                         tue::serialization::InputArchive& /*req*/,
+                         tue::serialization::OutputArchive& /*res*/) {}
 
 private:
 
