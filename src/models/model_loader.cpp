@@ -465,7 +465,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
 {
     tue::config::Reader r(data);
 
-    bool sdf_stripped = !r.readGroup("sdf");
+    r.readGroup("sdf"); // Just read the sdf element
 
     bool sdf_world = r.readGroup("world");
     bool sdf_model = false;
