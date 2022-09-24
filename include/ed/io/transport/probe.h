@@ -36,6 +36,8 @@ public:
 
     virtual void configure(tue::Configuration /*config*/) {}
 
+    using Plugin::process;
+
     virtual void process(const WorldModel& /*world*/,
                          UpdateRequest& /*update*/,
                          tue::serialization::InputArchive& /*req*/,
