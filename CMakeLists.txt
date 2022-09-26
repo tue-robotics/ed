@@ -45,6 +45,7 @@ catkin_package(
 
 include_directories(
   include
+  SYSTEM
   3rdparty/polypartition/include
   3rdparty/rapidjson/include
   ${TinyXML2_INCLUDE_DIRS}
