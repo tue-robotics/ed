@@ -3,8 +3,6 @@
 #include "rapidjson/reader.h"
 #include "ed/io/data_writer.h"
 
-using namespace std;
-using namespace rapidjson;
 
 namespace ed
 {
@@ -16,7 +14,7 @@ namespace io
 
 struct MyHandler {
 
-    MyHandler(DataWriter& w_) : w(w_)
+    MyHandler(ed::io::DataWriter& w_) : w(w_)
     {
     }
 
@@ -91,7 +89,7 @@ struct MyHandler {
         return true;
     }
 
-    DataWriter& w;
+    ed::io::DataWriter& w;
     std::string key;
     std::vector<unsigned char> stack;
 
@@ -101,7 +99,7 @@ struct MyHandler {
 
 JSONReader::JSONReader(const char* s) : n_current_(Node(0, MAP))
 {
-    DataWriter w(data_);
+    ed::io::DataWriter w(data_);
     MyHandler handler(w);
     rapidjson::StringStream ss(s);
 
