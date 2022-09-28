@@ -46,13 +46,15 @@ add_compile_options(-Wreorder)
 
 include_directories(
   include
-  3rdparty/rapidjson/include/
-  3rdparty
+  3rdparty/polypartition/include
+  3rdparty/rapidjson/include
   ${TinyXML2_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${SDFormat_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
+
+add_library(polypartition 3rdparty/polypartition/src/polypartition.cpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                          ED CORE
@@ -80,7 +82,6 @@ add_library(ed_core
   src/models/model_loader.cpp
   src/models/shape_loader.cpp
   src/models/xml_shape_parser.cpp
-  3rdparty/polypartition/polypartition.cpp
 
   # Logging
   src/logging.cpp
@@ -91,7 +92,7 @@ add_library(ed_core
 
   ${HEADER_FILES}
 )
-target_link_libraries(ed_core ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(ed_core polypartition ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(ed_core ${catkin_EXPORTED_TARGETS})
 
 add_library(ed_io
@@ -177,7 +178,6 @@ target_link_libraries(show_gui ed_core ${OpenCV_LIBRARIES})
 
 add_executable(ed_test_heightmap_triangulation
   test/test_heightmap_triangulation.cpp
-  3rdparty/polypartition/polypartition.cpp
 )
 target_link_libraries(ed_test_heightmap_triangulation ed_core ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES} ${tue_config_LIBRARIES})
 
