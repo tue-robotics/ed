@@ -46,6 +46,7 @@ add_compile_options(-Wreorder)
 
 include_directories(
   include
+  3rdparty/rapidjson/include/
   3rdparty
   ${TinyXML2_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
