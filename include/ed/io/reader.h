@@ -2,7 +2,6 @@
 #define ED_IO_READER_H_
 
 #include <string>
-#include <vector>
 
 #include <istream>
 
