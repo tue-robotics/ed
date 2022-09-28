@@ -32,6 +32,11 @@ struct MyHandler {
 
     bool Double(double d) { w.setValue(key, d); return true; }
 
+    bool RawNumber(const char* str, rapidjson::SizeType len, bool copy)
+    {
+        w.setValue(key, str);
+        return true;
+    }
     bool String(const char* str, rapidjson::SizeType length, bool copy)
     {
         w.setValue(key, str);
