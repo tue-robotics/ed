@@ -13,7 +13,7 @@ namespace ed
 namespace io
 {
 
-class JSONReader : public Reader
+class JSONReader : public ed::io::Reader
 {
 
 public:
