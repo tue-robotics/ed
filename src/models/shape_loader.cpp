@@ -745,7 +745,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         int num_points = 12;
         cfg.value("num_points", num_points, tue::config::OPTIONAL);
 
-        double radius, height;
+        double radius = 0, height = 0;
         if (cfg.value("radius", radius) && (cfg.value("height", height) || cfg.value("length", height))) // length is used in SDF
         {
 
