@@ -14,7 +14,7 @@ void imageCallback(const tue_serialization::Binary::ConstPtr& msg)
     cv::waitKey(3);
 }
 
-void mouseCallback(int event, int x, int y, int flags, void* ptr)
+void mouseCallback(int event, int x, int y, int /*flags*/, void* /*ptr*/)
 {
     if (event == cv::EVENT_LBUTTONDOWN)
     {

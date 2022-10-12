@@ -23,7 +23,7 @@ void HelloWorld::initialize(ed::InitData& init)
 
 // ----------------------------------------------------------------------------------------------------
 
-void HelloWorld::process(const ed::WorldModel& world, ed::UpdateRequest& req)
+void HelloWorld::process(const ed::WorldModel& /*world*/, ed::UpdateRequest& /*req*/)
 {
     std::cout << text_ << std::endl;
 }

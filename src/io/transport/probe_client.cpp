@@ -85,7 +85,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
 
 // ----------------------------------------------------------------------------------------------------
 
-void ProbeClient::configure(tue::Configuration config)
+void ProbeClient::configure(tue::Configuration /*config*/)
 {
 
 }

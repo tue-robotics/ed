@@ -26,7 +26,8 @@ Measurement::Measurement(rgbd::ImageConstPtr image, const ImageMask& image_mask,
 Measurement::Measurement(const RGBDData& rgbd_data, const PointCloudMaskPtr& mask, unsigned int seq) :
     rgbd_data_(rgbd_data),
     mask_(mask),
-    timestamp_(rgbd_data.image->getTimestamp())
+    timestamp_(rgbd_data.image->getTimestamp()),
+    seq_(seq)
 {
     // Calculate image mask
     image_mask_.setSize(rgbd_data.image->getDepthImage().cols, rgbd_data.image->getDepthImage().rows);

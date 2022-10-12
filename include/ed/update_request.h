@@ -93,7 +93,7 @@ public:
     void removeConvexHullNew(const UUID& id, const std::string& source)
     {
         // For now, signal that the convex hull must be removed by setting an empty chull
-        ed::MeasurementConvexHull& m = convex_hulls_new[id][source];
+        convex_hulls_new[id][source] = ed::MeasurementConvexHull();
     }
 
 

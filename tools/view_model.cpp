@@ -50,7 +50,7 @@ void usage()
 
 // ----------------------------------------------------------------------------------------------------
 
-void CallBackFunc(int event, int x, int y, int flags, void* userdata)
+void CallBackFunc(int event, int x, int y, int flags, void* /*userdata*/)
 {
     if (event == cv::EVENT_LBUTTONDBLCLK)
     {

@@ -18,9 +18,9 @@ public:
 
     virtual ~PropertyInfo() {}
 
-    virtual void serialize(const Variant& v, io::Writer& out) const { }
+    virtual void serialize(const Variant& /*v*/, io::Writer& /*out*/) const { }
 
-    virtual bool deserialize(io::Reader& in, Variant& v) const { return false; }
+    virtual bool deserialize(io::Reader& /*in*/, Variant& /*v*/) const { return false; }
 
     virtual bool serializable() const { return false; }
 
