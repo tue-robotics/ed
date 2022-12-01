@@ -4,6 +4,9 @@ project(ed)
 add_compile_options(-Wall -Werror=all)
 add_compile_options(-Wextra -Werror=extra)
 
+# Find before adding cmake_modules, to not use their deprecated FindEigen
+find_package(PCL REQUIRED COMPONENTS common)
+
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
@@ -23,7 +26,6 @@ find_package(catkin REQUIRED COMPONENTS
   tue_serialization
 )
 
-find_package(PCL REQUIRED COMPONENTS common)
 find_package(OpenCV REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(SDFormat REQUIRED)
