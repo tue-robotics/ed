@@ -133,8 +133,8 @@ target_link_libraries(ed_tf_publisher_plugin ${tf2_LIBRARIES} ${tf2_ros_LIBRARIE
 
 find_package(kdl_parser REQUIRED)
 add_library(ed_robot_plugin plugins/robot_plugin.cpp)
-target_include_directories(ed_tf_publisher_plugin PRIVATE ${kdl_parser_INCLUDE_DIRS})
-target_link_libraries(ed_robot_plugin ${catkin_LIBRARIES} ${kdl_parser_LIBRARIES})
+target_include_directories(ed_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${kdl_parser_INCLUDE_DIRS})
+target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(ed_sync_plugin plugins/sync_plugin.cpp)
 target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
