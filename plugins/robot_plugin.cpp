@@ -8,6 +8,8 @@
 #include <ed/world_model.h>
 #include <ed/entity.h>
 
+#include <geolib/CompositeShape.h>
+
 // URDF shape loading
 #include <ros/package.h>
 #include <geolib/Importer.h>
@@ -66,21 +68,13 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
+geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
 {
     geo::ShapePtr shape;
 
-    if (!link->visual || !link->visual->geometry)
-        return shape;
-
-    geo::Pose3D offset;
-    const urdf::Pose& o = link->visual->origin;
-    offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
-    offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
-
-    if (link->visual->geometry->type == urdf::Geometry::MESH)
+    if (geom->type == urdf::Geometry::MESH)
     {
-        urdf::Mesh* mesh = static_cast<urdf::Mesh*>(link->visual->geometry.get());
+        urdf::Mesh* mesh = static_cast<urdf::Mesh*>(geom.get());
         if (!mesh)
             return shape;
 
@@ -102,9 +96,9 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
                 ROS_ERROR("RobotPlugin: Could not load shape");
         }
     }
-    else if (link->visual->geometry->type == urdf::Geometry::BOX)
+    else if (geom->type == urdf::Geometry::BOX)
     {
-        urdf::Box* box = static_cast<urdf::Box*>(link->visual->geometry.get());
+        urdf::Box* box = static_cast<urdf::Box*>(geom.get());
         if (box)
         {
             double hx = box->dim.x / 2;
@@ -114,9 +108,9 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
             shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
         }
     }
-    else if (link->visual->geometry->type == urdf::Geometry::CYLINDER)
+    else if (geom->type == urdf::Geometry::CYLINDER)
     {
-        urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(link->visual->geometry.get());
+        urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(geom.get());
         if (!cyl)
             return shape;
 
@@ -154,12 +148,36 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
         shape->setMesh(mesh);
     }
 
-    // Transform using visual offset
-    if (shape && offset != geo::Pose3D::identity())
+    return shape;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
+{
+    geo::CompositeShapePtr shape;
+
+    if (!link->visual_array.size())
+        return shape;
+
+    for (urdf::VisualSharedPtr& vis : link->visual_array)
     {
-        geo::ShapePtr shape_tr(new geo::Shape);
-        shape_tr->setMesh(shape->getMesh().getTransformed(offset));
-        shape = shape_tr;
+        const urdf::GeometrySharedPtr& geom = vis->geometry;
+        if (!geom)
+            continue;
+
+        geo::Pose3D offset;
+        const urdf::Pose& o = vis->origin;
+        offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
+        offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
+
+        geo::ShapePtr subshape = URDFGeometryToShape(geom);
+        if (!subshape)
+            continue;
+
+        if (!shape)
+            shape.reset(new geo::CompositeShape());
+        shape->addShape(*subshape, offset);
     }
 
     return shape;
