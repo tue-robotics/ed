@@ -6,6 +6,7 @@
 #include <geolib/Shape.h>
 
 #include <cmath>
+#include <map>
 
 namespace ed
 {
