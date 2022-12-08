@@ -127,6 +127,18 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
         shape.reset(new geo::Shape());
         ed::models::createCylinder(*shape, cyl->radius, cyl->length, 20);
     }
+    else if (geom->type ==  urdf::Geometry::SPHERE)
+    {
+        urdf::Sphere* sphere = static_cast<urdf::Sphere*>(geom.get());
+        if (!sphere)
+        {
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No sphere geometry defined");
+            return shape;
+        }
+
+        shape.reset(new geo::Shape());
+        ed::models::createSphere(*shape, sphere->radius);
+    }
 
     return shape;
 }
