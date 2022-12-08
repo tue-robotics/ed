@@ -4,9 +4,10 @@
 
 #include <ros/node_handle.h>
 
+#include <ed/entity.h>
 #include <ed/update_request.h>
 #include <ed/world_model.h>
-#include <ed/entity.h>
+#include <ed/models/shape_loader.h>
 
 #include <geolib/CompositeShape.h>
 
@@ -118,40 +119,13 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
     {
         urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(geom.get());
         if (!cyl)
+        {
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No cylinder geometry defined");
             return shape;
-
-        geo::Mesh mesh;
-
-        int N = 20;
-
-        // Calculate vertices
-        for(int i = 0; i < N; ++i)
-        {
-            double a = 6.283 * i / N;
-            double x = sin(a) * cyl->radius;
-            double y = cos(a) * cyl->radius;
-
-            mesh.addPoint(x, y, -cyl->length / 2);
-            mesh.addPoint(x, y, cyl->length / 2);
-        }
-
-        // Calculate triangles
-        for(int i = 1; i < N - 1; ++i)
-        {
-            int i2 = 2 * i;
-            mesh.addTriangle(0, i2, i2 + 2);
-            mesh.addTriangle(1, i2 + 1, i2 + 3);
-        }
-
-        for(int i = 0; i < N; ++i)
-        {
-            int j = (i + 1) % N;
-            mesh.addTriangle(i * 2, j * 2, i * 2 + 1);
-            mesh.addTriangle(i * 2 + 1, j * 2, j * 2 + 1);
         }
 
         shape.reset(new geo::Shape());
-        shape->setMesh(mesh);
+        ed::models::createCylinder(*shape, cyl->radius, cyl->length, 20);
     }
 
     return shape;
