@@ -76,7 +76,10 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
     {
         urdf::Mesh* mesh = static_cast<urdf::Mesh*>(geom.get());
         if (!mesh)
+        {
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No mesh geometry defined");
             return shape;
+        }
 
         std::string pkg_prefix = "package://";
         if (mesh->filename.substr(0, pkg_prefix.size()) == pkg_prefix)
@@ -93,20 +96,23 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
             shape = importer.readMeshFile(abs_filename, mesh->scale.x);
 
             if (!shape)
-                ROS_ERROR("RobotPlugin: Could not load shape");
+                ROS_ERROR_STREAM_NAMED("RobotPlugin", "[RobotPlugin] Could not load mesh shape from '" << abs_filename << "'");
         }
     }
     else if (geom->type == urdf::Geometry::BOX)
     {
         urdf::Box* box = static_cast<urdf::Box*>(geom.get());
-        if (box)
+        if (!box)
         {
-            double hx = box->dim.x / 2;
-            double hy = box->dim.y / 2;
-            double hz = box->dim.z / 2;
-
-            shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No box geometry defined");
+            return shape;
         }
+
+        double hx = box->dim.x / 2;
+        double hy = box->dim.y / 2;
+        double hz = box->dim.z / 2;
+
+        shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
     }
     else if (geom->type == urdf::Geometry::CYLINDER)
     {
@@ -164,7 +170,10 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
     {
         const urdf::GeometrySharedPtr& geom = vis->geometry;
         if (!geom)
+        {
+            ROS_WARN_STREAM_NAMED("RobotPlugin" ,"[RobotPlugin] Robot model error: missing geometry for visual in link: '" << link->name << "'");
             continue;
+        }
 
         geo::Pose3D offset;
         const urdf::Pose& o = vis->origin;
