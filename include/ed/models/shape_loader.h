@@ -6,6 +6,7 @@
 #include <geolib/Shape.h>
 
 #include <cmath>
+#include <map>
 
 namespace ed
 {
@@ -68,15 +69,15 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
  * @param radius radius of teh sphere
  * @return index of the inserted point
  */
-int getMiddlePoint(geo::Mesh& mesh, int i1, int i2, std::map<long, int> cache, double radius)
+uint getMiddlePoint(geo::Mesh& mesh, uint i1, uint i2, std::map<unsigned long, uint> cache, double radius)
 {
        // first check if we have it already
        bool firstIsSmaller = i1 < i2;
-       long smallerIndex = firstIsSmaller ? i1 : i2;
-       long greaterIndex = firstIsSmaller ? i2 : i1;
-       long key = (smallerIndex << 32) + greaterIndex;
+       unsigned long smallerIndex = firstIsSmaller ? i1 : i2;
+       unsigned long greaterIndex = firstIsSmaller ? i2 : i1;
+       unsigned long key = (smallerIndex << 32) + greaterIndex;
 
-       std::map<long, int>::const_iterator it = cache.find(key);
+       std::map<unsigned long, uint>::const_iterator it = cache.find(key);
        if (it != cache.end())
            return it->second;
 
@@ -88,10 +89,10 @@ int getMiddlePoint(geo::Mesh& mesh, int i1, int i2, std::map<long, int> cache, d
        p3 = p3.normalized() * radius;
 
        // add vertex makes sure point is on unit sphere
-       int i3 = mesh.addPoint(p3);
+       uint i3 = mesh.addPoint(p3);
 
        // store it, return index
-       cache.insert(std::pair<long, int>(key, i3));
+       cache.insert(std::pair<unsigned long, uint>(key, i3));
        return i3;
 }
 /**
@@ -100,7 +101,7 @@ int getMiddlePoint(geo::Mesh& mesh, int i1, int i2, std::map<long, int> cache, d
  * @param radius radius of the sphere
  * @param recursion_level number of recursions to smooth the mesh, but rapidly increases the mesh.
  */
-void createSphere(geo::Shape& shape, double radius, int recursion_level = 2)
+void createSphere(geo::Shape& shape, double radius, uint recursion_level = 2)
 {
     geo::Mesh mesh;
 
@@ -151,10 +152,10 @@ void createSphere(geo::Shape& shape, double radius, int recursion_level = 2)
     mesh.addTriangle(8, 6, 7);
     mesh.addTriangle(9, 8, 1);
 
-    for (int i = 0; i < recursion_level; i++)
+    for (uint i = 0; i < recursion_level; i++)
     {
         geo::Mesh mesh2;
-        std::map<long, int> cache;
+        std::map<unsigned long, uint> cache;
 
         const std::vector<geo::Vec3>& points = mesh.getPoints();
         for (std::vector<geo::Vec3>::const_iterator it = points.begin(); it != points.end(); ++it)
@@ -164,9 +165,9 @@ void createSphere(geo::Shape& shape, double radius, int recursion_level = 2)
         for (std::vector<geo::TriangleI>::const_iterator it = triangleIs.begin(); it != triangleIs.end(); ++it)
         {
             // replace triangle by 4 triangles
-            int a = getMiddlePoint(mesh2, it->i1_, it->i2_, cache, radius);
-            int b = getMiddlePoint(mesh2, it->i2_, it->i3_, cache, radius);
-            int c = getMiddlePoint(mesh2, it->i3_, it->i1_, cache, radius);
+            uint a = getMiddlePoint(mesh2, it->i1_, it->i2_, cache, radius);
+            uint b = getMiddlePoint(mesh2, it->i2_, it->i3_, cache, radius);
+            uint c = getMiddlePoint(mesh2, it->i3_, it->i1_, cache, radius);
 
             mesh2.addTriangle(it->i1_, a, c);
             mesh2.addTriangle(it->i2_, b, a);
