@@ -4,9 +4,12 @@
 
 #include <ros/node_handle.h>
 
+#include <ed/entity.h>
 #include <ed/update_request.h>
 #include <ed/world_model.h>
-#include <ed/entity.h>
+#include <ed/models/shape_loader.h>
+
+#include <geolib/CompositeShape.h>
 
 // URDF shape loading
 #include <ros/package.h>
@@ -66,23 +69,18 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
+geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
 {
     geo::ShapePtr shape;
 
-    if (!link->visual || !link->visual->geometry)
-        return shape;
-
-    geo::Pose3D offset;
-    const urdf::Pose& o = link->visual->origin;
-    offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
-    offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
-
-    if (link->visual->geometry->type == urdf::Geometry::MESH)
+    if (geom->type == urdf::Geometry::MESH)
     {
-        urdf::Mesh* mesh = static_cast<urdf::Mesh*>(link->visual->geometry.get());
+        urdf::Mesh* mesh = static_cast<urdf::Mesh*>(geom.get());
         if (!mesh)
+        {
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No mesh geometry defined");
             return shape;
+        }
 
         std::string pkg_prefix = "package://";
         if (mesh->filename.substr(0, pkg_prefix.size()) == pkg_prefix)
@@ -99,67 +97,82 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
             shape = importer.readMeshFile(abs_filename, mesh->scale.x);
 
             if (!shape)
-                ROS_ERROR("RobotPlugin: Could not load shape");
+                ROS_ERROR_STREAM_NAMED("RobotPlugin", "[RobotPlugin] Could not load mesh shape from '" << abs_filename << "'");
         }
     }
-    else if (link->visual->geometry->type == urdf::Geometry::BOX)
+    else if (geom->type == urdf::Geometry::BOX)
     {
-        urdf::Box* box = static_cast<urdf::Box*>(link->visual->geometry.get());
-        if (box)
+        urdf::Box* box = static_cast<urdf::Box*>(geom.get());
+        if (!box)
         {
-            double hx = box->dim.x / 2;
-            double hy = box->dim.y / 2;
-            double hz = box->dim.z / 2;
-
-            shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
-        }
-    }
-    else if (link->visual->geometry->type == urdf::Geometry::CYLINDER)
-    {
-        urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(link->visual->geometry.get());
-        if (!cyl)
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No box geometry defined");
             return shape;
-
-        geo::Mesh mesh;
-
-        int N = 20;
-
-        // Calculate vertices
-        for(int i = 0; i < N; ++i)
-        {
-            double a = 6.283 * i / N;
-            double x = sin(a) * cyl->radius;
-            double y = cos(a) * cyl->radius;
-
-            mesh.addPoint(x, y, -cyl->length / 2);
-            mesh.addPoint(x, y, cyl->length / 2);
         }
 
-        // Calculate triangles
-        for(int i = 1; i < N - 1; ++i)
-        {
-            int i2 = 2 * i;
-            mesh.addTriangle(0, i2, i2 + 2);
-            mesh.addTriangle(1, i2 + 1, i2 + 3);
-        }
+        double hx = box->dim.x / 2;
+        double hy = box->dim.y / 2;
+        double hz = box->dim.z / 2;
 
-        for(int i = 0; i < N; ++i)
+        shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
+    }
+    else if (geom->type == urdf::Geometry::CYLINDER)
+    {
+        urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(geom.get());
+        if (!cyl)
         {
-            int j = (i + 1) % N;
-            mesh.addTriangle(i * 2, j * 2, i * 2 + 1);
-            mesh.addTriangle(i * 2 + 1, j * 2, j * 2 + 1);
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No cylinder geometry defined");
+            return shape;
         }
 
         shape.reset(new geo::Shape());
-        shape->setMesh(mesh);
+        ed::models::createCylinder(*shape, cyl->radius, cyl->length, 20);
+    }
+    else if (geom->type ==  urdf::Geometry::SPHERE)
+    {
+        urdf::Sphere* sphere = static_cast<urdf::Sphere*>(geom.get());
+        if (!sphere)
+        {
+            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No sphere geometry defined");
+            return shape;
+        }
+
+        shape.reset(new geo::Shape());
+        ed::models::createSphere(*shape, sphere->radius);
     }
 
-    // Transform using visual offset
-    if (shape && offset != geo::Pose3D::identity())
+    return shape;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
+{
+    geo::CompositeShapePtr shape;
+
+    if (!link->visual_array.size())
+        return shape;
+
+    for (urdf::VisualSharedPtr& vis : link->visual_array)
     {
-        geo::ShapePtr shape_tr(new geo::Shape);
-        shape_tr->setMesh(shape->getMesh().getTransformed(offset));
-        shape = shape_tr;
+        const urdf::GeometrySharedPtr& geom = vis->geometry;
+        if (!geom)
+        {
+            ROS_WARN_STREAM_NAMED("RobotPlugin" ,"[RobotPlugin] Robot model error: missing geometry for visual in link: '" << link->name << "'");
+            continue;
+        }
+
+        geo::Pose3D offset;
+        const urdf::Pose& o = vis->origin;
+        offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
+        offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
+
+        geo::ShapePtr subshape = URDFGeometryToShape(geom);
+        if (!subshape)
+            continue;
+
+        if (!shape)
+            shape.reset(new geo::CompositeShape());
+        shape->addShape(*subshape, offset);
     }
 
     return shape;
