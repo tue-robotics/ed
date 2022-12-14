@@ -137,9 +137,10 @@ int main(int argc, char **argv)
     world_model.update(req);
 
     // Set camera specs
-    cam.setFocalLengths(0.87 * CANVAS_WIDTH, 0.87 * CANVAS_WIDTH);
-    cam.setOpticalCenter(CANVAS_WIDTH / 2 + 0.5, CANVAS_HEIGHT / 2 + 0.5);
-    cam.setOpticalTranslation(0, 0);
+    cam = geo::DepthCamera(CANVAS_WIDTH, CANVAS_HEIGHT,
+                           0.87 * CANVAS_WIDTH, 0.87 * CANVAS_WIDTH,
+                           CANVAS_WIDTH / 2 + 0.5, CANVAS_HEIGHT / 2 + 0.5,
+                           0, 0);
 
     // Determine min and max coordinates of model
     geo::Vector3 p_min(1e9, 1e9, 1e9);
