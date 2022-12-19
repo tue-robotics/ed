@@ -16,11 +16,11 @@
   <build_depend>cmake_modules</build_depend>
 
   <depend>code_profiler</depend>
-  <depend>cv_bridge</depend>
   <depend>diagnostic_updater</depend>
   <depend>ed_msgs</depend>
   <depend>geolib2</depend>
   <depend>kdl_parser</depend>
+  <depend>libopencv-dev</depend>
   <depend>libpcl-all-dev</depend>
   <depend>orocos_kdl</depend>
   <depend>pluginlib</depend>
