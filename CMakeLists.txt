@@ -11,7 +11,6 @@ find_package(PCL REQUIRED COMPONENTS common)
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   code_profiler
-  cv_bridge
   diagnostic_updater
   ed_msgs
   geolib2
@@ -37,7 +36,7 @@ find_package(TinyXML2 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ed_core ed_io ed_server
-  CATKIN_DEPENDS code_profiler cv_bridge ed_msgs geolib2 kdl_parser pluginlib rgbd rgbd_msgs rosconsole_bridge roscpp tue_config tue_filesystem tue_serialization
+  CATKIN_DEPENDS code_profiler ed_msgs geolib2 kdl_parser pluginlib rgbd rgbd_msgs rosconsole_bridge roscpp tue_config tue_filesystem tue_serialization
   DEPENDS OpenCV PCL
 )
 
