@@ -457,7 +457,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, tue::config::
     cfg.value("inverted", inverted);
 
     return getHeightMapShape(image_filename, geo::Vec3(origin_x, origin_y, origin_z), blockheight, resolution, resolution,
-                             (bool) inverted, error);
+                             static_cast<bool>(inverted), error);
 }
 
 // ----------------------------------------------------------------------------------------------------

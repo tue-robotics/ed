@@ -30,7 +30,7 @@ public:
     {
     }
 
-    void renderPixel(int x, int y, float depth, int i_triangle)
+    void renderPixel(int x, int y, float depth, int /*i_triangle*/)
     {
         float old_depth = z_buffer_.at<float>(y, x);
         if (old_depth == 0 || depth < old_depth)
@@ -236,10 +236,10 @@ void GUIPlugin::configure(tue::Configuration config)
     projector_pose_.setOrigin(geo::Vector3(cam_x, cam_y, cam_z));
     projector_pose_.setBasis(geo::Matrix3::identity());
 
-    projector_.setFocalLengths(image_width / (world_width / cam_z),
-                               image_height / (world_height / cam_z));
-    projector_.setOpticalCenter(image_width / 2, image_height / 2);
-    projector_.setOpticalTranslation(0, 0);
+    projector_ = geo::DepthCamera(image_width, image_height,
+                                  image_width / (world_width / cam_z), image_height / (world_height / cam_z),
+                                  image_width / 2, image_height / 2,
+                                  0, 0);
 }
 
 // ----------------------------------------------------------------------------------------------------
