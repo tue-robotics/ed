@@ -136,7 +136,7 @@ target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin ${tf2_geometry_msgs_LI
 
 find_package(kdl_parser REQUIRED)
 add_library(${PROJECT_NAME}_robot_plugin plugins/robot_plugin.cpp)
-target_include_directories(${PROJECT_NAME}_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${kdl_parser_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME}_robot_plugin BEFORE PRIVATE SYSTEM ${kdl_parser_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}_robot_plugin ${kdl_parser_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(${PROJECT_NAME}_sync_plugin plugins/sync_plugin.cpp)
