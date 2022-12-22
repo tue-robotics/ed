@@ -12,9 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   code_profiler
   diagnostic_updater
-  ed_msgs
+  ${PROJECT_NAME}_msgs
   geolib2
-  kdl_parser
   pluginlib
   rgbd
   rgbd_msgs
@@ -35,8 +34,8 @@ find_package(TinyXML2 REQUIRED)
 ###################################
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ed_core ed_io ed_server
-  CATKIN_DEPENDS code_profiler ed_msgs geolib2 kdl_parser pluginlib rgbd rgbd_msgs rosconsole_bridge roscpp tue_config tue_filesystem tue_serialization
+  LIBRARIES ${PROJECT_NAME}_core ${PROJECT_NAME}_io ${PROJECT_NAME}_server ${PROJECT_NAME}_hello_world_plugin ${PROJECT_NAME}_custom_properties_plugin
+  CATKIN_DEPENDS code_profiler ${PROJECT_NAME}_msgs geolib2 pluginlib rgbd rgbd_msgs rosconsole_bridge roscpp tue_config tue_filesystem tue_serialization
   DEPENDS OpenCV PCL
 )
 
@@ -65,15 +64,17 @@ add_library(polypartition 3rdparty/polypartition/src/polypartition.cpp)
 file(GLOB_RECURSE HEADER_FILES include/*.h)
 
 # Declare a cpp library
-add_library(ed_core
-  src/entity.cpp
-  src/measurement.cpp
-  src/world_model.cpp
-  src/transform_cache.cpp
+add_library(${PROJECT_NAME}_core
+  ${HEADER_FILES}
+
   src/convex_hull_2d.cpp
   src/convex_hull_calc.cpp
+  src/entity.cpp
+  src/measurement.cpp
   src/plugin_container.cpp
   src/rendering.cpp
+  src/transform_cache.cpp
+  src/world_model.cpp
 
   # World model querying
   src/world_model/transform_crawler.cpp
@@ -85,39 +86,42 @@ add_library(ed_core
   src/models/xml_shape_parser.cpp
 
   # Logging
-  src/logging.cpp
   src/error_context.cpp
+  src/logging.cpp
 
   # Forward geolib2 logging to rosconsole
   src/rosconsole_bridge.cpp
-
-  ${HEADER_FILES}
 )
-target_link_libraries(ed_core polypartition ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
-add_dependencies(ed_core ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_core polypartition ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_core ${catkin_EXPORTED_TARGETS})
 
-add_library(ed_io
-  src/serialization/serialization.cpp
+add_library(${PROJECT_NAME}_io
   src/io/filesystem/read.cpp
   src/io/filesystem/write.cpp
-  src/io/transport/probe.cpp
-  src/io/transport/probe_ros.cpp
-  src/io/transport/probe_client.cpp
 
   src/io/json_reader.cpp
-)
-target_link_libraries(ed_io ed_core)
 
-add_library(ed_server src/server.cpp include/ed/server.h)
-target_link_libraries(ed_server ed_core ed_io)
+  src/io/transport/probe.cpp
+  src/io/transport/probe_client.cpp
+  src/io/transport/probe_ros.cpp
+
+  src/serialization/serialization.cpp
+)
+target_link_libraries(${PROJECT_NAME}_io ${PROJECT_NAME}_core)
+
+add_library(${PROJECT_NAME}_server
+  include/${PROJECT_NAME}/server.h
+  src/server.cpp
+)
+target_link_libraries(${PROJECT_NAME}_server ${PROJECT_NAME}_core ${PROJECT_NAME}_io)
 
 # ------------------------------------------------------------------------------------------------
 #                                               SERVER
 # ------------------------------------------------------------------------------------------------
 
 # Create executable
-add_executable(ed src/ed.cpp)
-target_link_libraries(ed ed_core ed_io ed_server)
+add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_core ${PROJECT_NAME}_io ${PROJECT_NAME}_server)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
@@ -126,59 +130,116 @@ target_link_libraries(ed ed_core ed_io ed_server)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
-add_library(ed_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
-target_include_directories(ed_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${tf2_geometry_msgs_INCLUDE_DIRS} ${tf2_INCLUDE_DIRS} ${tf2_ros_INCLUDE_DIRS})
-target_link_libraries(ed_tf_publisher_plugin ${tf2_geometry_msgs_LIBRARIES} ${tf2_LIBRARIES} ${tf2_ros_LIBRARIES} ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
+target_include_directories(${PROJECT_NAME}_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${tf2_geometry_msgs_INCLUDE_DIRS} ${tf2_INCLUDE_DIRS} ${tf2_ros_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin ${tf2_geometry_msgs_LIBRARIES} ${tf2_LIBRARIES} ${tf2_ros_LIBRARIES} ${catkin_LIBRARIES})
 
 find_package(kdl_parser REQUIRED)
-add_library(ed_robot_plugin plugins/robot_plugin.cpp)
-target_include_directories(ed_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${kdl_parser_INCLUDE_DIRS})
-target_link_libraries(ed_robot_plugin ${kdl_parser_LIBRARIES} ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}_robot_plugin plugins/robot_plugin.cpp)
+target_include_directories(${PROJECT_NAME}_robot_plugin BEFORE PRIVATE SYSTEM ${kdl_parser_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME}_robot_plugin ${kdl_parser_LIBRARIES} ${catkin_LIBRARIES})
 
-add_library(ed_sync_plugin plugins/sync_plugin.cpp)
-target_link_libraries(ed_sync_plugin ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}_sync_plugin plugins/sync_plugin.cpp)
+target_link_libraries(${PROJECT_NAME}_sync_plugin ${catkin_LIBRARIES})
 
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
 # ------------------------------------------------------------------------------------------------
 
-add_executable(ed_view_model tools/view_model.cpp)
-target_link_libraries(ed_view_model ed_core)
+add_executable(${PROJECT_NAME}_view_model tools/view_model.cpp)
+target_link_libraries(${PROJECT_NAME}_view_model ${PROJECT_NAME}_core)
 
-add_executable(ed_heightmap_to_mesh tools/heightmap_to_mesh.cpp)
-target_link_libraries(ed_heightmap_to_mesh ed_core)
+add_executable(${PROJECT_NAME}_heightmap_to_mesh tools/heightmap_to_mesh.cpp)
+target_link_libraries(${PROJECT_NAME}_heightmap_to_mesh ${PROJECT_NAME}_core)
 
 add_executable(configure tools/configure.cpp)
-target_link_libraries(configure ed_core)
+target_link_libraries(configure ${PROJECT_NAME}_core)
 
-#add_executable(ed_repl tools/repl.cpp)
-#target_link_libraries(ed_repl readline)
+#add_executable(${PROJECT_NAME}_repl tools/repl.cpp)
+#target_link_libraries(${PROJECT_NAME}_repl readline)
 
 # ------------------------------------------------------------------------------------------------
 #                                               EXAMPLES
 # ------------------------------------------------------------------------------------------------
 
-add_library(ed_hello_world_plugin examples/hello_world/hello_world_plugin.cpp)
-add_library(ed_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
+add_library(${PROJECT_NAME}_hello_world_plugin examples/hello_world/hello_world_plugin.cpp)
+add_library(${PROJECT_NAME}_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TESTS
 # ------------------------------------------------------------------------------------------------
 
-add_executable(ed_test_wm test/test_wm.cpp)
-target_link_libraries(ed_test_wm ed_core ${OpenCV_LIBRARIES})
+add_executable(${PROJECT_NAME}_test_wm test/test_wm.cpp)
+target_link_libraries(${PROJECT_NAME}_test_wm ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
 
 add_executable(test_mask test/test_mask.cpp)
-target_link_libraries(test_mask ed_core ${OpenCV_LIBRARIES})
+target_link_libraries(test_mask ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
 
 add_executable(test_service_speed test/test_service_speed.cpp)
-target_link_libraries(test_service_speed ed_core)
+target_link_libraries(test_service_speed ${PROJECT_NAME}_core)
 
 add_executable(show_gui test/show_gui.cpp)
-target_link_libraries(show_gui ed_core ${OpenCV_LIBRARIES})
+target_link_libraries(show_gui ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
 
-add_executable(ed_test_heightmap_triangulation
+add_executable(${PROJECT_NAME}_test_heightmap_triangulation
   test/test_heightmap_triangulation.cpp
 )
-target_link_libraries(ed_test_heightmap_triangulation ed_core ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES} ${tue_config_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_test_heightmap_triangulation ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES} ${tue_config_LIBRARIES})
 
+
+# ------------------------------------------------------------------------------------------------
+#                                               INSTALL
+# ------------------------------------------------------------------------------------------------
+
+catkin_install_python(
+  PROGRAMS
+    tools/entity-teleop
+    tools/list_plugins
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  FILES plugins.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(
+  DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
+install(
+  TARGETS
+    ${PROJECT_NAME}_core
+    ${PROJECT_NAME}_io
+    ${PROJECT_NAME}_server
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+)
+
+install(
+  TARGETS
+    configure
+    ${PROJECT_NAME}
+    ${PROJECT_NAME}_custom_properties_plugin
+    ${PROJECT_NAME}_heightmap_to_mesh
+    ${PROJECT_NAME}_hello_world_plugin
+    ${PROJECT_NAME}_test_heightmap_triangulation
+    ${PROJECT_NAME}_test_wm
+    ${PROJECT_NAME}_view_model
+    polypartition
+    show_gui
+    test_mask
+    test_service_speed
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# ------------------------------------------------------------------------------------------------
+#                                                 CI
+# ------------------------------------------------------------------------------------------------
+
+if (CATKIN_ENABLE_TESTING)
+  find_package(catkin_lint_cmake REQUIRED)
+  catkin_add_catkin_lint_test("-W2 --ignore LITERAL_PROJECT_NAME --ignore UNSORTED_LIST")
+endif()

@@ -40,11 +40,13 @@
   <exec_depend>python3-rospkg</exec_depend>
   <exec_depend>roslib</exec_depend>
 
+  <test_depend>catkin_lint_cmake</test_depend>
+
   <doc_depend>doxygen</doc_depend>
 
   <export>
-    <rosdoc config="rosdoc.yaml" />
     <ed plugin="${prefix}/plugins.xml" />
+    <rosdoc config="rosdoc.yaml" />
   </export>
 
 </package>
