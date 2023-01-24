@@ -36,6 +36,7 @@ We assume you have successfully installed ROS and set-up a Catkin workspace. Che
     cd <your_catkin_workspace>/src
 
     git clone https://github.com/tue-robotics/ed.git
+    git -C ed submodule update --init --recursive
     git clone https://github.com/tue-robotics/ed_object_models.git
     git clone https://github.com/tue-robotics/ed_msgs.git
     git clone https://github.com/tue-robotics/code_profiler.git
