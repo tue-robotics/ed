@@ -48,6 +48,8 @@ We assume you have successfully installed ROS and set-up a Catkin workspace. Che
 ED is able to read (a subset of) [SDF](http://sdformat.org/), therefore the [SDF library](https://bitbucket.org/osrf/sdformat) is used. The minimal required version is 4.4. On ubuntu 16.04, you need to add the OSRF apt sources ([link](http://gazebosim.org/tutorials?tut=install_ubuntu)), as the released version on the main channel is just 4.0.
 To install the library (version 4.X): `libsdformat4-dev`
 
+Clone the submodules of ed via `git submodule update --init`
+
 Install the other dependencies by rsolving them via `rosdep`.
 
 This should be sufficient to successfully compile ED:
