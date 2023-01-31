@@ -89,7 +89,7 @@ add_library(${PROJECT_NAME}_core
   src/error_context.cpp
   src/logging.cpp
 
-  # Forward geolib2 logging to rosconsole
+  # Forward geolib2/tue_filesystem logging to rosconsole
   src/rosconsole_bridge.cpp
 )
 target_link_libraries(${PROJECT_NAME}_core polypartition ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
