@@ -35,7 +35,7 @@ find_package(TinyXML2 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_core ${PROJECT_NAME}_io ${PROJECT_NAME}_server ${PROJECT_NAME}_hello_world_plugin ${PROJECT_NAME}_custom_properties_plugin
-  CATKIN_DEPENDS code_profiler ${PROJECT_NAME}_msgs geolib2 pluginlib rgbd rgbd_msgs rosconsole_bridge roscpp tue_config tue_filesystem tue_serialization
+  CATKIN_DEPENDS code_profiler ${PROJECT_NAME}_msgs geolib2 pluginlib rgbd rgbd_msgs roscpp tue_config tue_filesystem tue_serialization
   DEPENDS OpenCV PCL
 )
 
@@ -89,7 +89,7 @@ add_library(${PROJECT_NAME}_core
   src/error_context.cpp
   src/logging.cpp
 
-  # Forward geolib2 logging to rosconsole
+  # Forward geolib2/tue_filesystem logging to rosconsole
   src/rosconsole_bridge.cpp
 )
 target_link_libraries(${PROJECT_NAME}_core polypartition ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
