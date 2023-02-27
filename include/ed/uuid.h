@@ -36,6 +36,10 @@ private:
 
     std::string id_;
 
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version);
+    friend class boost::serialization::access;
+
 public:
 
     mutable Idx idx;

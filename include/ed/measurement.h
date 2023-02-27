@@ -4,6 +4,7 @@
 #include "ed/types.h"
 #include "ed/mask.h"
 #include "ed/rgbd_data.h"
+#include "boost/serialization/access.hpp"
 
 namespace ed
 {
@@ -33,6 +34,9 @@ protected:
     double timestamp_;
     unsigned int seq_;
 
+    template <class Archive>
+    void serialize(Archive & ar, const unsigned int version);
+    friend class boost::serialization::access;
 };
 
 }

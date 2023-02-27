@@ -245,7 +245,10 @@ private:
     ConvexHull convex_hull_new_;
 
     bool has_pose_;
-    geo::Pose3D pose_;
+    geo::Pose3D pose_;//will be phased out
+
+    std::vector<EntityConstPtr> siblings_;
+    EntityConstPtr parent_;
 
 //    double creation_time_;
 
@@ -262,6 +265,10 @@ private:
     void updateConvexHullFromShape();
 
     std::set<std::string> flags_;
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version);
+    friend class boost::serialization::access;
 
 };
 

@@ -130,6 +130,9 @@ private:
 
     Idx addNewEntity(const EntityConstPtr& e);
 
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version);
+    friend class boost::serialization::access;
 
 };
 

@@ -4,6 +4,7 @@
 #include "ed/types.h"
 #include "ed/property_key.h"
 #include "ed/property_info.h"
+#include "boost/serialization/access.hpp"
 
 #include <map>
 
@@ -87,6 +88,9 @@ private:
 
     std::map<std::string, PropertyKeyDBEntry*> name_to_info_;
 
+    template <class Archive>
+    void serialize(Archive & ar, const unsigned int version);
+    friend class boost::serialization::access;
 };
 
 } // end namespace
