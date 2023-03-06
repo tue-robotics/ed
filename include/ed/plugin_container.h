@@ -1,5 +1,5 @@
-#ifndef WIRE_VOLUME_PLUGIN_CONTAINER_H_
-#define WIRE_VOLUME_PLUGIN_CONTAINER_H_
+#ifndef ED_PLUGIN_CONTAINER_H_
+#define ED_PLUGIN_CONTAINER_H_
 
 #include "ed/loop_usage_status.h"
 #include "ed/types.h"
