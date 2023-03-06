@@ -1,4 +1,9 @@
-#include <ros/ros.h>
+#include <ros/advertise_service_options.h>
+#include <ros/callback_queue.h>
+#include <ros/init.h>
+#include <ros/node_handle.h>
+#include <ros/rate.h>
+#include <ros/service.h>
 
 #include "ed/server.h"
 
