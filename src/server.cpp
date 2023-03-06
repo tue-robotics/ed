@@ -1,29 +1,27 @@
 #include "ed/server.h"
 
 #include "ed/entity.h"
+#include "ed/error_context.h"
 #include "ed/measurement.h"
-
-#include <geolib/Box.h>
+#include "ed/plugin.h"
+#include "ed/plugin_container.h"
+#include "ed/types.h"
+#include "ed/world_model.h"
 
 // Storing measurements to disk
 #include "ed/io/filesystem/write.h"
 
-#include <tue/filesystem/path.h>
+#include "ed/serialization/serialization.h"
 
-#include "ed/plugin.h"
-#include "ed/plugin_container.h"
-#include "ed/world_model.h"
-
+#include <tue/config/writer.h>
 #include <tue/config/loaders/yaml.h>
 
-#include <boost/make_shared.hpp>
+#include <tue/filesystem/path.h>
 
 #include <std_msgs/String.h>
 
-#include "ed/serialization/serialization.h"
-#include <tue/config/writer.h>
-
-#include "ed/error_context.h"
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace ed
 {
@@ -33,6 +31,10 @@ namespace ed
 Server::Server() : world_model_(new WorldModel(&property_key_db_))
 {
     updater_.setHardwareID("none");
+
+    tf_buffer_ = ed::make_shared<tf2_ros::Buffer>();
+    tf_buffer_const_ = ed::const_pointer_cast<const tf2_ros::Buffer>(tf_buffer_);
+    tf_listener_ = ed::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
 // ----------------------------------------------------------------------------------------------------

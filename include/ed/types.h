@@ -9,6 +9,12 @@
 #include <limits>
 #include <stdint.h>
 
+namespace tf2_ros {
+
+class Buffer;
+
+}
+
 namespace ed
 {
 
@@ -72,6 +78,10 @@ class ImageMask;
 class UUID;
 
 typedef std::string TYPE;
+
+// tf2_ros::Buffer
+typedef shared_ptr<tf2_ros::Buffer> TFBufferPtr;
+typedef shared_ptr<const tf2_ros::Buffer> TFBufferConstPtr;
 
 }
 

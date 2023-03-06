@@ -3,21 +3,28 @@
 
 #include "ed/types.h"
 
-#include <diagnostic_updater/diagnostic_updater.h>
+#include "ed/property_key_db.h"
+#include <ed/models/model_loader.h>
 
-#include <tf/transform_listener.h>
+
+#include <diagnostic_updater/diagnostic_updater.h>
 
 #include <ros/publisher.h>
 
-#include <ed/models/model_loader.h>
-
-#include "ed/property_key_db.h"
+#include <tf2_ros/buffer.h>
 
 #include "tue/config/configuration.h"
 
 #include <map>
 #include <queue>
 #include <vector>
+
+namespace tf2_ros
+{
+
+class TransformListener;
+
+}
 
 namespace ed
 {
@@ -89,6 +96,10 @@ private:
     //! Profiling
     diagnostic_updater::Updater updater_;
     ros::Publisher pub_stats_;
+
+    TFBufferPtr tf_buffer_;
+    TFBufferConstPtr tf_buffer_const_;
+    ed::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }

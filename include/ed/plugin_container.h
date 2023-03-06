@@ -27,7 +27,7 @@ class PluginContainer
 
 public:
 
-    PluginContainer();
+    PluginContainer(const ed::TFBufferConstPtr& tf_buffer_);
 
     virtual ~PluginContainer();
 
@@ -110,6 +110,8 @@ protected:
     WorldModelConstPtr world_new_;
 
     WorldModelConstPtr world_current_;
+
+    TFBufferConstPtr tf_buffer_;
 
     std::unique_ptr<ed::LoopUsageStatus> loop_usage_status_;
 
