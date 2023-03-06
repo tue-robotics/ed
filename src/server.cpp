@@ -124,7 +124,7 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
             // Create world model copy (shallow)
             boost::unique_lock<boost::mutex> ul(mutex_world_);
-            WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+            WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
 
             new_world_model->update(*req);
 
@@ -179,7 +179,7 @@ void Server::reset(bool keep_all_shapes)
 
     // Create world model copy
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
 
     // Apply the deletion request
     new_world_model->update(*req_init_world);
@@ -218,7 +218,7 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
     }
 
     // Create a plugin container
-    PluginContainerPtr container(new PluginContainer());
+    PluginContainerPtr container = ed::make_shared<PluginContainer>(tf_buffer_const_);
 
     InitData init(property_key_db_, config);
 
@@ -252,7 +252,7 @@ void Server::stepPlugins()
             {
                 // Create world model copy (shallow)
                 boost::unique_lock<boost::mutex> ul(mutex_world_);
-                new_world_model = boost::make_shared<WorldModel>(*world_model_);
+                new_world_model = ed::make_shared<WorldModel>(*world_model_);
             }
 
             new_world_model->update(*c->updateRequest());
@@ -289,7 +289,7 @@ void Server::update()
 
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Notify all plugins of the updated world model
@@ -311,7 +311,7 @@ void Server::update(const ed::UpdateRequest& req)
 {
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Update the world model
@@ -390,7 +390,7 @@ void Server::update(const std::string& update_str, std::string& error)
 
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Update the world model

@@ -1,6 +1,6 @@
 #include "ed/models/model_loader.h"
 
-#include <boost/make_shared.hpp>
+#include "ed/types.h"
 
 #include "ed/update_request.h"
 #include "ed/entity.h"
@@ -536,11 +536,11 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
             std::string child_id;
             geo::Pose3D child_pose;
             std::string uri;
-            boost::shared_ptr<const geo::Pose3D> child_posePtr;
+            ed::shared_ptr<const geo::Pose3D> child_posePtr;
 
             r.value("name", child_id);
             if (readPose(r, child_pose))
-                child_posePtr = boost::make_shared<const geo::Pose3D>(child_pose);
+                child_posePtr = ed::make_shared<const geo::Pose3D>(child_pose);
             if (!r.value("uri", uri))
             {
                 error << "No uri found for include in model: '" << id << "'." << std::endl << r.data() << std::endl;

@@ -46,7 +46,7 @@ public:
     WorldModelConstPtr world_model() const
     {
         boost::lock_guard<boost::mutex> lg(mutex_world_);
-        return boost::make_shared<const WorldModel>(*world_model_);
+        return ed::make_shared<const WorldModel>(*world_model_);
     }
 
     PluginContainerPtr loadPlugin(const std::string& plugin_name, tue::Configuration config);
