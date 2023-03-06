@@ -12,8 +12,8 @@
 
 namespace ed {
 
-struct WorldModel;
-struct UpdateRequest;
+class WorldModel;
+class UpdateRequest;
 
 struct PluginInput
 {
