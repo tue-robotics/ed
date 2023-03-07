@@ -1,29 +1,27 @@
 #include "ed/server.h"
 
 #include "ed/entity.h"
+#include "ed/error_context.h"
 #include "ed/measurement.h"
-
-#include <geolib/Box.h>
+#include "ed/plugin.h"
+#include "ed/plugin_container.h"
+#include "ed/types.h"
+#include "ed/world_model.h"
 
 // Storing measurements to disk
 #include "ed/io/filesystem/write.h"
 
-#include <tue/filesystem/path.h>
+#include "ed/serialization/serialization.h"
 
-#include "ed/plugin.h"
-#include "ed/plugin_container.h"
-#include "ed/world_model.h"
-
+#include <tue/config/writer.h>
 #include <tue/config/loaders/yaml.h>
 
-#include <boost/make_shared.hpp>
+#include <tue/filesystem/path.h>
 
 #include <std_msgs/String.h>
 
-#include "ed/serialization/serialization.h"
-#include <tue/config/writer.h>
-
-#include "ed/error_context.h"
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace ed
 {
@@ -33,6 +31,10 @@ namespace ed
 Server::Server() : world_model_(new WorldModel(&property_key_db_))
 {
     updater_.setHardwareID("none");
+
+    tf_buffer_ = ed::make_shared<tf2_ros::Buffer>();
+    tf_buffer_const_ = ed::const_pointer_cast<const tf2_ros::Buffer>(tf_buffer_);
+    tf_listener_ = ed::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -124,7 +126,7 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
             // Create world model copy (shallow)
             boost::unique_lock<boost::mutex> ul(mutex_world_);
-            WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+            WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
 
             new_world_model->update(*req);
 
@@ -179,7 +181,7 @@ void Server::reset(bool keep_all_shapes)
 
     // Create world model copy
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
 
     // Apply the deletion request
     new_world_model->update(*req_init_world);
@@ -218,7 +220,7 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
     }
 
     // Create a plugin container
-    PluginContainerPtr container(new PluginContainer());
+    PluginContainerPtr container = ed::make_shared<PluginContainer>(tf_buffer_const_);
 
     InitData init(property_key_db_, config);
 
@@ -252,7 +254,7 @@ void Server::stepPlugins()
             {
                 // Create world model copy (shallow)
                 boost::unique_lock<boost::mutex> ul(mutex_world_);
-                new_world_model = boost::make_shared<WorldModel>(*world_model_);
+                new_world_model = ed::make_shared<WorldModel>(*world_model_);
             }
 
             new_world_model->update(*c->updateRequest());
@@ -289,7 +291,7 @@ void Server::update()
 
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Notify all plugins of the updated world model
@@ -311,7 +313,7 @@ void Server::update(const ed::UpdateRequest& req)
 {
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Update the world model
@@ -390,7 +392,7 @@ void Server::update(const std::string& update_str, std::string& error)
 
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Update the world model

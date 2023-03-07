@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   rgbd_msgs
   rosconsole_bridge
   roscpp
+  tf2_ros
   tue_config
   tue_filesystem
   tue_serialization
@@ -35,7 +36,7 @@ find_package(TinyXML2 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_core ${PROJECT_NAME}_io ${PROJECT_NAME}_server ${PROJECT_NAME}_hello_world_plugin ${PROJECT_NAME}_custom_properties_plugin
-  CATKIN_DEPENDS code_profiler ${PROJECT_NAME}_msgs geolib2 pluginlib rgbd rgbd_msgs roscpp tue_config tue_filesystem tue_serialization
+  CATKIN_DEPENDS code_profiler ${PROJECT_NAME}_msgs geolib2 pluginlib rgbd rgbd_msgs roscpp tf2_ros tue_config tue_filesystem tue_serialization
   DEPENDS OpenCV PCL
 )
 
@@ -129,10 +130,9 @@ target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_core ${PROJECT_NAME}_io ${
 
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
 add_library(${PROJECT_NAME}_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
-target_include_directories(${PROJECT_NAME}_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${tf2_geometry_msgs_INCLUDE_DIRS} ${tf2_INCLUDE_DIRS} ${tf2_ros_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin ${tf2_geometry_msgs_LIBRARIES} ${tf2_LIBRARIES} ${tf2_ros_LIBRARIES} ${catkin_LIBRARIES})
+target_include_directories(${PROJECT_NAME}_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${tf2_geometry_msgs_INCLUDE_DIRS} ${tf2_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin ${tf2_geometry_msgs_LIBRARIES} ${tf2_LIBRARIES} ${catkin_LIBRARIES})
 
 find_package(kdl_parser REQUIRED)
 add_library(${PROJECT_NAME}_robot_plugin plugins/robot_plugin.cpp)

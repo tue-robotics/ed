@@ -1,7 +1,8 @@
 #include "ed/plugin_container.h"
 
 #include <ed/error_context.h>
-#include <ed/plugin.h>
+#include "ed/init_data.h"
+#include "ed/plugin.h"
 
 #include <pluginlib/class_loader.h>
 
@@ -12,8 +13,9 @@ namespace ed
 
 // --------------------------------------------------------------------------------
 
-PluginContainer::PluginContainer()
-    : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10), loop_frequency_max_(11), loop_frequency_min_(9), step_finished_(true), t_last_update_(0),
+PluginContainer::PluginContainer(const TFBufferConstPtr& tf_buffer)
+    : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10),
+      loop_frequency_max_(11), loop_frequency_min_(9), step_finished_(true), t_last_update_(0), tf_buffer_(tf_buffer),
       loop_usage_status_(nullptr)
 {
 }
@@ -51,6 +53,7 @@ PluginPtr PluginContainer::loadPlugin(const std::string& plugin_name, const std:
         {
             name_ = plugin_name;
             plugin_->name_ = plugin_name;
+            plugin_->tf_buffer_ = tf_buffer_;
 
             configure(init, false);
 

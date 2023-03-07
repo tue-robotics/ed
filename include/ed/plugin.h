@@ -6,14 +6,15 @@
 
 #include <tue/config/configuration.h>
 
+#include "ed/types.h"
 #include "ed/init_data.h"
+
+#include <tf2_ros/buffer.h>
 
 #include <vector>
 
-namespace ed {
 
-struct WorldModel;
-struct UpdateRequest;
+namespace ed {
 
 struct PluginInput
 {
@@ -43,6 +44,10 @@ public:
     virtual void process(const PluginInput& /*data*/, UpdateRequest& /*req*/) {}
 
     const std::string& name() const { return name_; }
+
+protected:
+
+    TFBufferConstPtr tf_buffer_;
 
 private:
 

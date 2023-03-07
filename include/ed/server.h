@@ -3,21 +3,28 @@
 
 #include "ed/types.h"
 
-#include <diagnostic_updater/diagnostic_updater.h>
+#include "ed/property_key_db.h"
+#include <ed/models/model_loader.h>
 
-#include <tf/transform_listener.h>
+
+#include <diagnostic_updater/diagnostic_updater.h>
 
 #include <ros/publisher.h>
 
-#include <ed/models/model_loader.h>
-
-#include "ed/property_key_db.h"
+#include <tf2_ros/buffer.h>
 
 #include "tue/config/configuration.h"
 
 #include <map>
 #include <queue>
 #include <vector>
+
+namespace tf2_ros
+{
+
+class TransformListener;
+
+}
 
 namespace ed
 {
@@ -46,7 +53,7 @@ public:
     WorldModelConstPtr world_model() const
     {
         boost::lock_guard<boost::mutex> lg(mutex_world_);
-        return boost::make_shared<const WorldModel>(*world_model_);
+        return ed::make_shared<const WorldModel>(*world_model_);
     }
 
     PluginContainerPtr loadPlugin(const std::string& plugin_name, tue::Configuration config);
@@ -89,6 +96,10 @@ private:
     //! Profiling
     diagnostic_updater::Updater updater_;
     ros::Publisher pub_stats_;
+
+    TFBufferPtr tf_buffer_;
+    TFBufferConstPtr tf_buffer_const_;
+    ed::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }
