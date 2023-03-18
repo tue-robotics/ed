@@ -60,7 +60,7 @@ public:
     inline void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++shape_revision_; }
     inline void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++shape_revision_; }
 
-    inline int shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
+    inline unsigned long shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
 
     inline const ConvexHull& convexHull() const { return convex_hull_new_; }
 
@@ -239,7 +239,7 @@ private:
 
     geo::ShapeConstPtr shape_;
     std::map<std::string, geo::ShapeConstPtr> volumes_;
-    int shape_revision_;
+    unsigned long shape_revision_;
 
     std::map<std::string, MeasurementConvexHull> convex_hull_map_;
     ConvexHull convex_hull_new_;
