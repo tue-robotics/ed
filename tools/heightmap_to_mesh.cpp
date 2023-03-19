@@ -1,9 +1,11 @@
 #include "../src/models/shape_loader_private.h"
-#include <geolib/Exporter.h>
-//#include <geolib/Mesh.h>
-//#include <geolib/Triangle.h>
 
-int main(int argc, char **argv) {
+#include <geolib/io/export.h>
+#include <geolib/Shape.h>
+
+
+int main(int argc, char **argv)
+{
 
     // Parse command-line arguments
     if (argc < 3 || argc > 7) {
@@ -45,8 +47,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    geo::Exporter exp;
-    if (!exp.writeMeshFile(output_file, *shape))
+    if (!geo::io::writeMeshFile(output_file, *shape))
     {
         std::cout << "Could not convert loaded shape to mesh file: " << output_file << std::endl;
         return 1;

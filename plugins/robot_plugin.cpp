@@ -13,7 +13,7 @@
 
 // URDF shape loading
 #include <ros/package.h>
-#include <geolib/Importer.h>
+#include <geolib/io/import.h>
 #include <geolib/Box.h>
 
 #include <ed/world_model/transform_crawler.h>
@@ -93,8 +93,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
             std::string pkg_path = ros::package::getPath(pkg);
             std::string abs_filename = pkg_path + "/" + rel_filename;
 
-            geo::Importer importer;
-            shape = importer.readMeshFile(abs_filename, mesh->scale.x);
+            shape = geo::io::readMeshFile(abs_filename, mesh->scale.x);
 
             if (!shape)
                 ROS_ERROR_STREAM_NAMED("RobotPlugin", "[RobotPlugin] Could not load mesh shape from '" << abs_filename << "'");

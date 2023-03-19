@@ -5,10 +5,10 @@
 
 #include <tue/filesystem/path.h>
 
+#include <geolib/CompositeShape.h>
+#include <geolib/io/import.h>
 #include <geolib/serialization.h>
 #include <geolib/Shape.h>
-#include <geolib/CompositeShape.h>
-#include <geolib/Importer.h>
 
 // Heightmap generation
 #include "polypartition/polypartition.h"
@@ -697,7 +697,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             }
             else if (xt == ".3ds" || xt == ".stl" || xt == ".dae")
             {
-                shape = geo::Importer::readMeshFile(shape_path.string());
+                shape = geo::io::readMeshFile(shape_path.string());
             }
             else if (xt == ".xml")
             {
@@ -827,7 +827,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             }
             tue::filesystem::Path mesh_path = getUriPath(uri_path);
             if (mesh_path.exists())
-                shape = geo::Importer::readMeshFile(mesh_path.string(), scale);
+                shape = geo::io::readMeshFile(mesh_path.string(), scale);
             else
                 error << "[ED::MODELS::LOADSHAPE] Mesh File: '" << mesh_path.string() << "' doesn't exist." << std::endl;
         }
