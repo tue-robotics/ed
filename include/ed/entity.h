@@ -35,21 +35,21 @@ public:
     ~Entity();
 
     static UUID generateID();
-    const UUID& id() const { return id_; }
+    inline const UUID& id() const { return id_; }
 
-    const TYPE& type() const { return type_; }
-    void setType(const TYPE& type) { type_ = type; types_.insert(type); }
+    inline const TYPE& type() const { return type_; }
+    inline void setType(const TYPE& type) { type_ = type; types_.insert(type); }
 
-    const std::set<TYPE>& types() const { return types_; }
-    void addType(const TYPE& type) { types_.insert(type); }
-    void removeType(const TYPE& type) { types_.erase(type); }
-    bool hasType(const TYPE& type) const { return types_.find(type) != types_.end(); }
+    inline const std::set<TYPE>& types() const { return types_; }
+    inline void addType(const TYPE& type) { types_.insert(type); }
+    inline void removeType(const TYPE& type) { types_.erase(type); }
+    inline bool hasType(const TYPE& type) const { return types_.find(type) != types_.end(); }
 
     void measurements(std::vector<MeasurementConstPtr>& measurements, double min_timestamp = 0) const;
     void measurements(std::vector<MeasurementConstPtr>& measurements, unsigned int num) const;
     MeasurementConstPtr lastMeasurement() const;
-    unsigned int measurementSeq() const { return measurements_seq_; }
-    MeasurementConstPtr bestMeasurement() const { return best_measurement_; }
+    inline unsigned int measurementSeq() const { return measurements_seq_; }
+    inline MeasurementConstPtr bestMeasurement() const { return best_measurement_; }
 
     void addMeasurement(MeasurementConstPtr measurement);
 
@@ -57,10 +57,10 @@ public:
     void setShape(const geo::ShapeConstPtr& shape);
 
     inline const std::map<std::string, geo::ShapeConstPtr>& volumes() const { return volumes_; }
-    void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++shape_revision_; }
-    void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++shape_revision_; }
+    inline void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++shape_revision_; }
+    inline void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++shape_revision_; }
 
-    inline int shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
+    inline unsigned long shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
 
     inline const ConvexHull& convexHull() const { return convex_hull_new_; }
 
@@ -82,7 +82,7 @@ public:
         updateConvexHull();
     }
 
-    const std::map<std::string, MeasurementConvexHull>& convexHullMap() const { return convex_hull_map_; }
+    inline const std::map<std::string, MeasurementConvexHull>& convexHullMap() const { return convex_hull_map_; }
 
     inline const geo::Pose3D& pose() const
     {
@@ -131,9 +131,9 @@ public:
         return it->second;
     }
 
-    const std::map<Idx, Idx>& relationsFrom() const { return relations_from_; }
+    inline const std::map<Idx, Idx>& relationsFrom() const { return relations_from_; }
 
-    const std::map<Idx, Idx>& relationsTo() const { return relations_to_; }
+    inline const std::map<Idx, Idx>& relationsTo() const { return relations_to_; }
 
     template<typename T>
     const T* property(const PropertyKey<T>& key) const
@@ -199,25 +199,25 @@ public:
 
     const std::map<Idx, Property>& properties() const { return properties_; }
 
-    unsigned long revision() const { return revision_; }
+    inline unsigned long revision() const { return revision_; }
 
-    void setRevision(unsigned long revision) { revision_ = revision; }
+    inline void setRevision(unsigned long revision) { revision_ = revision; }
 
-    void setExistenceProbability(double prob) { existence_prob_ = prob; }
+    inline void setExistenceProbability(double prob) { existence_prob_ = prob; }
 
-    double existenceProbability() const { return existence_prob_; }
+    inline double existenceProbability() const { return existence_prob_; }
 
-    void setLastUpdateTimestamp(double t) { last_update_timestamp_ = t; }
+    inline void setLastUpdateTimestamp(double t) { last_update_timestamp_ = t; }
 
-    double lastUpdateTimestamp() const { return last_update_timestamp_; }
+    inline double lastUpdateTimestamp() const { return last_update_timestamp_; }
 
-    void setFlag(const std::string& flag) { flags_.insert(flag); }
+    inline void setFlag(const std::string& flag) { flags_.insert(flag); }
 
-    void removeFlag(const std::string& flag) { flags_.erase(flag); }
+    inline void removeFlag(const std::string& flag) { flags_.erase(flag); }
 
-    bool hasFlag(const std::string& flag) const { return flags_.find(flag) != flags_.end(); }
+    inline bool hasFlag(const std::string& flag) const { return flags_.find(flag) != flags_.end(); }
 
-    const std::set<std::string>& flags() const { return flags_; }
+    inline const std::set<std::string>& flags() const { return flags_; }
 
 private:
 
@@ -239,7 +239,7 @@ private:
 
     geo::ShapeConstPtr shape_;
     std::map<std::string, geo::ShapeConstPtr> volumes_;
-    int shape_revision_;
+    unsigned long shape_revision_;
 
     std::map<std::string, MeasurementConvexHull> convex_hull_map_;
     ConvexHull convex_hull_new_;
