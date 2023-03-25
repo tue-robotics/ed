@@ -119,7 +119,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
 
                     ed_msgs::SubVolume sub_volume;
                     convert(shape_tr,  sub_volume);
-                    sub_volume.center_point.header.frame_id = "/" + e.id().str();
+                    sub_volume.center_point.header.frame_id = e.id().str();
                     volume.subvolumes.push_back(sub_volume);
                 }
             }
