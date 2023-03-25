@@ -22,7 +22,9 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
     last_update_timestamp_(0),
     measurements_(measurement_buffer_size),
     measurements_seq_(0),
-    shape_revision_(0),
+    visual_revision_(0),
+    collision_revision_(0),
+    volumes_revision_(0),
 //    creation_time_(creation_time),
     has_pose_(false),
     pose_(geo::Pose3D::identity())
@@ -83,9 +85,9 @@ void Entity::updateConvexHull()
 
 // ----------------------------------------------------------------------------------------------------
 
-void Entity::updateConvexHullFromShape()
+void Entity::updateConvexHullFromVisual()
 {
-    const std::vector<geo::Vector3>& vertices = shape_->getMesh().getPoints();
+    const std::vector<geo::Vector3>& vertices = visual_->getMesh().getPoints();
 
     if (vertices.empty())
         return;
@@ -114,16 +116,28 @@ void Entity::updateConvexHullFromShape()
 
 // ----------------------------------------------------------------------------------------------------
 
-void Entity::setShape(const geo::ShapeConstPtr& shape)
+void Entity::setVisual(const geo::ShapeConstPtr& visual)
 {
-    if (shape_ != shape)
+    if (visual_ != visual)
     {
-        ++shape_revision_;
-        shape_ = shape;
+        ++visual_revision_;
+        visual_ = visual;
 
-        updateConvexHullFromShape();
+        updateConvexHullFromVisual();
     }
 }
+
+// ----------------------------------------------------------------------------------------------------
+
+void Entity::setCollision(const geo::ShapeConstPtr& collision)
+{
+    if (collision_ != collision)
+    {
+        ++collision_revision_;
+        collision_ = collision;
+    }
+}
+
 
 // ----------------------------------------------------------------------------------------------------
 

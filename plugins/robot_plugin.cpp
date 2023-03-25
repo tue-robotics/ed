@@ -341,7 +341,7 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
                 std::string id = link->name;
                 if (link->name.find(robot_name_) == std::string::npos)
                     id = robot_name_ + "/" + link->name;
-                req.setShape(id, shape);
+                req.setVisual(id, shape);
             }
         }
 

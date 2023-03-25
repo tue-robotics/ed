@@ -156,7 +156,7 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
         const ed::EntityConstPtr& e = *it;
         const std::string& id = e->id().str();
 
-        if (e->shape() && e->has_pose() && !e->hasFlag("self") && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
+        if (e->visual() && e->has_pose() && !e->hasFlag("self") && (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
         {
 
             if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall")) continue;
@@ -178,7 +178,7 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
             }
 
             geo::Pose3D pose = cam_pose_inv * e->pose();
-            renderMesh(cam, pose, e->shape()->getMesh(), color, res, flatten);
+            renderMesh(cam, pose, e->visual()->getMesh(), color, res, flatten);
 
             // Render volumes
             if (show_volumes == ModelVolumes && !e->volumes().empty())

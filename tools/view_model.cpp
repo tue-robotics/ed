@@ -153,12 +153,12 @@ int main(int argc, char **argv)
     {
         const ed::EntityConstPtr& e = *it;
 
-        if (e->shape())
+        if (e->visual())
         {
             const std::string& id = e->id().str();
             if (id.size() < 5 || id.substr(id.size() - 5) != "floor") // Filter ground plane
             {
-                const std::vector<geo::Vector3>& vertices = e->shape()->getMesh().getPoints();
+                const std::vector<geo::Vector3>& vertices = e->visual()->getMesh().getPoints();
                 for(unsigned int i = 0; i < vertices.size(); ++i)
                 {
                     const geo::Vector3& p = e->pose() * vertices[i];
@@ -172,8 +172,8 @@ int main(int argc, char **argv)
                 }
             }
 
-            n_vertices += e->shape()->getMesh().getPoints().size();
-            n_triangles += e->shape()->getMesh().getTriangleIs().size();
+            n_vertices += e->visual()->getMesh().getPoints().size();
+            n_triangles += e->visual()->getMesh().getTriangleIs().size();
         }
     }
 

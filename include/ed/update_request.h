@@ -46,14 +46,17 @@ public:
     }
 
 
-    // SHAPES
+    // VISUALS
+    std::map<UUID, geo::ShapeConstPtr> visuals;
+    [[deprecated("Use setVisual() instead.")]]
+    void setShape(const UUID& id, const geo::ShapeConstPtr& shape) { setVisual(id, shape); }
+    void setVisual(const UUID& id, const geo::ShapeConstPtr& visual) { visuals[id] = visual; flagUpdated(id); }
 
-    std::map<UUID, geo::ShapeConstPtr> shapes;
-    void setShape(const UUID& id, const geo::ShapeConstPtr& shape) { shapes[id] = shape; flagUpdated(id); }
+    // COLLISIONS
+    std::map<UUID, geo::ShapeConstPtr> collisions;
+    void setCollision(const UUID& id, const geo::ShapeConstPtr& collision) { collisions[id] = collision; flagUpdated(id); }
 
-
-    //VOLUMES
-
+    // VOLUMES
     std::map<UUID, std::map<std::string, geo::ShapeConstPtr> > volumes_added;
     void addVolume(const UUID& id, const std::string Volume_name, const geo::ShapeConstPtr& Volume_shape)
     {   std::map<UUID, std::map<std::string, geo::ShapeConstPtr> >::iterator it = volumes_added.find(id);
