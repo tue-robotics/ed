@@ -102,7 +102,7 @@ public:
 
     const std::vector<unsigned long>& entity_revisions() const { return entity_revisions_; }
 
-    [[deprecated("Use entity_visual_revisions() instead.")]]
+    [[deprecated("Use entity_visual_revisions(), entity_collision_revisions() or entity_volumes_revisions() instead.")]]
     const std::vector<unsigned long>& entity_shape_revisions() const { return entity_visual_revisions(); }
 
     const std::vector<unsigned long>& entity_visual_revisions() const { return entity_visual_revisions_; }

@@ -53,11 +53,11 @@ public:
 
     void addMeasurement(MeasurementConstPtr measurement);
 
-    [[deprecated("Use visual() instead.")]]
+    [[deprecated("Use visual() or collision() instead.")]]
     inline geo::ShapeConstPtr shape() const { return visual(); }
     inline geo::ShapeConstPtr visual() const { return visual_; }
     inline geo::ShapeConstPtr collision() const { return collision_; }
-    [[deprecated("Use setVisual() instead.")]]
+    [[deprecated("Use setVisual() or setCollision() instead.")]]
     inline void setShape(const geo::ShapeConstPtr& shape) { setVisual(shape); }
     void setVisual(const geo::ShapeConstPtr& visual);
     void setCollision(const geo::ShapeConstPtr& collision);
@@ -66,7 +66,7 @@ public:
     inline void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++volumes_revision_; }
     inline void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++volumes_revision_; }
 
-    [[deprecated("Use visualRevision() instead.")]]
+    [[deprecated("Use visualRevision(), collisionRevision() or volumesRevision() instead.")]]
     inline unsigned long shapeRevision() const{ return visualRevision(); }
     inline unsigned long visualRevision() const{ return visual_ ? visual_revision_ : 0; }
     inline unsigned long collisionRevision() const{ return collision_ ? collision_revision_ : 0; }

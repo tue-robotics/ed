@@ -48,7 +48,7 @@ public:
 
     // VISUALS
     std::map<UUID, geo::ShapeConstPtr> visuals;
-    [[deprecated("Use setVisual() instead.")]]
+    [[deprecated("Use setVisual() or setCollision() instead.")]]
     void setShape(const UUID& id, const geo::ShapeConstPtr& shape) { setVisual(id, shape); }
     void setVisual(const UUID& id, const geo::ShapeConstPtr& visual) { visuals[id] = visual; flagUpdated(id); }
 
