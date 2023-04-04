@@ -24,9 +24,6 @@ namespace ed
 namespace models
 {
 
-/*
-std::string split implementation by using delimiter as a character. Multiple delimeters are removed.
-*/
 /**
  * @brief split Implementation by using delimiter as a character. Multiple delimeters are removed.
  * @param strToSplit input string, which is splitted
@@ -400,17 +397,6 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief getHeightMapShape convert grayscale image in a heigtmap mesh
- * @param image_filename full path of grayscale image
- * @param pos position of the origin of the heigtmap
- * @param blockheight height of the heightmap of max grayscale value
- * @param resolution_x resolution in x direction in meters
- * @param resolution_y resolution in y direction in meters
- * @param inverted false: CV/ROS standard (black = height); true: SDF/GAZEBO (White = height)
- * @param errorerrorstream
- * @return final mesh; or empty mesh in case of error
- */
 geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, const double blockheight,
                                 const double resolution_x, const double resolution_y, const bool inverted, std::stringstream& error)
 {
@@ -462,14 +448,6 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, tue::config::
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief createPolygon create polygon mesh from points
- * @param shape filled mesh
- * @param points 2D points which define the mesh
- * @param height height of the mesh
- * @param error error stream
- * @param create_bottom false: open bottom; true: closed bottom
- */
 void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, std::stringstream& error, bool create_bottom)
 {
     TPPLPoly poly;
@@ -580,14 +558,6 @@ bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& ve
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief readPose read pose into Pose3D. Both ED yaml and SDF. Also reads pos(position) of SDF.
- * @param cfg reader
- * @param pose filled Pose3D pose
- * @param pos_req position RequiredOrOptional
- * @param rot_req rotation RequiredOrOptional
- * @return indicates succes
- */
 bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::RequiredOrOptional pos_req, tue::config::RequiredOrOptional rot_req)
 {
     double roll = 0, pitch = 0, yaw = 0;
@@ -648,14 +618,6 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief loadShape load the shape of a model.
- * @param model_path path of the model
- * @param cfg reader
- * @param shape_cache cache for complex models
- * @param error errorstream
- * @return final mesh; or empty mesh in case of error
- */
 geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
