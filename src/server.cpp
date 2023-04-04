@@ -41,6 +41,7 @@ Server::Server() : world_model_(new WorldModel(&property_key_db_))
 
 Server::~Server()
 {
+    ErrorContext errc("Server", "destructor");
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -455,6 +456,7 @@ void Server::storeEntityMeasurements(const std::string& path) const
 
 void Server::publishStatistics()
 {
+    ErrorContext errc("Server", "publishStatistics");
     std::stringstream s;
 
     s << "[plugins]" << std::endl;
