@@ -22,9 +22,14 @@
 #include <set>
 #include <vector>
 
+
 namespace ed
 {
 
+struct semanticGeometry{
+    geo::Pose3D pose;
+    geo::ShapeConstPtr shape; 
+};
 // ----------------------------------------------------------------------------------------------------
 
 class Entity
@@ -56,8 +61,13 @@ public:
     inline geo::ShapeConstPtr shape() const { return shape_; }
     void setShape(const geo::ShapeConstPtr& shape);
 
-    inline const std::map<std::string, geo::ShapeConstPtr>& volumes() const { return volumes_; }
-    inline void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++shape_revision_; }
+    inline const std::map<std::string, semanticGeometry>& volumes() const { return volumes_; }
+    inline void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) {
+        volumes_[volume_name] = semanticGeometry();
+        volumes_[volume_name].pose = geo::Pose3D::identity();
+        volumes_[volume_name].shape = volume_shape;
+        ++shape_revision_;
+        }
     inline void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++shape_revision_; }
 
     inline unsigned long shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
@@ -238,7 +248,7 @@ private:
     unsigned int measurements_seq_;
 
     geo::ShapeConstPtr shape_;
-    std::map<std::string, geo::ShapeConstPtr> volumes_;
+    std::map<std::string, semanticGeometry> volumes_;
     unsigned long shape_revision_;
 
     std::map<std::string, MeasurementConvexHull> convex_hull_map_;

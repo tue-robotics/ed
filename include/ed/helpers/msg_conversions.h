@@ -102,12 +102,12 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
 
     if (!e.volumes().empty())
     {
-        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.volumes().begin(); it != e.volumes().end(); ++it)
+        for (std::map<std::string, ed::semanticGeometry>::const_iterator it = e.volumes().begin(); it != e.volumes().end(); ++it)
         {
             ed_msgs::Volume volume;
             volume.name = it->first;
 
-            geo::CompositeShapeConstPtr composite = std::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
+            geo::CompositeShapeConstPtr composite = std::dynamic_pointer_cast<const geo::CompositeShape>(it->second.shape);
             if (composite)
             {
                 const std::vector<std::pair<geo::ShapePtr, geo::Transform> >&  shapes = composite->getShapes();
@@ -126,7 +126,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
             else
             {
                 ed_msgs::SubVolume sub_volume;
-                convert(it->second, sub_volume);
+                convert(it->second.shape, sub_volume);
                 volume.subvolumes.push_back(sub_volume);
             }
             msg.volumes.push_back(volume);

@@ -183,18 +183,18 @@ bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes 
             // Render volumes
             if (show_volumes == ModelVolumes && !e->volumes().empty())
             {
-                for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
+                for (std::map<std::string, ed::semanticGeometry>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
                 {
-                    renderMesh(cam, pose, it->second->getMesh(), cv::Vec3b(0, 0, 255), res, flatten); // Red
+                    renderMesh(cam, pose, it->second.shape->getMesh(), cv::Vec3b(0, 0, 255), res, flatten); // Red
                 }
             }
         }
         else if (show_volumes == RoomVolumes && e->types().find("room") != e->types().end())
         {
             geo::Pose3D pose = cam_pose_inv * e->pose();
-            for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
+            for (std::map<std::string, ed::semanticGeometry>::const_iterator it = e->volumes().begin(); it != e->volumes().end(); ++it)
             {
-                renderMesh(cam, pose, it->second->getMesh(), cv::Vec3b(0, 0, 255), res, flatten); // Red
+                renderMesh(cam, pose, it->second.shape->getMesh(), cv::Vec3b(0, 0, 255), res, flatten); // Red
             }
         }
 
