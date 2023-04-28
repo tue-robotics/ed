@@ -48,6 +48,12 @@ void WorldModel::update(const UpdateRequest& req)
         e->setPose(it->second);
     }
 
+    for (const UUID& id : req.poses_removed)
+    {
+        EntityPtr e = getOrAddEntity(id, new_entities);
+        e->removePose();
+    }
+
     // Update visuals
     for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.visuals.begin(); it != req.visuals.end(); ++it)
     {
