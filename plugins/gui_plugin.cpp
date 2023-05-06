@@ -273,7 +273,7 @@ ed::UUID GUIPlugin::getEntityFromClick(const cv::Point2i& p) const
     for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
     {
         const ed::EntityConstPtr& e = *it_entity;
-        if (!e->shape())
+        if (!e->visual())
         {
             const pcl::PointCloud<pcl::PointXYZ>& chull_points = e->convexHull().chull;
 
@@ -307,14 +307,14 @@ void GUIPlugin::publishMapImage()
     {
         const ed::EntityConstPtr& e = *it_entity;
 
-        if (e->shape() && e->id() != "floor")
+        if (e->visual() && e->id() != "floor")
         {
             cv::Scalar color = idToColor(e->id());
             cv::Vec3b color_vec(0.5 * color[0], 0.5 * color[1], 0.5 * color[2]);
 
             geo::Pose3D pose = projector_pose_.inverse() * e->pose();
             geo::RenderOptions opt;
-            opt.setMesh(e->shape()->getMesh(), pose);
+            opt.setMesh(e->visual()->getMesh(), pose);
 
             ColorRenderResult res(map_image_, z_buffer, color_vec, projector_pose_.t.z - 3, projector_pose_.t.z + 1);
 

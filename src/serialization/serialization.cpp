@@ -89,7 +89,8 @@ bool deserialize(io::Reader &r, UpdateRequest& req)
             {
                 geo::ShapePtr shape(new geo::Shape);
                 ed::deserialize(r, *shape);
-                req.setShape(id, shape);
+                req.setVisual(id, shape);
+                req.setCollision(id, shape);
                 r.endGroup();
             }
 

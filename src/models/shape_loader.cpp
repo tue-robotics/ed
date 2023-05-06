@@ -24,9 +24,6 @@ namespace ed
 namespace models
 {
 
-/*
-std::string split implementation by using delimiter as a character. Multiple delimeters are removed.
-*/
 /**
  * @brief split Implementation by using delimiter as a character. Multiple delimeters are removed.
  * @param strToSplit input string, which is splitted
@@ -400,17 +397,6 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Ve
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief getHeightMapShape convert grayscale image in a heigtmap mesh
- * @param image_filename full path of grayscale image
- * @param pos position of the origin of the heigtmap
- * @param blockheight height of the heightmap of max grayscale value
- * @param resolution_x resolution in x direction in meters
- * @param resolution_y resolution in y direction in meters
- * @param inverted false: CV/ROS standard (black = height); true: SDF/GAZEBO (White = height)
- * @param errorerrorstream
- * @return final mesh; or empty mesh in case of error
- */
 geo::ShapePtr getHeightMapShape(const std::string& image_filename, const geo::Vec3& pos, const double blockheight,
                                 const double resolution_x, const double resolution_y, const bool inverted, std::stringstream& error)
 {
@@ -462,14 +448,6 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename, tue::config::
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief createPolygon create polygon mesh from points
- * @param shape filled mesh
- * @param points 2D points which define the mesh
- * @param height height of the mesh
- * @param error error stream
- * @param create_bottom false: open bottom; true: closed bottom
- */
 void createPolygon(geo::Shape& shape, const std::vector<geo::Vec2>& points, double height, std::stringstream& error, bool create_bottom)
 {
     TPPLPoly poly;
@@ -580,14 +558,6 @@ bool readVec3Group(tue::config::Reader& cfg, geo::Vec3& v, const std::string& ve
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief readPose read pose into Pose3D. Both ED yaml and SDF. Also reads pos(position) of SDF.
- * @param cfg reader
- * @param pose filled Pose3D pose
- * @param pos_req position RequiredOrOptional
- * @param rot_req rotation RequiredOrOptional
- * @return indicates succes
- */
 bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::RequiredOrOptional pos_req, tue::config::RequiredOrOptional rot_req)
 {
     double roll = 0, pitch = 0, yaw = 0;
@@ -648,14 +618,6 @@ bool readPose(tue::config::Reader& cfg, geo::Pose3D& pose, tue::config::Required
 
 // ----------------------------------------------------------------------------------------------------
 
-/**
- * @brief loadShape load the shape of a model.
- * @param model_path path of the model
- * @param cfg reader
- * @param shape_cache cache for complex models
- * @param error errorstream
- * @return final mesh; or empty mesh in case of error
- */
 geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache, std::stringstream& error)
 {
@@ -917,5 +879,157 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
     return shape;
 }
 
+// ----------------------------------------------------------------------------------------------------
+
+void createCylinder(geo::Shape& shape, double radius, double height, int num_corners)
+{
+    geo::Mesh mesh;
+
+    // Calculate vertices
+    for(int i = 0; i < num_corners; ++i)
+    {
+        double a = 2 * M_PI * i / num_corners;
+        double x = sin(a) * radius;
+        double y = cos(a) * radius;
+
+        mesh.addPoint(x, y, -height / 2);
+        mesh.addPoint(x, y,  height / 2);
+    }
+
+    // Calculate top and bottom triangles
+    for(int i = 1; i < num_corners - 1; ++i)
+    {
+        int i2 = 2 * i;
+
+        // bottom
+        mesh.addTriangle(0, i2, i2 + 2);
+
+        // top
+        mesh.addTriangle(1, i2 + 3, i2 + 1);
+    }
+
+    // Calculate side triangles
+    for(int i = 0; i < num_corners; ++i)
+    {
+        int j = (i + 1) % num_corners;
+        mesh.addTriangle(i * 2, i * 2 + 1, j * 2);
+        mesh.addTriangle(i * 2 + 1, j * 2 + 1, j * 2);
+    }
+
+    shape.setMesh(mesh);
 }
+
+// ----------------------------------------------------------------------------------------------------
+
+uint getMiddlePoint(geo::Mesh& mesh, uint i1, uint i2, std::map<unsigned long, uint> cache, double radius)
+{
+       // first check if we have it already
+       bool firstIsSmaller = i1 < i2;
+       unsigned long smallerIndex = firstIsSmaller ? i1 : i2;
+       unsigned long greaterIndex = firstIsSmaller ? i2 : i1;
+       unsigned long key = (smallerIndex << 32) + greaterIndex;
+
+       std::map<unsigned long, uint>::const_iterator it = cache.find(key);
+       if (it != cache.end())
+           return it->second;
+
+       // not in cache, calculate it
+       const std::vector<geo::Vec3>& points = mesh.getPoints();
+       geo::Vec3 p1 = points[i1];
+       geo::Vec3 p2 = points[i2];
+       geo::Vec3 p3((p1+p2)/2);
+       p3 = p3.normalized() * radius;
+
+       // add vertex makes sure point is on unit sphere
+       uint i3 = mesh.addPoint(p3);
+
+       // store it, return index
+       cache.insert(std::pair<unsigned long, uint>(key, i3));
+       return i3;
 }
+
+// ----------------------------------------------------------------------------------------------------
+
+void createSphere(geo::Shape& shape, double radius, uint recursion_level)
+{
+    geo::Mesh mesh;
+
+    // create 12 vertices of a icosahedron
+    double t = (1.0 + sqrt(5.0)) / 2.0;
+
+    mesh.addPoint(geo::Vec3(-1,  t,  0).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 1,  t,  0).normalized()*radius);
+    mesh.addPoint(geo::Vec3(-1, -t,  0).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 1, -t,  0).normalized()*radius);
+
+    mesh.addPoint(geo::Vec3( 0, -1,  t).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 0,  1,  t).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 0, -1, -t).normalized()*radius);
+    mesh.addPoint(geo::Vec3( 0,  1, -t).normalized()*radius);
+
+    mesh.addPoint(geo::Vec3( t,  0, -1).normalized()*radius);
+    mesh.addPoint(geo::Vec3( t,  0,  1).normalized()*radius);
+    mesh.addPoint(geo::Vec3(-t,  0, -1).normalized()*radius);
+    mesh.addPoint(geo::Vec3(-t,  0,  1).normalized()*radius);
+
+    // create 20 triangles of the icosahedron
+    // 5 faces around point 0
+    mesh.addTriangle(0, 11, 5);
+    mesh.addTriangle(0, 5, 1);
+    mesh.addTriangle(0, 1, 7);
+    mesh.addTriangle(0, 7, 10);
+    mesh.addTriangle(0, 10, 11);
+
+    // 5 adjacent faces
+    mesh.addTriangle(1, 5, 9);
+    mesh.addTriangle(5, 11, 4);
+    mesh.addTriangle(11, 10, 2);
+    mesh.addTriangle(10, 7, 6);
+    mesh.addTriangle(7, 1, 8);
+
+    // 5 faces around point 3
+    mesh.addTriangle(3, 9, 4);
+    mesh.addTriangle(3, 4, 2);
+    mesh.addTriangle(3, 2, 6);
+    mesh.addTriangle(3, 6, 8);
+    mesh.addTriangle(3, 8, 9);
+
+    // 5 adjacent faces
+    mesh.addTriangle(4, 9, 5);
+    mesh.addTriangle(2, 4, 11);
+    mesh.addTriangle(6, 2, 10);
+    mesh.addTriangle(8, 6, 7);
+    mesh.addTriangle(9, 8, 1);
+
+    for (uint i = 0; i < recursion_level; i++)
+    {
+        geo::Mesh mesh2;
+        std::map<unsigned long, uint> cache;
+
+        const std::vector<geo::Vec3>& points = mesh.getPoints();
+        for (std::vector<geo::Vec3>::const_iterator it = points.begin(); it != points.end(); ++it)
+            mesh2.addPoint(*it);
+
+        const std::vector<geo::TriangleI>& triangleIs = mesh.getTriangleIs();
+        for (std::vector<geo::TriangleI>::const_iterator it = triangleIs.begin(); it != triangleIs.end(); ++it)
+        {
+            // replace triangle by 4 triangles
+            uint a = getMiddlePoint(mesh2, it->i1_, it->i2_, cache, radius);
+            uint b = getMiddlePoint(mesh2, it->i2_, it->i3_, cache, radius);
+            uint c = getMiddlePoint(mesh2, it->i3_, it->i1_, cache, radius);
+
+            mesh2.addTriangle(it->i1_, a, c);
+            mesh2.addTriangle(it->i2_, b, a);
+            mesh2.addTriangle(it->i3_, c, b);
+            mesh2.addTriangle(a, b, c);
+        }
+        mesh = mesh2;
+    }
+    shape.setMesh(mesh);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+} // end namespace models
+
+} // end namespace ed

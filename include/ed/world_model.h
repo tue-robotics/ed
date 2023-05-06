@@ -102,7 +102,14 @@ public:
 
     const std::vector<unsigned long>& entity_revisions() const { return entity_revisions_; }
 
-    const std::vector<unsigned long>& entity_shape_revisions() const { return entity_shape_revisions_; }
+    [[deprecated("Use entity_visual_revisions(), entity_collision_revisions() or entity_volumes_revisions() instead.")]]
+    const std::vector<unsigned long>& entity_shape_revisions() const { return entity_visual_revisions(); }
+
+    const std::vector<unsigned long>& entity_visual_revisions() const { return entity_visual_revisions_; }
+
+    const std::vector<unsigned long>& entity_collision_revisions() const { return entity_collision_revisions_; }
+
+    const std::vector<unsigned long>& entity_volumes_revisions() const { return entity_volumes_revisions_; }
 
     const PropertyKeyDBEntry* getPropertyInfo(const std::string& name) const;
 
@@ -116,7 +123,11 @@ private:
 
     std::vector<unsigned long> entity_revisions_;
 
-    std::vector<unsigned long> entity_shape_revisions_;
+    std::vector<unsigned long> entity_visual_revisions_;
+
+    std::vector<unsigned long> entity_collision_revisions_;
+
+    std::vector<unsigned long> entity_volumes_revisions_;
 
     std::queue<Idx> entity_empty_spots_;
 

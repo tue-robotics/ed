@@ -53,14 +53,24 @@ public:
 
     void addMeasurement(MeasurementConstPtr measurement);
 
-    inline geo::ShapeConstPtr shape() const { return shape_; }
-    void setShape(const geo::ShapeConstPtr& shape);
+    [[deprecated("Use visual() or collision() instead.")]]
+    inline geo::ShapeConstPtr shape() const { return visual(); }
+    inline geo::ShapeConstPtr visual() const { return visual_; }
+    inline geo::ShapeConstPtr collision() const { return collision_; }
+    [[deprecated("Use setVisual() or setCollision() instead.")]]
+    inline void setShape(const geo::ShapeConstPtr& shape) { setVisual(shape); }
+    void setVisual(const geo::ShapeConstPtr& visual);
+    void setCollision(const geo::ShapeConstPtr& collision);
 
     inline const std::map<std::string, geo::ShapeConstPtr>& volumes() const { return volumes_; }
-    inline void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++shape_revision_; }
-    inline void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++shape_revision_; }
+    inline void addVolume(const std::string& volume_name, const geo::ShapeConstPtr& volume_shape) { volumes_[volume_name] = volume_shape; ++volumes_revision_; }
+    inline void removeVolume(const std::string& volume_name) { volumes_.erase(volume_name); ++volumes_revision_; }
 
-    inline unsigned long shapeRevision() const{ return shape_ ? shape_revision_ : 0; }
+    [[deprecated("Use visualRevision(), collisionRevision() or volumesRevision() instead.")]]
+    inline unsigned long shapeRevision() const{ return visualRevision(); }
+    inline unsigned long visualRevision() const{ return visual_ ? visual_revision_ : 0; }
+    inline unsigned long collisionRevision() const{ return collision_ ? collision_revision_ : 0; }
+    inline unsigned long volumesRevision() const{ return !volumes_.empty() ? volumes_revision_ : 0; }
 
     inline const ConvexHull& convexHull() const { return convex_hull_new_; }
 
@@ -94,8 +104,8 @@ public:
     inline void setPose(const geo::Pose3D& pose)
     {
         pose_ = pose;
-        if (shape_)
-            updateConvexHullFromShape();
+        if (visual_)
+            updateConvexHullFromVisual();
 
         has_pose_ = true;
     }
@@ -104,10 +114,6 @@ public:
 
     inline const tue::config::DataConstPointer& data() const { return config_; }
     inline void setData(const tue::config::DataConstPointer& data) { config_ = data; }
-
-    //! For debugging purposes
-    bool in_frustrum;
-    bool object_in_front;
 
 //    inline double creationTime() const { return creation_time_; }
 
@@ -237,9 +243,12 @@ private:
     MeasurementConstPtr best_measurement_;
     unsigned int measurements_seq_;
 
-    geo::ShapeConstPtr shape_;
+    geo::ShapeConstPtr visual_;
+    geo::ShapeConstPtr collision_;
     std::map<std::string, geo::ShapeConstPtr> volumes_;
-    unsigned long shape_revision_;
+    unsigned long visual_revision_;
+    unsigned long collision_revision_;
+    unsigned long volumes_revision_;
 
     std::map<std::string, MeasurementConvexHull> convex_hull_map_;
     ConvexHull convex_hull_new_;
@@ -259,7 +268,7 @@ private:
 
     void updateConvexHull();
 
-    void updateConvexHullFromShape();
+    void updateConvexHullFromVisual();
 
     std::set<std::string> flags_;
 

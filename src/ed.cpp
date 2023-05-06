@@ -264,7 +264,7 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Write convex hull
-            if (!e->convexHull().points.empty() && wm.entity_shape_revisions()[i] > req.since_revision)
+            if (!e->convexHull().points.empty() && wm.entity_visual_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("convex_hull");
                 ed::serialize(e->convexHull(), w);
@@ -280,10 +280,10 @@ bool srvQuery(ed_msgs::Query::Request& req, ed_msgs::Query::Response& res)
             }
 
             // Mesh
-            if (e->shape() && wm.entity_shape_revisions()[i] > req.since_revision)
+            if (e->visual() && wm.entity_visual_revisions()[i] > req.since_revision)
             {
                 w.writeGroup("mesh");
-                ed::serialize(*e->shape(), w);
+                ed::serialize(*e->visual(), w);
                 w.endGroup();
             }
 
@@ -403,14 +403,14 @@ bool srvSimpleQuery(ed_msgs::SimpleQuery::Request& req, ed_msgs::SimpleQuery::Re
             if(req.ignore_z)
                 center_point.z = e->pose().t.z; // Ignoring z in global frame, not in entity frame, as it can be rotated
 
-            geo::ShapeConstPtr shape = e->shape();
-            if (shape)
+            geo::ShapeConstPtr visual = e->visual();
+            if (visual)
             {
                 geo::Vector3 center_point_e = e->pose().getBasis().transpose() * (center_point - e->pose().getOrigin());
                 if (radius > 0)
-                    geom_ok = shape->intersect(center_point_e, radius);
+                    geom_ok = visual->intersect(center_point_e, radius);
                 else
-                    geom_ok = shape->contains(center_point_e);
+                    geom_ok = visual->contains(center_point_e);
             }
             else
             {

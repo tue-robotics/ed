@@ -78,7 +78,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
         msg.z_max = 0;
     }
 
-    msg.has_shape = (e.shape() != nullptr);
+    msg.has_shape = (e.visual() != nullptr);
     msg.has_pose = e.has_pose();
     if (e.has_pose())
     {
@@ -119,7 +119,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
 
                     ed_msgs::SubVolume sub_volume;
                     convert(shape_tr,  sub_volume);
-                    sub_volume.center_point.header.frame_id = "/" + e.id().str();
+                    sub_volume.center_point.header.frame_id = e.id().str();
                     volume.subvolumes.push_back(sub_volume);
                 }
             }

@@ -48,16 +48,29 @@ void WorldModel::update(const UpdateRequest& req)
         e->setPose(it->second);
     }
 
-    // Update shapes
-    for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.shapes.begin(); it != req.shapes.end(); ++it)
+    // Update visuals
+    for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.visuals.begin(); it != req.visuals.end(); ++it)
     {
         EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setShape(it->second);
+        e->setVisual(it->second);
 
         Idx idx;
         if (findEntityIdx(e->id(), idx))
         {
-            entity_shape_revisions_[idx] = revision_;
+            entity_visual_revisions_[idx] = revision_;
+        }
+    }
+
+    // Update collisions
+    for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.collisions.begin(); it != req.collisions.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setCollision(it->second);
+
+        Idx idx;
+        if (findEntityIdx(e->id(), idx))
+        {
+            entity_collision_revisions_[idx] = revision_;
         }
     }
 
@@ -74,7 +87,8 @@ void WorldModel::update(const UpdateRequest& req)
         Idx idx;
         if (findEntityIdx(e->id(), idx))
         {
-            entity_shape_revisions_[idx] = revision_;
+            entity_visual_revisions_[idx] = revision_;
+            entity_collision_revisions_[idx] = revision_;
         }
     }
 
@@ -88,7 +102,7 @@ void WorldModel::update(const UpdateRequest& req)
         Idx idx;
         if (findEntityIdx(e->id(), idx))
         {
-            entity_shape_revisions_[idx] = revision_;
+            entity_volumes_revisions_[idx] = revision_;
         }
     }
     for (std::map<UUID, std::map<std::string, geo::ShapeConstPtr> >::const_iterator it = req.volumes_added.begin(); it != req.volumes_added.end(); ++it)
@@ -102,7 +116,7 @@ void WorldModel::update(const UpdateRequest& req)
         Idx idx;
         if (findEntityIdx(e->id(), idx))
         {
-            entity_shape_revisions_[idx] = revision_;
+            entity_volumes_revisions_[idx] = revision_;
         }
     }
 
@@ -372,7 +386,9 @@ void WorldModel::removeEntity(const UUID& id)
     {
         entities_[it_idx->second].reset();
         entity_revisions_[it_idx->second] = revision_;
-        entity_shape_revisions_[it_idx->second] = 0;
+        entity_visual_revisions_[it_idx->second] = 0;
+        entity_collision_revisions_[it_idx->second] = 0;
+        entity_volumes_revisions_[it_idx->second] = 0;
         entity_empty_spots_.push(it_idx->second);
         entity_map_.erase(it_idx);
     }
@@ -446,7 +462,9 @@ Idx WorldModel::addNewEntity(const EntityConstPtr& e)
         idx = entities_.size();
         entity_map_[e->id()] = idx;
         entities_.push_back(e);
-        entity_shape_revisions_.push_back(0);
+        entity_visual_revisions_.push_back(0);
+        entity_collision_revisions_.push_back(0);
+        entity_volumes_revisions_.push_back(0);
     }
     else
     {

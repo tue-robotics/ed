@@ -99,7 +99,7 @@ protected:
 
     UpdateRequestPtr update_request_;
 
-    boost::shared_ptr<boost::thread> thread_;
+    ed::shared_ptr<boost::thread> thread_;
 
     bool step_finished_;
 

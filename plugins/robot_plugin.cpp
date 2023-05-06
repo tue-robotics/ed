@@ -18,6 +18,8 @@
 
 #include <ed/world_model/transform_crawler.h>
 
+#include <tuple>
+
 // ----------------------------------------------------------------------------------------------------
 
 bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
@@ -144,12 +146,9 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
+std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr& link)
 {
-    geo::CompositeShapePtr shape;
-
-    if (!link->visual_array.size())
-        return shape;
+    geo::CompositeShapePtr visual, collision;
 
     for (urdf::VisualSharedPtr& vis : link->visual_array)
     {
@@ -169,12 +168,35 @@ geo::ShapePtr linkToShape(const urdf::LinkSharedPtr& link)
         if (!subshape)
             continue;
 
-        if (!shape)
-            shape.reset(new geo::CompositeShape());
-        shape->addShape(*subshape, offset);
+        if (!visual)
+            visual.reset(new geo::CompositeShape());
+        visual->addShape(*subshape, offset);
     }
 
-    return shape;
+    for (urdf::CollisionSharedPtr& col : link->collision_array)
+    {
+        const urdf::GeometrySharedPtr& geom = col->geometry;
+        if (!geom)
+        {
+            ROS_WARN_STREAM_NAMED("RobotPlugin" ,"[RobotPlugin] Robot model error: missing geometry for collision in link: '" << link->name << "'");
+            continue;
+        }
+
+        geo::Pose3D offset;
+        const urdf::Pose& o = col->origin;
+        offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
+        offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
+
+        geo::ShapePtr subshape = URDFGeometryToShape(geom);
+        if (!subshape)
+            continue;
+
+        if (!collision)
+            collision.reset(new geo::CompositeShape());
+        collision->addShape(*subshape, offset);
+    }
+
+    return {visual, collision};
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -335,13 +357,17 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
         {
             const urdf::LinkSharedPtr& link = *it;
 
-            geo::ShapePtr shape = linkToShape(link);
-            if (shape)
+            geo::ShapePtr visual, collision;
+            std::tie(visual, collision) = LinkToShapes(link);
+            if (visual || collision)
             {
                 std::string id = link->name;
                 if (link->name.find(robot_name_) == std::string::npos)
                     id = robot_name_ + "/" + link->name;
-                req.setShape(id, shape);
+                if (visual)
+                    req.setVisual(id, visual);
+                if (collision)
+                    req.setCollision(id, collision);
             }
         }
 

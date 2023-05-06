@@ -173,7 +173,7 @@ void Server::reset(bool keep_all_shapes)
         if (e->id().str().substr(0, 6) == "sergio" || e->id().str().substr(0, 5) == "amigo" || e->id().str().substr(0, 4) == "hero") // TODO: robocup hack
             continue;
 
-        if (keep_all_shapes && e->shape())
+        if (keep_all_shapes && e->visual())
             continue;
 
         if (req_init_world->updated_entities.find(e->id()) == req_init_world->updated_entities.end())

@@ -36,30 +36,30 @@ struct KeyHolder
 
 ErrorContext::ErrorContext(const char* msg, const char* value)
 {
-    ErrorContextData* data = static_cast<ErrorContextData*>(pthread_getspecific(key.key));
-    if (!data)
+    ErrorContextData* _data = data();
+    if (!_data)
     {
-        data = new ErrorContextData;
-        pthread_setspecific(key.key, data);
+        _data = new ErrorContextData;
+        pthread_setspecific(key.key, _data);
     }
 
-    data->stack.push_back(std::pair<const char*, const char*>(msg, value));
+    _data->stack.push_back(std::pair<const char*, const char*>(msg, value));
 
 }
 
 ErrorContext::~ErrorContext()
 {
-    ErrorContextData* data = static_cast<ErrorContextData*>(pthread_getspecific(key.key));
-    if (!data)
+    ErrorContextData* _data = data();
+    if (!_data)
         return;
 
-    data->stack.pop_back();
+    _data->stack.pop_back();
 }
 
 void ErrorContext::change(const char* msg, const char* value)
 {
-    ErrorContextData* data = static_cast<ErrorContextData*>(pthread_getspecific(key.key));
-    data->stack.back() = std::pair<const char*, const char*>(msg, value);
+    ErrorContextData* _data = data();
+    _data->stack.back() = std::pair<const char*, const char*>(msg, value);
 }
 
 ErrorContextData* ErrorContext::data()

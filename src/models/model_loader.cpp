@@ -408,7 +408,10 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     {
         geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
         if (shape)
-            req.setShape(id, shape);
+        {
+            req.setVisual(id, shape);
+            req.setCollision(id, shape);
+        }
         else
             return false;
 
@@ -556,8 +559,8 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
     }
 
 
-    // Shape && volumes
-    geo::CompositeShapePtr composite;
+    // visual, collision & volumes
+    geo::CompositeShapePtr visual_composite, collision_composite;
     std::map<std::string, geo::ShapePtr> dummy_shape_cache;
     if (r.readArray("link"))
     {
@@ -569,7 +572,15 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
             {
                 while(r.nextArrayItem())
                 {
-                    readSDFGeometry(r, composite, error, link_pose);
+                    readSDFGeometry(r, visual_composite, error, link_pose);
+                }
+                r.endArray();
+            }
+            if (r.readArray("collision"))
+            {
+                while(r.nextArrayItem())
+                {
+                    readSDFGeometry(r, collision_composite, error, link_pose);
                 }
                 r.endArray();
             }
@@ -591,8 +602,10 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
         }
         r.endArray(); // end array link
     }
-    if (composite)
-        req.setShape(id, composite);
+    if (visual_composite)
+        req.setVisual(id, visual_composite);
+    if (collision_composite)
+        req.setCollision(id, collision_composite);
 
     if(sdf_world)
         r.endGroup(); // end group world
