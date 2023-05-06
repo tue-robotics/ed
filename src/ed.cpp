@@ -109,6 +109,7 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
             if (r.readGroup("pose"))
             {
                 double x, y, z;
+                std::string remove;
                 if (r.readValue("x", x) && r.readValue("y", y) && r.readValue("z", z))
                 {
                     geo::Pose3D pose = geo::Pose3D::identity();
@@ -119,6 +120,10 @@ bool srvUpdate(ed_msgs::UpdateSrv::Request& req, ed_msgs::UpdateSrv::Response& r
                         pose.setRPY(X, Y, Z);
 
                     update_req.setPose(id, pose);
+                }
+                else if(r.readValue("remove", remove) && remove == "true")
+                {
+                    update_req.removePose(id);
                 }
                 else
                 {

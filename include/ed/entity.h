@@ -110,6 +110,8 @@ public:
         has_pose_ = true;
     }
 
+    inline void removePose() { has_pose_ = false; }
+
     inline bool has_pose() const { return has_pose_; }
 
     inline const tue::config::DataConstPointer& data() const { return config_; }

@@ -131,6 +131,9 @@ public:
     std::map<UUID, geo::Pose3D> poses;
     void setPose(const UUID& id, const geo::Pose3D& pose) { poses[id] = pose; flagUpdated(id); }
 
+    std::vector<UUID> poses_removed;
+    void removePose(const UUID& id) { poses_removed.push_back(id); flagUpdated(id); }
+
 
     // RELATIONS
 
