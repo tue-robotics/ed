@@ -26,7 +26,7 @@ namespace ed { // functions that require access to private members
     void WorldModel::serialize(Archive & ar, const unsigned int /*version*/) {
         ar & make_nvp("revision_", revision_);
         ar & make_nvp("entity_map_", entity_map_);
-        ar & make_nvp("entities", entities_);
+        ar & make_nvp("entities_", entities_);
         ar & make_nvp("entity_revisions_", entity_revisions_);
         ar & make_nvp("entity_shape_revisions_", entity_shape_revisions_);
         ar & make_nvp("entity_empty_spots_", entity_empty_spots_);
@@ -40,9 +40,9 @@ namespace ed { // functions that require access to private members
         ar & make_nvp("revision_", revision_);
         ar & make_nvp("type_", type_);
         ar & make_nvp("types_", types_);
-        ar & make_nvp("existence_prob", existence_prob_);
-        ar & make_nvp("last_update_timestamp", last_update_timestamp_);
-        ar & make_nvp("measurements", measurements_);
+        ar & make_nvp("existence_prob_", existence_prob_);
+        ar & make_nvp("last_update_timestamp_", last_update_timestamp_);
+        ar & make_nvp("measurements_", measurements_);
         ar & make_nvp("best_measurement_", best_measurement_);
         ar & make_nvp("measurements_seq_", measurements_seq_);
         ar & make_nvp("shape_", shape_);
@@ -50,7 +50,7 @@ namespace ed { // functions that require access to private members
         ar & make_nvp("shape_revision_", shape_revision_);
         ar & make_nvp("convex_hull_map_", convex_hull_map_);
         ar & make_nvp("convex_hull_new_", convex_hull_new_);
-        ar & make_nvp("has_pose", has_pose_);
+        ar & make_nvp("has_pose_", has_pose_);
         ar & make_nvp("config_", config_);
         ar & make_nvp("relations from_", relations_from_);
         ar & make_nvp("relations_to_", relations_to)_;
@@ -62,7 +62,7 @@ namespace ed { // functions that require access to private members
     void UUID::serialize(Archive & ar, const unsigned int /*version*/)
     {
         ar & make_nvp("id_", id_);
-        ar & make_nvp("idx_", idx);
+        ar & make_nvp("idx", idx);
     }
     
     /*template <class Archive>
