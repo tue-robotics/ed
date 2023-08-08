@@ -183,6 +183,9 @@ int main(int argc, char **argv)
     info_msg << "Model loaded successfully:" << std::endl;
     info_msg << "    " << n_vertices << " vertices" << std::endl;
     info_msg << "    " << n_triangles << " triangles" << std::endl;
+    info_msg << "    " << "x: [" << p_min.x << " - " << p_max.x << "]" << std::endl;
+    info_msg << "    " << "y: [" << p_min.y << " - " << p_max.y << "]" << std::endl;
+    info_msg << "    " << "z: [" << p_min.z << " - " << p_max.z << "]" << std::endl;
 
     info_msg << std::endl;
     info_msg << "Mouse:" << std::endl;
