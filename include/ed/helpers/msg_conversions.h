@@ -84,6 +84,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
     {
         geo::convert(e.pose(), msg.pose);
     }
+    msg.pose_frame = e.poseFrame();
 
     msg.last_update_time =  ros::Time(e.lastUpdateTimestamp());
 

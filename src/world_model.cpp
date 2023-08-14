@@ -47,6 +47,12 @@ void WorldModel::update(const UpdateRequest& req)
         EntityPtr e = getOrAddEntity(it->first, new_entities);
         e->setPose(it->second);
     }
+    // Update poses
+    for(std::map<UUID, std::string>::const_iterator it = req.pose_frames.begin(); it != req.pose_frames.end(); ++it)
+    {
+        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        e->setPoseFrame(it->second);
+    }
 
     // Update shapes
     for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.shapes.begin(); it != req.shapes.end(); ++it)

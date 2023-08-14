@@ -110,6 +110,16 @@ public:
         has_pose_ = true;
     }
 
+    inline void setPoseFrame(const std::string& frame_name)
+    {
+        pose_frame_ = frame_name;
+    }
+
+    inline const std::string poseFrame() const
+    {
+        return pose_frame_;
+    }
+
     inline bool has_pose() const { return has_pose_; }
 
     inline const tue::config::DataConstPointer& data() const { return config_; }
@@ -256,6 +266,7 @@ private:
 
     bool has_pose_;
     geo::Pose3D pose_;
+    std::string pose_frame_;
 
 //    double creation_time_;
 

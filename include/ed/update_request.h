@@ -126,7 +126,9 @@ public:
     // POSES
 
     std::map<UUID, geo::Pose3D> poses;
+    std::map<UUID, std::string> pose_frames;
     void setPose(const UUID& id, const geo::Pose3D& pose) { poses[id] = pose; flagUpdated(id); }
+    void setPoseFrame(const UUID& id, const std::string& frame) { pose_frames[id] = frame; flagUpdated(id); }
 
 
     // RELATIONS
