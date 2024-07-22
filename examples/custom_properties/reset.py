@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 import rospy
 from ed_msgs.srv import UpdateSrv
