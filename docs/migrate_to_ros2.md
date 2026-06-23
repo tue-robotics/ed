@@ -26,7 +26,7 @@ order for `ed`:
 1. Interface packages: `tue_serialization_interfaces`, `ed_interfaces`,
    `rgbd_interfaces` — **already migrated**.
 2. Libraries: `tue_config`, `geolib2`, `tue_serialization`, `rgbd`,
-   `code_profiler` — **already migrated**.
+   `code_profiler`, `rosconsole_bridge` — **already migrated**.
 3. `tue_filesystem` — **do not migrate**; remove it from every package (§3).
 4. `ed` itself — this package (§4–§9).
 
@@ -49,7 +49,7 @@ reference package for a worked example):
 | `<exec_depend>message_runtime</exec_depend>` | `<exec_depend>rosidl_default_runtime</exec_depend>` *(interface pkgs only)* |
 | `<depend>roscpp</depend>` | `<depend>rclcpp</depend>` (+ `<depend>rclcpp_components</depend>` if it has nodes) |
 | `<depend>roslib</depend>`, `<exec_depend>python3-rospkg</exec_depend>` | **remove** (ROS 1 only; use `ament_index_cpp` if package lookup is needed) |
-| `<depend>rosconsole_bridge</depend>` | **remove** (see logging, §6) |
+| `<depend>rosconsole_bridge</depend>` | **keep** — still needed if a (recursive) dependency logs via `console_bridge`; see logging, §6 |
 | `<depend>tf</depend>` | `<depend>tf2</depend>` / `<depend>tf2_ros</depend>` |
 | `<depend>nodelet</depend>` / `<depend>pluginlib</depend>` (for nodelets) | `<depend>rclcpp_components</depend>` (pluginlib stays only for *your own* plugin systems, see §7) |
 | `<depend>ed_msgs</depend>` | `<depend>ed_interfaces</depend>` |
@@ -130,6 +130,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tue_config REQUIRED)
 find_package(tue_serialization REQUIRED)
 find_package(diagnostic_updater REQUIRED)
+find_package(rosconsole_bridge REQUIRED)   # routes dependencies' console_bridge logs to ROS (§6)
 # non-ROS deps stay as they were:
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common)
@@ -172,6 +173,7 @@ For **generated interfaces**, link the typesupport target, not a bare name:
 target_link_libraries(${PROJECT_NAME}_server
   ${PROJECT_NAME}_core ${PROJECT_NAME}_io
   rclcpp::rclcpp
+  rosconsole_bridge::rosconsole_bridge   # keep the bridge in the linked-together node (§6)
   ${ed_interfaces_TARGETS})        # or ed_interfaces::ed_interfaces__rosidl_typesupport_cpp
 ```
 
@@ -200,7 +202,7 @@ install(PROGRAMS tools/entity-teleop tools/list_plugins
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(geolib2 tue_config tue_serialization rgbd rclcpp
-  pluginlib tf2_ros diagnostic_updater ed_interfaces OpenCV PCL)
+  pluginlib tf2_ros diagnostic_updater rosconsole_bridge ed_interfaces OpenCV PCL)
 ```
 
 End the file with `ament_package()` (must be the **last** call).
@@ -342,9 +344,15 @@ new types.
 `ed` has its own logger (`include/ed/logging.h`, `src/logging.cpp`) — **keep
 it**. The ROS-coupled pieces to change:
 
-- Delete `src/rosconsole_bridge.cpp` and its source entry in `CMakeLists.txt`;
-  remove the `rosconsole_bridge` dependency. geolib2/tue_filesystem now log via
-  `console_bridge` directly, which surfaces without the bridge.
+- **Keep `src/rosconsole_bridge.cpp`** (`#include <rosconsole_bridge/bridge.h>`
+  + `REGISTER_ROSCONSOLE_BRIDGE;` — both unchanged in ROS 2) and keep its source
+  entry in `CMakeLists.txt`. `rosconsole_bridge` is migrated to ROS 2 and stays
+  a dependency. `ed`'s recursive dependencies (geolib2, tue_config, …) log via
+  `console_bridge`, whose default handler only goes to stderr; the bridge's
+  registration installs a handler that forwards those messages into ROS 2
+  logging (rosout). Without it those logs would not surface through ROS. Library
+  packages (geolib2 etc.) deliberately do **not** register the bridge — the end
+  application (here `ed`) owns that, so register it exactly once in the node.
 - Replace the few `ROS_*` macros (`ROS_ERROR_STREAM`, `ROS_WARN_NAMED` in
   `plugins/robot_plugin.cpp`, `plugins/sync_plugin.cpp`,
   `src/models/load_model.cpp`) with either the existing `ed::log::*` API or
@@ -522,7 +530,7 @@ Acceptable remaining hits: comments/changelog you intentionally wrote.
 ## 12. Pitfalls checklist (review before submitting)
 
 - [ ] `package.xml`: `ament_cmake`, no `catkin`/`message_generation`/`roslib`/
-      `rosconsole_bridge`/`tue_filesystem`; `*_msgs`→`*_interfaces`;
+      `tue_filesystem`; `rosconsole_bridge` **kept**; `*_msgs`→`*_interfaces`;
       `<build_type>ament_cmake</build_type>` present.
 - [ ] `CMakeLists.txt`: one `find_package` per dep; no `catkin_package`;
       target-based includes/links; `ament_export_targets` +
@@ -533,7 +541,8 @@ Acceptable remaining hits: comments/changelog you intentionally wrote.
       `SharedPtr` args; `ros::Time`/`Duration`/`Rate`→`rclcpp::`.
 - [ ] `tf2_ros::Buffer` constructed with a clock.
 - [ ] `tue_filesystem` fully removed in favour of `std::filesystem`; C++17 set.
-- [ ] `rosconsole_bridge.cpp` deleted; `ROS_*` macros replaced.
+- [ ] `rosconsole_bridge` kept (dep + `REGISTER_ROSCONSOLE_BRIDGE` registration)
+      so dependencies' `console_bridge` logs reach ROS; `ROS_*` macros replaced.
 - [ ] pluginlib: `class_list_macros.hpp` include; plugin libs `SHARED`;
       `pluginlib_export_plugin_description_file(...)` added.
 - [ ] Launch files ported to `.launch.py`; Python tools on rclpy.
