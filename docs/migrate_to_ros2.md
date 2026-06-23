@@ -402,24 +402,106 @@ optional for a first build but removes a dependency; keep it a separate commit.
 ## 10. CI
 
 Update `.github/workflows/main.yml` to the ROS 2 matrix used by the reference
-packages (copy from `geolib2/master`):
+packages. **Which template depends on how many packages the repo contains** —
+count the `package.xml` files (`find . -name package.xml -not -path '*/.git/*'`):
+
+| Repo layout | Reference | Template |
+| --- | --- | --- |
+| **Single package** (one `package.xml`) | `geolib2`, `tue_config`, `upower_ros`, `ed_msgs` | §10.1 |
+| **Multi-package** (≥2 `package.xml`) | `code_profiler`, `rgbd`, `tue_serialization` | §10.2 |
+
+`ed` ships a single `package.xml`, so it uses the **single-package** form
+(§10.1). Migrate a multi-package repo (e.g. a future `rgbd`-style repo) with
+§10.2.
+
+### 10.1 Single-package repo
+
+One `tue-ci` job over the `ros_distro` matrix (copy from `geolib2/master`):
 
 ```yaml
+name: CI
+
 on: [push, pull_request, workflow_dispatch]
+
 permissions:
   contents: read
+
 jobs:
   tue-ci:
+    name: TUe CI - ${{ github.event_name }} (${{ matrix.ros_distro }})
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         ros_distro: [humble, jazzy, rolling-u24]
     steps:
-      - uses: tue-robotics/tue-env/ci/main@master
+      - name: TUe CI
+        uses: tue-robotics/tue-env/ci/main@master
         with:
           image: ghcr.io/tue-robotics/tue-env-ros-${{ matrix.ros_distro }}
           package: ${{ github.event.repository.name }}
 ```
+
+> **Package name ≠ repo name?** If the package was renamed during migration
+> (e.g. the `ed_msgs` repo now ships `ed_interfaces`), `${{ github.event.repository.name }}`
+> no longer matches. Hardcode the actual package name instead — `ed_msgs`
+> uses `package: ed_interfaces`. For `ed` the names match, so keep the
+> `repository.name` expression.
+
+### 10.2 Multi-package repo
+
+A first `matrix` job determines which packages changed (so CI only builds the
+affected ones), feeding a 2-D `ros_distro` × `package` matrix in `tue-ci` (copy
+from `rgbd/master` or `tue_serialization/master`):
+
+```yaml
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    name: Determine modified packages
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.modified-packages.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 300          # deep enough for the commit-range diff
+      - name: Commit Range
+        id: commit-range
+        uses: tue-robotics/tue-env/ci/commit-range@master
+      - name: Modified packages
+        id: modified-packages
+        uses: tue-robotics/tue-env/ci/modified-packages@master
+        with:
+          commit-range: ${{ steps.commit-range.outputs.commit-range }}
+  tue-ci:
+    name: TUe CI - ${{ matrix.package }} (${{ matrix.ros_distro }})
+    runs-on: ubuntu-latest
+    needs: matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distro: [humble, jazzy, rolling-u24]
+        package: ${{ fromJson(needs.matrix.outputs.packages) }}
+    steps:
+      - name: TUe CI
+        uses: tue-robotics/tue-env/ci/main@master
+        with:
+          image: ghcr.io/tue-robotics/tue-env-ros-${{ matrix.ros_distro }}
+          package: ${{ matrix.package }}
+```
+
+> The `package` matrix is populated dynamically, so it needs **no edits** when
+> packages are added or renamed inside the repo. Do **not** copy the
+> `default-branch:` input some in-flight migration branches carry (e.g.
+> `rgbd`'s `copilot/...`) — that is a temporary artifact, not part of the
+> template.
 
 ---
 
