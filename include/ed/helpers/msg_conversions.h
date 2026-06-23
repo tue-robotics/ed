@@ -1,7 +1,9 @@
 #ifndef ED_HELPERS_MSG_CONVERSIONS_H_
 #define ED_HELPERS_MSG_CONVERSIONS_H_
 
-#include "ed_msgs/EntityInfo.h"
+#include "ed_interfaces/msg/entity_info.hpp"
+#include "ed_interfaces/msg/sub_volume.hpp"
+#include "ed_interfaces/msg/volume.hpp"
 #include "ed/entity.h"
 
 #include "geolib/Shape.h"
@@ -12,18 +14,20 @@
 
 #include "tue/config/yaml_emitter.h"
 
-#include <shape_msgs/SolidPrimitive.h>
+#include <shape_msgs/msg/solid_primitive.hpp>
+
+#include <rclcpp/time.hpp>
 
 namespace ed {
 
 // ------------------------------ TO ROS ------------------------------
 
 /**
- * @brief converting geo::ShapeConstPtr to ed_msgs::SubVolume message
+ * @brief converting geo::ShapeConstPtr to ed_interfaces::msg::SubVolume message
  * @param shape geo::ShapeConstPtr as input
- * @param msg filled ed_msgs::SubVolume message as output
+ * @param msg filled ed_interfaces::msg::SubVolume message as output
  */
-void convert(const geo::ShapeConstPtr shape, ed_msgs::SubVolume& sub_Volume)
+void convert(const geo::ShapeConstPtr shape, ed_interfaces::msg::SubVolume& sub_Volume)
 {
     geo::Vector3 min = shape->getBoundingBox().getMin();
     geo::Vector3 max = shape->getBoundingBox().getMax();
@@ -33,7 +37,7 @@ void convert(const geo::ShapeConstPtr shape, ed_msgs::SubVolume& sub_Volume)
 
     geo::convert(pos, sub_Volume.center_point.point);
 
-    shape_msgs::SolidPrimitive solid;
+    shape_msgs::msg::SolidPrimitive solid;
     sub_Volume.geometry.type = sub_Volume.geometry.BOX;
     sub_Volume.geometry.dimensions.resize(3, 0);
     sub_Volume.geometry.dimensions[solid.BOX_X] = size.x;
@@ -46,7 +50,7 @@ void convert(const geo::ShapeConstPtr shape, ed_msgs::SubVolume& sub_Volume)
  * @param e ed::Entity as input
  * @param msg filled ed_msgs::EntityInfo message as output
  */
-void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
+void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg) {
     msg.id = e.id().str();
     msg.type = e.type();
 
@@ -85,7 +89,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
         geo::convert(e.pose(), msg.pose);
     }
 
-    msg.last_update_time =  ros::Time(e.lastUpdateTimestamp());
+    msg.last_update_time = rclcpp::Time(static_cast<int64_t>(e.lastUpdateTimestamp() * 1e9));
 
     if (!e.data().empty())
     {
@@ -104,7 +108,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
     {
         for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.volumes().begin(); it != e.volumes().end(); ++it)
         {
-            ed_msgs::Volume volume;
+            ed_interfaces::msg::Volume volume;
             volume.name = it->first;
 
             geo::CompositeShapeConstPtr composite = std::dynamic_pointer_cast<const geo::CompositeShape>(it->second);
@@ -117,7 +121,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
                     geo::ShapePtr shape_tr(new geo::Shape());
                     shape_tr->setMesh(it2->first->getMesh().getTransformed(it2->second.inverse()));
 
-                    ed_msgs::SubVolume sub_volume;
+                    ed_interfaces::msg::SubVolume sub_volume;
                     convert(shape_tr,  sub_volume);
                     sub_volume.center_point.header.frame_id = e.id().str();
                     volume.subvolumes.push_back(sub_volume);
@@ -125,7 +129,7 @@ void convert(const ed::Entity& e, ed_msgs::EntityInfo& msg) {
             }
             else
             {
-                ed_msgs::SubVolume sub_volume;
+                ed_interfaces::msg::SubVolume sub_volume;
                 convert(it->second, sub_volume);
                 volume.subvolumes.push_back(sub_volume);
             }

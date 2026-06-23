@@ -1,13 +1,20 @@
 #ifndef ED_LOOP_USAGE_STATUS_H_
 #define ED_LOOP_USAGE_STATUS_H_
 
+#if __has_include(<diagnostic_updater/diagnostic_updater.hpp>)
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <diagnostic_updater/update_functions.hpp>
+#else
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/update_functions.h>
+#endif
 
-#include <diagnostic_msgs/DiagnosticStatus.h>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
 
 #include <tue/profiling/loop_timer.h>
 #include <tue/profiling/timer.h>
+
+#include <boost/thread/mutex.hpp>
 
 #include <math.h>
 
@@ -127,19 +134,19 @@ public:
 
         if (events == 0)
         {
-            stat.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "No events recorded.");
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "No events recorded.");
         }
         else if (window != 0 && freq < *params_.min_freq_ * (1 - params_.tolerance_))
         {
-            stat.summary(diagnostic_msgs::DiagnosticStatus::WARN, "Frequency too low.");
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Frequency too low.");
         }
         else if (window != 0 && freq > *params_.max_freq_ * (1 + params_.tolerance_))
         {
-            stat.summary(diagnostic_msgs::DiagnosticStatus::WARN, "Frequency too high.");
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Frequency too high.");
         }
         else if (window != 0)
         {
-            stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Desired frequency met");
+            stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Desired frequency met");
         }
 
         stat.addf("Events in window", "%d", events);

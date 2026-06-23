@@ -4,19 +4,19 @@
 #include "ed/init_data.h"
 #include "ed/plugin.h"
 
-#include <pluginlib/class_loader.h>
+#include <pluginlib/class_loader.hpp>
 
-#include <ros/rate.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace ed
 {
 
 // --------------------------------------------------------------------------------
 
-PluginContainer::PluginContainer(const TFBufferConstPtr& tf_buffer)
+PluginContainer::PluginContainer(const rclcpp::Node::SharedPtr& node, const TFBufferConstPtr& tf_buffer)
     : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10),
       loop_frequency_max_(11), loop_frequency_min_(9), step_finished_(true), t_last_update_(0), tf_buffer_(tf_buffer),
-      loop_usage_status_(nullptr)
+      node_(node), loop_usage_status_(nullptr)
 {
 }
 
@@ -48,12 +48,13 @@ PluginPtr PluginContainer::loadPlugin(const std::string& plugin_name, const std:
         init.config.addError("Could not find plugin with the type '" + plugin_type + "'.");
     else
     {
-        plugin_ = class_loader_->createInstance(plugin_type);
+        plugin_ = PluginPtr(class_loader_->createUnmanagedInstance(plugin_type));
         if (plugin_)
         {
             name_ = plugin_name;
             plugin_->name_ = plugin_name;
             plugin_->tf_buffer_ = tf_buffer_;
+            plugin_->node_ = node_;
 
             configure(init, false);
 
@@ -133,8 +134,8 @@ void PluginContainer::run()
 
     double innerloop_frequency = 1000; // TODO: magic number!
 
-    ros::Rate r(loop_frequency_);
-    ros::Rate ir(innerloop_frequency);
+    rclcpp::WallRate r(loop_frequency_);
+    rclcpp::WallRate ir(innerloop_frequency);
     while(!request_stop_)
     {
         if (!step())

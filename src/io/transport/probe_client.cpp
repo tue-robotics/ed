@@ -1,10 +1,10 @@
 #include "ed/io/transport/probe_client.h"
 
 // ROS services
-#include <ed_msgs/Configure.h>
-#include "tue_serialization/BinaryService.h"
+#include <ed_interfaces/srv/configure.hpp>
+#include <tue_serialization_interfaces/srv/binary_service.hpp>
 
-#include <ros/node_handle.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <tue/serialization/conversions.h>
 
@@ -13,7 +13,7 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-ProbeClient::ProbeClient() : nh_(nullptr)
+ProbeClient::ProbeClient()
 {
 }
 
@@ -21,24 +21,20 @@ ProbeClient::ProbeClient() : nh_(nullptr)
 
 ProbeClient::~ProbeClient()
 {
-    delete nh_;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void ProbeClient::launchProbe(const std::string& probe_name, const std::string& lib)
 {
-    if (!ros::isInitialized())
-    {
-        ros::M_string remapping_args;
-        ros::init(remapping_args, "ed_probe_client_" + probe_name);
-    }
+    if (!rclcpp::ok())
+        rclcpp::init(0, nullptr);
 
-    nh_ = new ros::NodeHandle();
-    ros::ServiceClient client = nh_->serviceClient<ed_msgs::Configure>("ed/configure");
-    client.waitForExistence();
+    node_ = rclcpp::Node::make_shared("ed_probe_client_" + probe_name);
+    auto client = node_->create_client<ed_interfaces::srv::Configure>("ed/configure");
+    client->wait_for_service();
 
-    ed_msgs::Configure srv;
+    auto request = std::make_shared<ed_interfaces::srv::Configure::Request>();
 
     double freq = 1000; // default
     tue::Configuration config;
@@ -55,15 +51,16 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     }
     config.endArray();
 
-    srv.request.request = config.toYAMLString();
+    request->request = config.toYAMLString();
 
-    std::cout << "Sending request to launch probe using configuration: " << srv.request.request << std::endl;
+    std::cout << "Sending request to launch probe using configuration: " << request->request << std::endl;
 
     std::string error;
 
-    if (client.call(srv))
+    auto future = client->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(node_, future) == rclcpp::FutureReturnCode::SUCCESS)
     {
-        error = srv.response.error_msg;
+        error = future.get()->error_msg;
     }
     else
     {
@@ -78,8 +75,8 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
     {
         // Initialize connection with the probe
         probe_name_ = probe_name;
-        srv_probe_ = nh_->serviceClient<tue_serialization::BinaryService>("ed/probe/" + probe_name_);
-        srv_probe_.waitForExistence();
+        srv_probe_ = node_->create_client<tue_serialization_interfaces::srv::BinaryService>("ed/probe/" + probe_name_);
+        srv_probe_->wait_for_service();
     }
 }
 
@@ -94,18 +91,19 @@ void ProbeClient::configure(tue::Configuration /*config*/)
 
 bool ProbeClient::process(tue::serialization::Archive& req, tue::serialization::Archive& res)
 {
-    if (!srv_probe_.exists())
+    if (!srv_probe_ || !srv_probe_->service_is_ready())
     {
         std::cout << "Service does not exist" << std::endl;
         return false;
     }
 
-    tue_serialization::BinaryService srv;
-    tue::serialization::convert(req, srv.request.bin.data);
+    auto request = std::make_shared<tue_serialization_interfaces::srv::BinaryService::Request>();
+    tue::serialization::convert(req, request->bin.data);
 
-    if (srv_probe_.call(srv))
+    auto future = srv_probe_->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(node_, future) == rclcpp::FutureReturnCode::SUCCESS)
     {
-        tue::serialization::convert(srv.response.bin.data, res);
+        tue::serialization::convert(future.get()->bin.data, res);
         return true;
     }
     else

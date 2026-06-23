@@ -17,7 +17,7 @@
 #include "ed/logging.h"
 #include "ed/convex_hull_calc.h"
 
-#include <tue/filesystem/path.h>
+#include <filesystem>
 
 namespace ed
 {
@@ -154,7 +154,9 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
         std::string rgbd_filename, mask_filename;
         if (r.readValue("image_file", rgbd_filename) && r.readValue("mask_file", mask_filename))
         {
-            std::string base_path = tue::filesystem::Path(filename).parentPath().string();
+            // tue::filesystem::Path::parentPath() returned "." for a bare filename; std::filesystem returns empty
+            std::filesystem::path parent_path = std::filesystem::path(filename).parent_path();
+            std::string base_path = parent_path.empty() ? "." : parent_path.string();
 
             rgbd::ImagePtr image = readRGBDImage(base_path + "/" + rgbd_filename);
 

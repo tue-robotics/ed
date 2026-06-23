@@ -2,8 +2,6 @@
 #include <ed/update_request.h>
 #include <ed/relations/transform_cache.h>
 
-#include <ros/time.h>    // Why do we need this?
-
 // Profiling
 #include <tue/profiling/timer.h>
 
@@ -81,8 +79,6 @@ void testCorrectness(const ed::WorldModel& wm)
 
 int main(int argc, char **argv)
 {
-    ros::Time::init();                      // Why do we need this?
-
     ed::WorldModel wm;
     buildWorldModel(wm);
 

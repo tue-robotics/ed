@@ -1,8 +1,6 @@
 #include "sync_plugin.h"
 
-#include <ros/node_handle.h>
-
-#include "ed_msgs/Query.h"
+#include <ed_interfaces/srv/query.hpp>
 #include "ed/update_request.h"
 #include "ed/world_model.h"
 #include "ed/serialization/serialization.h"
@@ -27,45 +25,48 @@ void SyncPlugin::initialize(ed::InitData& init)
     std::string server_name;
     init.config.value("server", server_name);
 
-    ros::NodeHandle nh;
-    sync_client_ = nh.serviceClient<ed_msgs::Query>(server_name);
+    cb_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    sync_client_ = node_->create_client<ed_interfaces::srv::Query>(server_name, rclcpp::ServicesQoS(), cb_group_);
+    executor_.add_callback_group(cb_group_, node_->get_node_base_interface());
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void SyncPlugin::process(const ed::PluginInput& /*data*/, ed::UpdateRequest& req)
 {
-    ed_msgs::Query query;
-    query.request.since_revision = rev_number_;
+    auto request = std::make_shared<ed_interfaces::srv::Query::Request>();
+    request->since_revision = rev_number_;
 
-    if (!sync_client_.call(query))
+    auto future = sync_client_->async_send_request(request);
+    if (executor_.spin_until_future_complete(future) != rclcpp::FutureReturnCode::SUCCESS)
     {
-        ROS_ERROR_STREAM("[ED SyncPlugin] Failed to call service '" << sync_client_.getService() << "'");
+        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED SyncPlugin] Failed to call service '" << sync_client_->get_service_name() << "'");
         return;
     }
 
-    ed::io::JSONReader r(query.response.human_readable.c_str());
+    auto response = future.get();
+    ed::io::JSONReader r(response->human_readable.c_str());
 
     if (!r.ok())
     {
-        ROS_ERROR_STREAM("[ED SyncPlugin] Could not parse query response received from '" << sync_client_.getService() << "': " << query.response);
+        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED SyncPlugin] Could not parse query response received from '" << sync_client_->get_service_name() << "'");
         return;
     }
 
-//    std::cout << "Response size: " << query.response.human_readable.size() << std::endl;
+//    std::cout << "Response size: " << response->human_readable.size() << std::endl;
 
     ed::deserialize(r, req);
 
     if (!r.ok())
     {
-        ROS_ERROR_STREAM("[ED SyncPlugin] Invalid query response from '" << sync_client_.getService() << "': " << r.error());
+        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED SyncPlugin] Invalid query response from '" << sync_client_->get_service_name() << "': " << r.error());
 
         // Clear update request
         req = ed::UpdateRequest();
     }
     else
     {
-        rev_number_ = query.response.new_revision;
+        rev_number_ = response->new_revision;
     }
 }
 

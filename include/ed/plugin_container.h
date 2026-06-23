@@ -7,6 +7,8 @@
 
 #include <tue/config/configuration.h>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <boost/thread.hpp>
 
 #include <queue>
@@ -27,7 +29,7 @@ class PluginContainer
 
 public:
 
-    PluginContainer(const ed::TFBufferConstPtr& tf_buffer_);
+    PluginContainer(const rclcpp::Node::SharedPtr& node, const ed::TFBufferConstPtr& tf_buffer);
 
     virtual ~PluginContainer();
 
@@ -112,6 +114,8 @@ protected:
     WorldModelConstPtr world_current_;
 
     TFBufferConstPtr tf_buffer_;
+
+    rclcpp::Node::SharedPtr node_;
 
     std::unique_ptr<ed::LoopUsageStatus> loop_usage_status_;
 

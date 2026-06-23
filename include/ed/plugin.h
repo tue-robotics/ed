@@ -1,7 +1,7 @@
 #ifndef ED_PLUGIN_H_
 #define ED_PLUGIN_H_
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #define ED_REGISTER_PLUGIN(Derived)  PLUGINLIB_EXPORT_CLASS(Derived, ed::Plugin)
 
 #include <tue/config/configuration.h>
@@ -9,6 +9,7 @@
 #include "ed/types.h"
 #include "ed/init_data.h"
 
+#include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/buffer.h>
 
 #include <vector>
@@ -48,6 +49,9 @@ public:
 protected:
 
     TFBufferConstPtr tf_buffer_;
+
+    //! Shared node handle, set by the PluginContainer before configure()/initialize()
+    rclcpp::Node::SharedPtr node_;
 
 private:
 

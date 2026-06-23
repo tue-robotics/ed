@@ -1,9 +1,8 @@
 #include "ed/io/transport/probe.h"
 
-#include <ros/node_handle.h>
-#include <ros/advertise_service_options.h>
-
 #include <tue/serialization/conversions.h>
+
+#include <functional>
 
 namespace ed
 {
@@ -24,14 +23,14 @@ Probe::~Probe()
 
 void Probe::initialize()
 {
-    ros::NodeHandle nh;
+    cb_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
-    ros::AdvertiseServiceOptions opt_srv =
-            ros::AdvertiseServiceOptions::create<tue_serialization::BinaryService>(
-                "ed/probe/" + name(), boost::bind(&Probe::srvCallback, this, _1, _2),
-                ros::VoidPtr(), &cb_queue_);
+    srv_ = node_->create_service<tue_serialization_interfaces::srv::BinaryService>(
+                "ed/probe/" + name(),
+                std::bind(&Probe::srvCallback, this, std::placeholders::_1, std::placeholders::_2),
+                rclcpp::ServicesQoS(), cb_group_);
 
-    srv_ = nh.advertiseService(opt_srv);
+    executor_.add_callback_group(cb_group_, node_->get_node_base_interface());
 
     std::cout << "Probe '" << name() << "' initialized." << std::endl;
 }
@@ -43,16 +42,16 @@ void Probe::process(const WorldModel& world, UpdateRequest& req)
     world_ = &world;
     update_req_ = &req;
 
-    cb_queue_.callAvailable();
+    executor_.spin_some();
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-bool Probe::srvCallback(const tue_serialization::BinaryService::Request& ros_req,
-                        tue_serialization::BinaryService::Response& ros_res)
+void Probe::srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request> ros_req,
+                        std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response> ros_res)
 {
     std::stringstream ss_req;
-    tue::serialization::convert(ros_req.bin.data, ss_req);
+    tue::serialization::convert(ros_req->bin.data, ss_req);
     tue::serialization::InputArchive req(ss_req);
 
     std::stringstream ss_res;
@@ -60,9 +59,7 @@ bool Probe::srvCallback(const tue_serialization::BinaryService::Request& ros_req
 
     this->process(*world_, *update_req_, req, res);
 
-    tue::serialization::convert(ss_res, ros_res.bin.data);
-
-    return true;
+    tue::serialization::convert(ss_res, ros_res->bin.data);
 }
 
 }

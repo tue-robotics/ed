@@ -8,8 +8,14 @@
 #include <tf2/convert.h>
 #include <tf2/transform_datatypes.h>
 #include <tf2/LinearMath/Transform.h>
+#if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#else
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#endif
 #include <tf2_ros/transform_broadcaster.h>
+
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -40,7 +46,7 @@ void TFPublisherPlugin::configure(tue::Configuration config)
 
 void TFPublisherPlugin::initialize()
 {
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>();
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -64,11 +70,11 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
 
         tf2::Stamped<tf2::Transform> t;
         geo::convert(e->pose(), t);
-        t.frame_id_ = root_frame_id_;
-        t.stamp_ = ros::Time::now();
 
-        geometry_msgs::TransformStamped msg;
+        geometry_msgs::msg::TransformStamped msg;
         tf2::convert(t, msg);
+        msg.header.frame_id = root_frame_id_;
+        msg.header.stamp = node_->now();
         msg.child_frame_id = e->id().str();
         tf_broadcaster_->sendTransform(msg);
     }

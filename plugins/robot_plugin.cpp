@@ -2,8 +2,6 @@
 
 #include <kdl_parser/kdl_parser.hpp>
 
-#include <ros/node_handle.h>
-
 #include <ed/entity.h>
 #include <ed/update_request.h>
 #include <ed/world_model.h>
@@ -12,12 +10,13 @@
 #include <geolib/CompositeShape.h>
 
 // URDF shape loading
-#include <ros/package.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <geolib/io/import.h>
 #include <geolib/Box.h>
 
 #include <ed/world_model/transform_crawler.h>
 
+#include <functional>
 #include <tuple>
 
 // ----------------------------------------------------------------------------------------------------
@@ -80,7 +79,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
         urdf::Mesh* mesh = static_cast<urdf::Mesh*>(geom.get());
         if (!mesh)
         {
-            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No mesh geometry defined");
+            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No mesh geometry defined");
             return shape;
         }
 
@@ -92,13 +91,13 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
 
             std::string pkg = str.substr(0, i_slash);
             std::string rel_filename = str.substr(i_slash + 1);
-            std::string pkg_path = ros::package::getPath(pkg);
+            std::string pkg_path = ament_index_cpp::get_package_share_directory(pkg);
             std::string abs_filename = pkg_path + "/" + rel_filename;
 
             shape = geo::io::readMeshFile(abs_filename, mesh->scale.x);
 
             if (!shape)
-                ROS_ERROR_STREAM_NAMED("RobotPlugin", "[RobotPlugin] Could not load mesh shape from '" << abs_filename << "'");
+                RCLCPP_ERROR_STREAM(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Could not load mesh shape from '" << abs_filename << "'");
         }
     }
     else if (geom->type == urdf::Geometry::BOX)
@@ -106,7 +105,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
         urdf::Box* box = static_cast<urdf::Box*>(geom.get());
         if (!box)
         {
-            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No box geometry defined");
+            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No box geometry defined");
             return shape;
         }
 
@@ -121,7 +120,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
         urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(geom.get());
         if (!cyl)
         {
-            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No cylinder geometry defined");
+            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No cylinder geometry defined");
             return shape;
         }
 
@@ -133,7 +132,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
         urdf::Sphere* sphere = static_cast<urdf::Sphere*>(geom.get());
         if (!sphere)
         {
-            ROS_WARN_NAMED("RobotPlugin", "[RobotPlugin] Robot model error: No sphere geometry defined");
+            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No sphere geometry defined");
             return shape;
         }
 
@@ -155,7 +154,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
         const urdf::GeometrySharedPtr& geom = vis->geometry;
         if (!geom)
         {
-            ROS_WARN_STREAM_NAMED("RobotPlugin" ,"[RobotPlugin] Robot model error: missing geometry for visual in link: '" << link->name << "'");
+            RCLCPP_WARN_STREAM(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: missing geometry for visual in link: '" << link->name << "'");
             continue;
         }
 
@@ -178,7 +177,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
         const urdf::GeometrySharedPtr& geom = col->geometry;
         if (!geom)
         {
-            ROS_WARN_STREAM_NAMED("RobotPlugin" ,"[RobotPlugin] Robot model error: missing geometry for collision in link: '" << link->name << "'");
+            RCLCPP_WARN_STREAM(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: missing geometry for collision in link: '" << link->name << "'");
             continue;
         }
 
@@ -247,11 +246,11 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMa
 
 // ----------------------------------------------------------------------------------------------------
 
-void RobotPlugin::jointCallback(const sensor_msgs::JointState::ConstPtr& msg)
+void RobotPlugin::jointCallback(const sensor_msgs::msg::JointState::ConstSharedPtr& msg)
 {
     if (msg->name.size() != msg->position.size())
     {
-        ROS_ERROR("[ED RobotPlugin] On joint callback: name and position vector must be of equal length.");
+        RCLCPP_ERROR(node_->get_logger(), "[ED RobotPlugin] On joint callback: name and position vector must be of equal length.");
         return;
     }
 
@@ -269,7 +268,7 @@ void RobotPlugin::jointCallback(const sensor_msgs::JointState::ConstPtr& msg)
             boost::shared_ptr<JointRelation> r(new JointRelation(*info.last_rel));
             r->setCacheSize(joint_cache_size_);
 
-            r->insert(msg->header.stamp.toSec(), pos);
+            r->insert(rclcpp::Time(msg->header.stamp).seconds(), pos);
 
             update_req_->setRelation(info.parent_id, info.child_id, r);
 
@@ -277,7 +276,7 @@ void RobotPlugin::jointCallback(const sensor_msgs::JointState::ConstPtr& msg)
         }
         else
         {
-            ROS_ERROR_STREAM("[ED RobotPlugin] On joint callback: unknown joint name '" << name << "'.");
+            RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED RobotPlugin] On joint callback: unknown joint name '" << name << "'.");
         }
     }
 }
@@ -291,7 +290,9 @@ void RobotPlugin::configure(tue::Configuration config)
 
     config.value("robot_name", robot_name_);
 
-    ros::NodeHandle nh;
+    cb_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions sub_options;
+    sub_options.callback_group = cb_group_;
 
     if (config.readArray("joint_topics"))
     {
@@ -299,22 +300,28 @@ void RobotPlugin::configure(tue::Configuration config)
         {
             std::string topic;
             config.value("topic", topic);
-            ROS_DEBUG_STREAM("[RobotPlugin] Topic: " << topic);
+            RCLCPP_DEBUG_STREAM(node_->get_logger(), "[RobotPlugin] Topic: " << topic);
 
-            ros::SubscribeOptions sub_options = ros::SubscribeOptions::create<sensor_msgs::JointState>
-                    (topic, 10, boost::bind(&RobotPlugin::jointCallback, this, _1), ros::VoidPtr(), &cb_queue_);
-
-            joint_subscribers_[topic] = nh.subscribe(sub_options);
+            joint_subscribers_[topic] = node_->create_subscription<sensor_msgs::msg::JointState>(
+                        topic, 10, std::bind(&RobotPlugin::jointCallback, this, std::placeholders::_1), sub_options);
         }
 
         config.endArray();
     }
 
+    executor_.add_callback_group(cb_group_, node_->get_node_base_interface());
+
     if (config.hasError())
         return;
 
+    // ToDo(ROS2): in ROS 1 the URDF was fetched from the global parameter server. ROS 2 has no
+    // global parameter server; this reads it from a parameter on the ED node. Consider subscribing
+    // to the /robot_description topic (transient_local) instead.
     std::string urdf_xml;
-    if (!nh.getParam(urdf_rosparam, urdf_xml))
+    if (!node_->has_parameter(urdf_rosparam))
+        node_->declare_parameter<std::string>(urdf_rosparam, "");
+    urdf_xml = node_->get_parameter(urdf_rosparam).as_string();
+    if (urdf_xml.empty())
     {
         config.addError("No such ROS parameter: '" + urdf_rosparam + "'.");
         return;
@@ -381,13 +388,13 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
     }
 
     update_req_ = &req;
-    cb_queue_.callAvailable();
+    executor_.spin_some();
 
     ed::EntityConstPtr e_robot = world.getEntity(robot_name_);
     if (e_robot && e_robot->has_pose())
     {
         // Calculate absolute poses
-        for(ed::world_model::TransformCrawler tc(world, robot_name_, ros::Time::now().toSec()); tc.hasNext(); tc.next())
+        for(ed::world_model::TransformCrawler tc(world, robot_name_, node_->now().seconds()); tc.hasNext(); tc.next())
         {
             const ed::EntityConstPtr& e = tc.entity();
             req.setPose(e->id(), e_robot->pose() * tc.transform());

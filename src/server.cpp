@@ -16,9 +16,7 @@
 #include <tue/config/writer.h>
 #include <tue/config/loaders/yaml.h>
 
-#include <tue/filesystem/path.h>
-
-#include <std_msgs/String.h>
+#include <std_msgs/msg/string.hpp>
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -28,13 +26,14 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-Server::Server() : world_model_(new WorldModel(&property_key_db_))
+Server::Server(const rclcpp::Node::SharedPtr& node) :
+    node_(node), world_model_(new WorldModel(&property_key_db_)), updater_(node)
 {
     updater_.setHardwareID("none");
 
-    tf_buffer_ = ed::make_shared<tf2_ros::Buffer>();
+    tf_buffer_ = ed::make_shared<tf2_ros::Buffer>(node_->get_clock());
     tf_buffer_const_ = ed::const_pointer_cast<const tf2_ros::Buffer>(tf_buffer_);
-    tf_listener_ = ed::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_listener_ = ed::make_shared<tf2_ros::TransformListener>(*tf_buffer_, node_);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -141,10 +140,9 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
 void Server::initialize()
 {
-    if (pub_stats_.getTopic().empty())
+    if (!pub_stats_)
     {
-        ros::NodeHandle nh;
-        pub_stats_ = nh.advertise<std_msgs::String>("ed/stats", 10);
+        pub_stats_ = node_->create_publisher<std_msgs::msg::String>("ed/stats", 10);
     }
 }
 
@@ -159,7 +157,7 @@ void Server::reset(bool keep_all_shapes)
     std::stringstream error;
     if (!model_loader_.create("_root", world_name_, *req_init_world, error, true))
     {
-        ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
+        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED] Could not initialize world: " << error.str());
     }
 
     // Prepare deletion request
@@ -221,7 +219,7 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
     }
 
     // Create a plugin container
-    PluginContainerPtr container = ed::make_shared<PluginContainer>(tf_buffer_const_);
+    PluginContainerPtr container = ed::make_shared<PluginContainer>(node_, tf_buffer_const_);
 
     InitData init(property_key_db_, config);
 
@@ -419,7 +417,7 @@ void Server::initializeWorld()
     std::stringstream error;
     if (!model_loader_.create("_root", world_name_, *req, error, true))
     {
-        ROS_ERROR_STREAM("[ED] Could not initialize world: " << error.str());
+        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED] Could not initialize world: " << error.str());
         return;
     }
 
@@ -471,10 +469,10 @@ void Server::publishStatistics()
     }
 
 
-    std_msgs::String msg;
+    std_msgs::msg::String msg;
     msg.data = s.str();
 
-    pub_stats_.publish(msg);
+    pub_stats_->publish(msg);
     updater_.force_update();
 }
 

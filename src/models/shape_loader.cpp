@@ -3,7 +3,7 @@
 
 #include "xml_shape_parser.h"
 
-#include <tue/filesystem/path.h>
+#include <filesystem>
 
 #include <geolib/CompositeShape.h>
 #include <geolib/io/import.h>
@@ -120,8 +120,8 @@ static std::string getUriPath(std::string type)
 
     for(std::vector<std::string>::const_iterator it = type_paths->cbegin(); it != type_paths->cend(); ++it)
     {
-        tue::filesystem::Path file_path(*it + "/" + parsed_uri);
-        if (file_path.exists())
+        std::filesystem::path file_path(*it + "/" + parsed_uri);
+        if (std::filesystem::exists(file_path))
             return file_path.string();
     }
 
@@ -633,7 +633,7 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
             return shape;
         }
 
-        tue::filesystem::Path shape_path;
+        std::filesystem::path shape_path;
 
         if (model_path.empty() || path[0] == '/')
             shape_path = path;
@@ -645,9 +645,9 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
         if (it != shape_cache.end())
             return it->second;
 
-        if (shape_path.exists())
+        if (std::filesystem::exists(shape_path))
         {
-            std::string xt = shape_path.extension();
+            std::string xt = shape_path.extension().string();
             if (xt == ".pgm" || xt == ".png")
             {
                 shape = getHeightMapShape(shape_path.string(), cfg, error);
@@ -787,8 +787,8 @@ geo::ShapePtr loadShape(const std::string& model_path, tue::config::Reader cfg,
                 scale.y = std::stod(scale_vector[1]);
                 scale.z = std::stod(scale_vector[2]);
             }
-            tue::filesystem::Path mesh_path = getUriPath(uri_path);
-            if (mesh_path.exists())
+            std::filesystem::path mesh_path = getUriPath(uri_path);
+            if (std::filesystem::exists(mesh_path))
                 shape = geo::io::readMeshFile(mesh_path.string(), scale);
             else
                 error << "[ED::MODELS::LOADSHAPE] Mesh File: '" << mesh_path.string() << "' doesn't exist." << std::endl;

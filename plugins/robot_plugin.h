@@ -6,9 +6,8 @@
 #include <ed/time_cache.h>
 #include <ed/uuid.h>
 
-#include <ros/subscriber.h>
-#include <ros/callback_queue.h>
-#include <sensor_msgs/JointState.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 
 #include <kdl/tree.hpp>
 #include <geolib/datatypes.h>
@@ -90,11 +89,13 @@ private:
 
     // ROS Communication
 
-    ros::CallbackQueue cb_queue_;
+    rclcpp::CallbackGroup::SharedPtr cb_group_;
 
-    std::map<std::string, ros::Subscriber> joint_subscribers_;
+    rclcpp::executors::SingleThreadedExecutor executor_;
 
-    void jointCallback(const sensor_msgs::JointState::ConstPtr& msg);
+    std::map<std::string, rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr> joint_subscribers_;
+
+    void jointCallback(const sensor_msgs::msg::JointState::ConstSharedPtr& msg);
 
 
 };

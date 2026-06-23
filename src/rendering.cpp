@@ -1,6 +1,3 @@
-// ROS
-#include <ros/console.h>
-
 // TU/e Robotics
 #include <geolib/sensors/DepthCamera.h>
 #include <geolib/Mesh.h>

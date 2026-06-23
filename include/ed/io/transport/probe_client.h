@@ -5,7 +5,8 @@
 
 #include <tue/config/configuration.h>
 
-#include <ros/service_client.h>
+#include <rclcpp/rclcpp.hpp>
+#include <tue_serialization_interfaces/srv/binary_service.hpp>
 
 namespace ed
 {
@@ -29,11 +30,11 @@ public:
 
 private:
 
-    ros::NodeHandle* nh_;
+    rclcpp::Node::SharedPtr node_;
 
     std::string probe_name_;
 
-    ros::ServiceClient srv_probe_;
+    rclcpp::Client<tue_serialization_interfaces::srv::BinaryService>::SharedPtr srv_probe_;
 
 };
 

@@ -7,7 +7,7 @@
 #include "ed/logging.h"
 
 #include <tue/serialization/output_archive.h>
-#include <tue/filesystem/path.h>
+#include <filesystem>
 
 #include <rgbd/serialization.h>
 
@@ -98,7 +98,7 @@ bool write(const std::string& filename, const Entity& e)
         w.writeGroup("rgbd_measurement");
 
         // Get filename without path
-        std::string base_filename = tue::filesystem::Path(filename).filename();
+        std::string base_filename = std::filesystem::path(filename).filename().string();
 
         w.writeValue("image_file", base_filename + ".rgbd");
         w.writeValue("mask_file", base_filename + ".mask");

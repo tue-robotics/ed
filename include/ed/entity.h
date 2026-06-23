@@ -9,7 +9,6 @@
 #include <tue/config/data.h>
 
 #include <boost/circular_buffer.hpp>
-#include <ros/time.h>
 
 #include "ed/property.h"
 #include "ed/property_key.h"

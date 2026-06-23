@@ -7,10 +7,9 @@
 #include <tue/serialization/input_archive.h>
 #include <tue/serialization/output_archive.h>
 
-#include <tue_serialization/BinaryService.h>
+#include <tue_serialization_interfaces/srv/binary_service.hpp>
 
-#include <ros/callback_queue.h>
-#include <ros/service_server.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace ed
 {
@@ -48,12 +47,14 @@ private:
     const ed::WorldModel* world_;
     ed::UpdateRequest* update_req_;
 
-    ros::CallbackQueue cb_queue_;
+    rclcpp::CallbackGroup::SharedPtr cb_group_;
 
-    ros::ServiceServer srv_;
+    rclcpp::executors::SingleThreadedExecutor executor_;
 
-    bool srvCallback(const tue_serialization::BinaryService::Request& ros_req,
-                     tue_serialization::BinaryService::Response& ros_res);
+    rclcpp::Service<tue_serialization_interfaces::srv::BinaryService>::SharedPtr srv_;
+
+    void srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request> ros_req,
+                     std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response> ros_res);
 
 };
 

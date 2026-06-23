@@ -6,7 +6,7 @@
 #include "ed/entity.h"
 #include "ed/relations/transform_cache.h"
 
-#include <tue/filesystem/path.h>
+#include <filesystem>
 
 #include "shape_loader_private.h"
 
@@ -91,8 +91,8 @@ std::string ModelLoader::getModelPath(const std::string& type) const
 {
     for(std::vector<std::string>::const_iterator it = ed_model_paths_.cbegin(); it != ed_model_paths_.cend(); ++it)
     {
-        tue::filesystem::Path model_path(*it + "/" + type);
-        if (model_path.exists())
+        std::filesystem::path model_path(*it + "/" + type);
+        if (std::filesystem::exists(model_path))
             return model_path.string();
     }
 
@@ -112,14 +112,14 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
     {
         for(std::vector<std::string>::const_iterator it = model_paths_.cbegin(); it != model_paths_.cend(); ++it)
         {
-            tue::filesystem::Path model_dir(*it + "/" + parsed_uri);
-            if (model_dir.exists())
+            std::filesystem::path model_dir(*it + "/" + parsed_uri);
+            if (std::filesystem::exists(model_dir))
             {
-                tue::filesystem::Path config_path(model_dir.string() + "/model.config");
-                if (config_path.exists())
+                std::filesystem::path config_path(model_dir.string() + "/model.config");
+                if (std::filesystem::exists(config_path))
                 {
-                    tue::filesystem::Path model_path = sdf::getModelFilePath(model_dir.string());
-                    if (model_path.exists())
+                    std::filesystem::path model_path = sdf::getModelFilePath(model_dir.string());
+                    if (std::filesystem::exists(model_path))
                         return model_path.string();
                 }
             }
@@ -129,8 +129,8 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
     {
         for(std::vector<std::string>::const_iterator it = file_paths_.cbegin(); it != file_paths_.cend(); ++it)
         {
-            tue::filesystem::Path file_path(*it + "/" + parsed_uri);
-            if (file_path.exists())
+            std::filesystem::path file_path(*it + "/" + parsed_uri);
+            if (std::filesystem::exists(file_path))
                 return file_path.string();
         }
     }
@@ -179,8 +179,8 @@ tue::config::DataConstPointer ModelLoader::loadModelData(std::string type, std::
         return data;
     }
 
-    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml");
-    if (!model_cfg_path.exists())
+    std::filesystem::path model_cfg_path(model_path + "/model.yaml");
+    if (!std::filesystem::exists(model_cfg_path))
     {
         error << "[ed::models::loadModelData] ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' file does not exist." << std::endl;
         return data;
@@ -238,8 +238,8 @@ tue::config::DataConstPointer ModelLoader::loadSDFData(std::string uri, std::str
         return cache_data.first;
     }
 
-    tue::filesystem::Path model_cfg_path = getSDFPath(uri);
-    if (!model_cfg_path.exists())
+    std::filesystem::path model_cfg_path = getSDFPath(uri);
+    if (!std::filesystem::exists(model_cfg_path))
     {
         error << "[ed::models::loadSDFData] Model '" << uri << "' could not be found." << std::endl;
         return data;

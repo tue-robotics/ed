@@ -1,61 +1,58 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(ed)
 
-add_compile_options(-Wall -Werror=all)
-add_compile_options(-Wextra -Werror=extra)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Find before adding cmake_modules, to not use their deprecated FindEigen
-find_package(PCL REQUIRED COMPONENTS common)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Werror=all)
+  add_compile_options(-Wextra -Werror=extra)
+endif()
 
-## Find catkin macros and libraries
-find_package(catkin REQUIRED COMPONENTS
-  cmake_modules
-  code_profiler
-  diagnostic_updater
-  ${PROJECT_NAME}_msgs
-  geolib2
-  pluginlib
-  rgbd
-  rgbd_msgs
-  rosconsole_bridge
-  roscpp
-  tf2_ros
-  tue_config
-  tue_filesystem
-  tue_serialization
-)
+find_package(ament_cmake REQUIRED)
 
+find_package(ament_index_cpp REQUIRED)
+find_package(code_profiler REQUIRED)
+find_package(diagnostic_updater REQUIRED)
+find_package(ed_interfaces REQUIRED)
+find_package(geolib2 REQUIRED)
+find_package(kdl_parser REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rgbd REQUIRED)
+find_package(rgbd_interfaces REQUIRED)
+find_package(rosconsole_bridge REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(urdf REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tue_config REQUIRED)
+find_package(tue_serialization REQUIRED)
+find_package(tue_serialization_interfaces REQUIRED)
+
+# Non-ROS dependencies
+find_package(Boost REQUIRED COMPONENTS thread)
 find_package(OpenCV REQUIRED)
 find_package(orocos_kdl REQUIRED)
-find_package(SDFormat REQUIRED)
+# Find before adding cmake_modules, to not use their deprecated FindEigen
+find_package(PCL REQUIRED COMPONENTS common)
+find_package(sdformat_vendor REQUIRED)
+find_package(sdformat14 REQUIRED)
 find_package(TinyXML2 REQUIRED)
 
-###################################
-## catkin specific configuration ##
-###################################
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}_core ${PROJECT_NAME}_io ${PROJECT_NAME}_server ${PROJECT_NAME}_hello_world_plugin ${PROJECT_NAME}_custom_properties_plugin
-  CATKIN_DEPENDS code_profiler ${PROJECT_NAME}_msgs geolib2 pluginlib rgbd rgbd_msgs roscpp tf2_ros tue_config tue_filesystem tue_serialization
-  DEPENDS OpenCV PCL
-)
-
-###########
-## Build ##
-###########
-
-include_directories(
-  include
-  SYSTEM
-  3rdparty/polypartition/include
-  3rdparty/rapidjson/include
-  ${TinyXML2_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${SDFormat_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS}
-)
+# ------------------------------------------------------------------------------------------------
+#                                          3RDPARTY
+# ------------------------------------------------------------------------------------------------
 
 add_library(polypartition 3rdparty/polypartition/src/polypartition.cpp)
+target_include_directories(polypartition PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/polypartition/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 # ------------------------------------------------------------------------------------------------
 #                                          ED CORE
@@ -64,8 +61,7 @@ add_library(polypartition 3rdparty/polypartition/src/polypartition.cpp)
 # Get all the headers
 file(GLOB_RECURSE HEADER_FILES include/*.h)
 
-# Declare a cpp library
-add_library(${PROJECT_NAME}_core
+add_library(${PROJECT_NAME}_core SHARED
   ${HEADER_FILES}
 
   src/convex_hull_2d.cpp
@@ -90,13 +86,38 @@ add_library(${PROJECT_NAME}_core
   src/error_context.cpp
   src/logging.cpp
 
-  # Forward geolib2/tue_filesystem logging to rosconsole
+  # Forward geolib2/tue_config (console_bridge) logging to ROS
   src/rosconsole_bridge.cpp
 )
-target_link_libraries(${PROJECT_NAME}_core polypartition ${TinyXML2_LIBRARIES} ${PCL_LIBRARIES} ${SDFormat_LIBRARIES} ${catkin_LIBRARIES})
-add_dependencies(${PROJECT_NAME}_core ${catkin_EXPORTED_TARGETS})
+target_include_directories(${PROJECT_NAME}_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/rapidjson/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_include_directories(${PROJECT_NAME}_core SYSTEM PRIVATE
+  ${PCL_INCLUDE_DIRS}
+)
+target_link_libraries(${PROJECT_NAME}_core PUBLIC
+  polypartition
+  Boost::thread
+  code_profiler::code_profiler
+  geolib2::geolib
+  rgbd::rgbd
+  rosconsole_bridge::rosconsole_bridge
+  tinyxml2::tinyxml2
+  tue_config::tue_config
+  tue_serialization::tue_serialization
+  sdformat14::sdformat14
+  ${PCL_LIBRARIES}
+)
+ament_target_dependencies(${PROJECT_NAME}_core PUBLIC
+  diagnostic_updater
+  pluginlib
+  rclcpp
+  tf2_ros
+)
 
-add_library(${PROJECT_NAME}_io
+add_library(${PROJECT_NAME}_io SHARED
   src/io/filesystem/read.cpp
   src/io/filesystem/write.cpp
 
@@ -108,39 +129,52 @@ add_library(${PROJECT_NAME}_io
 
   src/serialization/serialization.cpp
 )
-target_link_libraries(${PROJECT_NAME}_io ${PROJECT_NAME}_core)
+target_link_libraries(${PROJECT_NAME}_io
+  ${PROJECT_NAME}_core
+  tue_serialization::tue_serialization
+  ${tue_serialization_interfaces_TARGETS}
+  ${ed_interfaces_TARGETS}
+)
 
-add_library(${PROJECT_NAME}_server
+add_library(${PROJECT_NAME}_server SHARED
   include/${PROJECT_NAME}/server.h
   src/server.cpp
 )
-target_link_libraries(${PROJECT_NAME}_server ${PROJECT_NAME}_core ${PROJECT_NAME}_io)
+target_link_libraries(${PROJECT_NAME}_server PUBLIC
+  ${PROJECT_NAME}_core
+  ${PROJECT_NAME}_io
+  ${ed_interfaces_TARGETS}
+)
+ament_target_dependencies(${PROJECT_NAME}_server PUBLIC std_msgs)
 
 # ------------------------------------------------------------------------------------------------
 #                                               SERVER
 # ------------------------------------------------------------------------------------------------
 
-# Create executable
 add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_core ${PROJECT_NAME}_io ${PROJECT_NAME}_server)
+target_link_libraries(${PROJECT_NAME}
+  ${PROJECT_NAME}_core
+  ${PROJECT_NAME}_io
+  ${PROJECT_NAME}_server
+  ${ed_interfaces_TARGETS}
+)
 
 # ------------------------------------------------------------------------------------------------
 #                                               PLUGINS
 # ------------------------------------------------------------------------------------------------
 
-find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-add_library(${PROJECT_NAME}_tf_publisher_plugin plugins/tf_publisher_plugin.cpp)
-target_include_directories(${PROJECT_NAME}_tf_publisher_plugin BEFORE PRIVATE SYSTEM ${tf2_geometry_msgs_INCLUDE_DIRS} ${tf2_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin ${tf2_geometry_msgs_LIBRARIES} ${tf2_LIBRARIES} ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}_tf_publisher_plugin SHARED plugins/tf_publisher_plugin.cpp)
+target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin PUBLIC ${PROJECT_NAME}_core)
+ament_target_dependencies(${PROJECT_NAME}_tf_publisher_plugin PUBLIC tf2 tf2_geometry_msgs tf2_ros)
 
-find_package(kdl_parser REQUIRED)
-add_library(${PROJECT_NAME}_robot_plugin plugins/robot_plugin.cpp)
-target_include_directories(${PROJECT_NAME}_robot_plugin BEFORE PRIVATE SYSTEM ${kdl_parser_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME}_robot_plugin ${kdl_parser_LIBRARIES} ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}_robot_plugin SHARED plugins/robot_plugin.cpp)
+target_link_libraries(${PROJECT_NAME}_robot_plugin PUBLIC ${PROJECT_NAME}_core)
+ament_target_dependencies(${PROJECT_NAME}_robot_plugin PUBLIC kdl_parser sensor_msgs urdf)
 
-add_library(${PROJECT_NAME}_sync_plugin plugins/sync_plugin.cpp)
-target_link_libraries(${PROJECT_NAME}_sync_plugin ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}_sync_plugin SHARED plugins/sync_plugin.cpp)
+target_link_libraries(${PROJECT_NAME}_sync_plugin ${PROJECT_NAME}_core ${ed_interfaces_TARGETS})
+
+pluginlib_export_plugin_description_file(${PROJECT_NAME} plugins.xml)
 
 # ------------------------------------------------------------------------------------------------
 #                                                TOOLS
@@ -153,93 +187,115 @@ add_executable(${PROJECT_NAME}_heightmap_to_mesh tools/heightmap_to_mesh.cpp)
 target_link_libraries(${PROJECT_NAME}_heightmap_to_mesh ${PROJECT_NAME}_core)
 
 add_executable(configure tools/configure.cpp)
-target_link_libraries(configure ${PROJECT_NAME}_core)
-
-#add_executable(${PROJECT_NAME}_repl tools/repl.cpp)
-#target_link_libraries(${PROJECT_NAME}_repl readline)
+target_link_libraries(configure ${PROJECT_NAME}_core ${ed_interfaces_TARGETS})
 
 # ------------------------------------------------------------------------------------------------
 #                                               EXAMPLES
 # ------------------------------------------------------------------------------------------------
 
-add_library(${PROJECT_NAME}_hello_world_plugin examples/hello_world/hello_world_plugin.cpp)
-add_library(${PROJECT_NAME}_custom_properties_plugin examples/custom_properties/custom_properties_plugin.cpp)
+add_library(${PROJECT_NAME}_hello_world_plugin SHARED examples/hello_world/hello_world_plugin.cpp)
+target_link_libraries(${PROJECT_NAME}_hello_world_plugin ${PROJECT_NAME}_core)
 
-# ------------------------------------------------------------------------------------------------
-#                                                TESTS
-# ------------------------------------------------------------------------------------------------
-
-add_executable(${PROJECT_NAME}_test_wm test/test_wm.cpp)
-target_link_libraries(${PROJECT_NAME}_test_wm ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
-
-add_executable(test_mask test/test_mask.cpp)
-target_link_libraries(test_mask ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
-
-add_executable(test_service_speed test/test_service_speed.cpp)
-target_link_libraries(test_service_speed ${PROJECT_NAME}_core)
-
-add_executable(show_gui test/show_gui.cpp)
-target_link_libraries(show_gui ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
-
-add_executable(${PROJECT_NAME}_test_heightmap_triangulation
-  test/test_heightmap_triangulation.cpp
-)
-target_link_libraries(${PROJECT_NAME}_test_heightmap_triangulation ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} ${geolib2_LIBRARIES} ${tue_config_LIBRARIES})
-
+add_library(${PROJECT_NAME}_custom_properties_plugin SHARED examples/custom_properties/custom_properties_plugin.cpp)
+target_link_libraries(${PROJECT_NAME}_custom_properties_plugin ${PROJECT_NAME}_core)
 
 # ------------------------------------------------------------------------------------------------
 #                                               INSTALL
 # ------------------------------------------------------------------------------------------------
 
-catkin_install_python(
+install(
   PROGRAMS
     tools/entity-teleop
     tools/list_plugins
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(
-  FILES plugins.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
   DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  DESTINATION include/${PROJECT_NAME}
 )
+
+install(FILES plugins.xml DESTINATION share/${PROJECT_NAME})
 
 install(
   TARGETS
+    polypartition
     ${PROJECT_NAME}_core
     ${PROJECT_NAME}_io
     ${PROJECT_NAME}_server
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(
   TARGETS
-    configure
     ${PROJECT_NAME}
-    ${PROJECT_NAME}_custom_properties_plugin
-    ${PROJECT_NAME}_heightmap_to_mesh
+    ${PROJECT_NAME}_tf_publisher_plugin
+    ${PROJECT_NAME}_robot_plugin
+    ${PROJECT_NAME}_sync_plugin
     ${PROJECT_NAME}_hello_world_plugin
-    ${PROJECT_NAME}_test_heightmap_triangulation
-    ${PROJECT_NAME}_test_wm
+    ${PROJECT_NAME}_custom_properties_plugin
     ${PROJECT_NAME}_view_model
-    polypartition
-    show_gui
-    test_mask
-    test_service_speed
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    ${PROJECT_NAME}_heightmap_to_mesh
+    configure
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  ament_index_cpp
+  code_profiler
+  diagnostic_updater
+  ed_interfaces
+  geolib2
+  pluginlib
+  rclcpp
+  rgbd
+  rosconsole_bridge
+  std_msgs
+  tf2_ros
+  tue_config
+  tue_serialization
+  Boost
+  OpenCV
+  PCL
 )
 
 # ------------------------------------------------------------------------------------------------
-#                                                 CI
+#                                                TESTS
 # ------------------------------------------------------------------------------------------------
 
-if (CATKIN_ENABLE_TESTING)
-  find_package(catkin_lint_cmake REQUIRED)
-  catkin_add_catkin_lint_test("-W2 --ignore LITERAL_PROJECT_NAME --ignore UNSORTED_LIST")
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_clang_format REQUIRED)
+  find_package(ament_cmake_clang_tidy REQUIRED)
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  find_package(ament_cmake_xmllint REQUIRED)
+  find_package(tue_lint_config REQUIRED)
+
+  add_executable(${PROJECT_NAME}_test_wm test/test_wm.cpp)
+  target_link_libraries(${PROJECT_NAME}_test_wm ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
+
+  add_executable(test_mask test/test_mask.cpp)
+  target_link_libraries(test_mask ${PROJECT_NAME}_core ${OpenCV_LIBRARIES})
+
+  add_executable(test_service_speed test/test_service_speed.cpp)
+  target_link_libraries(test_service_speed ${PROJECT_NAME}_core ${ed_interfaces_TARGETS})
+
+  add_executable(show_gui test/show_gui.cpp)
+  target_link_libraries(show_gui ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} ${ed_interfaces_TARGETS} ${tue_serialization_interfaces_TARGETS})
+
+  add_executable(${PROJECT_NAME}_test_heightmap_triangulation test/test_heightmap_triangulation.cpp)
+  target_link_libraries(${PROJECT_NAME}_test_heightmap_triangulation
+    ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} geolib2::geolib tue_config::tue_config)
+
+  ament_clang_format(CONFIG_FILE ${tue_lint_config_DIR}/../config/.clang-format --clang-format-version=21)
+  ament_clang_tidy(CONFIG_FILE ${tue_lint_config_DIR}/../config/.clang-tidy --clang-tidy-version=21
+    ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/compile_commands.json)
+  ament_lint_cmake(MAX_LINE_LENGTH 120)
+  ament_xmllint(MAX_LINE_LENGTH 120)
 endif()
+
+ament_package()

@@ -18,8 +18,6 @@
 #include "tue/config/loaders/xml.h"
 #include "tue/config/loaders/yaml.h"
 
-#include <tue/filesystem/path.h>
-
 #include <math.h>
 
 constexpr double CANVAS_WIDTH = 800;
