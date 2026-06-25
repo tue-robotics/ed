@@ -1,36 +1,62 @@
 #include "ed/io/json_reader.h"
 
-#include "rapidjson/reader.h"
+#include "ed/io/data.h"
 #include "ed/io/data_writer.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/reader.h"
+#include <cstdint>
+#include <map>
+#include <vector>
 
-
-namespace ed
-{
-
-namespace io
+namespace ed::io
 {
 
 // ----------------------------------------------------------------------------------------------------
 
-struct MyHandler {
+struct MyHandler
+{
 
-    MyHandler(ed::io::DataWriter& w_) : w(w_)
+    MyHandler(ed::io::DataWriter& w_) : w(w_) {}
+
+    static bool Null() { return true; }
+
+    bool Bool(bool b)
     {
+        int const i = b;
+        w.setValue(key, i);
+        ;
+        return true;
     }
 
-    bool Null() { return true; }
+    bool Int(int i)
+    {
+        w.setValue(key, i);
+        return true;
+    }
 
-    bool Bool(bool b) { int i = b; w.setValue(key, i); ; return true; }
+    bool Uint(unsigned u)
+    {
+        w.setValue(key, static_cast<int>(u));
+        return true;
+    }
 
-    bool Int(int i) { w.setValue(key, i); return true; }
+    bool Int64(int64_t i)
+    {
+        w.setValue(key, static_cast<int>(i));
+        return true;
+    }
 
-    bool Uint(unsigned u) { w.setValue(key, (int)u); return true; }
+    bool Uint64(uint64_t u)
+    {
+        w.setValue(key, static_cast<int>(u));
+        return true;
+    }
 
-    bool Int64(int64_t i) { w.setValue(key, (int)i); return true; }
-
-    bool Uint64(uint64_t u) { w.setValue(key, (int)u); return true; }
-
-    bool Double(double d) { w.setValue(key, d); return true; }
+    bool Double(double d)
+    {
+        w.setValue(key, d);
+        return true;
+    }
 
     bool RawNumber(const char* str, rapidjson::SizeType /*len*/, bool /*copy*/)
     {
@@ -64,7 +90,11 @@ struct MyHandler {
         return true;
     }
 
-    bool Key(const char* str, rapidjson::SizeType /*length*/, bool /*copy*/) { key = str; return true; }
+    bool Key(const char* str, rapidjson::SizeType /*length*/, bool /*copy*/)
+    {
+        key = str;
+        return true;
+    }
 
     bool EndObject(rapidjson::SizeType /*memberCount*/)
     {
@@ -97,7 +127,6 @@ struct MyHandler {
     ed::io::DataWriter& w;
     std::string key;
     std::vector<unsigned char> stack;
-
 };
 
 // ----------------------------------------------------------------------------------------------------
@@ -119,16 +148,14 @@ JSONReader::JSONReader(const char* s) : n_current_(Node(0, MAP))
 
 // ----------------------------------------------------------------------------------------------------
 
-JSONReader::~JSONReader()
-{
-}
+JSONReader::~JSONReader() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
 bool JSONReader::readGroup(const std::string& key)
 {
     std::map<std::string, Node>& map = data_.maps[n_current_.idx];
-    std::map<std::string, Node>::const_iterator it = map.find(key);
+    auto const it = map.find(key);
     if (it == map.end())
         return false;
 
@@ -150,7 +177,7 @@ bool JSONReader::endGroup()
 bool JSONReader::readArray(const std::string& key)
 {
     std::map<std::string, Node>& map = data_.maps[n_current_.idx];
-    std::map<std::string, Node>::const_iterator it = map.find(key);
+    auto const it = map.find(key);
     if (it == map.end())
         return false;
 
@@ -167,7 +194,7 @@ bool JSONReader::endArray()
     if (array_index_stack_.empty())
         return false;
 
-    unsigned int& i_next_array_item_ = array_index_stack_.back();
+    unsigned int const& i_next_array_item_ = array_index_stack_.back();
     array_index_stack_.pop_back();
 
     if (n_current_.type != ARRAY && i_next_array_item_ > 0)
@@ -221,7 +248,6 @@ bool JSONReader::readValue(const std::string& key, float& f)
 bool JSONReader::readValue(const std::string& key, double& d)
 {
     return value<double>(key, d);
-
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -238,6 +264,4 @@ bool JSONReader::readValue(const std::string& key, std::string& s)
     return value<std::string>(key, s);
 }
 
-}
-
-}
+} // namespace ed::io

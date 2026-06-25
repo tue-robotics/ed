@@ -1,4 +1,7 @@
 #include "hello_world_plugin.h"
+#include "ed/init_data.h"
+#include "ed/plugin.h"
+#include "ed/types.h"
 
 #include <ed/logging.h>
 
@@ -6,15 +9,11 @@
 
 // ----------------------------------------------------------------------------------------------------
 
-HelloWorld::HelloWorld()
-{
-}
+HelloWorld::HelloWorld() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
-HelloWorld::~HelloWorld()
-{
-}
+HelloWorld::~HelloWorld() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -27,7 +26,7 @@ void HelloWorld::initialize(ed::InitData& init)
 
 void HelloWorld::process(const ed::WorldModel& /*world*/, ed::UpdateRequest& /*req*/)
 {
-    std::cout << text_ << std::endl;
+    std::cout << text_ << '\n';
 
     ed::log::info(text_);
     ed::log::warning(text_);

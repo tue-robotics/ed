@@ -7,17 +7,15 @@
 namespace ed
 {
 
-template<typename T>
-class TimeCache
+template <typename T> class TimeCache
 {
 
 public:
+    using const_iterator = typename std::map<Time, T>::const_iterator;
 
-    typedef typename std::map<Time, T>::const_iterator const_iterator;
+    TimeCache() = default;
 
-    TimeCache() : max_size_(0) {}
-
-    ~TimeCache() {}
+    ~TimeCache() = default;
 
     void insert(const Time& t, const T& value)
     {
@@ -49,20 +47,30 @@ public:
         }
     }
 
-    inline const_iterator begin() const { return cache_.begin(); }
-    inline const_iterator end() const { return cache_.end(); }
+    [[nodiscard]]
+    const_iterator begin() const
+    {
+        return cache_.begin();
+    }
+    [[nodiscard]]
+    const_iterator end() const
+    {
+        return cache_.end();
+    }
 
-    inline unsigned int size() const { return cache_.size(); }
+    [[nodiscard]]
+    unsigned int size() const
+    {
+        return cache_.size();
+    }
 
     void setMaxSize(unsigned int n) { max_size_ = n; }
 
 private:
-
     // Cache with items ordered in time
     std::map<Time, T> cache_;
 
-    unsigned int max_size_;
-
+    unsigned int max_size_{0};
 };
 
 } // end namespace ed

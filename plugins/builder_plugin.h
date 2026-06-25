@@ -7,8 +7,8 @@
 
 // Communication
 #include <ros/callback_queue.h>
-#include <ros/service_server.h>
 #include <ros/publisher.h>
+#include <ros/service_server.h>
 
 // Configuration
 #include <tue/config/configuration.h>
@@ -20,7 +20,6 @@ class BuilderPlugin : public ed::Plugin
 {
 
 public:
-
     BuilderPlugin();
 
     virtual ~BuilderPlugin();
@@ -32,7 +31,6 @@ public:
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
 
 private:
-
     const ed::WorldModel* world_model_;
 
     ed::UpdateRequest* update_req_;
@@ -43,9 +41,7 @@ private:
 
     ros::ServiceServer srv_set_entity_;
 
-
     bool srvSetEntity(ed_msgs::SetEntity::Request& req, ed_msgs::SetEntity::Response& res);
-
 };
 
 #endif

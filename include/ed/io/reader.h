@@ -5,20 +5,16 @@
 
 #include <istream>
 
-namespace ed
-{
-
-namespace io
+namespace ed::io
 {
 
 class Reader
 {
 
 public:
+    Reader() = default;
 
-    Reader() {}
-
-    virtual ~Reader() {}
+    virtual ~Reader() = default;
 
     virtual bool readGroup(const std::string& name) = 0;
     virtual bool endGroup() = 0;
@@ -36,12 +32,8 @@ public:
     virtual bool ok() = 0;
 
     virtual std::string error() = 0;
-
 };
 
-}
-
-} // end namespace era
+} // namespace ed::io
 
 #endif
-

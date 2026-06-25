@@ -10,67 +10,58 @@
 namespace ed
 {
 
-template <typename T>
-struct TypeWrapper
+template <typename T> struct TypeWrapper
 {
-    typedef T TYPE;
-    typedef const T CONSTTYPE;
-    typedef T& REFTYPE;
-    typedef const T& CONSTREFTYPE;
+    using TYPE = T;
+    using CONSTTYPE = T;
+    using REFTYPE = T&;
+    using CONSTREFTYPE = T&;
 };
 
-template <typename T>
-struct TypeWrapper<const T>
+template <typename T> struct TypeWrapper<const T>
 {
-    typedef T TYPE;
-    typedef const T CONSTTYPE;
-    typedef T& REFTYPE;
-    typedef const T& CONSTREFTYPE;
+    using TYPE = T;
+    using CONSTTYPE = T;
+    using REFTYPE = T&;
+    using CONSTREFTYPE = T&;
 };
 
-template <typename T>
-struct TypeWrapper<const T&>
+template <typename T> struct TypeWrapper<const T&>
 {
-    typedef T TYPE;
-    typedef const T CONSTTYPE;
-    typedef T& REFTYPE;
-    typedef const T& CONSTREFTYPE;
+    using TYPE = T;
+    using CONSTTYPE = T;
+    using REFTYPE = T&;
+    using CONSTREFTYPE = T&;
 };
 
-template <typename T>
-struct TypeWrapper<T&>
+template <typename T> struct TypeWrapper<T&>
 {
-    typedef T TYPE;
-    typedef const T CONSTTYPE;
-    typedef T& REFTYPE;
-    typedef const T& CONSTREFTYPE;
+    using TYPE = T;
+    using CONSTTYPE = T;
+    using REFTYPE = T&;
+    using CONSTREFTYPE = T&;
 };
 
 class Variant
 {
 public:
-    Variant() { }
+    Variant() = default;
 
-    template<class T>
-    Variant(T inValue) :
-        mImpl(new VariantImpl<typename TypeWrapper<T>::TYPE>(inValue))
+    template <class T> Variant(const T& inValue) : mImpl(new VariantImpl<typename TypeWrapper<T>::TYPE>(inValue)) {}
+
+    template <class T> typename TypeWrapper<T>::REFTYPE getValue()
     {
+        return dynamic_cast<VariantImpl<typename TypeWrapper<T>::TYPE>&>(*mImpl).mValue;
     }
 
-    template<class T>
-    typename TypeWrapper<T>::REFTYPE getValue()
-    {
-        return dynamic_cast<VariantImpl<typename TypeWrapper<T>::TYPE>&>(*mImpl.get()).mValue;
-    }
-
-    template<class T>
+    template <class T>
+    [[nodiscard]] [[nodiscard]]
     typename TypeWrapper<T>::CONSTREFTYPE getValue() const
     {
-        return dynamic_cast<VariantImpl<typename TypeWrapper<T>::TYPE>&>(*mImpl.get()).mValue;
+        return dynamic_cast<VariantImpl<typename TypeWrapper<T>::TYPE>&>(*mImpl).mValue;
     }
 
-    template<class T>
-    void setValue(typename TypeWrapper<T>::CONSTREFTYPE inValue)
+    template <class T> void setValue(typename TypeWrapper<T>::CONSTREFTYPE inValue)
     {
         mImpl.reset(new VariantImpl<typename TypeWrapper<T>::TYPE>(inValue));
     }
@@ -78,15 +69,14 @@ public:
 private:
     struct AbstractVariantImpl
     {
-        virtual ~AbstractVariantImpl() {}
+        virtual ~AbstractVariantImpl() = default;
     };
 
-    template<class T>
-    struct VariantImpl : public AbstractVariantImpl
+    template <class T> struct VariantImpl : public AbstractVariantImpl
     {
-        VariantImpl(T inValue) : mValue(inValue) { }
+        VariantImpl(const T& inValue) : mValue(inValue) {}
 
-        ~VariantImpl() {}
+        ~VariantImpl() override = default;
 
         T mValue;
     };
@@ -94,6 +84,6 @@ private:
     boost::shared_ptr<AbstractVariantImpl> mImpl;
 };
 
-} // end namespace
+} // namespace ed
 
 #endif

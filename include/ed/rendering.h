@@ -4,15 +4,9 @@
 #include <geolib/datatypes.h>
 
 // Forward declarations
-namespace ed {
-    class WorldModel;
-}
-namespace geo {
-    class DepthCamera;
-}
-namespace cv {
-    class Mat;
-}
+namespace ed { class WorldModel; }
+namespace geo { class DepthCamera; }
+namespace cv { class Mat; }
 
 namespace ed
 {
@@ -39,11 +33,14 @@ enum ShowVolumes
  * @param flatten Flatten all the meshes to the groundplane (default: false)
  * @return
  */
-bool renderWorldModel(const ed::WorldModel& world_model, const enum ShowVolumes show_volumes,
-                      const geo::DepthCamera& cam, const geo::Pose3D& cam_pose_inv,
-                      cv::Mat& depth_image, cv::Mat& image, bool flatten = false);
+bool renderWorldModel(const ed::WorldModel& world_model,
+                      const enum ShowVolumes show_volumes,
+                      const geo::DepthCamera& cam,
+                      const geo::Pose3D& cam_pose_inv,
+                      cv::Mat& depth_image,
+                      cv::Mat& image,
+                      bool flatten = false);
 
-}  // End of namespace ed
-
+} // End of namespace ed
 
 #endif // RENDERING_H

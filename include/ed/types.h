@@ -1,88 +1,84 @@
 #ifndef ED_TYPES_H_
 #define ED_TYPES_H_
 
-//#include <rgbd/types.h>
-//#include <geolib/datatypes.h>
+// #include <rgbd/types.h>
+// #include <geolib/datatypes.h>
 
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 #include <limits>
 #include <stdint.h>
 
-namespace tf2_ros {
-
-class Buffer;
-
-}
+namespace tf2_ros { class Buffer; }
 
 namespace ed
 {
 
-typedef uint64_t Idx;
+using Idx = uint64_t;
 static const Idx INVALID_IDX = std::numeric_limits<Idx>::max();
 
 // For easy switching to std pointers
-using boost::shared_ptr;
-using boost::make_shared;
 using boost::const_pointer_cast;
 using boost::dynamic_pointer_cast;
+using boost::make_shared;
+using boost::shared_ptr;
 using boost::static_pointer_cast;
 
 class Measurement;
-typedef shared_ptr<Measurement> MeasurementPtr;
-typedef shared_ptr<const Measurement> MeasurementConstPtr;
+using MeasurementPtr = shared_ptr<Measurement>;
+using MeasurementConstPtr = shared_ptr<const Measurement>;
 
 class Entity;
-typedef shared_ptr<Entity> EntityPtr;
-typedef shared_ptr<const Entity> EntityConstPtr;
+using EntityPtr = shared_ptr<Entity>;
+using EntityConstPtr = shared_ptr<const Entity>;
 
 class Plugin;
-typedef shared_ptr<Plugin> PluginPtr;
-typedef shared_ptr<const Plugin> PluginConstPtr;
+using PluginPtr = shared_ptr<Plugin>;
+using PluginConstPtr = shared_ptr<const Plugin>;
 
 class WorldModel;
-typedef shared_ptr<WorldModel> WorldModelPtr;
-typedef shared_ptr<const WorldModel> WorldModelConstPtr;
+using WorldModelPtr = shared_ptr<WorldModel>;
+using WorldModelConstPtr = shared_ptr<const WorldModel>;
 
 class UpdateRequest;
-typedef shared_ptr<UpdateRequest> UpdateRequestPtr;
-typedef shared_ptr<const UpdateRequest> UpdateRequestConstPtr;
+using UpdateRequestPtr = shared_ptr<UpdateRequest>;
+using UpdateRequestConstPtr = shared_ptr<const UpdateRequest>;
 
 class PluginContainer;
-typedef shared_ptr<PluginContainer> PluginContainerPtr;
-typedef shared_ptr<const PluginContainer> PluginContainerConstPtr;
+using PluginContainerPtr = shared_ptr<PluginContainer>;
+using PluginContainerConstPtr = shared_ptr<const PluginContainer>;
 
 class SensorModule;
-typedef shared_ptr<SensorModule> SensorModulePtr;
-typedef shared_ptr<const SensorModule> SensorModuleConstPtr;
+using SensorModulePtr = shared_ptr<SensorModule>;
+using SensorModuleConstPtr = shared_ptr<const SensorModule>;
 
 class RGBDALModule;
-typedef shared_ptr<RGBDALModule> RGBDALModulePtr;
-typedef shared_ptr<const RGBDALModule> RGBDALModuleConstPtr;
+using RGBDALModulePtr = shared_ptr<RGBDALModule>;
+using RGBDALModuleConstPtr = shared_ptr<const RGBDALModule>;
 
 class RGBDSegModule;
-typedef shared_ptr<RGBDSegModule> RGBDSegModulePtr;
-typedef shared_ptr<const RGBDSegModule> RGBDSegModuleConstPtr;
+using RGBDSegModulePtr = shared_ptr<RGBDSegModule>;
+using RGBDSegModuleConstPtr = shared_ptr<const RGBDSegModule>;
 
 class PerceptionModule;
-typedef shared_ptr<PerceptionModule> PerceptionModulePtr;
-typedef shared_ptr<const PerceptionModule> PerceptionModuleConstPtr;
+using PerceptionModulePtr = shared_ptr<PerceptionModule>;
+using PerceptionModuleConstPtr = shared_ptr<const PerceptionModule>;
 
 class Relation;
-typedef shared_ptr<Relation> RelationPtr;
-typedef shared_ptr<const Relation> RelationConstPtr;
+using RelationPtr = shared_ptr<Relation>;
+using RelationConstPtr = shared_ptr<const Relation>;
 
-class ConvexHull2D;
+struct ConvexHull2D;
 class ImageMask;
 
 class UUID;
 
-typedef std::string TYPE;
+using TYPE = std::string;
 
 // tf2_ros::Buffer
-typedef shared_ptr<tf2_ros::Buffer> TFBufferPtr;
-typedef shared_ptr<const tf2_ros::Buffer> TFBufferConstPtr;
+using TFBufferPtr = shared_ptr<tf2_ros::Buffer>;
+using TFBufferConstPtr = shared_ptr<const tf2_ros::Buffer>;
 
-}
+} // namespace ed
 
 #endif

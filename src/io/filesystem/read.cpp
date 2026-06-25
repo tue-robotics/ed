@@ -3,19 +3,28 @@
 #include "ed/measurement.h"
 #include "ed/serialization/serialization.h"
 
+#include <geolib/datatypes.h>
+#include <geolib/math_types.h>
+#include <iostream>
+#include <ostream>
 #include <rgbd/image.h>
 #include <rgbd/serialization.h>
 
+#include <rgbd/types.h>
+#include <sstream>
+#include <string>
 #include <tue/serialization/input_archive.h>
 
 #include <fstream>
 
 #include "ed/io/json_reader.h"
 
-#include "ed/entity.h"
-#include "ed/update_request.h"
-#include "ed/logging.h"
 #include "ed/convex_hull_calc.h"
+#include "ed/entity.h"
+#include "ed/logging.h"
+#include "ed/types.h"
+#include "ed/update_request.h"
+#include "ed/uuid.h"
 
 #include <filesystem>
 
@@ -34,8 +43,8 @@ rgbd::ImagePtr readRGBDImage(const std::string& filename)
 
     if (!f_in.is_open())
     {
-        std::cout << "Could not open '" << filename << "'." << std::endl;
-        return rgbd::ImagePtr();
+        std::cout << "Could not open '" << filename << "'." << '\n';
+        return {};
     }
 
     tue::serialization::InputArchive a_in(f_in);
@@ -51,7 +60,7 @@ bool readImageMask(const std::string& filename, ed::ImageMask& mask)
 
     if (!f_in.is_open())
     {
-        std::cout << "Could not open '" << filename << "'." << std::endl;
+        std::cout << "Could not open '" << filename << "'." << '\n';
         return false;
     }
 
@@ -61,14 +70,14 @@ bool readImageMask(const std::string& filename, ed::ImageMask& mask)
     return true;
 }
 
-}
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
 bool read(const std::string& filename, Measurement& msr)
 {
     // Read image
-    rgbd::ImagePtr image = readRGBDImage(filename + ".rgbd");
+    rgbd::ImagePtr const image = readRGBDImage(filename + ".rgbd");
 
     // Read mask
     ed::ImageMask mask;
@@ -88,13 +97,13 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
 
     if (!f_in.is_open())
     {
-        std::cout << "Could not open '" << filename << "'." << std::endl;
+        std::cout << "Could not open '" << filename << "'." << '\n';
         return false;
     }
 
     std::stringstream buffer;
     buffer << f_in.rdbuf();
-    std::string str = buffer.str();
+    std::string const str = buffer.str();
 
     io::JSONReader r(str.c_str());
 
@@ -129,9 +138,9 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
 
         if (r.readArray("points"))
         {
-            while(r.nextArrayItem())
+            while (r.nextArrayItem())
             {
-                chull.points.push_back(geo::Vec2f());
+                chull.points.emplace_back();
                 geo::Vec2f& p = chull.points.back();
                 r.readValue("x", p.x);
                 r.readValue("y", p.y);
@@ -142,7 +151,7 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
         ed::convex_hull::calculateEdgesAndNormals(chull);
         ed::convex_hull::calculateArea(chull);
 
-        ed::log::warning() << "ed::readEntity: convex hull timestamp is set to 0." << std::endl;
+        ed::log::warning() << "ed::readEntity: convex hull timestamp is set to 0." << '\n';
         req.setConvexHullNew(id, chull, pose, 0);
 
         r.endGroup();
@@ -151,14 +160,15 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
     // RGBD measurement
     if (r.readGroup("rgbd_measurement"))
     {
-        std::string rgbd_filename, mask_filename;
+        std::string rgbd_filename;
+        std::string mask_filename;
         if (r.readValue("image_file", rgbd_filename) && r.readValue("mask_file", mask_filename))
         {
             // tue::filesystem::Path::parentPath() returned "." for a bare filename; std::filesystem returns empty
-            std::filesystem::path parent_path = std::filesystem::path(filename).parent_path();
-            std::string base_path = parent_path.empty() ? "." : parent_path.string();
+            std::filesystem::path const parent_path = std::filesystem::path(filename).parent_path();
+            std::string const base_path = parent_path.empty() ? "." : parent_path.string();
 
-            rgbd::ImagePtr image = readRGBDImage(base_path + "/" + rgbd_filename);
+            rgbd::ImagePtr const image = readRGBDImage(base_path + "/" + rgbd_filename);
 
             // Read mask
             ed::ImageMask mask;
@@ -172,11 +182,11 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
             }
             else
             {
-                log::error() << "Could not read sensor pose from rgbd measurement" << std::endl;
+                log::error() << "Could not read sensor pose from rgbd measurement" << '\n';
                 sensor_pose = geo::Pose3D::identity();
             }
 
-            MeasurementPtr msr(new Measurement(image, mask, sensor_pose));
+            MeasurementPtr const msr(new Measurement(image, mask, sensor_pose));
 
             req.addMeasurement(id, msr);
         }
@@ -187,4 +197,4 @@ bool readEntity(const std::string& filename, UpdateRequest& req)
     return true;
 }
 
-}
+} // namespace ed

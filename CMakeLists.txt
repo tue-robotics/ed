@@ -48,7 +48,10 @@ find_package(TinyXML2 REQUIRED)
 #                                          3RDPARTY
 # ------------------------------------------------------------------------------------------------
 
+# Exclude vendored 3rdparty source from compile_commands.json so clang-tidy does not lint it
+set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 add_library(polypartition 3rdparty/polypartition/src/polypartition.cpp)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 target_include_directories(polypartition PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/polypartition/include>
   $<INSTALL_INTERFACE:include>
@@ -285,14 +288,22 @@ if(BUILD_TESTING)
   target_link_libraries(test_service_speed ${PROJECT_NAME}_core ${ed_interfaces_TARGETS})
 
   add_executable(show_gui test/show_gui.cpp)
-  target_link_libraries(show_gui ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} ${ed_interfaces_TARGETS} ${tue_serialization_interfaces_TARGETS})
+  target_link_libraries(show_gui
+    ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} ${ed_interfaces_TARGETS} ${tue_serialization_interfaces_TARGETS})
 
   add_executable(${PROJECT_NAME}_test_heightmap_triangulation test/test_heightmap_triangulation.cpp)
   target_link_libraries(${PROJECT_NAME}_test_heightmap_triangulation
     ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} geolib2::geolib tue_config::tue_config)
 
   ament_clang_format(CONFIG_FILE ${tue_lint_config_DIR}/../config/.clang-format --clang-format-version=21)
+  # ed has many translation units; run clang-tidy in parallel and allow extra time so the test
+  # does not hit the default 300s timeout (which manifests as a "did not generate a result file" error).
+  cmake_host_system_information(RESULT CLANG_TIDY_JOBS QUERY NUMBER_OF_LOGICAL_CORES)
+  if(NOT CLANG_TIDY_JOBS OR CLANG_TIDY_JOBS EQUAL 0)
+    set(CLANG_TIDY_JOBS 1)
+  endif()
   ament_clang_tidy(CONFIG_FILE ${tue_lint_config_DIR}/../config/.clang-tidy --clang-tidy-version=21
+    JOBS ${CLANG_TIDY_JOBS} TIMEOUT 600
     ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/compile_commands.json)
   ament_lint_cmake(MAX_LINE_LENGTH 120)
   ament_xmllint(MAX_LINE_LENGTH 120)

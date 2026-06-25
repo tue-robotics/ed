@@ -1,9 +1,9 @@
 #ifndef ED_PROPERTY_KEY_DB_H_
 #define ED_PROPERTY_KEY_DB_H_
 
-#include "ed/types.h"
-#include "ed/property_key.h"
 #include "ed/property_info.h"
+#include "ed/property_key.h"
+#include "ed/types.h"
 
 #include <map>
 
@@ -12,39 +12,34 @@ namespace ed
 
 struct PropertyKeyDBEntry
 {
-    PropertyKeyDBEntry() : info(nullptr) {}
+    PropertyKeyDBEntry() = default;
 
-    ~PropertyKeyDBEntry()
-    {
-        if (info)
-            delete info;
-    }
+    ~PropertyKeyDBEntry() { delete info; }
 
     std::string name;
-    PropertyInfo* info;
-    Idx idx;
+    PropertyInfo* info{nullptr};
+    Idx idx{};
 };
 
 class PropertyKeyDB
 {
 
 public:
-
     ~PropertyKeyDB()
     {
-        for(std::map<std::string, PropertyKeyDBEntry*>::iterator it = name_to_info_.begin(); it != name_to_info_.end(); ++it)
+        for (auto& it : name_to_info_)
         {
-            if(it->second)
-                delete it->second;
+
+            delete it.second;
         }
     }
 
-    template<typename T>
-    void registerProperty(const std::string& name, PropertyKey<T>& key, PropertyInfo* info = 0)
+    template <typename T>
+    void registerProperty(const std::string& name, PropertyKey<T>& key, PropertyInfo* info = nullptr)
     {
-        PropertyKeyDBEntry* entry;
+        PropertyKeyDBEntry* entry = nullptr;
 
-        std::map<std::string, PropertyKeyDBEntry*>::iterator it = name_to_info_.find(name);
+        auto const it = name_to_info_.find(name);
         if (it == name_to_info_.end())
         {
             entry = new PropertyKeyDBEntry;
@@ -74,21 +69,20 @@ public:
         key.idx = entry->idx;
     }
 
+    [[nodiscard]]
     const PropertyKeyDBEntry* getPropertyKeyDBEntry(const std::string& name) const
     {
-        std::map<std::string, PropertyKeyDBEntry*>::const_iterator it = name_to_info_.find(name);
+        auto const it = name_to_info_.find(name);
         if (it == name_to_info_.end())
-            return 0;
+            return nullptr;
 
         return it->second;
     }
 
 private:
-
     std::map<std::string, PropertyKeyDBEntry*> name_to_info_;
-
 };
 
-} // end namespace
+} // namespace ed
 
 #endif

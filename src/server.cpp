@@ -13,8 +13,8 @@
 
 #include "ed/serialization/serialization.h"
 
-#include <tue/config/writer.h>
 #include <tue/config/loaders/yaml.h>
+#include <tue/config/writer.h>
 
 #include <std_msgs/msg/string.hpp>
 
@@ -40,18 +40,18 @@ Server::Server(const rclcpp::Node::SharedPtr& node) :
 
 Server::~Server()
 {
-    ErrorContext errc("Server", "destructor");
+    ErrorContext const errc("Server", "destructor");
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 {
-    ErrorContext errc("Server", "configure");
+    ErrorContext const errc("Server", "configure");
 
     if (config.readArray("plugins"))
     {
-        while(config.nextArrayItem())
+        while (config.nextArrayItem())
         {
             std::string name;
             if (!config.value("name", name))
@@ -62,7 +62,7 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
             PluginContainerPtr plugin_container;
 
-            std::map<std::string, PluginContainerPtr>::iterator it_plugin = plugin_containers_.find(name);
+            std::map<std::string, PluginContainerPtr>::iterator const it_plugin = plugin_containers_.find(name);
             if (it_plugin == plugin_containers_.end())
             {
                 // Plugin does not yet exist
@@ -90,12 +90,10 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
                     updater_.removeByName(name);
                     continue;
                 }
-                else
-                {
-                    InitData init(property_key_db_, config);
-                    plugin_container->configure(init, true);
-                    updater_.add(plugin_container->getLoopUsageStatus());
-                }
+
+                InitData init(property_key_db_, config);
+                plugin_container->configure(init, true);
+                updater_.add(plugin_container->getLoopUsageStatus());
             }
 
             if (config.hasError())
@@ -116,7 +114,7 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
     {
         while (config.nextArrayItem())
         {
-            ed::UpdateRequestPtr req(new UpdateRequest);
+            ed::UpdateRequestPtr const req(new UpdateRequest);
             std::stringstream error;
             if (!model_loader_.create(config.data(), "", "", *req, error))
             {
@@ -126,7 +124,7 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
             // Create world model copy (shallow)
             boost::unique_lock<boost::mutex> ul(mutex_world_);
-            WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
+            WorldModelPtr const new_world_model = ed::make_shared<WorldModel>(*world_model_);
 
             new_world_model->update(*req);
 
@@ -150,10 +148,11 @@ void Server::initialize()
 
 void Server::reset(bool keep_all_shapes)
 {
-    ErrorContext errc("Server", "reset");
+    ErrorContext const errc("Server", "reset");
 
-    // Create init world request, such that we can check which entities we have to keep in the world model
-    UpdateRequestPtr req_init_world(new UpdateRequest);
+    // Create init world request, such that we can check which entities we have to
+    // keep in the world model
+    UpdateRequestPtr const req_init_world(new UpdateRequest);
     std::stringstream error;
     if (!model_loader_.create("_root", world_name_, *req_init_world, error, true))
     {
@@ -161,14 +160,15 @@ void Server::reset(bool keep_all_shapes)
     }
 
     // Prepare deletion request
-    UpdateRequestPtr req_delete(new UpdateRequest);
-    WorldModelConstPtr wm = world_model();
-    for(WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
+    UpdateRequestPtr const req_delete(new UpdateRequest);
+    WorldModelConstPtr const wm = world_model();
+    for (WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
     {
         // Only remove entities that are NOT in the initial world model
         const ed::EntityConstPtr& e = *it;
 
-        if (e->id().str().substr(0, 6) == "sergio" || e->id().str().substr(0, 5) == "amigo" || e->id().str().substr(0, 4) == "hero") // TODO: robocup hack
+        if (e->id().str().substr(0, 6) == "sergio" || e->id().str().substr(0, 5) == "amigo" ||
+            e->id().str().substr(0, 4) == "hero") // TODO: robocup hack
             continue;
 
         if (keep_all_shapes && e->visual())
@@ -180,7 +180,7 @@ void Server::reset(bool keep_all_shapes)
 
     // Create world model copy
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr const new_world_model = ed::make_shared<WorldModel>(*world_model_);
 
     // Apply the deletion request
     new_world_model->update(*req_init_world);
@@ -191,7 +191,9 @@ void Server::reset(bool keep_all_shapes)
     ul.unlock();
 
     // Notify plugins
-    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
+         it != plugin_containers_.end();
+         ++it)
     {
         const PluginContainerPtr& c = it->second;
         c->addDelta(req_init_world);
@@ -204,7 +206,7 @@ void Server::reset(bool keep_all_shapes)
 
 PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Configuration config)
 {
-    ErrorContext errc("Server loadPlugin", plugin_name.c_str());
+    ErrorContext const errc("Server loadPlugin", plugin_name.c_str());
 
     config.setErrorContext("While loading plugin '" + plugin_name + "': ");
 
@@ -237,22 +239,24 @@ PluginContainerPtr Server::loadPlugin(const std::string& plugin_name, tue::Confi
 
 void Server::stepPlugins()
 {
-    ErrorContext errc("Server", "stepPlugins");
+    ErrorContext const errc("Server", "stepPlugins");
 
     WorldModelPtr new_world_model;
 
     // collect and apply all update requests
     std::vector<PluginContainerPtr> plugins_with_requests;
-    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
+         it != plugin_containers_.end();
+         ++it)
     {
-        PluginContainerPtr c = it->second;
+        PluginContainerPtr const c = it->second;
 
         if (c->updateRequest())
         {
             if (!new_world_model)
             {
                 // Create world model copy (shallow)
-                boost::unique_lock<boost::mutex> ul(mutex_world_);
+                boost::unique_lock<boost::mutex> const ul(mutex_world_);
                 new_world_model = ed::make_shared<WorldModel>(*world_model_);
             }
 
@@ -264,7 +268,9 @@ void Server::stepPlugins()
     if (new_world_model)
     {
         // Set the new (updated) world
-        for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+        for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
+             it != plugin_containers_.end();
+             ++it)
         {
             const PluginContainerPtr& c = it->second;
             c->setWorld(new_world_model);
@@ -274,9 +280,11 @@ void Server::stepPlugins()
         ul.unlock();
 
         // Clear the requests of all plugins that had requests (which flags them to continue processing)
-        for(std::vector<PluginContainerPtr>::iterator it = plugins_with_requests.begin(); it != plugins_with_requests.end(); ++it)
+        for (std::vector<PluginContainerPtr>::iterator it = plugins_with_requests.begin();
+             it != plugins_with_requests.end();
+             ++it)
         {
-            PluginContainerPtr c = *it;
+            PluginContainerPtr const c = *it;
             c->clearUpdateRequest();
         }
     }
@@ -286,17 +294,19 @@ void Server::stepPlugins()
 
 void Server::update()
 {
-    ErrorContext errc("Server", "update");
+    ErrorContext const errc("Server", "update");
 
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr const new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Notify all plugins of the updated world model
-    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
+         it != plugin_containers_.end();
+         ++it)
     {
-        PluginContainerPtr c = it->second;
+        PluginContainerPtr const c = it->second;
         c->setWorld(new_world_model);
     }
 
@@ -312,16 +322,18 @@ void Server::update(const ed::UpdateRequest& req)
 {
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr const new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Update the world model
     new_world_model->update(req);
 
     // Notify all plugins of the updated world model
-    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
+         it != plugin_containers_.end();
+         ++it)
     {
-        PluginContainerPtr c = it->second;
+        PluginContainerPtr const c = it->second;
         c->setWorld(new_world_model);
     }
 
@@ -351,7 +363,7 @@ void Server::update(const std::string& update_str, std::string& error)
 
     if (cfg.readArray("entities"))
     {
-        while(cfg.nextArrayItem())
+        while (cfg.nextArrayItem())
         {
             std::string id;
             if (!cfg.value("id", id))
@@ -364,7 +376,9 @@ void Server::update(const std::string& update_str, std::string& error)
                 if (!cfg.value("x", pose.t.x) || !cfg.value("y", pose.t.y) || !cfg.value("z", pose.t.z))
                     continue;
 
-                double rx = 0, ry = 0, rz = 0;
+                double rx = 0;
+                double ry = 0;
+                double rz = 0;
                 cfg.value("rx", rx, tue::config::OPTIONAL);
                 cfg.value("ry", ry, tue::config::OPTIONAL);
                 cfg.value("rz", rz, tue::config::OPTIONAL);
@@ -391,16 +405,18 @@ void Server::update(const std::string& update_str, std::string& error)
 
     // Create world model copy (shallow)
     boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = ed::make_shared<WorldModel>(*world_model_);
+    WorldModelPtr const new_world_model = ed::make_shared<WorldModel>(*world_model_);
     ul.unlock();
 
     // Update the world model
     new_world_model->update(req);
 
     // Notify all plugins of the updated world model
-    for(std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
+         it != plugin_containers_.end();
+         ++it)
     {
-        PluginContainerPtr c = it->second;
+        PluginContainerPtr const c = it->second;
         c->setWorld(new_world_model);
     }
 
@@ -413,7 +429,7 @@ void Server::update(const std::string& update_str, std::string& error)
 
 void Server::initializeWorld()
 {
-    ed::UpdateRequestPtr req(new UpdateRequest);
+    ed::UpdateRequestPtr const req(new UpdateRequest);
     std::stringstream error;
     if (!model_loader_.create("_root", world_name_, *req, error, true))
     {
@@ -422,8 +438,8 @@ void Server::initializeWorld()
     }
 
     // Create world model copy (shallow)
-    boost::unique_lock<boost::mutex> ul(mutex_world_);
-    WorldModelPtr new_world_model = boost::make_shared<WorldModel>(*world_model_);
+    boost::unique_lock<boost::mutex> const ul(mutex_world_);
+    WorldModelPtr const new_world_model = boost::make_shared<WorldModel>(*world_model_);
 
     new_world_model->update(*req);
 
@@ -434,15 +450,15 @@ void Server::initializeWorld()
 
 void Server::storeEntityMeasurements(const std::string& path) const
 {
-    WorldModelConstPtr wm =  world_model();
-    for(WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
+    WorldModelConstPtr const wm = world_model();
+    for (WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
     {
         const EntityConstPtr& e = *it;
-        MeasurementConstPtr msr = e->lastMeasurement();
+        MeasurementConstPtr const msr = e->lastMeasurement();
         if (!msr)
             continue;
 
-        std::string filename = path + "/" + e->id().str();
+        std::string const filename = path + "/" + e->id().str();
         if (!write(filename, *msr))
         {
             std::cout << "Saving measurement failed." << std::endl;
@@ -454,20 +470,22 @@ void Server::storeEntityMeasurements(const std::string& path) const
 
 void Server::publishStatistics()
 {
-    ErrorContext errc("Server", "publishStatistics");
+    ErrorContext const errc("Server", "publishStatistics");
     std::stringstream s;
 
     s << "[plugins]" << std::endl;
-    for(std::map<std::string, PluginContainerPtr>::const_iterator it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for (std::map<std::string, PluginContainerPtr>::const_iterator it = plugin_containers_.begin();
+         it != plugin_containers_.end();
+         ++it)
     {
         const PluginContainerPtr& p = it->second;
 
         // Calculate CPU usage percentage
-        double cpu_perc = p->getLoopUsageStatus().getTimer().getLoopUsagePercentage() * 100;
+        double const cpu_perc = p->getLoopUsageStatus().getTimer().getLoopUsagePercentage() * 100;
 
-        s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency() << " hz)" << std::endl;
+        s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency()
+          << " hz)" << std::endl;
     }
-
 
     std_msgs::msg::String msg;
     msg.data = s.str();
@@ -476,4 +494,4 @@ void Server::publishStatistics()
     updater_.force_update();
 }
 
-}
+} // namespace ed

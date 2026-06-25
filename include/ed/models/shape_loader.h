@@ -8,12 +8,8 @@
 #include <cmath>
 #include <map>
 
-namespace ed
+namespace ed::models
 {
-
-namespace models
-{
-
 
 /**
  * @brief createCylinder create a mesh from radius and height
@@ -25,8 +21,8 @@ namespace models
 void createCylinder(geo::Shape& shape, double radius, double height, int num_corners = 12);
 
 /**
- * @brief getMiddlePoint Gets the middle point of two points in a mesh of a sphere. Uses a cache to not create double points.
- * The new point is placed on the radius of the sphere.
+ * @brief getMiddlePoint Gets the middle point of two points in a mesh of a sphere. Uses a cache to not create double
+ * points. The new point is placed on the radius of the sphere.
  * @param mesh Mesh of the sphere
  * @param i1 index of first point
  * @param i2 index of second point
@@ -44,8 +40,8 @@ uint getMiddlePoint(geo::Mesh& mesh, uint i1, uint i2, std::map<unsigned long, u
  */
 void createSphere(geo::Shape& shape, double radius, uint recursion_level = 2);
 
-} // end namespace models
+} // namespace ed::models
 
-} // end namespace ed
+// end namespace ed
 
 #endif

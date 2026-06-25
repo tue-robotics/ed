@@ -7,17 +7,17 @@
 
 // Communication
 #include <ros/callback_queue.h>
-#include <ros/service_server.h>
 #include <ros/publisher.h>
+#include <ros/service_server.h>
 
 // Configuration
 #include <tue/config/configuration.h>
 
 // Services
-#include <ed_msgs/GetMeasurements.h>
-#include <ed_msgs/SetLabel.h>
-#include <ed_msgs/RaiseEvent.h>
 #include <ed_msgs/GetGUICommand.h>
+#include <ed_msgs/GetMeasurements.h>
+#include <ed_msgs/RaiseEvent.h>
+#include <ed_msgs/SetLabel.h>
 
 // Map drawing
 #include <geolib/sensors/DepthCamera.h>
@@ -30,7 +30,6 @@ class GUIPlugin : public ed::Plugin
 {
 
 public:
-
     GUIPlugin();
 
     virtual ~GUIPlugin();
@@ -44,7 +43,6 @@ public:
     ed::EventClock trigger_map_publish_;
 
     const ed::WorldModel* world_model_;
-
 
     // Map drawing
 
@@ -76,7 +74,6 @@ public:
 
     bool srvGetCommand(ed_msgs::GetGUICommand::Request& req, ed_msgs::GetGUICommand::Response& res);
 
-
     void handleRequests();
 
     void publishMapImage();
@@ -101,7 +98,6 @@ public:
 
     ed::UUID selected_id_;
 
-
     // HELPER FUNCTIONS
 
     ed::UUID getEntityFromClick(const cv::Point2i& p) const;
@@ -113,11 +109,7 @@ public:
         return coordinateToPixel(geo::Vector3(x, y, z));
     }
 
-    cv::Point2i coordinateToPixel(const pcl::PointXYZ& p) const
-    {
-        return coordinateToPixel(p.x, p.y, p.z);
-    }
-
+    cv::Point2i coordinateToPixel(const pcl::PointXYZ& p) const { return coordinateToPixel(p.x, p.y, p.z); }
 };
 
 #endif

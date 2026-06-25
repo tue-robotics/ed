@@ -2,9 +2,17 @@
 
 // ROS services
 #include <ed_interfaces/srv/configure.hpp>
+#include <iostream>
+#include <memory>
+#include <ostream>
+#include <rclcpp/executors.hpp>
+#include <rclcpp/future_return_code.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/utilities.hpp>
+#include <string>
+#include <tue/config/configuration.h>
+#include <tue/serialization/archive.h>
 #include <tue_serialization_interfaces/srv/binary_service.hpp>
-
-#include <rclcpp/rclcpp.hpp>
 
 #include <tue/serialization/conversions.h>
 
@@ -13,15 +21,11 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-ProbeClient::ProbeClient()
-{
-}
+ProbeClient::ProbeClient() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
-ProbeClient::~ProbeClient()
-{
-}
+ProbeClient::~ProbeClient() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -36,7 +40,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
 
     auto request = std::make_shared<ed_interfaces::srv::Configure::Request>();
 
-    double freq = 1000; // default
+    double const freq = 1000; // default
     tue::Configuration config;
 
     config.writeArray("plugins");
@@ -53,7 +57,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
 
     request->request = config.toYAMLString();
 
-    std::cout << "Sending request to launch probe using configuration: " << request->request << std::endl;
+    std::cout << "Sending request to launch probe using configuration: " << request->request << '\n';
 
     std::string error;
 
@@ -69,7 +73,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
 
     if (!error.empty())
     {
-        std::cout << "[ed::ProbeClient] ERROR: " + error << std::endl;
+        std::cout << "[ed::ProbeClient] ERROR: " + error << '\n';
     }
     else
     {
@@ -82,10 +86,7 @@ void ProbeClient::launchProbe(const std::string& probe_name, const std::string& 
 
 // ----------------------------------------------------------------------------------------------------
 
-void ProbeClient::configure(tue::Configuration /*config*/)
-{
-
-}
+void ProbeClient::configure(const tue::Configuration& /*config*/) {}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -93,7 +94,7 @@ bool ProbeClient::process(tue::serialization::Archive& req, tue::serialization::
 {
     if (!srv_probe_ || !srv_probe_->service_is_ready())
     {
-        std::cout << "Service does not exist" << std::endl;
+        std::cout << "Service does not exist" << '\n';
         return false;
     }
 
@@ -106,11 +107,9 @@ bool ProbeClient::process(tue::serialization::Archive& req, tue::serialization::
         tue::serialization::convert(future.get()->bin.data, res);
         return true;
     }
-    else
-    {
-        std::cout << "Service call failed" << std::endl;
-        return false;
-    }
+
+    std::cout << "Service call failed" << '\n';
+    return false;
 }
 
-}
+} // namespace ed

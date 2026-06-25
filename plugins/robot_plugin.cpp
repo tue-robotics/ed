@@ -3,17 +3,18 @@
 #include <kdl_parser/kdl_parser.hpp>
 
 #include <ed/entity.h>
+#include <ed/models/shape_loader.h>
 #include <ed/update_request.h>
 #include <ed/world_model.h>
-#include <ed/models/shape_loader.h>
 
 #include <geolib/CompositeShape.h>
 
 // URDF shape loading
 #include <ament_index_cpp/get_package_share_directory.hpp>
-#include <geolib/io/import.h>
 #include <geolib/Box.h>
+#include <geolib/io/import.h>
 
+#include <cmath>
 #include <ed/world_model/transform_crawler.h>
 
 #include <functional>
@@ -23,10 +24,11 @@
 
 bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 {
-    ed::TimeCache<float>::const_iterator it_low, it_up;
+    ed::TimeCache<float>::const_iterator it_low;
+    ed::TimeCache<float>::const_iterator it_up;
     joint_pos_cache_.getLowerUpper(t, it_low, it_up);
 
-    float joint_pos;
+    float joint_pos = NAN;
 
     if (it_low == joint_pos_cache_.end())
     {
@@ -47,11 +49,11 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
         else
         {
             // Interpolate
-            float p1 = it_low->second;
-            float p2 = it_up->second;
+            float const p1 = it_low->second;
+            float const p2 = it_up->second;
 
-            float dt1 = t.seconds() - it_low->first.seconds();
-            float dt2 = it_up->first.seconds() - t.seconds();
+            float const dt1 = t.seconds() - it_low->first.seconds();
+            float const dt2 = it_up->first.seconds() - t.seconds();
 
             // Linearly interpolate joint positions
             joint_pos = (p1 * dt2 + p2 * dt1) / (dt1 + dt2);
@@ -76,63 +78,66 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
 
     if (geom->type == urdf::Geometry::MESH)
     {
-        urdf::Mesh* mesh = static_cast<urdf::Mesh*>(geom.get());
+        urdf::Mesh const* mesh = static_cast<urdf::Mesh*>(geom.get());
         if (!mesh)
         {
             RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No mesh geometry defined");
             return shape;
         }
 
-        std::string pkg_prefix = "package://";
+        std::string const pkg_prefix = "package://";
         if (mesh->filename.substr(0, pkg_prefix.size()) == pkg_prefix)
         {
-            std::string str = mesh->filename.substr(pkg_prefix.size());
-            size_t i_slash = str.find("/");
+            std::string const str = mesh->filename.substr(pkg_prefix.size());
+            size_t const i_slash = str.find("/");
 
-            std::string pkg = str.substr(0, i_slash);
-            std::string rel_filename = str.substr(i_slash + 1);
-            std::string pkg_path = ament_index_cpp::get_package_share_directory(pkg);
-            std::string abs_filename = pkg_path + "/" + rel_filename;
+            std::string const pkg = str.substr(0, i_slash);
+            std::string const rel_filename = str.substr(i_slash + 1);
+            std::string const pkg_path = ament_index_cpp::get_package_share_directory(pkg);
+            std::string const abs_filename = pkg_path + "/" + rel_filename;
 
             shape = geo::io::readMeshFile(abs_filename, mesh->scale.x);
 
             if (!shape)
-                RCLCPP_ERROR_STREAM(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Could not load mesh shape from '" << abs_filename << "'");
+                RCLCPP_ERROR_STREAM(rclcpp::get_logger("RobotPlugin"),
+                                    "[RobotPlugin] Could not load mesh shape from '" << abs_filename << "'");
         }
     }
     else if (geom->type == urdf::Geometry::BOX)
     {
-        urdf::Box* box = static_cast<urdf::Box*>(geom.get());
+        urdf::Box const* box = static_cast<urdf::Box*>(geom.get());
         if (!box)
         {
             RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No box geometry defined");
             return shape;
         }
 
-        double hx = box->dim.x / 2;
-        double hy = box->dim.y / 2;
-        double hz = box->dim.z / 2;
+        double const hx = box->dim.x / 2;
+        double const hy = box->dim.y / 2;
+        double const hz = box->dim.z / 2;
 
         shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
     }
     else if (geom->type == urdf::Geometry::CYLINDER)
     {
-        urdf::Cylinder* cyl = static_cast<urdf::Cylinder*>(geom.get());
+        urdf::Cylinder const* cyl = static_cast<urdf::Cylinder*>(geom.get());
         if (!cyl)
         {
-            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No cylinder geometry defined");
+            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"),
+                        "[RobotPlugin] Robot model error: No cylinder geometry defined");
             return shape;
         }
 
         shape.reset(new geo::Shape());
         ed::models::createCylinder(*shape, cyl->radius, cyl->length, 20);
     }
-    else if (geom->type ==  urdf::Geometry::SPHERE)
+    else if (geom->type == urdf::Geometry::SPHERE)
     {
-        urdf::Sphere* sphere = static_cast<urdf::Sphere*>(geom.get());
+        urdf::Sphere const* sphere = static_cast<urdf::Sphere*>(geom.get());
         if (!sphere)
         {
-            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No sphere geometry defined");
+            RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"),
+                        "[RobotPlugin] Robot model error: No sphere geometry defined");
             return shape;
         }
 
@@ -147,14 +152,18 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
 
 std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr& link)
 {
-    geo::CompositeShapePtr visual, collision;
+    geo::CompositeShapePtr visual;
+    geo::CompositeShapePtr collision;
 
-    for (urdf::VisualSharedPtr& vis : link->visual_array)
+    for (urdf::VisualSharedPtr const& vis : link->visual_array)
     {
         const urdf::GeometrySharedPtr& geom = vis->geometry;
         if (!geom)
         {
-            RCLCPP_WARN_STREAM(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: missing geometry for visual in link: '" << link->name << "'");
+            RCLCPP_WARN_STREAM(rclcpp::get_logger("RobotPlugin"),
+                               "[RobotPlugin] Robot model error: missing geometry "
+                               "for visual in link: '"
+                                   << link->name << "'");
             continue;
         }
 
@@ -163,7 +172,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
         offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
         offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
 
-        geo::ShapePtr subshape = URDFGeometryToShape(geom);
+        geo::ShapePtr const subshape = URDFGeometryToShape(geom);
         if (!subshape)
             continue;
 
@@ -172,12 +181,15 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
         visual->addShape(*subshape, offset);
     }
 
-    for (urdf::CollisionSharedPtr& col : link->collision_array)
+    for (urdf::CollisionSharedPtr const& col : link->collision_array)
     {
         const urdf::GeometrySharedPtr& geom = col->geometry;
         if (!geom)
         {
-            RCLCPP_WARN_STREAM(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: missing geometry for collision in link: '" << link->name << "'");
+            RCLCPP_WARN_STREAM(rclcpp::get_logger("RobotPlugin"),
+                               "[RobotPlugin] Robot model error: missing geometry "
+                               "for collision in link: '"
+                                   << link->name << "'");
             continue;
         }
 
@@ -186,7 +198,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
         offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
         offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
 
-        geo::ShapePtr subshape = URDFGeometryToShape(geom);
+        geo::ShapePtr const subshape = URDFGeometryToShape(geom);
         if (!subshape)
             continue;
 
@@ -200,19 +212,17 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
 
 // ----------------------------------------------------------------------------------------------------
 
-RobotPlugin::RobotPlugin() : model_initialized_(true)
-{
-}
+RobotPlugin::RobotPlugin() {}
 
 // ----------------------------------------------------------------------------------------------------
 
-RobotPlugin::~RobotPlugin()
-{
-}
+RobotPlugin::~RobotPlugin() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
-void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMap::const_iterator& it_segment, ed::UpdateRequest& req)
+void RobotPlugin::constructRobot(const ed::UUID& parent_id,
+                                 const KDL::SegmentMap::const_iterator& it_segment,
+                                 ed::UpdateRequest& req)
 {
     const KDL::Segment& segment = it_segment->second.segment;
 
@@ -226,7 +236,7 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id, const KDL::SegmentMa
     req.setFlag(child_id, "self");
 
     // Create a joint relation and add id
-    boost::shared_ptr<JointRelation> r(new JointRelation(segment));
+    boost::shared_ptr<JointRelation> const r(new JointRelation(segment));
     r->setCacheSize(joint_cache_size_);
     r->insert(0, 0);
     req.setRelation(parent_id, child_id, r);
@@ -250,22 +260,23 @@ void RobotPlugin::jointCallback(const sensor_msgs::msg::JointState::ConstSharedP
 {
     if (msg->name.size() != msg->position.size())
     {
-        RCLCPP_ERROR(node_->get_logger(), "[ED RobotPlugin] On joint callback: name and position vector must be of equal length.");
+        RCLCPP_ERROR(node_->get_logger(),
+                     "[ED RobotPlugin] On joint callback: name and position vector must be of equal length.");
         return;
     }
 
-    for(unsigned int i = 0; i < msg->name.size(); ++i)
+    for (unsigned int i = 0; i < msg->name.size(); ++i)
     {
         const std::string& name = msg->name[i];
-        double pos = msg->position[i];
+        double const pos = msg->position[i];
 
-        std::map<std::string, RelationInfo>::iterator it_r = joint_name_to_rel_info_.find(name);
+        std::map<std::string, RelationInfo>::iterator const it_r = joint_name_to_rel_info_.find(name);
         if (it_r != joint_name_to_rel_info_.end())
         {
             RelationInfo& info = it_r->second;
 
             // Make a copy of the last relation
-            boost::shared_ptr<JointRelation> r(new JointRelation(*info.last_rel));
+            boost::shared_ptr<JointRelation> const r(new JointRelation(*info.last_rel));
             r->setCacheSize(joint_cache_size_);
 
             r->insert(rclcpp::Time(msg->header.stamp).seconds(), pos);
@@ -276,7 +287,8 @@ void RobotPlugin::jointCallback(const sensor_msgs::msg::JointState::ConstSharedP
         }
         else
         {
-            RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED RobotPlugin] On joint callback: unknown joint name '" << name << "'.");
+            RCLCPP_ERROR_STREAM(node_->get_logger(),
+                                "[ED RobotPlugin] On joint callback: unknown joint name '" << name << "'.");
         }
     }
 }
@@ -296,14 +308,14 @@ void RobotPlugin::configure(tue::Configuration config)
 
     if (config.readArray("joint_topics"))
     {
-        while(config.nextArrayItem())
+        while (config.nextArrayItem())
         {
             std::string topic;
             config.value("topic", topic);
             RCLCPP_DEBUG_STREAM(node_->get_logger(), "[RobotPlugin] Topic: " << topic);
 
             joint_subscribers_[topic] = node_->create_subscription<sensor_msgs::msg::JointState>(
-                        topic, 10, std::bind(&RobotPlugin::jointCallback, this, std::placeholders::_1), sub_options);
+                topic, 10, std::bind(&RobotPlugin::jointCallback, this, std::placeholders::_1), sub_options);
         }
 
         config.endArray();
@@ -346,9 +358,7 @@ void RobotPlugin::configure(tue::Configuration config)
 
 // ----------------------------------------------------------------------------------------------------
 
-void RobotPlugin::initialize()
-{
-}
+void RobotPlugin::initialize() {}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -360,11 +370,12 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
         std::vector<urdf::LinkSharedPtr> links;
         robot_model_.getLinks(links);
 
-        for(std::vector<urdf::LinkSharedPtr >::const_iterator it = links.begin(); it != links.end(); ++it)
+        for (std::vector<urdf::LinkSharedPtr>::const_iterator it = links.begin(); it != links.end(); ++it)
         {
             const urdf::LinkSharedPtr& link = *it;
 
-            geo::ShapePtr visual, collision;
+            geo::ShapePtr visual;
+            geo::ShapePtr collision;
             std::tie(visual, collision) = LinkToShapes(link);
             if (visual || collision)
             {
@@ -390,11 +401,11 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
     update_req_ = &req;
     executor_.spin_some();
 
-    ed::EntityConstPtr e_robot = world.getEntity(robot_name_);
+    ed::EntityConstPtr const e_robot = world.getEntity(robot_name_);
     if (e_robot && e_robot->has_pose())
     {
         // Calculate absolute poses
-        for(ed::world_model::TransformCrawler tc(world, robot_name_, node_->now().seconds()); tc.hasNext(); tc.next())
+        for (ed::world_model::TransformCrawler tc(world, robot_name_, node_->now().seconds()); tc.hasNext(); tc.next())
         {
             const ed::EntityConstPtr& e = tc.entity();
             req.setPose(e->id(), e_robot->pose() * tc.transform());

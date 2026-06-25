@@ -11,9 +11,9 @@ struct MeasurementConvexHull
 {
     ConvexHull convex_hull;
     geo::Pose3D pose;
-    double timestamp;
+    double timestamp{};
 };
 
-}
+} // namespace ed
 
 #endif

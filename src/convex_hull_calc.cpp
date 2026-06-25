@@ -1,11 +1,16 @@
 #include "ed/convex_hull_calc.h"
+#include "ed/convex_hull.h"
 
+#include <algorithm>
+#include <geolib/datatypes.h>
+#include <geolib/math_types.h>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/matx.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <vector>
 
-namespace ed
-{
-
-namespace convex_hull
+namespace ed::convex_hull
 {
 
 // ----------------------------------------------------------------------------------------------------
@@ -21,7 +26,7 @@ namespace convex_hull
 void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& chull, geo::Pose3D& pose)
 {
     cv::Mat_<cv::Vec2f> points_2d(1, points.size());
-    for(unsigned int i = 0; i < points.size(); ++i)
+    for (unsigned int i = 0; i < points.size(); ++i)
         points_2d.at<cv::Vec2f>(i) = cv::Vec2f(points[i].x, points[i].y);
 
     pose = geo::Pose3D::identity();
@@ -38,10 +43,10 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
     geo::Vec2f xy_max(-1e9, -1e9);
 
     chull.points.clear();
-    for(unsigned int i = 0; i < chull_indices.size(); ++i)
+    for (int const chull_indice : chull_indices)
     {
-        const cv::Vec2f& p_cv = points_2d.at<cv::Vec2f>(chull_indices[i]);
-        geo::Vec2f p(p_cv[0], p_cv[1]);
+        const cv::Vec2f& p_cv = points_2d.at<cv::Vec2f>(chull_indice);
+        geo::Vec2f const p(p_cv[0], p_cv[1]);
 
         chull.points.push_back(p);
 
@@ -57,9 +62,8 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
     pose.t.y = (xy_min.y + xy_max.y) / 2;
 
     // Move all points to the pose frame
-    for(unsigned int i = 0; i < chull.points.size(); ++i)
+    for (auto& p : chull.points)
     {
-        geo::Vec2f& p = chull.points[i];
         p.x -= pose.t.x;
         p.y -= pose.t.y;
     }
@@ -83,7 +87,7 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
 void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& chull)
 {
     cv::Mat_<cv::Vec2f> points_2d(1, points.size());
-    for(unsigned int i = 0; i < points.size(); ++i)
+    for (unsigned int i = 0; i < points.size(); ++i)
         points_2d.at<cv::Vec2f>(i) = cv::Vec2f(points[i].x, points[i].y);
 
     chull.z_min = z_min;
@@ -93,7 +97,7 @@ void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_
     cv::convexHull(points_2d, chull_indices);
 
     chull.points.resize(chull_indices.size());
-    for(unsigned int i = 0; i < chull_indices.size(); ++i)
+    for (unsigned int i = 0; i < chull_indices.size(); ++i)
     {
         const cv::Vec2f& p_cv = points_2d.at<cv::Vec2f>(chull_indices[i]);
         chull.points[i] = geo::Vec2f(p_cv[0], p_cv[1]);
@@ -113,15 +117,15 @@ void calculateEdgesAndNormals(ConvexHull& chull)
     chull.edges.resize(chull.points.size());
     chull.normals.resize(chull.points.size());
 
-    for(unsigned int i = 0; i < chull.points.size(); ++i)
+    for (unsigned int i = 0; i < chull.points.size(); ++i)
     {
-        unsigned int j = (i + 1) % chull.points.size();
+        unsigned int const j = (i + 1) % chull.points.size();
 
         const geo::Vec2f& p1 = chull.points[i];
         const geo::Vec2f& p2 = chull.points[j];
 
         // Calculate edge
-        geo::Vec2f e = p2 - p1;
+        geo::Vec2f const e = p2 - p1;
         chull.edges[i] = e;
 
         // Calculate normal
@@ -141,21 +145,24 @@ void calculateEdgesAndNormals(ConvexHull& chull)
  * @param z_padding padding in z-plane
  * @return
  */
-bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
-             const ConvexHull& c2, const geo::Vector3& pos2,
-             float xy_padding, float z_padding)
+bool collide(const ConvexHull& c1,
+             const geo::Vector3& pos1,
+             const ConvexHull& c2,
+             const geo::Vector3& pos2,
+             float xy_padding,
+             float z_padding)
 {
     if (c1.points.size() < 3 || c2.points.size() < 3)
         return false;
 
-    float z_diff = pos2.z - pos1.z;
+    float const z_diff = pos2.z - pos1.z;
 
-    if (c1.z_max < (c2.z_min + z_diff - 2 * z_padding) || c2.z_max < (c1.z_min - z_diff - 2 * z_padding))
+    if (c1.z_max < (c2.z_min + z_diff - (2 * z_padding)) || c2.z_max < (c1.z_min - z_diff - (2 * z_padding)))
         return false;
 
-    geo::Vec2f pos_diff(pos2.x - pos1.x, pos2.y - pos1.y);
+    geo::Vec2f const pos_diff(pos2.x - pos1.x, pos2.y - pos1.y);
 
-    for(unsigned int i = 0; i < c1.points.size(); ++i)
+    for (unsigned int i = 0; i < c1.points.size(); ++i)
     {
         const geo::Vec2f& p1 = c1.points[i];
         const geo::Vec2f& n = c1.normals[i];
@@ -163,10 +170,10 @@ bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
         // Calculate min and max projection of c1
         float min1 = n.dot(c1.points[0] - p1);
         float max1 = min1;
-        for(unsigned int k = 1; k < c1.points.size(); ++k)
+        for (unsigned int k = 1; k < c1.points.size(); ++k)
         {
             // Calculate projection
-            float p = n.dot(c1.points[k] - p1);
+            float const p = n.dot(c1.points[k] - p1);
             min1 = std::min(min1, p);
             max1 = std::max(max1, p);
         }
@@ -176,7 +183,7 @@ bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
         max1 += xy_padding;
 
         // Calculate p1 in c2's frame
-        geo::Vec2f p1_c2 = p1 - pos_diff;
+        geo::Vec2f const p1_c2 = p1 - pos_diff;
 
         // If this bool stays true, there is definitely no collision
         bool no_collision = true;
@@ -188,10 +195,10 @@ bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
         bool above = false;
 
         // Check if c2's points overlap with c1's bounds
-        for(unsigned int k = 0; k < c2.points.size(); ++k)
+        for (const auto& point : c2.points)
         {
             // Calculate projection on p1's normal
-            float p = n.dot(c2.points[k] - p1_c2);
+            float const p = n.dot(point - p1_c2);
 
             below = below || (p < max1);
             above = above || (p > min1);
@@ -221,9 +228,9 @@ bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
 void calculateArea(ConvexHull& c)
 {
     c.area = 0;
-    for(unsigned int i = 0; i < c.points.size(); ++i)
+    for (unsigned int i = 0; i < c.points.size(); ++i)
     {
-        unsigned int j = (i + 1) % c.points.size();
+        unsigned int const j = (i + 1) % c.points.size();
 
         const geo::Vec2f& p1 = c.points[i];
         const geo::Vec2f& p2 = c.points[j];
@@ -234,6 +241,4 @@ void calculateArea(ConvexHull& c)
 
 // ----------------------------------------------------------------------------------------------------
 
-}
-
-}
+} // namespace ed::convex_hull

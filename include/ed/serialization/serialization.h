@@ -6,12 +6,11 @@
 
 #include <geolib/datatypes.h>
 
-namespace tue {
-namespace config {
+namespace tue::config
+{
 class Reader;
 class Writer;
-}
-}
+} // namespace tue::config
 
 namespace ed
 {
@@ -19,29 +18,26 @@ namespace ed
 class WorldModel;
 class Entity;
 class UpdateRequest;
-class ConvexHull;
+struct ConvexHull;
 class ImageMask;
 
 namespace io
 {
 class Reader;
 class Writer;
-}
-}
+} // namespace io
+} // namespace ed
 
 namespace ed
 {
 
 // SERIALIZATION
 
-//void serialize(const WorldModel& wm, ed::io::Writer& w, unsigned long since_revision = 0);
+// void serialize(const WorldModel& wm, ed::io::Writer& w, unsigned long since_revision = 0);
 
+// void serialize(const Entity& wm, ed::io::Writer& w, unsigned long since_revision = 0);
 
-//void serialize(const Entity& wm, ed::io::Writer& w, unsigned long since_revision = 0);
-
-
-bool deserialize(io::Reader &r, UpdateRequest& req);
-
+bool deserialize(io::Reader& r, UpdateRequest& req);
 
 void serialize(const geo::Pose3D& pose, ed::io::Writer& w);
 
@@ -51,11 +47,9 @@ bool deserialize(tue::config::Reader& r, const std::string& group, geo::Pose3D& 
 
 bool deserialize(tue::config::Reader& r, const std::string& group, geo::Vec3& p);
 
-
 void serialize(const ConvexHull& ch, ed::io::Writer& w);
 
 bool deserialize(ed::io::Reader& r, ConvexHull& ch);
-
 
 void serialize(const geo::Shape& s, ed::io::Writer& w);
 
@@ -63,27 +57,20 @@ bool deserialize(ed::io::Reader& r, geo::Shape& s);
 
 bool deserialize(tue::config::Reader& r, const std::string& group, geo::Shape& s);
 
-
 void serializeTimestamp(double time, ed::io::Writer& w);
 
 bool deserializeTimestamp(ed::io::Reader& r, double& time);
-
 
 void serialize(const ImageMask& mask, tue::serialization::OutputArchive& m);
 
 bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask);
 
-
-//void serialize(const WorldModel& wm, tue::config::Writer& w);
-
-
+// void serialize(const WorldModel& wm, tue::config::Writer& w);
 
 // DESERIALIZATION
 
+// void deserialize(tue::config::Reader& r, UpdateRequest& req);
 
-
-//void deserialize(tue::config::Reader& r, UpdateRequest& req);
-
-}
+} // namespace ed
 
 #endif

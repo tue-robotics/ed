@@ -13,7 +13,7 @@
 
 // ----------------------------------------------------------------------------------------------------
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     if (argc <= 1)
     {
@@ -21,7 +21,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    std::string image_filename = argv[1];
+    std::string const image_filename = argv[1];
 
     // Read input image
     cv::Mat viz = cv::imread(image_filename);
@@ -41,13 +41,13 @@ int main(int argc, char **argv)
     w.setValue("resolution", 1);
     w.setValue("blockheight", 0);
 
-    tue::config::Reader cfg(w.data()); // Wrap config in reader
+    tue::config::Reader const cfg(w.data()); // Wrap config in reader
 
     std::map<std::string, geo::ShapePtr> shape_cache; // necessary for call, not used
 
     // Call shape loader. This will generate a mesh from the file
     std::stringstream error;
-    geo::ShapePtr shape = ed::models::loadShape("", cfg, shape_cache, error);
+    geo::ShapePtr const shape = ed::models::loadShape("", cfg, shape_cache, error);
 
     if (!shape)
     {
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     std::cout << triangles.size() << " triangles" << std::endl;
 
     // Visualize triangles
-    for(std::vector<geo::TriangleI>::const_iterator it = triangles.begin(); it != triangles.end(); ++it)
+    for (std::vector<geo::TriangleI>::const_iterator it = triangles.begin(); it != triangles.end(); ++it)
     {
         const geo::TriangleI& t = *it;
 

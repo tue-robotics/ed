@@ -6,19 +6,22 @@
 namespace ed
 {
 
-class PropertyKeyDBEntry;
+struct PropertyKeyDBEntry;
 
-template<typename T>
-struct PropertyKey
+template <typename T> struct PropertyKey
 {
-    PropertyKey() : idx(INVALID_IDX), entry(0) {}
-    Idx idx;
+    PropertyKey() = default;
+    Idx idx{INVALID_IDX};
 
-    const PropertyKeyDBEntry* entry;
+    const PropertyKeyDBEntry* entry{nullptr};
 
-    bool valid() const { return idx != INVALID_IDX; }
+    [[nodiscard]]
+    bool valid() const
+    {
+        return idx != INVALID_IDX;
+    }
 };
 
-} // end namespace
+} // namespace ed
 
 #endif

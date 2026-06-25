@@ -1,33 +1,30 @@
 #include "tf_publisher_plugin.h"
+#include "ed/plugin.h"
+#include "ed/types.h"
 
-#include <ed/world_model.h>
 #include <ed/entity.h>
+#include <ed/world_model.h>
 
 #include <geolib/ros/tf2_conversions.h>
 
-#include <tf2/convert.h>
-#include <tf2/transform_datatypes.h>
-#include <tf2/LinearMath/Transform.h>
-#if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
+#include <memory>
+#include <tf2/convert.hpp>
+#include <tf2/LinearMath/Transform.hpp>
+#include <tf2/transform_datatypes.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#else
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#endif
 #include <tf2_ros/transform_broadcaster.h>
+#include <tue/config/configuration.h>
+#include <tue/config/types.h>
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
 // ----------------------------------------------------------------------------------------------------
 
-TFPublisherPlugin::TFPublisherPlugin() : tf_broadcaster_(nullptr)
-{
-}
+TFPublisherPlugin::TFPublisherPlugin() : tf_broadcaster_(nullptr) {}
 
 // ----------------------------------------------------------------------------------------------------
 
-TFPublisherPlugin::~TFPublisherPlugin()
-{
-}
+TFPublisherPlugin::~TFPublisherPlugin() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -53,10 +50,8 @@ void TFPublisherPlugin::initialize()
 
 void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& /*req*/)
 {
-    for(ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it)
+    for (const auto& e : world)
     {
-        const ed::EntityConstPtr& e = *it;
-
         if (!e->has_pose())
             continue;
 

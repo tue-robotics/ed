@@ -7,8 +7,8 @@
 #include <rgbd/Image.h>
 #include <rgbd/View.h>
 
-#include <ros/node_handle.h>
 #include <ros/advertise_service_options.h>
+#include <ros/node_handle.h>
 
 #include <geolib/Shape.h>
 
@@ -23,10 +23,9 @@ class ColorRenderResult : public geo::RenderResult
 {
 
 public:
-
-    ColorRenderResult(cv::Mat& image, cv::Mat& z_buffer, const cv::Vec3b& color, float min_depth, float max_depth)
-        : geo::RenderResult(image.rows, image.rows), image_(image), z_buffer_(z_buffer), color_(color),
-          min_depth_(min_depth), max_depth_(max_depth)
+    ColorRenderResult(cv::Mat& image, cv::Mat& z_buffer, const cv::Vec3b& color, float min_depth, float max_depth) :
+        geo::RenderResult(image.rows, image.rows), image_(image), z_buffer_(z_buffer), color_(color),
+        min_depth_(min_depth), max_depth_(max_depth)
     {
     }
 
@@ -45,13 +44,10 @@ public:
     }
 
 protected:
-
     cv::Mat image_;
     cv::Mat z_buffer_;
     cv::Vec3b color_;
     float min_depth_, max_depth_;
-
-
 };
 
 // ----------------------------------------------------------------------------------------------------
@@ -65,29 +61,31 @@ bool inPolygon(const std::vector<cv::Point2i>& points_list, const cv::Point2i& p
     float testy = point.y;
 
     unsigned int ii = 0;
-    for(; ii < points_list.size(); ++ii){
+    for (; ii < points_list.size(); ++ii)
+    {
         vertx[ii] = points_list[ii].x;
         verty[ii] = points_list[ii].y;
     }
 
     int i, j, c = 0;
-    for (i = 0, j = nvert-1; i < nvert; j = i++) {
-    if ( ((verty[i]>testy) != (verty[j]>testy)) &&
-        (testx < (vertx[j]-vertx[i]) * (testy-verty[i]) / (verty[j]-verty[i]) + vertx[i]) )
-        c = !c;
+    for (i = 0, j = nvert - 1; i < nvert; j = i++)
+    {
+        if (((verty[i] > testy) != (verty[j] > testy)) &&
+            (testx < (vertx[j] - vertx[i]) * (testy - verty[i]) / (verty[j] - verty[i]) + vertx[i]))
+            c = !c;
     }
     return c > 0;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-int REDS[] =   { 255, 0  , 255, 0,   255, 0  , 255};
-int GREENS[] = { 255, 255, 0  , 0,   255, 255, 0  };
-int BLUES[] =  { 255, 255, 255, 255, 0,   0,   0  };
+int REDS[] = {255, 0, 255, 0, 255, 0, 255};
+int GREENS[] = {255, 255, 0, 0, 255, 255, 0};
+int BLUES[] = {255, 255, 255, 255, 0, 0, 0};
 
 // ----------------------------------------------------------------------------------------------------
 
-int hash(const char *str, int max_val)
+int hash(const char* str, int max_val)
 {
     unsigned long hash = 5381;
     int c;
@@ -126,7 +124,8 @@ bool imageToBinary(const cv::Mat& image, std::vector<unsigned char>& data, Image
         rgb_params[1] = 95; // default is 95
 
         // Compress image
-        if (!cv::imencode(".jpg", image, data, rgb_params)) {
+        if (!cv::imencode(".jpg", image, data, rgb_params))
+        {
             std::cout << "RGB image compression failed" << std::endl;
             return false;
         }
@@ -139,7 +138,8 @@ bool imageToBinary(const cv::Mat& image, std::vector<unsigned char>& data, Image
         params[0] = CV_IMWRITE_PNG_COMPRESSION;
         params[1] = 1;
 
-        if (!cv::imencode(".png", image, data, params)) {
+        if (!cv::imencode(".png", image, data, params))
+        {
             std::cout << "PNG image compression failed" << std::endl;
             return false;
         }
@@ -159,9 +159,7 @@ GUIPlugin::GUIPlugin()
 
 // ----------------------------------------------------------------------------------------------------
 
-GUIPlugin::~GUIPlugin()
-{
-}
+GUIPlugin::~GUIPlugin() {}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -199,32 +197,32 @@ void GUIPlugin::configure(tue::Configuration config)
     if (srv_get_measurements_.getService() != srv_get_measurements)
     {
         ros::AdvertiseServiceOptions opt_get_measurements =
-                ros::AdvertiseServiceOptions::create<ed_msgs::GetMeasurements>(
-                    srv_get_measurements, boost::bind(&GUIPlugin::srvGetMeasurements, this, _1, _2), ros::VoidPtr(), &cb_queue_);
+            ros::AdvertiseServiceOptions::create<ed_msgs::GetMeasurements>(
+                srv_get_measurements,
+                boost::bind(&GUIPlugin::srvGetMeasurements, this, _1, _2),
+                ros::VoidPtr(),
+                &cb_queue_);
         srv_get_measurements_ = nh.advertiseService(opt_get_measurements);
     }
 
     if (srv_set_label_.getService() != srv_set_label)
     {
-        ros::AdvertiseServiceOptions opt_set_label =
-                ros::AdvertiseServiceOptions::create<ed_msgs::SetLabel>(
-                    srv_set_label, boost::bind(&GUIPlugin::srvSetLabel, this, _1, _2), ros::VoidPtr(), &cb_queue_);
+        ros::AdvertiseServiceOptions opt_set_label = ros::AdvertiseServiceOptions::create<ed_msgs::SetLabel>(
+            srv_set_label, boost::bind(&GUIPlugin::srvSetLabel, this, _1, _2), ros::VoidPtr(), &cb_queue_);
         srv_set_label_ = nh.advertiseService(opt_set_label);
     }
 
     if (srv_raise_event_.getService() != srv_raise_event)
     {
-        ros::AdvertiseServiceOptions opt_raise_event =
-                ros::AdvertiseServiceOptions::create<ed_msgs::RaiseEvent>(
-                    srv_raise_event, boost::bind(&GUIPlugin::srvRaiseEvent, this, _1, _2), ros::VoidPtr(), &cb_queue_);
+        ros::AdvertiseServiceOptions opt_raise_event = ros::AdvertiseServiceOptions::create<ed_msgs::RaiseEvent>(
+            srv_raise_event, boost::bind(&GUIPlugin::srvRaiseEvent, this, _1, _2), ros::VoidPtr(), &cb_queue_);
         srv_raise_event_ = nh.advertiseService(opt_raise_event);
     }
 
     if (srv_get_command_.getService() != srv_get_command)
     {
-        ros::AdvertiseServiceOptions opt_get_command =
-                ros::AdvertiseServiceOptions::create<ed_msgs::GetGUICommand>(
-                    srv_get_command, boost::bind(&GUIPlugin::srvGetCommand, this, _1, _2), ros::VoidPtr(), &cb_queue_);
+        ros::AdvertiseServiceOptions opt_get_command = ros::AdvertiseServiceOptions::create<ed_msgs::GetGUICommand>(
+            srv_get_command, boost::bind(&GUIPlugin::srvGetCommand, this, _1, _2), ros::VoidPtr(), &cb_queue_);
         srv_get_command_ = nh.advertiseService(opt_get_command);
     }
 
@@ -236,17 +234,19 @@ void GUIPlugin::configure(tue::Configuration config)
     projector_pose_.setOrigin(geo::Vector3(cam_x, cam_y, cam_z));
     projector_pose_.setBasis(geo::Matrix3::identity());
 
-    projector_ = geo::DepthCamera(image_width, image_height,
-                                  image_width / (world_width / cam_z), image_height / (world_height / cam_z),
-                                  image_width / 2, image_height / 2,
-                                  0, 0);
+    projector_ = geo::DepthCamera(image_width,
+                                  image_height,
+                                  image_width / (world_width / cam_z),
+                                  image_height / (world_height / cam_z),
+                                  image_width / 2,
+                                  image_height / 2,
+                                  0,
+                                  0);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void GUIPlugin::initialize()
-{
-}
+void GUIPlugin::initialize() {}
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -270,7 +270,8 @@ cv::Point2i GUIPlugin::coordinateToPixel(const geo::Vector3& p) const
 
 ed::UUID GUIPlugin::getEntityFromClick(const cv::Point2i& p) const
 {
-    for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
+    for (ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end();
+         ++it_entity)
     {
         const ed::EntityConstPtr& e = *it_entity;
         if (!e->visual())
@@ -280,7 +281,7 @@ ed::UUID GUIPlugin::getEntityFromClick(const cv::Point2i& p) const
             if (!chull_points.empty())
             {
                 std::vector<cv::Point2i> image_chull(chull_points.size());
-                for(unsigned int i = 0; i < chull_points.size(); ++i)
+                for (unsigned int i = 0; i < chull_points.size(); ++i)
                     image_chull[i] = coordinateToPixel(chull_points[i]);
 
                 if (inPolygon(image_chull, p))
@@ -303,7 +304,8 @@ void GUIPlugin::publishMapImage()
 
     cv::Mat z_buffer(map_image_.rows, map_image_.cols, CV_32FC1, 0.0);
 
-    for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
+    for (ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end();
+         ++it_entity)
     {
         const ed::EntityConstPtr& e = *it_entity;
 
@@ -323,7 +325,8 @@ void GUIPlugin::publishMapImage()
         }
     }
 
-    for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
+    for (ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end();
+         ++it_entity)
     {
         const ed::EntityConstPtr& e = *it_entity;
 
@@ -338,7 +341,7 @@ void GUIPlugin::publishMapImage()
         if (!chull_points.empty())
         {
             // Lower polygon
-            for(unsigned int i = 0; i < chull_points.size(); ++i)
+            for (unsigned int i = 0; i < chull_points.size(); ++i)
             {
                 int j = (i + 1) % chull_points.size();
 
@@ -348,22 +351,23 @@ void GUIPlugin::publishMapImage()
                 cv::line(map_image_,
                          coordinateToPixel(p1.x, p1.y, e->convexHull().min_z),
                          coordinateToPixel(p2.x, p2.y, e->convexHull().min_z),
-                         0.3 * color, thickness);
+                         0.3 * color,
+                         thickness);
             }
 
             // Edges in between
-            for(unsigned int i = 0; i < chull_points.size(); ++i)
+            for (unsigned int i = 0; i < chull_points.size(); ++i)
             {
                 const pcl::PointXYZ p = chull_points[i];
                 cv::line(map_image_,
                          coordinateToPixel(p.x, p.y, e->convexHull().min_z),
                          coordinateToPixel(p.x, p.y, e->convexHull().max_z),
-                         0.5 * color, thickness);
+                         0.5 * color,
+                         thickness);
             }
 
-
             // Upper polygon
-            for(unsigned int i = 0; i < chull_points.size(); ++i)
+            for (unsigned int i = 0; i < chull_points.size(); ++i)
             {
                 int j = (i + 1) % chull_points.size();
 
@@ -373,7 +377,8 @@ void GUIPlugin::publishMapImage()
                 cv::line(map_image_,
                          coordinateToPixel(p1.x, p1.y, e->convexHull().max_z),
                          coordinateToPixel(p2.x, p2.y, e->convexHull().max_z),
-                         color, thickness);
+                         color,
+                         thickness);
             }
 
             if (e->type() == "person")
@@ -386,10 +391,12 @@ void GUIPlugin::publishMapImage()
 
     // Find the global most recent measurement
     ed::MeasurementConstPtr last_measurement;
-    for(ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end(); ++it_entity)
+    for (ed::WorldModel::const_iterator it_entity = world_model_->begin(); it_entity != world_model_->end();
+         ++it_entity)
     {
         const ed::EntityConstPtr& e = *it_entity;
-        if (e->lastMeasurement() && (!last_measurement || e->lastMeasurement()->timestamp() > e->lastMeasurement()->timestamp()))
+        if (e->lastMeasurement() &&
+            (!last_measurement || e->lastMeasurement()->timestamp() > e->lastMeasurement()->timestamp()))
             last_measurement = e->lastMeasurement();
     }
 
@@ -403,7 +410,8 @@ void GUIPlugin::publishMapImage()
 
         cv::circle(map_image_, p_2d, 10, cv::Scalar(255, 255, 255));
 
-        rgbd::View view(*last_measurement->image(), 100); // width doesnt matter; we'll go back to world coordinates anyway
+        rgbd::View view(*last_measurement->image(),
+                        100); // width doesnt matter; we'll go back to world coordinates anyway
         geo::Vector3 p1 = view.getRasterizer().project2Dto3D(0, 0) * 3;
         geo::Vector3 p2 = view.getRasterizer().project2Dto3D(view.getWidth() - 1, 0) * 3;
         geo::Vector3 p3 = view.getRasterizer().project2Dto3D(0, view.getHeight() - 1) * 3;
@@ -439,8 +447,8 @@ void GUIPlugin::publishMapImage()
         pub_image_map_.publish(msg);
     }
 
-//    cv::imshow("gui", map_image_);
-//    cv::waitKey(3);
+    //    cv::imshow("gui", map_image_);
+    //    cv::waitKey(3);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -470,7 +478,7 @@ bool GUIPlugin::srvGetMeasurements(ed_msgs::GetMeasurements::Request& req, ed_ms
 
         cv::Mat rgb_image_masked(rgb_image.rows, rgb_image.cols, CV_8UC3, cv::Scalar(0, 0, 0));
 
-        for(ed::ImageMask::const_iterator it = image_mask.begin(rgb_image.cols); it != image_mask.end(); ++it)
+        for (ed::ImageMask::const_iterator it = image_mask.begin(rgb_image.cols); it != image_mask.end(); ++it)
         {
             cv::Point2i pt = it();
             rgb_image_masked.at<cv::Vec3b>(pt) = rgb_image.at<cv::Vec3b>(pt);
@@ -523,8 +531,7 @@ bool GUIPlugin::srvSetLabel(ed_msgs::SetLabel::Request& req, ed_msgs::SetLabel::
         res.msg = "[ED] GUI Plugin: srv SetLabel not yet implemented.";
         std::cout << res.msg << std::endl;
 
-
-//        std::cout << "Setting entity '" << id << "' to type '" << req.label << "'" << std::endl;
+        //        std::cout << "Setting entity '" << id << "' to type '" << req.label << "'" << std::endl;
     }
 
     return true;
@@ -557,7 +564,7 @@ bool parseParam(const std::map<std::string, std::string>& params, const std::str
 bool GUIPlugin::srvRaiseEvent(ed_msgs::RaiseEvent::Request& req, ed_msgs::RaiseEvent::Response& res)
 {
     std::map<std::string, std::string> params;
-    for(unsigned int i = 0; i < req.param_names.size(); ++i)
+    for (unsigned int i = 0; i < req.param_names.size(); ++i)
         params[req.param_names[i]] = req.param_values[i];
 
     if (req.name == "click")
@@ -581,9 +588,8 @@ bool GUIPlugin::srvRaiseEvent(ed_msgs::RaiseEvent::Request& req, ed_msgs::RaiseE
                     res.msg = "Deletion not yet implemented";
                     std::cout << "[ED] GUI Plugin: " << res.msg << std::endl;
 
-
-//                    world_model_->erase(selected_id_);
-//                    res.msg = "Deleted object with id '" + selected_id_ + "'";
+                    //                    world_model_->erase(selected_id_);
+                    //                    res.msg = "Deleted object with id '" + selected_id_ + "'";
                 }
             }
             else if (type == "navigate")
@@ -662,7 +668,9 @@ bool GUIPlugin::srvGetCommand(ed_msgs::GetGUICommand::Request& req, ed_msgs::Get
         res.command = command_;
         res.command_id = command_id_;
 
-        for(std::map<std::string, std::string>::const_iterator it = command_params_.begin(); it != command_params_.end(); ++it)
+        for (std::map<std::string, std::string>::const_iterator it = command_params_.begin();
+             it != command_params_.end();
+             ++it)
         {
             res.param_names.push_back(it->first);
             res.param_values.push_back(it->second);
@@ -671,6 +679,5 @@ bool GUIPlugin::srvGetCommand(ed_msgs::GetGUICommand::Request& req, ed_msgs::Get
 
     return true;
 }
-
 
 ED_REGISTER_PLUGIN(GUIPlugin)

@@ -15,29 +15,30 @@ class ProbeClient
 {
 
 public:
-
     ProbeClient();
 
     virtual ~ProbeClient();
 
     void launchProbe(const std::string& probe_name, const std::string& lib);
 
-    void configure(tue::Configuration config);
+    void configure(const tue::Configuration& config);
 
     bool process(tue::serialization::Archive& req, tue::serialization::Archive& res);
 
-    const std::string& probeName() const { return probe_name_; }
+    [[nodiscard]]
+    const std::string& probeName() const
+    {
+        return probe_name_;
+    }
 
 private:
-
     rclcpp::Node::SharedPtr node_;
 
     std::string probe_name_;
 
     rclcpp::Client<tue_serialization_interfaces::srv::BinaryService>::SharedPtr srv_probe_;
-
 };
 
-}
+} // namespace ed
 
 #endif

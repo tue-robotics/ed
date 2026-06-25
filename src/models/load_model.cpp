@@ -5,18 +5,19 @@
 #include "ed/logging.h"
 
 // TU/e Robotics
-#include <tue/config/configuration.h>
+#include <sstream>
+#include <string>
 #include <tue/config/loaders/sdf.h>
 #include <tue/config/loaders/xml.h>
 #include <tue/config/loaders/yaml.h>
+#include <tue/config/reader_writer.h>
 
 // ED
-#include "ed/update_request.h"
 #include "ed/models/model_loader.h"
+#include "ed/update_request.h"
 
-namespace ed {
-
-namespace models {
+namespace ed::models
+{
 
 bool loadModel(const enum LoadType load_type, const std::string& source, ed::UpdateRequest& req)
 {
@@ -24,16 +25,16 @@ bool loadModel(const enum LoadType load_type, const std::string& source, ed::Upd
     std::stringstream error;
     if (load_type == LoadType::FILE)
     {
-        std::filesystem::path path(source);
+        std::filesystem::path const path(source);
         if (!std::filesystem::exists(path))
         {
-            ed::log::error() << "Couldn't open: '" << source << "', because it doesn't exist" << std::endl;
+            ed::log::error() << "Couldn't open: '" << source << "', because it doesn't exist" << '\n';
             return false;
         }
 
         tue::config::ReaderWriter config;
-        std::string extension = std::filesystem::path(source).extension().string();
-        if ( extension == ".sdf" || extension == ".world")
+        std::string const extension = std::filesystem::path(source).extension().string();
+        if (extension == ".sdf" || extension == ".world")
             tue::config::loadFromSDFFile(source, config);
         else if (extension == ".xml")
             tue::config::loadFromXMLFile(source, config);
@@ -41,14 +42,13 @@ bool loadModel(const enum LoadType load_type, const std::string& source, ed::Upd
             tue::config::loadFromYAMLFile(source, config);
         else
         {
-            ed::log::error() << "[model_viewer] extension: '" << extension << "'  is not supported." << std::endl;
+            ed::log::error() << "[model_viewer] extension: '" << extension << "'  is not supported." << '\n';
             return false;
         }
 
         if (!model_loader.create(config.data(), req, error))
         {
-            ed::log::error() << "File '" << source << "' could not be loaded:" <<
-                             "\nError:\n" << error.str() << std::endl;
+            ed::log::error() << "File '" << source << "' could not be loaded:" << "\nError:\n" << error.str() << '\n';
             return false;
         }
     }
@@ -56,21 +56,17 @@ bool loadModel(const enum LoadType load_type, const std::string& source, ed::Upd
     {
         if (!model_loader.create("_root", source, req, error, true))
         {
-            ed::log::error() << "Model '" << source << "' could not be loaded:" <<
-                             "\nError:\n" << error.str() << std::endl;
+            ed::log::error() << "Model '" << source << "' could not be loaded:" << "\nError:\n" << error.str() << '\n';
             return false;
         }
     }
     else
     {
-        ed::log::error() << "Unknown load type" << std::endl;
+        ed::log::error() << "Unknown load type" << '\n';
         return false;
     }
 
     return true;
-
 }
 
-}  // End of namespace 'models'
-
-}  // End of namespace 'ed'
+} // namespace ed::models

@@ -1,42 +1,34 @@
 #include "builder_plugin.h"
 
 #include <ed/entity.h>
-#include <ed/world_model.h>
-#include <ed/update_request.h>
 #include <ed/models/loader.h>
+#include <ed/update_request.h>
+#include <ed/world_model.h>
 
-#include <ros/node_handle.h>
 #include <ros/advertise_service_options.h>
+#include <ros/node_handle.h>
 
 #include <geolib/ros/msg_conversions.h>
 
 // ----------------------------------------------------------------------------------------------------
 
-BuilderPlugin::BuilderPlugin()
-{
-}
+BuilderPlugin::BuilderPlugin() {}
 
 // ----------------------------------------------------------------------------------------------------
 
-BuilderPlugin::~BuilderPlugin()
-{
-}
+BuilderPlugin::~BuilderPlugin() {}
 
 // ----------------------------------------------------------------------------------------------------
 
-void BuilderPlugin::configure(tue::Configuration config)
-{
-
-}
+void BuilderPlugin::configure(tue::Configuration config) {}
 
 // ----------------------------------------------------------------------------------------------------
 
 void BuilderPlugin::initialize()
 {
     ros::NodeHandle nh;
-    ros::AdvertiseServiceOptions opt_set_entity =
-            ros::AdvertiseServiceOptions::create<ed_msgs::SetEntity>(
-                "/ed/set_entity", boost::bind(&BuilderPlugin::srvSetEntity, this, _1, _2), ros::VoidPtr(), &cb_queue_);
+    ros::AdvertiseServiceOptions opt_set_entity = ros::AdvertiseServiceOptions::create<ed_msgs::SetEntity>(
+        "/ed/set_entity", boost::bind(&BuilderPlugin::srvSetEntity, this, _1, _2), ros::VoidPtr(), &cb_queue_);
     srv_set_entity_ = nh.advertiseService(opt_set_entity);
 }
 

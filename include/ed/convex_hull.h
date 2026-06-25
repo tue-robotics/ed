@@ -13,18 +13,25 @@ struct ConvexHull
     std::vector<geo::Vec2f> points;
     std::vector<geo::Vec2f> edges;
     std::vector<geo::Vec2f> normals;
-    float z_min, z_max;
-    float area; // is calculated based on points
-    bool complete;
+    float z_min{}, z_max{};
+    float area{0}; // is calculated based on points
+    bool complete{false};
 
-    ConvexHull() : area(0), complete(false) {}
+    ConvexHull() = default;
 
-    double height() const { return z_max - z_min; }
+    [[nodiscard]]
+    double height() const
+    {
+        return z_max - z_min;
+    }
 
-    double volume() const { return height() * area; }
-
+    [[nodiscard]]
+    double volume() const
+    {
+        return height() * area;
+    }
 };
 
-}
+} // namespace ed
 
 #endif

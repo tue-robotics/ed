@@ -6,7 +6,6 @@
 #include "ed/property_key_db.h"
 #include <ed/models/model_loader.h>
 
-
 #if __has_include(<diagnostic_updater/diagnostic_updater.hpp>)
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #else
@@ -26,12 +25,7 @@
 #include <queue>
 #include <vector>
 
-namespace tf2_ros
-{
-
-class TransformListener;
-
-}
+namespace tf2_ros { class TransformListener; }
 
 namespace ed
 {
@@ -59,7 +53,7 @@ public:
 
     WorldModelConstPtr world_model() const
     {
-        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        boost::lock_guard<boost::mutex> const lg(mutex_world_);
         return ed::make_shared<const WorldModel>(*world_model_);
     }
 
@@ -75,7 +69,6 @@ public:
     }
 
 private:
-
     //! Shared node handle
     rclcpp::Node::SharedPtr node_;
 
@@ -112,6 +105,6 @@ private:
     ed::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
-}
+} // namespace ed
 
 #endif

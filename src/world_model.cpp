@@ -1,22 +1,35 @@
 #include "ed/world_model.h"
 
-#include "ed/update_request.h"
 #include "ed/entity.h"
+#include "ed/measurement_convex_hull.h"
+#include "ed/property.h"
 #include "ed/relation.h"
+#include "ed/time.h"
+#include "ed/types.h"
+#include "ed/update_request.h"
 
-#include <tue/config/reader.h>
-#include <boost/make_shared.hpp>
+#include <algorithm>
+#include <boost/smart_ptr/make_shared_object.hpp>
+#include <cstddef>
+#include <geolib/datatypes.h>
+#include <iostream>
+#include <map>
+#include <ostream>
+#include <queue>
+#include <set>
+#include <string>
+#include <tue/config/data_pointer.h>
+#include <vector>
 
 #include "ed/property_key_db.h"
+#include "ed/uuid.h"
 
 namespace ed
 {
 
 // --------------------------------------------------------------------------------
 
-WorldModel::WorldModel(const PropertyKeyDB* prop_key_db) : revision_(0), property_info_db_(prop_key_db)
-{
-}
+WorldModel::WorldModel(const PropertyKeyDB* prop_key_db) : property_info_db_(prop_key_db) {}
 
 // --------------------------------------------------------------------------------
 
@@ -31,36 +44,36 @@ void WorldModel::update(const UpdateRequest& req)
     std::map<UUID, EntityPtr> new_entities;
 
     // Update associated measurements
-    for(std::map<UUID, std::vector<MeasurementConstPtr> >::const_iterator it = req.measurements.begin(); it != req.measurements.end(); ++it)
+    for (const auto& measurement : req.measurements)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::vector<MeasurementConstPtr>& measurements = it->second;
-        for(std::vector<MeasurementConstPtr>::const_iterator it2 = measurements.begin(); it2 != measurements.end(); ++it2)
+        EntityPtr const e = getOrAddEntity(measurement.first, new_entities);
+        const std::vector<MeasurementConstPtr>& measurements = measurement.second;
+        for (const auto& it2 : measurements)
         {
-            e->addMeasurement(*it2);
+            e->addMeasurement(it2);
         }
     }
 
     // Update poses
-    for(std::map<UUID, geo::Pose3D>::const_iterator it = req.poses.begin(); it != req.poses.end(); ++it)
+    for (const auto& pose : req.poses)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setPose(it->second);
+        EntityPtr const e = getOrAddEntity(pose.first, new_entities);
+        e->setPose(pose.second);
     }
 
     for (const UUID& id : req.poses_removed)
     {
-        EntityPtr e = getOrAddEntity(id, new_entities);
+        EntityPtr const e = getOrAddEntity(id, new_entities);
         e->removePose();
     }
 
     // Update visuals
-    for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.visuals.begin(); it != req.visuals.end(); ++it)
+    for (const auto& visual : req.visuals)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setVisual(it->second);
+        EntityPtr const e = getOrAddEntity(visual.first, new_entities);
+        e->setVisual(visual.second);
 
-        Idx idx;
+        Idx idx = 0;
         if (findEntityIdx(e->id(), idx))
         {
             entity_visual_revisions_[idx] = revision_;
@@ -68,12 +81,12 @@ void WorldModel::update(const UpdateRequest& req)
     }
 
     // Update collisions
-    for(std::map<UUID, geo::ShapeConstPtr>::const_iterator it = req.collisions.begin(); it != req.collisions.end(); ++it)
+    for (const auto& collision : req.collisions)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setCollision(it->second);
+        EntityPtr const e = getOrAddEntity(collision.first, new_entities);
+        e->setCollision(collision.second);
 
-        Idx idx;
+        Idx idx = 0;
         if (findEntityIdx(e->id(), idx))
         {
             entity_collision_revisions_[idx] = revision_;
@@ -81,16 +94,16 @@ void WorldModel::update(const UpdateRequest& req)
     }
 
     // Update convex hulls new
-    for(std::map<UUID, std::map<std::string, ed::MeasurementConvexHull> >::const_iterator it = req.convex_hulls_new.begin(); it != req.convex_hulls_new.end(); ++it)
+    for (const auto& it : req.convex_hulls_new)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        for(std::map<std::string, ed::MeasurementConvexHull>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2)
+        EntityPtr const e = getOrAddEntity(it.first, new_entities);
+        for (const auto& it2 : it.second)
         {
-            const ed::MeasurementConvexHull& m = it2->second;
-            e->setConvexHull(m.convex_hull, m.pose, m.timestamp, it2->first);
+            const ed::MeasurementConvexHull& m = it2.second;
+            e->setConvexHull(m.convex_hull, m.pose, m.timestamp, it2.first);
         }
 
-        Idx idx;
+        Idx idx = 0;
         if (findEntityIdx(e->id(), idx))
         {
             entity_visual_revisions_[idx] = revision_;
@@ -99,27 +112,27 @@ void WorldModel::update(const UpdateRequest& req)
     }
 
     // Update volumes
-    for (std::map<UUID, std::set<std::string> >::const_iterator it = req.volumes_removed.begin(); it != req.volumes_removed.end(); ++it )
+    for (const auto& it : req.volumes_removed)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::set<std::string>& volume_names = it->second;
-        for (std::set<std::string>::const_iterator it2 = volume_names.begin(); it2 != volume_names.end(); ++it2)
-            e->removeVolume(*it2);
-        Idx idx;
+        EntityPtr const e = getOrAddEntity(it.first, new_entities);
+        const std::set<std::string>& volume_names = it.second;
+        for (const auto& volume_name : volume_names)
+            e->removeVolume(volume_name);
+        Idx idx = 0;
         if (findEntityIdx(e->id(), idx))
         {
             entity_volumes_revisions_[idx] = revision_;
         }
     }
-    for (std::map<UUID, std::map<std::string, geo::ShapeConstPtr> >::const_iterator it = req.volumes_added.begin(); it != req.volumes_added.end(); ++it)
+    for (const auto& it : req.volumes_added)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::map<std::string, geo::ShapeConstPtr>& volumes = it->second;
-        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it2 = volumes.begin(); it2 != volumes.end(); ++it2)
+        EntityPtr const e = getOrAddEntity(it.first, new_entities);
+        const std::map<std::string, geo::ShapeConstPtr>& volumes = it.second;
+        for (const auto& volume : volumes)
         {
-            e->addVolume(it2->first, it2->second);
+            e->addVolume(volume.first, volume.second);
         }
-        Idx idx;
+        Idx idx = 0;
         if (findEntityIdx(e->id(), idx))
         {
             entity_volumes_revisions_[idx] = revision_;
@@ -127,103 +140,103 @@ void WorldModel::update(const UpdateRequest& req)
     }
 
     // Update types
-    for(std::map<UUID, std::string>::const_iterator it = req.types.begin(); it != req.types.end(); ++it)
+    for (const auto& type : req.types)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setType(it->second);
+        EntityPtr const e = getOrAddEntity(type.first, new_entities);
+        e->setType(type.second);
     }
 
-    for(std::map<UUID, std::set<std::string> >::const_iterator it = req.type_sets_added.begin(); it != req.type_sets_added.end(); ++it)
+    for (const auto& it : req.type_sets_added)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::set<std::string>& type_set = it->second;
-        for(std::set<std::string>::const_iterator it2 = type_set.begin(); it2 != type_set.end(); ++it2)
-            e->addType(*it2);
+        EntityPtr const e = getOrAddEntity(it.first, new_entities);
+        const std::set<std::string>& type_set = it.second;
+        for (const auto& it2 : type_set)
+            e->addType(it2);
     }
 
-    for(std::map<UUID, std::set<std::string> >::const_iterator it = req.type_sets_removed.begin(); it != req.type_sets_removed.end(); ++it)
+    for (const auto& it : req.type_sets_removed)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::set<std::string>& type_set = it->second;
-        for(std::set<std::string>::const_iterator it2 = type_set.begin(); it2 != type_set.end(); ++it2)
-            e->removeType(*it2);
+        EntityPtr const e = getOrAddEntity(it.first, new_entities);
+        const std::set<std::string>& type_set = it.second;
+        for (const auto& it2 : type_set)
+            e->removeType(it2);
     }
 
     // Update existence probabilities
-    for(std::map<UUID, double>::const_iterator it = req.existence_probabilities.begin(); it != req.existence_probabilities.end(); ++it)
+    for (const auto& existence_probabilitie : req.existence_probabilities)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setExistenceProbability(it->second);
+        EntityPtr const e = getOrAddEntity(existence_probabilitie.first, new_entities);
+        e->setExistenceProbability(existence_probabilitie.second);
     }
 
     // Update last update timestamps
-    for(std::map<UUID, double>::const_iterator it = req.last_update_timestamps.begin(); it != req.last_update_timestamps.end(); ++it)
+    for (const auto& last_update_timestamp : req.last_update_timestamps)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setLastUpdateTimestamp(it->second);
+        EntityPtr const e = getOrAddEntity(last_update_timestamp.first, new_entities);
+        e->setLastUpdateTimestamp(last_update_timestamp.second);
     }
 
     // Update relations
-    for(std::map<UUID, std::map<UUID, RelationConstPtr> >::const_iterator it = req.relations.begin(); it != req.relations.end(); ++it)
+    for (const auto& relation : req.relations)
     {
-        Idx idx1;
-        if (findEntityIdx(it->first, idx1))
+        Idx idx1 = 0;
+        if (findEntityIdx(relation.first, idx1))
         {
-            const std::map<UUID, RelationConstPtr>& rels = it->second;
-            for(std::map<UUID, RelationConstPtr>::const_iterator it2 = rels.begin(); it2 != rels.end(); ++it2)
+            const std::map<UUID, RelationConstPtr>& rels = relation.second;
+            for (const auto& rel : rels)
             {
-                Idx idx2;
-                if (findEntityIdx(it2->first, idx2))
-                    setRelation(idx1, idx2, it2->second);
+                Idx idx2 = 0;
+                if (findEntityIdx(rel.first, idx2))
+                    setRelation(idx1, idx2, rel.second);
                 else
-                    std::cout << "WorldModel::update (relation): unknown entity: '" << it2->first << "'." << std::endl;
+                    std::cout << "WorldModel::update (relation): unknown entity: '" << rel.first << "'." << '\n';
             }
         }
         else
-            std::cout << "WorldModel::update (relation): unknown entity: '" << it->first << "'." << std::endl;
+            std::cout << "WorldModel::update (relation): unknown entity: '" << relation.first << "'." << '\n';
     }
 
     // Update flags
-    for(std::map<UUID, std::string>::const_iterator it = req.added_flags.begin(); it != req.added_flags.end(); ++it)
+    for (const auto& added_flag : req.added_flags)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->setFlag(it->second);
+        EntityPtr const e = getOrAddEntity(added_flag.first, new_entities);
+        e->setFlag(added_flag.second);
     }
 
-    for(std::map<UUID, std::string>::const_iterator it = req.removed_flags.begin(); it != req.removed_flags.end(); ++it)
+    for (const auto& removed_flag : req.removed_flags)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        e->removeFlag(it->second);
+        EntityPtr const e = getOrAddEntity(removed_flag.first, new_entities);
+        e->removeFlag(removed_flag.second);
     }
 
     // Update additional info (data)
-    for(std::map<UUID, tue::config::DataConstPointer>::const_iterator it = req.datas.begin(); it != req.datas.end(); ++it)
+    for (const auto& data : req.datas)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
+        EntityPtr const e = getOrAddEntity(data.first, new_entities);
 
         tue::config::DataPointer params;
         params.add(e->data());
-        params.add(it->second);
+        params.add(data.second);
 
         e->setData(params);
     }
 
-    for(std::map<UUID, std::map<Idx, Property> >::const_iterator it = req.properties.begin(); it != req.properties.end(); ++it)
+    for (const auto& propertie : req.properties)
     {
-        EntityPtr e = getOrAddEntity(it->first, new_entities);
-        const std::map<Idx, Property>& props = it->second;
+        EntityPtr const e = getOrAddEntity(propertie.first, new_entities);
+        const std::map<Idx, Property>& props = propertie.second;
 
-        for(std::map<Idx, Property>::const_iterator it2 = props.begin(); it2 != props.end(); ++it2)
+        for (const auto& prop : props)
         {
-            const Property& p = it2->second;
-            e->setProperty(it2->first, p);
+            const Property& p = prop.second;
+            e->setProperty(prop.first, p);
         }
     }
 
     // Remove entities
-    for(std::set<UUID>::const_iterator it = req.removed_entities.begin(); it != req.removed_entities.end(); ++it)
+    for (const auto& removed_entitie : req.removed_entities)
     {
-        removeEntity(*it);
+        removeEntity(removed_entitie);
     }
 }
 
@@ -231,21 +244,21 @@ void WorldModel::update(const UpdateRequest& req)
 
 struct SearchNode
 {
-    SearchNode() {}
+    SearchNode() = default;
 
-    SearchNode(Idx parent_, Idx relation_, bool inverse_)
-        : parent(parent_), relation(relation_), inverse(inverse_) {}
+    SearchNode(Idx parent_, Idx relation_, bool inverse_) : parent(parent_), relation(relation_), inverse(inverse_) {}
 
-    Idx parent;
-    Idx relation;
-    bool inverse;
+    Idx parent{};
+    Idx relation{};
+    bool inverse{};
 };
 
 // --------------------------------------------------------------------------------
 
 bool WorldModel::calculateTransform(const UUID& source, const UUID& target, const Time& time, geo::Pose3D& tf) const
 {
-    Idx s, t;
+    Idx s = 0;
+    Idx t = 0;
     if (!findEntityIdx(source, s) || !findEntityIdx(target, t))
         return false;
 
@@ -255,9 +268,9 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
     Q.push(s);
     visited[s] = SearchNode(INVALID_IDX, INVALID_IDX, true);
 
-    while(!Q.empty())
+    while (!Q.empty())
     {
-        Idx n = Q.front();
+        Idx const n = Q.front();
         Q.pop();
 
         if (n == t)
@@ -269,7 +282,7 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
 
             while (u != s)
             {
-                std::map<Idx, SearchNode>::const_iterator it = visited.find(u);
+                auto const it = visited.find(u);
                 const SearchNode& sn = it->second;
 
                 const RelationConstPtr& r = relations_[sn.relation];
@@ -277,7 +290,9 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
                 geo::Pose3D tr;
                 if (!r->calculateTransform(time, tr))
                 {
-                    std::cout << "WorldModel::calculateTransform: transform could not be calculated. THIS SHOULD NEVER HAPPEN!" << std::endl;
+                    std::cout << "WorldModel::calculateTransform: transform could not be calculated. THIS SHOULD NEVER "
+                                 "HAPPEN!"
+                              << '\n';
                     return false;
                 }
 
@@ -294,24 +309,24 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
 
         // Push all nodes that point to this node
         const std::map<Idx, Idx>& transforms_to = entities_[n]->relationsTo();
-        for(std::map<Idx, Idx>::const_iterator it = transforms_to.begin(); it != transforms_to.end(); ++it)
+        for (auto it : transforms_to)
         {
-            Idx n2 = it->first;
+            Idx const n2 = it.first;
             if (visited.find(n2) == visited.end())
             {
-                visited[n2] = SearchNode(n, it->second, false);
+                visited[n2] = SearchNode(n, it.second, false);
                 Q.push(n2);
             }
         }
 
         // Push all nodes this node points to
         const std::map<Idx, Idx>& transforms_from = entities_[n]->relationsFrom();
-        for(std::map<Idx, Idx>::const_iterator it = transforms_from.begin(); it != transforms_from.end(); ++it)
+        for (auto it : transforms_from)
         {
-            Idx n2 = it->first;
+            Idx const n2 = it.first;
             if (visited.find(n2) == visited.end())
             {
-                visited[n2] = SearchNode(n, it->second, true);
+                visited[n2] = SearchNode(n, it.second, true);
                 Q.push(n2);
             }
         }
@@ -329,7 +344,7 @@ void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
 
     if (!p || !c)
     {
-        std::cout << "[ED] ERROR: Invalid relation addition: parent or child does not exit." << std::endl;
+        std::cout << "[ED] ERROR: Invalid relation addition: parent or child does not exit." << '\n';
         return;
     }
 
@@ -338,8 +353,8 @@ void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
     {
         r_idx = addRelation(r);
 
-        EntityPtr p_new(new Entity(*entities_[parent]));
-        EntityPtr c_new(new Entity(*entities_[child]));
+        EntityPtr const p_new(new Entity(*entities_[parent]));
+        EntityPtr const c_new(new Entity(*entities_[child]));
 
         p_new->setRelationTo(child, r_idx);
         c_new->setRelationFrom(parent, r_idx);
@@ -353,7 +368,7 @@ void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
     }
 
     // Update entity revisions
-    for(std::size_t i = entity_revisions_.size(); i < std::max(parent, child) + 1; ++i)
+    for (std::size_t i = entity_revisions_.size(); i < std::max(parent, child) + 1; ++i)
         entity_revisions_.push_back(0);
     entity_revisions_[parent] = revision_;
     entity_revisions_[child] = revision_;
@@ -363,7 +378,7 @@ void WorldModel::setRelation(Idx parent, Idx child, const RelationConstPtr& r)
 
 Idx WorldModel::addRelation(const RelationConstPtr& r)
 {
-    Idx r_idx = relations_.size();
+    Idx const r_idx = relations_.size();
     relations_.push_back(r);
     return r_idx;
 }
@@ -372,7 +387,7 @@ Idx WorldModel::addRelation(const RelationConstPtr& r)
 
 void WorldModel::setEntity(const UUID& id, const EntityConstPtr& e)
 {
-    std::map<UUID, Idx>::const_iterator it_idx = entity_map_.find(id);
+    auto const it_idx = entity_map_.find(id);
     if (it_idx == entity_map_.end())
     {
         addNewEntity(e);
@@ -387,7 +402,7 @@ void WorldModel::setEntity(const UUID& id, const EntityConstPtr& e)
 
 void WorldModel::removeEntity(const UUID& id)
 {
-    std::map<UUID, Idx>::iterator it_idx = entity_map_.find(id);
+    auto const it_idx = entity_map_.find(id);
     if (it_idx != entity_map_.end())
     {
         entities_[it_idx->second].reset();
@@ -405,13 +420,13 @@ void WorldModel::removeEntity(const UUID& id)
 EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& new_entities)
 {
     // Check if the id is already in the new_entities map. If so, return it
-    std::map<UUID, EntityPtr>::const_iterator it_e = new_entities.find(id);
+    auto const it_e = new_entities.find(id);
     if (it_e != new_entities.end())
         return it_e->second;
 
     EntityPtr e;
 
-    Idx idx;
+    Idx idx = 0;
     if (findEntityIdx(id, idx))
     {
         // Create a copy of the existing entity
@@ -432,7 +447,7 @@ EntityPtr WorldModel::getOrAddEntity(const UUID& id, std::map<UUID, EntityPtr>& 
 
     new_entities[id] = e;
 
-    for(std::size_t i = entity_revisions_.size(); i < idx + 1; ++i)
+    for (std::size_t i = entity_revisions_.size(); i < idx + 1; ++i)
         entity_revisions_.push_back(0);
     entity_revisions_[idx] = revision_;
 
@@ -449,7 +464,7 @@ bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
         return true;
     }
 
-    std::map<UUID, Idx>::const_iterator it = entity_map_.find(id);
+    auto const it = entity_map_.find(id);
     if (it == entity_map_.end())
         return false;
 
@@ -462,7 +477,7 @@ bool WorldModel::findEntityIdx(const UUID& id, Idx& idx) const
 
 Idx WorldModel::addNewEntity(const EntityConstPtr& e)
 {
-    Idx idx;
+    Idx idx = 0;
     if (entity_empty_spots_.empty())
     {
         idx = entities_.size();
@@ -493,6 +508,4 @@ const PropertyKeyDBEntry* WorldModel::getPropertyInfo(const std::string& name) c
     return property_info_db_->getPropertyKeyDBEntry(name);
 }
 
-}
-
-
+} // namespace ed

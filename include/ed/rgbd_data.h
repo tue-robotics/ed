@@ -1,23 +1,23 @@
 #ifndef ED_RGBD_DATA_H_
 #define ED_RGBD_DATA_H_
 
-#include <pcl/point_types.h>
-#include <rgbd/image.h>
 #include <geolib/datatypes.h>
 #include <pcl/pcl_base.h>
+#include <pcl/point_types.h>
+#include <rgbd/image.h>
 
 #include <vector>
 
 namespace ed
 {
 
-typedef std::vector<int> PointCloudMask;
-typedef pcl::IndicesPtr PointCloudMaskPtr;
-typedef pcl::IndicesConstPtr PointCloudMaskConstPtr;
-typedef std::vector<std::vector<int> > PointCloudToPixelsMapping;
+using PointCloudMask = std::vector<int>;
+using PointCloudMaskPtr = pcl::IndicesPtr;
+using PointCloudMaskConstPtr = pcl::IndicesConstPtr;
+using PointCloudToPixelsMapping = std::vector<std::vector<int>>;
 
 // TODO: check if this works!
-const static PointCloudMask NO_MASK( 1, -1 );
+const static PointCloudMask NO_MASK(1, -1);
 
 struct RGBDData
 {
@@ -36,6 +36,6 @@ struct RGBDData
     PointCloudToPixelsMapping point_cloud_to_pixels_mapping;
 };
 
-}
+} // namespace ed
 
 #endif

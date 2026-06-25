@@ -11,13 +11,12 @@ namespace ed
 
 struct InitData
 {
-    InitData(ed::PropertyKeyDB& properties_, tue::Configuration& config_)
-        : properties(properties_), config(config_) {}
+    InitData(ed::PropertyKeyDB& properties_, tue::Configuration& config_) : properties(properties_), config(config_) {}
 
     ed::PropertyKeyDB& properties;
     tue::Configuration& config;
 };
 
-} // end namespace
+} // namespace ed
 
 #endif

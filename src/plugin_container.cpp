@@ -1,8 +1,9 @@
 #include "ed/plugin_container.h"
 
-#include <ed/error_context.h>
 #include "ed/init_data.h"
 #include "ed/plugin.h"
+#include <cmath>
+#include <ed/error_context.h>
 
 #include <pluginlib/class_loader.hpp>
 
@@ -13,10 +14,8 @@ namespace ed
 
 // --------------------------------------------------------------------------------
 
-PluginContainer::PluginContainer(const rclcpp::Node::SharedPtr& node, const TFBufferConstPtr& tf_buffer)
-    : class_loader_(nullptr), request_stop_(false), is_running_(false), cycle_duration_(0.1), loop_frequency_(10),
-      loop_frequency_max_(11), loop_frequency_min_(9), step_finished_(true), t_last_update_(0), tf_buffer_(tf_buffer),
-      node_(node), loop_usage_status_(nullptr)
+PluginContainer::PluginContainer(const rclcpp::Node::SharedPtr& node, const TFBufferConstPtr& tf_buffer) :
+    tf_buffer_(tf_buffer), node_(node), loop_usage_status_(nullptr)
 {
 }
 
@@ -30,8 +29,8 @@ PluginContainer::~PluginContainer()
         thread_->join();
 
     plugin_.reset();
-    if (class_loader_)
-        delete class_loader_;
+
+    delete class_loader_;
 }
 
 // --------------------------------------------------------------------------------
@@ -39,8 +38,8 @@ PluginContainer::~PluginContainer()
 PluginPtr PluginContainer::loadPlugin(const std::string& plugin_name, const std::string& plugin_type, InitData& init)
 {
     // Load the library
-    if (class_loader_)
-        delete class_loader_;
+
+    delete class_loader_;
     class_loader_ = new pluginlib::ClassLoader<ed::Plugin>("ed", "ed::Plugin");
 
     // Create plugin
@@ -93,11 +92,11 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
         tue::Configuration scoped_config = init.config.limitScope();
         InitData scoped_init(init.properties, scoped_config);
 
-        plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
+        plugin_->configure(scoped_config); // This call will become obsolete (TODO)
         plugin_->initialize(scoped_init);
 
         // Read optional frequency (inside parameters is obsolete)
-        double freq_temp;
+        double freq_temp = NAN;
         if (init.config.value("frequency", freq_temp, tue::config::OPTIONAL))
             init.config.addError("Specify parameter 'frequency' outside 'parameters'.");
 
@@ -109,7 +108,7 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
         tue::Configuration scoped_config;
         InitData scoped_init(init.properties, scoped_config);
 
-        plugin_->configure(scoped_config);  // This call will become obsolete (TODO)
+        plugin_->configure(scoped_config); // This call will become obsolete (TODO)
         plugin_->initialize(scoped_init);
 
         if (scoped_config.hasError())
@@ -132,11 +131,11 @@ void PluginContainer::run()
     is_running_ = true;
     request_stop_ = false;
 
-    double innerloop_frequency = 1000; // TODO: magic number!
+    double const innerloop_frequency = 1000; // TODO: magic number!
 
     rclcpp::WallRate r(loop_frequency_);
     rclcpp::WallRate ir(innerloop_frequency);
-    while(!request_stop_)
+    while (!request_stop_)
     {
         if (!step())
             // If not stepped, sleep short
@@ -156,7 +155,7 @@ bool PluginContainer::step()
     // If we still have an update_request, it means the request is not yet handled,
     // so we have to skip this cycle (and wait until the world model has handled it)
     {
-        boost::lock_guard<boost::mutex> lg(mutex_update_request_);
+        boost::lock_guard<boost::mutex> const lg(mutex_update_request_);
         if (update_request_)
             return false;
     }
@@ -165,7 +164,7 @@ bool PluginContainer::step()
 
     // Check if there is a new world. If so replace the current one with the new one
     {
-        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        boost::lock_guard<boost::mutex> const lg(mutex_world_);
         if (world_new_)
         {
             world_current_ = world_new_;
@@ -178,13 +177,13 @@ bool PluginContainer::step()
 
     if (world_current_)
     {
-        PluginInput data(*world_current_, world_deltas);
+        PluginInput const data(*world_current_, world_deltas);
 
-        UpdateRequestPtr update_request(new UpdateRequest);
+        UpdateRequestPtr const update_request(new UpdateRequest);
 
         loop_usage_status_->start();
         {
-            ed::ErrorContext errc("Plugin:", name().c_str());
+            ed::ErrorContext const errc("Plugin:", name().c_str());
 
             // Old
             plugin_->process(*world_current_, *update_request);
@@ -210,6 +209,4 @@ void PluginContainer::requestStop()
 
 // --------------------------------------------------------------------------------
 
-}
-
-
+} // namespace ed

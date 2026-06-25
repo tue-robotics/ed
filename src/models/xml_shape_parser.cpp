@@ -1,25 +1,28 @@
 #include "xml_shape_parser.h"
 
-#include <geolib/datatypes.h>
+#include <cmath>
 #include <geolib/CompositeShape.h>
+#include <geolib/datatypes.h>
 
+#include <ostream>
 #include <tinyxml2.h>
 
-#include <vector>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <vector>
 
 // ----------------------------------------------------------------------------------------------------
 
-std::vector<double> parseArray(const tinyxml2::XMLElement* xml_elem)
+static std::vector<double> parseArray(const tinyxml2::XMLElement* xml_elem)
 {
-    std::string txt = xml_elem->GetText();
+    std::string const txt = xml_elem->GetText();
 
     std::vector<double> v;
 
     std::string word;
     std::stringstream stream(txt);
-    while(getline(stream, word, ' '))
+    while (getline(stream, word, ' '))
     {
         double d = 0;
         std::istringstream istr(word);
@@ -41,17 +44,18 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
 
     if (doc.Error())
     {
-        s_error << "While parsing '" << filename << "': " << std::endl << std::endl
-                << doc.ErrorStr() << " at line " << doc.ErrorLineNum() << std::endl;
+        s_error << "While parsing '" << filename << "': " << '\n'
+                << '\n'
+                << doc.ErrorStr() << " at line " << doc.ErrorLineNum() << '\n';
         error = s_error.str();
-        return geo::ShapePtr();
+        return {};
     }
 
     const tinyxml2::XMLElement* model_xml = doc.FirstChildElement("model");
     if (!model_xml)
     {
-        s_error << "Could not find 'model' element" << std::endl;
-        return geo::ShapePtr(new geo::Shape());
+        s_error << "Could not find 'model' element" << '\n';
+        return std::make_shared<geo::Shape>();
     }
 
     geo::CompositeShapePtr shape(new geo::CompositeShape);
@@ -86,8 +90,9 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
         if (size_xml)
             size = parseArray(size_xml);
 
-        std::string shape_type = shape_xml->Value();
-        if (shape_type == "box") {
+        std::string const shape_type = shape_xml->Value();
+        if (shape_type == "box")
+        {
             const tinyxml2::XMLElement* min_xml = shape_xml->FirstChildElement("min");
             const tinyxml2::XMLElement* max_xml = shape_xml->FirstChildElement("max");
 
@@ -98,22 +103,24 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
 
                 if (min.size() == 3 && max.size() == 3)
                 {
-                    shape->addShape(geo::Box(geo::Vector3(min[0], min[1], min[2]),
-                                             geo::Vector3(max[0], max[1], max[2])), pose);
+                    shape->addShape(
+                        geo::Box(geo::Vector3(min[0], min[1], min[2]), geo::Vector3(max[0], max[1], max[2])), pose);
                 }
             }
             else if (!size.empty())
             {
-                geo::Vector3 v_size(size[0], size[1], size[2]);
+                geo::Vector3 const v_size(size[0], size[1], size[2]);
                 shape->addShape(geo::Box(-v_size / 2, v_size / 2), pose);
             }
             else
             {
-                s_error << "In definition '" << filename << "': shape '" << shape_type << "' has no size property" << std::endl;
+                s_error << "In definition '" << filename << "': shape '" << shape_type << "' has no size property"
+                        << '\n';
             }
-
-        } else {
-            s_error << "In definition '" << filename << "': Unknown shape type: '" << shape_type << "'" << std::endl;
+        }
+        else
+        {
+            s_error << "In definition '" << filename << "': Unknown shape type: '" << shape_type << "'" << '\n';
         }
 
         shape_xml = shape_xml->NextSiblingElement();
@@ -121,7 +128,7 @@ geo::ShapePtr parseXMLShape(const std::string& filename, std::string& error)
 
     error = s_error.str();
     if (!error.empty())
-        return geo::ShapePtr();
+        return {};
 
     return shape;
 }

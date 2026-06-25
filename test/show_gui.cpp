@@ -1,7 +1,7 @@
-#include <rclcpp/rclcpp.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <tue_serialization_interfaces/msg/binary.hpp>
 #include <ed_interfaces/srv/raise_event.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tue_serialization_interfaces/msg/binary.hpp>
 
 rclcpp::Node::SharedPtr g_node;
 rclcpp::Client<ed_interfaces::srv::RaiseEvent>::SharedPtr client;
@@ -10,7 +10,7 @@ std::string click_type;
 
 void imageCallback(const tue_serialization_interfaces::msg::Binary::ConstSharedPtr msg)
 {
-    cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_UNCHANGED);
+    cv::Mat const image = cv::imdecode(msg->data, cv::IMREAD_UNCHANGED);
     cv::imshow("map", image);
     cv::waitKey(3);
 }
@@ -35,13 +35,13 @@ void mouseCallback(int event, int x, int y, int /*flags*/, void* /*ptr*/)
     }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
     g_node = rclcpp::Node::make_shared("ed_gui");
-    auto sub_image = g_node->create_subscription<tue_serialization_interfaces::msg::Binary>(
-                "/ed/gui/map_image", 1, imageCallback);
+    auto sub_image =
+        g_node->create_subscription<tue_serialization_interfaces::msg::Binary>("/ed/gui/map_image", 1, imageCallback);
     client = g_node->create_client<ed_interfaces::srv::RaiseEvent>("/ed/gui/raise_event");
 
     click_type = "navigate";
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     cv::setMouseCallback("map", mouseCallback);
 
     rclcpp::WallRate r(30);
-    while(rclcpp::ok())
+    while (rclcpp::ok())
     {
         rclcpp::spin_some(g_node);
         r.sleep();

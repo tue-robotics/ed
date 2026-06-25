@@ -1,26 +1,35 @@
-#include <rclcpp/rclcpp.hpp>
+#include <iostream>
+#include <memory>
+#include <ostream>
+#include <rclcpp/client.hpp>
+#include <rclcpp/executors.hpp>
+#include <rclcpp/future_return_code.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
 
 #include <ed_interfaces/srv/configure.hpp>
 
+#include <rclcpp/utilities.hpp>
+#include <string>
 #include <tue/config/configuration.h>
 #include <tue/config/loaders/yaml.h>
 #include <tue/config/resolve_config.h>
 
-#include <chrono>
 #include <filesystem>
+#include <vector>
 
 using namespace std::chrono_literals;
 
 // ----------------------------------------------------------------------------------------------------
 
-void usage()
+static void usage()
 {
-    std::cout << "Usage: configure CONFIG_FILE.yaml/json" << std::endl;
+    std::cout << "Usage: configure CONFIG_FILE.yaml/json" << '\n';
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     std::vector<std::string> myargv = rclcpp::init_and_remove_ros_arguments(argc, argv);
     if (myargv.size() != 2)
@@ -29,14 +38,15 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared("ed_configure");
-    rclcpp::Client<ed_interfaces::srv::Configure>::SharedPtr client =
-            node->create_client<ed_interfaces::srv::Configure>("ed/configure");
+    rclcpp::Node::SharedPtr const node = rclcpp::Node::make_shared("ed_configure");
+    rclcpp::Client<ed_interfaces::srv::Configure>::SharedPtr const client =
+        node->create_client<ed_interfaces::srv::Configure>("ed/configure");
 
-    std::filesystem::path config_file(myargv[1]);
+    std::filesystem::path const config_file(myargv[1]);
     if (!std::filesystem::exists(config_file))
     {
-        RCLCPP_ERROR_STREAM(node->get_logger(), "Could not configure ED: config file '" << config_file.string() << "' does not exist");
+        RCLCPP_ERROR_STREAM(node->get_logger(),
+                            "Could not configure ED: config file '" << config_file.string() << "' does not exist");
         return 1;
     }
 
@@ -47,7 +57,11 @@ int main(int argc, char **argv)
     tue::Configuration config;
     if (!tue::config::loadFromYAMLFile(config_file.string(), config, resolve_config))
     {
-        RCLCPP_ERROR_STREAM(node->get_logger(), "Could not configure ED: Error during parsing of the config file '" << config_file.string() << "' "<< std::endl << std::endl << config.error());
+        RCLCPP_ERROR_STREAM(node->get_logger(),
+                            "Could not configure ED: Error during parsing of the config file '" << config_file.string()
+                                                                                                << "' " << '\n'
+                                                                                                << '\n'
+                                                                                                << config.error());
         return 1;
     }
 

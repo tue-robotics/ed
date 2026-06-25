@@ -1,13 +1,17 @@
 #include "ed/io/filesystem/write.h"
 
-#include "ed/measurement.h"
 #include "ed/entity.h"
-#include "ed/serialization/serialization.h"
 #include "ed/io/json_writer.h"
 #include "ed/logging.h"
+#include "ed/measurement.h"
+#include "ed/serialization/serialization.h"
+#include "ed/types.h"
 
-#include <tue/serialization/output_archive.h>
 #include <filesystem>
+#include <iostream>
+#include <ostream>
+#include <string>
+#include <tue/serialization/output_archive.h>
 
 #include <rgbd/serialization.h>
 
@@ -22,7 +26,7 @@ bool write(const std::string& filename, const Measurement& msr)
 {
     // save image
     {
-        std::string filename_image = filename + ".rgbd";
+        std::string const filename_image = filename + ".rgbd";
         std::ofstream f_out;
         f_out.open(filename_image.c_str(), std::ifstream::binary);
         if (f_out.is_open())
@@ -32,13 +36,13 @@ bool write(const std::string& filename, const Measurement& msr)
         }
         else
         {
-            std::cout << "Could not save to " << filename_image << std::endl;
+            std::cout << "Could not save to " << filename_image << '\n';
         }
     }
 
     // save mask
     {
-        std::string filename_mask = filename + ".mask";
+        std::string const filename_mask = filename + ".mask";
         std::ofstream f_out;
         f_out.open(filename_mask.c_str(), std::ifstream::binary);
         if (f_out.is_open())
@@ -48,7 +52,7 @@ bool write(const std::string& filename, const Measurement& msr)
         }
         else
         {
-            std::cout << "Could not save to " << filename_mask << std::endl;
+            std::cout << "Could not save to " << filename_mask << '\n';
         }
     }
 
@@ -59,13 +63,13 @@ bool write(const std::string& filename, const Measurement& msr)
 
 bool write(const std::string& filename, const Entity& e)
 {
-    std::string filename_ext = filename + ".json";
+    std::string const filename_ext = filename + ".json";
     std::ofstream f_out;
     f_out.open(filename_ext.c_str());
 
     if (!f_out.is_open())
     {
-        ed::log::error() << "Could not save to '" << filename_ext << "'" << std::endl;
+        ed::log::error() << "Could not save to '" << filename_ext << "'" << '\n';
         return false;
     }
 
@@ -92,13 +96,13 @@ bool write(const std::string& filename, const Entity& e)
     }
 
     // RGBD Measurement
-    ed::MeasurementConstPtr msr = e.lastMeasurement();
+    ed::MeasurementConstPtr const msr = e.lastMeasurement();
     if (msr)
     {
         w.writeGroup("rgbd_measurement");
 
         // Get filename without path
-        std::string base_filename = std::filesystem::path(filename).filename().string();
+        std::string const base_filename = std::filesystem::path(filename).filename().string();
 
         w.writeValue("image_file", base_filename + ".rgbd");
         w.writeValue("mask_file", base_filename + ".mask");
@@ -117,4 +121,4 @@ bool write(const std::string& filename, const Entity& e)
     return true;
 }
 
-}
+} // namespace ed

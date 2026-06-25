@@ -11,20 +11,17 @@ class TransformCache : public ed::Relation
 {
 
 public:
-
     TransformCache();
 
     ~TransformCache();
 
-    bool calculateTransform(const Time& t, geo::Pose3D& tf) const;
+    bool calculateTransform(const Time& t, geo::Pose3D& tf) const override;
 
     void insert(const Time& t, const geo::Pose3D& tf) { cache_.insert(t, tf); }
 
 private:
-
     // Transforms, ordered in time
     TimeCache<geo::Pose3D> cache_;
-
 };
 
 } // end namespace ed

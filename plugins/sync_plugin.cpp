@@ -1,22 +1,24 @@
 #include "sync_plugin.h"
 
-#include <ed_interfaces/srv/query.hpp>
-#include "ed/update_request.h"
-#include "ed/world_model.h"
+#include "ed/init_data.h"
+#include "ed/plugin.h"
 #include "ed/serialization/serialization.h"
+#include "ed/update_request.h"
 #include <ed/io/json_reader.h>
+#include <ed_interfaces/srv/query.hpp>
+#include <memory>
+#include <rclcpp/callback_group.hpp>
+#include <rclcpp/future_return_code.hpp>
+#include <rclcpp/logging.hpp>
+#include <string>
 
 // ----------------------------------------------------------------------------------------------------
 
-SyncPlugin::SyncPlugin() : rev_number_(0)
-{
-}
+SyncPlugin::SyncPlugin() {}
 
 // ----------------------------------------------------------------------------------------------------
 
-SyncPlugin::~SyncPlugin()
-{
-}
+SyncPlugin::~SyncPlugin() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -40,7 +42,8 @@ void SyncPlugin::process(const ed::PluginInput& /*data*/, ed::UpdateRequest& req
     auto future = sync_client_->async_send_request(request);
     if (executor_.spin_until_future_complete(future) != rclcpp::FutureReturnCode::SUCCESS)
     {
-        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED SyncPlugin] Failed to call service '" << sync_client_->get_service_name() << "'");
+        RCLCPP_ERROR_STREAM(node_->get_logger(),
+                            "[ED SyncPlugin] Failed to call service '" << sync_client_->get_service_name() << "'");
         return;
     }
 
@@ -49,17 +52,21 @@ void SyncPlugin::process(const ed::PluginInput& /*data*/, ed::UpdateRequest& req
 
     if (!r.ok())
     {
-        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED SyncPlugin] Could not parse query response received from '" << sync_client_->get_service_name() << "'");
+        RCLCPP_ERROR_STREAM(node_->get_logger(),
+                            "[ED SyncPlugin] Could not parse query response received from '"
+                                << sync_client_->get_service_name() << "'");
         return;
     }
 
-//    std::cout << "Response size: " << response->human_readable.size() << std::endl;
+    //    std::cout << "Response size: " << response->human_readable.size() << std::endl;
 
     ed::deserialize(r, req);
 
     if (!r.ok())
     {
-        RCLCPP_ERROR_STREAM(node_->get_logger(), "[ED SyncPlugin] Invalid query response from '" << sync_client_->get_service_name() << "': " << r.error());
+        RCLCPP_ERROR_STREAM(node_->get_logger(),
+                            "[ED SyncPlugin] Invalid query response from '" << sync_client_->get_service_name()
+                                                                            << "': " << r.error());
 
         // Clear update request
         req = ed::UpdateRequest();

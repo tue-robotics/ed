@@ -1,8 +1,8 @@
 #ifndef ED_RELATION_H_
 #define ED_RELATION_H_
 
-#include "ed/types.h"
 #include "ed/time.h"
+#include "ed/types.h"
 
 #include <geolib/datatypes.h>
 
@@ -13,14 +13,11 @@ class Relation
 {
 
 public:
-
     virtual bool calculateTransform(const Time& /*t*/, geo::Pose3D& /*tf*/) const { return false; }
 
 private:
-
-//    Idx parent_idx_;
-//    Idx child_idx_;
-
+    //    Idx parent_idx_;
+    //    Idx child_idx_;
 };
 
 } // end namespace ed

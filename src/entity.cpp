@@ -2,10 +2,23 @@
 
 #include "ed/measurement.h"
 
-#include <geolib/Shape.h>
+#include <algorithm>
+#include <boost/circular_buffer/base.hpp>
+#include <cstdlib>
 #include <geolib/Mesh.h>
+#include <geolib/Shape.h>
+
+#include <geolib/datatypes.h>
+#include <geolib/math_types.h>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "ed/convex_hull_calc.h"
+#include "ed/measurement_convex_hull.h"
+#include "ed/types.h"
+#include "ed/uuid.h"
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -14,20 +27,8 @@ namespace ed
 
 // ----------------------------------------------------------------------------------------------------
 
-Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement_buffer_size) :
-    id_(id),
-    revision_(0),
-    type_(type),
-    existence_prob_(1.0),
-    last_update_timestamp_(0),
-    measurements_(measurement_buffer_size),
-    measurements_seq_(0),
-    visual_revision_(0),
-    collision_revision_(0),
-    volumes_revision_(0),
-//    creation_time_(creation_time),
-    has_pose_(false),
-    pose_(geo::Pose3D::identity())
+Entity::Entity(UUID id, TYPE type, const unsigned int& measurement_buffer_size) :
+    id_(std::move(id)), type_(std::move(type)), measurements_(measurement_buffer_size), pose_(geo::Pose3D::identity())
 {
 }
 
@@ -35,7 +36,7 @@ Entity::Entity(const UUID& id, const TYPE& type, const unsigned int& measurement
 
 Entity::~Entity()
 {
-//    std::cout << "Removing entity with ID: " << id_ << std::endl;
+    //    std::cout << "Removing entity with ID: " << id_ << std::endl;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -48,7 +49,7 @@ void Entity::updateConvexHull()
         return;
     }
 
-    std::map<std::string, MeasurementConvexHull>::const_iterator it = convex_hull_map_.begin();
+    auto it = convex_hull_map_.begin();
     const MeasurementConvexHull& m = it->second;
 
     if (convex_hull_map_.size() == 1)
@@ -66,16 +67,16 @@ void Entity::updateConvexHull()
     ++it;
 
     std::vector<geo::Vec2f> points;
-    for(; it != convex_hull_map_.end(); ++it)
+    for (; it != convex_hull_map_.end(); ++it)
     {
         const MeasurementConvexHull& m = it->second;
         z_min = std::min<float>(z_min, m.convex_hull.z_min + m.pose.t.z);
         z_max = std::max<float>(z_max, m.convex_hull.z_max + m.pose.t.z);
 
-        geo::Vec2f offset(m.pose.t.x, m.pose.t.y);
+        geo::Vec2f const offset(m.pose.t.x, m.pose.t.y);
 
-        for(unsigned int i = 0; i < m.convex_hull.points.size(); ++i)
-            points.push_back(m.convex_hull.points[i] + offset);
+        for (const auto& point : m.convex_hull.points)
+            points.push_back(point + offset);
     }
 
     ed::convex_hull::create(points, z_min, z_max, convex_hull_new_, pose_);
@@ -96,12 +97,12 @@ void Entity::updateConvexHullFromVisual()
     float z_max = -1e9;
 
     std::vector<geo::Vec2f> points(vertices.size());
-    for(unsigned int i = 0; i < vertices.size(); ++i)
+    for (unsigned int i = 0; i < vertices.size(); ++i)
     {
-//        geo::Vector3 p_MAP = pose_ * vertices[i];
+        //        geo::Vector3 p_MAP = pose_ * vertices[i];
         // old implementation, this is correct, but gives the wrong result with the rest of the code
         // Because it is too much work for now to change that. So therefore ignoring rotation.
-        geo::Vector3 p_MAP = pose_.t + vertices[i];
+        geo::Vector3 const p_MAP = pose_.t + vertices[i];
         // new implementation, not correct either. Because this creates the wrong output in case of other rotation,
         // than arround z-axis. But solves the main issue, rotation of convex hull is in the wrong frame.
         // ToDo: Make sure everything in stamped correctly. Then conversion are much easier.
@@ -138,10 +139,9 @@ void Entity::setCollision(const geo::ShapeConstPtr& collision)
     }
 }
 
-
 // ----------------------------------------------------------------------------------------------------
 
-void Entity::addMeasurement(MeasurementConstPtr measurement)
+void Entity::addMeasurement(const MeasurementConstPtr& measurement)
 {
     // Push back the measurement
     measurements_.push_front(measurement);
@@ -150,8 +150,9 @@ void Entity::addMeasurement(MeasurementConstPtr measurement)
     // Update beste measurement
     if (best_measurement_)
     {
-        if (measurement->imageMask().getSize() > best_measurement_->imageMask().getSize()
-                || (measurement->mask() && best_measurement_->mask() && measurement->mask()->size() > best_measurement_->mask()->size()))
+        if (measurement->imageMask().getSize() > best_measurement_->imageMask().getSize() ||
+            (measurement->mask() && best_measurement_->mask() &&
+             measurement->mask()->size() > best_measurement_->mask()->size()))
             best_measurement_ = measurement;
     }
     else
@@ -164,20 +165,18 @@ void Entity::addMeasurement(MeasurementConstPtr measurement)
 
 void Entity::measurements(std::vector<MeasurementConstPtr>& measurements, double min_timestamp) const
 {
-    for(boost::circular_buffer<MeasurementConstPtr>::const_iterator it = measurements_.begin(); it != measurements_.end(); ++it)
+    for (const auto& m : measurements_)
     {
-        const MeasurementConstPtr& m = *it;
         if (m->timestamp() > min_timestamp)
             measurements.push_back(m);
     }
 }
 
-
 // ----------------------------------------------------------------------------------------------------
 
 void Entity::measurements(std::vector<MeasurementConstPtr>& measurements, unsigned int num) const
 {
-    for(unsigned int i = 0; i < num && i < measurements_.size(); ++i)
+    for (unsigned int i = 0; i < num && i < measurements_.size(); ++i)
     {
         measurements.push_back(measurements_[i]);
     }
@@ -188,25 +187,27 @@ void Entity::measurements(std::vector<MeasurementConstPtr>& measurements, unsign
 MeasurementConstPtr Entity::lastMeasurement() const
 {
     if (measurements_.empty())
-        return MeasurementConstPtr();
+        return {};
 
     return measurements_.front();
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-UUID Entity::generateID() {
+UUID Entity::generateID()
+{
     static const char alphanum[] =
         "0123456789"
         "abcdef";
 
     std::string s;
-    for (int i = 0; i < 32; ++i) {
-        int n = rand() / (RAND_MAX / (sizeof(alphanum) - 1) + 1);
+    for (int i = 0; i < 32; ++i)
+    {
+        int const n = rand() / (RAND_MAX / (sizeof(alphanum) - 1) + 1);
         s += alphanum[n];
     }
 
-    return UUID(s);
+    return {s};
 }
 
-}
+} // namespace ed

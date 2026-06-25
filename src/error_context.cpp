@@ -1,7 +1,8 @@
 #include "ed/error_context.h"
 
+#include <bits/pthreadtypes.h>
 #include <pthread.h>
-#include <iostream>
+#include <utility>
 
 namespace ed
 {
@@ -13,24 +14,21 @@ namespace
 
 void dataDestructor(void* data)
 {
-    ErrorContextData* edata = static_cast<ErrorContextData*>(data);
+    auto const* edata = static_cast<ErrorContextData*>(data);
     delete edata;
 }
 
 struct KeyHolder
 {
 
-    KeyHolder() {
-        pthread_key_create(&key, &dataDestructor);
-    }
+    KeyHolder() { pthread_key_create(&key, &dataDestructor); }
 
-    pthread_key_t key;
-
+    pthread_key_t key{};
 };
 
-    static KeyHolder key;
+KeyHolder key;
 
-}
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -43,8 +41,7 @@ ErrorContext::ErrorContext(const char* msg, const char* value)
         pthread_setspecific(key.key, _data);
     }
 
-    _data->stack.push_back(std::pair<const char*, const char*>(msg, value));
-
+    _data->stack.emplace_back(msg, value);
 }
 
 ErrorContext::~ErrorContext()
@@ -67,4 +64,4 @@ ErrorContextData* ErrorContext::data()
     return static_cast<ErrorContextData*>(pthread_getspecific(key.key));
 }
 
-}
+} // namespace ed

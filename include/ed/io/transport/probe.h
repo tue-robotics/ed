@@ -18,34 +18,32 @@ class Probe : public Plugin
 {
 
 public:
-
     Probe();
 
-    virtual ~Probe();
-
+    ~Probe() override;
 
     // Plugin interface
 
-    void initialize();
+    void initialize() override;
 
-    void process(const WorldModel& world, UpdateRequest& req);
-
+    void process(const WorldModel& world, UpdateRequest& req) override;
 
     // Probe interface
 
-    virtual void configure(tue::Configuration /*config*/) {}
+    void configure(tue::Configuration /*config*/) override {}
 
     using Plugin::process;
 
     virtual void process(const WorldModel& /*world*/,
                          UpdateRequest& /*update*/,
                          tue::serialization::InputArchive& /*req*/,
-                         tue::serialization::OutputArchive& /*res*/) {}
+                         tue::serialization::OutputArchive& /*res*/)
+    {
+    }
 
 private:
-
-    const ed::WorldModel* world_;
-    ed::UpdateRequest* update_req_;
+    const ed::WorldModel* world_{};
+    ed::UpdateRequest* update_req_{};
 
     rclcpp::CallbackGroup::SharedPtr cb_group_;
 
@@ -53,11 +51,11 @@ private:
 
     rclcpp::Service<tue_serialization_interfaces::srv::BinaryService>::SharedPtr srv_;
 
+    // NOLINTNEXTLINE(performance-unnecessary-value-param) - rclcpp service callback requires shared_ptr by value
     void srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request> ros_req,
-                     std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response> ros_res);
-
+                     const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response>& ros_res);
 };
 
-}
+} // namespace ed
 
 #endif

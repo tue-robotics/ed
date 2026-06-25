@@ -13,6 +13,6 @@ bool read(const std::string& filename, Measurement& msr);
 
 bool readEntity(const std::string& filename, UpdateRequest& req);
 
-}
+} // namespace ed
 
 #endif

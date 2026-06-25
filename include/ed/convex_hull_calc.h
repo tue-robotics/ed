@@ -5,10 +5,7 @@
 
 #include <vector>
 
-namespace ed
-{
-
-namespace convex_hull
+namespace ed::convex_hull
 {
 
 void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& chull, geo::Pose3D& pose);
@@ -17,14 +14,15 @@ void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_
 
 void calculateEdgesAndNormals(ConvexHull& chull);
 
-bool collide(const ConvexHull& c1, const geo::Vector3& pos1,
-             const ConvexHull& c2, const geo::Vector3& pos2,
-             float xy_padding = 0, float z_padding = 0);
+bool collide(const ConvexHull& c1,
+             const geo::Vector3& pos1,
+             const ConvexHull& c2,
+             const geo::Vector3& pos2,
+             float xy_padding = 0,
+             float z_padding = 0);
 
 void calculateArea(ConvexHull& c);
 
-}
-
-}
+} // namespace ed::convex_hull
 
 #endif

@@ -7,7 +7,6 @@ class PoseInfo : public ed::PropertyInfo
 {
 
 public:
-
     void serialize(const ed::Variant& v, ed::io::Writer& w) const
     {
         const geo::Pose3D& p = v.getValue<geo::Pose3D>();
@@ -62,7 +61,6 @@ public:
     }
 
     bool serializable() const { return true; }
-
 };
 
 #endif

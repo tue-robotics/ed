@@ -7,19 +7,16 @@ class HelloWorld : public ed::Plugin
 {
 
 public:
-
     HelloWorld();
 
-    virtual ~HelloWorld();
+    ~HelloWorld() override;
 
-    void initialize(ed::InitData& init);
+    void initialize(ed::InitData& init) override;
 
-    void process(const ed::WorldModel& world, ed::UpdateRequest& req);
+    void process(const ed::WorldModel& world, ed::UpdateRequest& req) override;
 
 private:
-
     std::string text_;
-
 };
 
 #endif
