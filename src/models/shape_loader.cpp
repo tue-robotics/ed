@@ -283,14 +283,15 @@ static geo::ShapePtr getHeightMapShape(
 
                     for (unsigned int i = 0; i < num_points; ++i)
                     {
-                        poly[i].x = points[i].x;
-                        poly[i].y = points[i].y;
+                        poly[static_cast<int>(i)].x = points[i].x;
+                        poly[static_cast<int>(i)].y = points[i].y;
 
                         // Convert to world coordinates
                         double const wx = (points[i].x * resolution_x) + pos.x;
                         double const wy = ((image.rows - points[i].y - 2) * resolution_y) + pos.y;
 
-                        vertex_index_map.at<int>(points[i].y, points[i].x) = mesh.addPoint(geo::Vector3(wx, wy, min_z));
+                        vertex_index_map.at<int>(points[i].y, points[i].x) =
+                            static_cast<int>(mesh.addPoint(geo::Vector3(wx, wy, min_z)));
                         mesh.addPoint(geo::Vector3(wx, wy, max_z));
                     }
 
@@ -299,7 +300,7 @@ static geo::ShapePtr getHeightMapShape(
                     // Calculate side triangles
                     for (unsigned int i = 0; i < num_points; ++i)
                     {
-                        int const j = (i + 1) % num_points;
+                        int const j = static_cast<int>((i + 1) % num_points);
                         mesh.addTriangle(i * 2, (i * 2) + 1, j * 2);
                         mesh.addTriangle((i * 2) + 1, (j * 2) + 1, j * 2);
                     }
@@ -321,20 +322,20 @@ static geo::ShapePtr getHeightMapShape(
                             if (hole_points.size() > 2)
                             {
                                 TPPLPoly poly_hole;
-                                poly_hole.Init(hole_points.size());
+                                poly_hole.Init(static_cast<long>(hole_points.size()));
                                 poly_hole.SetHole(true);
 
                                 for (unsigned int j = 0; j < hole_points.size(); ++j)
                                 {
-                                    poly_hole[j].x = hole_points[j].x;
-                                    poly_hole[j].y = hole_points[j].y;
+                                    poly_hole[static_cast<int>(j)].x = hole_points[j].x;
+                                    poly_hole[static_cast<int>(j)].y = hole_points[j].y;
 
                                     // Convert to world coordinates
                                     double const wx = (hole_points[j].x * resolution_x) + pos.x;
                                     double const wy = ((image.rows - hole_points[j].y - 2) * resolution_y) + pos.y;
 
                                     vertex_index_map.at<int>(hole_points[j].y, hole_points[j].x) =
-                                        mesh.addPoint(geo::Vector3(wx, wy, min_z));
+                                        static_cast<int>(mesh.addPoint(geo::Vector3(wx, wy, min_z)));
                                     mesh.addPoint(geo::Vector3(wx, wy, max_z));
                                 }
                                 testpolys.push_back(poly_hole);
@@ -368,9 +369,12 @@ static geo::ShapePtr getHeightMapShape(
 
                     for (auto& cp : result)
                     {
-                        int const i1 = vertex_index_map.at<int>(cp[0].y, cp[0].x) + 1;
-                        int const i2 = vertex_index_map.at<int>(cp[1].y, cp[1].x) + 1;
-                        int const i3 = vertex_index_map.at<int>(cp[2].y, cp[2].x) + 1;
+                        int const i1 =
+                            vertex_index_map.at<int>(static_cast<int>(cp[0].y), static_cast<int>(cp[0].x)) + 1;
+                        int const i2 =
+                            vertex_index_map.at<int>(static_cast<int>(cp[1].y), static_cast<int>(cp[1].x)) + 1;
+                        int const i3 =
+                            vertex_index_map.at<int>(static_cast<int>(cp[2].y), static_cast<int>(cp[2].x)) + 1;
 
                         mesh.addTriangle(i1, i3, i2);
                     }
@@ -499,8 +503,8 @@ void createPolygon(geo::Shape& shape,
 
     for (unsigned int i = 0; i < points.size(); ++i)
     {
-        poly[i].x = points[i].x;
-        poly[i].y = points[i].y;
+        poly[static_cast<int>(i)].x = points[i].x;
+        poly[static_cast<int>(i)].y = points[i].y;
 
         mesh.addPoint(geo::Vector3(points[i].x, points[i].y, min_z));
         mesh.addPoint(geo::Vector3(points[i].x, points[i].y, max_z));
@@ -509,7 +513,7 @@ void createPolygon(geo::Shape& shape,
     // Add side triangles
     for (unsigned int i = 0; i < points.size(); ++i)
     {
-        int const j = (i + 1) % points.size();
+        int const j = static_cast<int>((i + 1) % points.size());
         mesh.addTriangle(i * 2, j * 2, (i * 2) + 1);
         mesh.addTriangle((i * 2) + 1, j * 2, (j * 2) + 1);
     }
@@ -528,16 +532,16 @@ void createPolygon(geo::Shape& shape,
 
     for (auto& cp : result)
     {
-        int const i1 = mesh.addPoint(cp[0].x, cp[0].y, max_z);
-        int const i2 = mesh.addPoint(cp[1].x, cp[1].y, max_z);
-        int const i3 = mesh.addPoint(cp[2].x, cp[2].y, max_z);
+        int const i1 = static_cast<int>(mesh.addPoint(cp[0].x, cp[0].y, max_z));
+        int const i2 = static_cast<int>(mesh.addPoint(cp[1].x, cp[1].y, max_z));
+        int const i3 = static_cast<int>(mesh.addPoint(cp[2].x, cp[2].y, max_z));
         mesh.addTriangle(i1, i2, i3);
 
         if (create_bottom)
         {
-            int const i1 = mesh.addPoint(cp[0].x, cp[0].y, min_z);
-            int const i2 = mesh.addPoint(cp[1].x, cp[1].y, min_z);
-            int const i3 = mesh.addPoint(cp[2].x, cp[2].y, min_z);
+            int const i1 = static_cast<int>(mesh.addPoint(cp[0].x, cp[0].y, min_z));
+            int const i2 = static_cast<int>(mesh.addPoint(cp[1].x, cp[1].y, min_z));
+            int const i3 = static_cast<int>(mesh.addPoint(cp[2].x, cp[2].y, min_z));
             mesh.addTriangle(i1, i3, i2);
         }
     }

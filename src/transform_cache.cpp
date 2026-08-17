@@ -20,7 +20,7 @@ static inline float clamp(float x, float a, float b)
 // Taken from: http://www.arcsynthesis.org/gltut/Positioning/Tut08%20Interpolation.html
 static geo::Quaternion slerp(const geo::Quaternion& v0, const geo::Quaternion& v1, float alpha)
 {
-    float dot = v0.dot(v1);
+    float dot = static_cast<float>(v0.dot(v1));
 
     const float DOT_THRESHOLD = 0.9995f;
     if (dot > DOT_THRESHOLD)
@@ -95,7 +95,7 @@ bool TransformCache::calculateTransform(const Time& t, geo::Pose3D& tf) const
             double const dt1 = t.seconds() - lower->first.seconds();
             double const t_diff = upper->first.seconds() - lower->first.seconds();
 
-            float const alpha = dt1 / t_diff;
+            float const alpha = static_cast<float>(dt1 / t_diff);
 
             interpolate(tf1, tf2, alpha, tf);
         }

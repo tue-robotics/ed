@@ -59,7 +59,7 @@ void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
     for (const auto& it : e.types())
         msg.types.push_back(it);
 
-    msg.existence_probability = e.existenceProbability();
+    msg.existence_probability = static_cast<float>(e.existenceProbability());
 
     // Convex hull
     const ed::ConvexHull& convex_hull = e.convexHull();

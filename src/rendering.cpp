@@ -178,13 +178,16 @@ bool renderWorldModel(const ed::WorldModel& world_model,
                 double g = NAN;
                 double b = NAN;
                 if (config.value("red", r) && config.value("green", g) && config.value("blue", b))
-                    color = cv::Vec3b(255 * b, 255 * g, 255 * r);
+                    color = cv::Vec3b(
+                        static_cast<uchar>(255 * b), static_cast<uchar>(255 * g), static_cast<uchar>(255 * r));
                 config.endGroup();
             }
             else
             {
-                int const i_color = djb2(id) % 27;
-                color = cv::Vec3b(255 * COLORS[i_color][2], 255 * COLORS[i_color][1], 255 * COLORS[i_color][0]);
+                int const i_color = static_cast<int>(djb2(id) % 27);
+                color = cv::Vec3b(static_cast<uchar>(255 * COLORS[i_color][2]),
+                                  static_cast<uchar>(255 * COLORS[i_color][1]),
+                                  static_cast<uchar>(255 * COLORS[i_color][0]));
             }
 
             geo::Pose3D const pose = cam_pose_inv * e->pose();

@@ -61,8 +61,8 @@ void Entity::updateConvexHull()
         return;
     }
 
-    float z_min = m.convex_hull.z_min + m.pose.t.z;
-    float z_max = m.convex_hull.z_max + m.pose.t.z;
+    float z_min = m.convex_hull.z_min + static_cast<float>(m.pose.t.z);
+    float z_max = m.convex_hull.z_max + static_cast<float>(m.pose.t.z);
 
     ++it;
 
@@ -70,10 +70,10 @@ void Entity::updateConvexHull()
     for (; it != convex_hull_map_.end(); ++it)
     {
         const MeasurementConvexHull& m = it->second;
-        z_min = std::min<float>(z_min, m.convex_hull.z_min + m.pose.t.z);
-        z_max = std::max<float>(z_max, m.convex_hull.z_max + m.pose.t.z);
+        z_min = std::min<float>(z_min, m.convex_hull.z_min + static_cast<float>(m.pose.t.z));
+        z_max = std::max<float>(z_max, m.convex_hull.z_max + static_cast<float>(m.pose.t.z));
 
-        geo::Vec2f const offset(m.pose.t.x, m.pose.t.y);
+        geo::Vec2f const offset(static_cast<float>(m.pose.t.x), static_cast<float>(m.pose.t.y));
 
         for (const auto& point : m.convex_hull.points)
             points.push_back(point + offset);
@@ -106,10 +106,10 @@ void Entity::updateConvexHullFromVisual()
         // new implementation, not correct either. Because this creates the wrong output in case of other rotation,
         // than arround z-axis. But solves the main issue, rotation of convex hull is in the wrong frame.
         // ToDo: Make sure everything in stamped correctly. Then conversion are much easier.
-        z_min = std::min<float>(z_min, p_MAP.z - pose_.t.z);
-        z_max = std::max<float>(z_max, p_MAP.z - pose_.t.z);
+        z_min = std::min<float>(z_min, static_cast<float>(p_MAP.z - pose_.t.z));
+        z_max = std::max<float>(z_max, static_cast<float>(p_MAP.z - pose_.t.z));
 
-        points[i] = geo::Vec2f(p_MAP.x - pose_.t.x, p_MAP.y - pose_.t.y);
+        points[i] = geo::Vec2f(static_cast<float>(p_MAP.x - pose_.t.x), static_cast<float>(p_MAP.y - pose_.t.y));
     }
 
     convex_hull::createAbsolute(points, z_min, z_max, convex_hull_new_);
@@ -203,7 +203,7 @@ UUID Entity::generateID()
     std::string s;
     for (int i = 0; i < 32; ++i)
     {
-        int const n = rand() / (RAND_MAX / (sizeof(alphanum) - 1) + 1);
+        int const n = rand() / static_cast<int>((RAND_MAX / (sizeof(alphanum) - 1)) + 1);
         s += alphanum[n];
     }
 

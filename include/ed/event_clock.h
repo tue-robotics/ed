@@ -18,7 +18,7 @@ public:
         struct timeval now{};
         gettimeofday(&now, nullptr);
 
-        double const t_secs = now.tv_sec + (now.tv_usec / 1e6);
+        double const t_secs = static_cast<double>(now.tv_sec) + (static_cast<double>(now.tv_usec) / 1e6);
         if ((t_secs - t_last_trigger_) > cycle_duration_)
         {
             t_last_trigger_ = t_secs;

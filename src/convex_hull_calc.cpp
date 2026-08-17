@@ -25,9 +25,9 @@ namespace ed::convex_hull
  */
 void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& chull, geo::Pose3D& pose)
 {
-    cv::Mat_<cv::Vec2f> points_2d(1, points.size());
+    cv::Mat_<cv::Vec2f> points_2d(1, static_cast<int>(points.size()));
     for (unsigned int i = 0; i < points.size(); ++i)
-        points_2d.at<cv::Vec2f>(i) = cv::Vec2f(points[i].x, points[i].y);
+        points_2d.at<cv::Vec2f>(static_cast<int>(i)) = cv::Vec2f(points[i].x, points[i].y);
 
     pose = geo::Pose3D::identity();
 
@@ -36,8 +36,8 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
     std::vector<int> chull_indices;
     cv::convexHull(points_2d, chull_indices);
 
-    chull.z_min = z_min - pose.t.z;
-    chull.z_max = z_max - pose.t.z;
+    chull.z_min = z_min - static_cast<float>(pose.t.z);
+    chull.z_max = z_max - static_cast<float>(pose.t.z);
 
     geo::Vec2f xy_min(1e9, 1e9);
     geo::Vec2f xy_max(-1e9, -1e9);
@@ -64,8 +64,8 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
     // Move all points to the pose frame
     for (auto& p : chull.points)
     {
-        p.x -= pose.t.x;
-        p.y -= pose.t.y;
+        p.x -= static_cast<float>(pose.t.x);
+        p.y -= static_cast<float>(pose.t.y);
     }
 
     // Calculate normals and edges
@@ -86,9 +86,9 @@ void create(const std::vector<geo::Vec2f>& points, float z_min, float z_max, Con
  */
 void createAbsolute(const std::vector<geo::Vec2f>& points, float z_min, float z_max, ConvexHull& chull)
 {
-    cv::Mat_<cv::Vec2f> points_2d(1, points.size());
+    cv::Mat_<cv::Vec2f> points_2d(1, static_cast<int>(points.size()));
     for (unsigned int i = 0; i < points.size(); ++i)
-        points_2d.at<cv::Vec2f>(i) = cv::Vec2f(points[i].x, points[i].y);
+        points_2d.at<cv::Vec2f>(static_cast<int>(i)) = cv::Vec2f(points[i].x, points[i].y);
 
     chull.z_min = z_min;
     chull.z_max = z_max;
@@ -155,12 +155,12 @@ bool collide(const ConvexHull& c1,
     if (c1.points.size() < 3 || c2.points.size() < 3)
         return false;
 
-    float const z_diff = pos2.z - pos1.z;
+    float const z_diff = static_cast<float>(pos2.z - pos1.z);
 
     if (c1.z_max < (c2.z_min + z_diff - (2 * z_padding)) || c2.z_max < (c1.z_min - z_diff - (2 * z_padding)))
         return false;
 
-    geo::Vec2f const pos_diff(pos2.x - pos1.x, pos2.y - pos1.y);
+    geo::Vec2f const pos_diff(static_cast<float>(pos2.x - pos1.x), static_cast<float>(pos2.y - pos1.y));
 
     for (unsigned int i = 0; i < c1.points.size(); ++i)
     {
@@ -235,7 +235,7 @@ void calculateArea(ConvexHull& c)
         const geo::Vec2f& p1 = c.points[i];
         const geo::Vec2f& p2 = c.points[j];
 
-        c.area += 0.5 * (p1.x * p2.y - p2.x * p1.y);
+        c.area += static_cast<float>(0.5 * ((p1.x * p2.y) - (p2.x * p1.y)));
     }
 }
 

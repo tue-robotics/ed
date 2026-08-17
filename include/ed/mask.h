@@ -48,7 +48,7 @@ public:
     [[nodiscard]]
     int getSize() const
     {
-        return points_.size();
+        return static_cast<int>(points_.size());
     }
 
     /**

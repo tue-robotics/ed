@@ -77,8 +77,8 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
             float const p1 = it_low->second;
             float const p2 = it_up->second;
 
-            float const dt1 = t.seconds() - it_low->first.seconds();
-            float const dt2 = it_up->first.seconds() - t.seconds();
+            float const dt1 = static_cast<float>(t.seconds() - it_low->first.seconds());
+            float const dt2 = static_cast<float>(it_up->first.seconds() - t.seconds());
 
             // Linearly interpolate joint positions
             joint_pos = (p1 * dt2 + p2 * dt1) / (dt1 + dt2);
@@ -309,7 +309,7 @@ void RobotPlugin::jointCallback(const sensor_msgs::msg::JointState::ConstSharedP
             boost::shared_ptr<JointRelation> const r(new JointRelation(*info.last_rel));
             r->setCacheSize(joint_cache_size_);
 
-            r->insert(rclcpp::Time(msg->header.stamp).seconds(), pos);
+            r->insert(rclcpp::Time(msg->header.stamp).seconds(), static_cast<float>(pos));
 
             update_req_->setRelation(info.parent_id, info.child_id, r);
 
