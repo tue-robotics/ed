@@ -61,6 +61,16 @@ Running the tests additionally needs the tue-robotics [`ament_lint`](https://git
 
     colcon test --packages-select ed && colcon test-result --verbose
 
+## Migrating a dependent package
+
+The ROS 2 port changed parts of ED's public C++ API — accessors renamed to
+`camelBack`, `ShowVolumes`/`NodeType` turned into scoped enums, several
+constructors made `explicit`, and `unsigned long` replaced by `std::uint64_t`.
+[docs/api_changes_lint_cleanup.md](docs/api_changes_lint_cleanup.md) lists every
+change with the exact replacement, plus the ones that were deliberately left
+alone. [docs/migrate_to_ros2.md](docs/migrate_to_ros2.md) covers the
+catkin → ament side.
+
 ## ED Extensions
 
 ### Localization
