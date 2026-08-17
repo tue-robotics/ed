@@ -13,6 +13,8 @@ class Relation
 {
 
 public:
+    virtual ~Relation() = default;
+
     virtual bool calculateTransform(const Time& /*t*/, geo::Pose3D& /*tf*/) const { return false; }
 
 private:

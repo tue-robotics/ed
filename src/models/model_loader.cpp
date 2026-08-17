@@ -101,7 +101,7 @@ std::string ModelLoader::getModelPath(const std::string& type) const
 {
     for (const auto& ed_model_path : ed_model_paths_)
     {
-        std::filesystem::path const model_path(ed_model_path + "/" + type);
+        std::filesystem::path const model_path = std::filesystem::path(ed_model_path) / type;
         if (std::filesystem::exists(model_path))
             return model_path.string();
     }
@@ -113,7 +113,7 @@ std::string ModelLoader::getModelPath(const std::string& type) const
 
 std::string ModelLoader::getSDFPath(const std::string& uri) const
 {
-    ModelOrFile uri_type;
+    ModelOrFile uri_type{};
     std::string const parsed_uri = parseURI(uri, uri_type);
     if (parsed_uri.empty())
         return "";
@@ -122,10 +122,10 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
     {
         for (const auto& it : model_paths_)
         {
-            std::filesystem::path const model_dir(it + "/" + parsed_uri);
+            std::filesystem::path const model_dir = std::filesystem::path(it) / parsed_uri;
             if (std::filesystem::exists(model_dir))
             {
-                std::filesystem::path const config_path(model_dir.string() + "/model.config");
+                std::filesystem::path const config_path = model_dir / "model.config";
                 if (std::filesystem::exists(config_path))
                 {
                     std::filesystem::path const model_path = sdf::getModelFilePath(model_dir.string());
@@ -139,7 +139,7 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
     {
         for (const auto& it : file_paths_)
         {
-            std::filesystem::path const file_path(it + "/" + parsed_uri);
+            std::filesystem::path const file_path = std::filesystem::path(it) / parsed_uri;
             if (std::filesystem::exists(file_path))
                 return file_path.string();
         }
@@ -158,11 +158,12 @@ ModelLoader::ModelData ModelLoader::readModelCache(const std::string& type) cons
 
     tue::config::DataConstPointer const data;
     std::vector<std::string> const types;
-    return ModelData(data, types);
+    return {data, types};
 }
 
 // ----------------------------------------------------------------------------------------------------
 
+// NOLINTNEXTLINE(misc-no-recursion) -- a model may inherit from a super model
 tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type,
                                                          std::vector<std::string>& types,
                                                          std::stringstream& error,
@@ -239,7 +240,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type
 tue::config::DataConstPointer ModelLoader::loadSDFData(const std::string& uri, std::stringstream& error)
 {
     tue::config::DataPointer data;
-    ModelOrFile uri_type;
+    ModelOrFile uri_type{};
     std::string const parsed_uri = parseURI(uri, uri_type);
     if (parsed_uri.empty())
     {
@@ -340,6 +341,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateReques
 
 // ----------------------------------------------------------------------------------------------------
 
+// NOLINTNEXTLINE(misc-no-recursion) -- composite models contain sub-models
 bool ModelLoader::create(const tue::config::DataConstPointer& data,
                          const UUID& id_opt,
                          const UUID& parent_id,
@@ -479,6 +481,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data,
     return true;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion) -- SDF includes may nest
 bool ModelLoader::createSDF(const tue::config::DataConstPointer& data,
                             const UUID& parent_id,
                             const geo::Pose3D& parent_pose,

@@ -155,7 +155,7 @@ bool collide(const ConvexHull& c1,
     if (c1.points.size() < 3 || c2.points.size() < 3)
         return false;
 
-    float const z_diff = static_cast<float>(pos2.z - pos1.z);
+    auto const z_diff = static_cast<float>(pos2.z - pos1.z);
 
     if (c1.z_max < (c2.z_min + z_diff - (2 * z_padding)) || c2.z_max < (c1.z_min - z_diff - (2 * z_padding)))
         return false;

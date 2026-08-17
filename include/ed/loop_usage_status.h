@@ -124,8 +124,8 @@ public:
         long double const total_loop_time = timer_.getTotalLoopTime(); // Seconds
         int const curseq = static_cast<int>(timer_.getIterationCount());
         int const events = curseq - seq_nums_[hist_indx_];
-        double const window = static_cast<double>((curtime - starts_[hist_indx_]) * 0.000001); // us -> s
-        double const loop_time_window = static_cast<double>(total_loop_time - durations_[hist_indx_]); // Seconds
+        auto const window = static_cast<double>((curtime - starts_[hist_indx_]) * 0.000001); // us -> s
+        auto const loop_time_window = static_cast<double>(total_loop_time - durations_[hist_indx_]); // Seconds
         double freq = 0;
 
         if (window != 0)

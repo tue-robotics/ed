@@ -5,7 +5,7 @@
 #include "ed/plugin.h"
 #include "ed/types.h"
 #include "ed/update_request.h"
-#include <boost/bind/bind.hpp>
+#include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/thread/lock_guard.hpp>
 #include <boost/thread/pthread/mutex.hpp>
@@ -135,7 +135,7 @@ void PluginContainer::configure(InitData& init, bool reconfigure)
 
 void PluginContainer::runThreaded()
 {
-    thread_ = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&PluginContainer::run, this)));
+    thread_ = boost::make_shared<boost::thread>([this] { run(); });
     pthread_setname_np(thread_->native_handle(), name_.c_str());
 }
 

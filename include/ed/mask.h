@@ -179,15 +179,15 @@ public:
     const_iterator begin(int width = 0) const
     {
         if (width <= 0)
-            return const_iterator(points_, 0, 1);
+            return {points_, 0, 1};
 
-        return const_iterator(points_, 0, width / width_);
+        return {points_, 0, width / width_};
     }
 
     [[nodiscard]]
     const_iterator end() const
     {
-        return const_iterator(points_, points_.size(), 0);
+        return {points_, points_.size(), 0};
     }
 
 private:

@@ -27,7 +27,7 @@ struct Node
     Node(unsigned int idx_, NodeType type_) : idx(idx_), type(type_) {}
 
     unsigned int idx{};
-    NodeType type;
+    NodeType type{};
 };
 
 // ----------------------------------------------------------------------------------------------------

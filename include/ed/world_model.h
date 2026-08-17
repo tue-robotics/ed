@@ -6,6 +6,8 @@
 
 #include <geolib/datatypes.h>
 
+#include <cstddef>
+#include <iterator>
 #include <map>
 #include <queue>
 #include <vector>
@@ -22,10 +24,17 @@ class WorldModel
 {
 
 public:
-    class EntityIterator : public std::iterator<std::forward_iterator_tag, EntityConstPtr>
+    class EntityIterator
     {
 
     public:
+        // std::iterator is deprecated in C++17; spell out the traits it used to provide.
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = EntityConstPtr;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const EntityConstPtr*;
+        using reference = const EntityConstPtr&;
+
         EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end())
         {
             // Skip possible zero-entities (deleted entities) at the beginning
@@ -40,12 +49,9 @@ public:
         EntityIterator& operator++()
         {
             // Increase iterator and skip possible zero-entities (deleted entities)
-            do
-            {
+            ++it_;
+            while (it_ != it_end_ && !(*it_))
                 ++it_;
-                if (it_ == it_end_)
-                    break;
-            } while (!(*it_));
             return *this;
         }
 
@@ -74,13 +80,13 @@ public:
     [[nodiscard]]
     const_iterator begin() const
     {
-        return const_iterator(entities_);
+        return {entities_};
     }
 
     [[nodiscard]]
     const_iterator end() const
     {
-        return const_iterator(entities_.end());
+        return {entities_.end()};
     }
 
     void setEntity(const UUID& id, const EntityConstPtr& e);

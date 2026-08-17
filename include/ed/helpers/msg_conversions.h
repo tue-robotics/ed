@@ -28,7 +28,7 @@ namespace ed
  * @param shape geo::ShapeConstPtr as input
  * @param msg filled ed_interfaces::msg::SubVolume message as output
  */
-void convert(const geo::ShapeConstPtr& shape, ed_interfaces::msg::SubVolume& sub_Volume)
+inline void convert(const geo::ShapeConstPtr& shape, ed_interfaces::msg::SubVolume& sub_Volume)
 {
     geo::Vector3 const min = shape->getBoundingBox().getMin();
     geo::Vector3 const max = shape->getBoundingBox().getMax();
@@ -50,7 +50,7 @@ void convert(const geo::ShapeConstPtr& shape, ed_interfaces::msg::SubVolume& sub
  * @param e ed::Entity as input
  * @param msg filled ed_interfaces::msg::EntityInfo message as output
  */
-void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
+inline void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
 {
     msg.id = e.id().str();
     msg.type = e.type();
@@ -119,7 +119,7 @@ void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
                 for (const auto& shape : shapes)
                 {
                     geo::ShapePtr const shape_tr(new geo::Shape());
-                    geo::Transform inv = shape.second.inverse();
+                    geo::Transform const inv = shape.second.inverse();
                     shape_tr->setMesh(shape.first->getMesh().getTransformed(inv));
 
                     ed_interfaces::msg::SubVolume sub_volume;

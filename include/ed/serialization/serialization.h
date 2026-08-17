@@ -6,11 +6,7 @@
 
 #include <geolib/datatypes.h>
 
-namespace tue::config
-{
-class Reader;
-class Writer;
-} // namespace tue::config
+namespace tue::config { class Reader; } // namespace tue::config
 
 namespace ed
 {

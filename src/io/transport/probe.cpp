@@ -34,8 +34,8 @@ void Probe::initialize()
     // argument types, which a generic `auto&&` lambda does not provide.
     srv_ = node_->create_service<tue_serialization_interfaces::srv::BinaryService>(
         "ed/probe/" + name(),
-        std::bind(
-            &Probe::srvCallback, this, std::placeholders::_1, std::placeholders::_2), // NOLINT(modernize-avoid-bind)
+        // NOLINTNEXTLINE(modernize-avoid-bind)
+        std::bind(&Probe::srvCallback, this, std::placeholders::_1, std::placeholders::_2),
         rclcpp::ServicesQoS(),
         cb_group_);
 

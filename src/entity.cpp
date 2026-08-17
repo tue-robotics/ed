@@ -34,10 +34,8 @@ Entity::Entity(UUID id, TYPE type, const unsigned int& measurement_buffer_size) 
 
 // ----------------------------------------------------------------------------------------------------
 
-Entity::~Entity()
-{
-    //    std::cout << "Removing entity with ID: " << id_ << std::endl;
-}
+//    std::cout << "Removing entity with ID: " << id_ << std::endl;
+Entity::~Entity() = default;
 
 // ----------------------------------------------------------------------------------------------------
 

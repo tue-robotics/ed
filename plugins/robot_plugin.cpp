@@ -38,7 +38,6 @@
 #include <cstddef>
 #include <ed/world_model/transform_crawler.h>
 
-#include <functional>
 #include <map>
 #include <string>
 #include <tuple>
@@ -77,8 +76,8 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
             float const p1 = it_low->second;
             float const p2 = it_up->second;
 
-            float const dt1 = static_cast<float>(t.seconds() - it_low->first.seconds());
-            float const dt2 = static_cast<float>(it_up->first.seconds() - t.seconds());
+            auto const dt1 = static_cast<float>(t.seconds() - it_low->first.seconds());
+            auto const dt2 = static_cast<float>(it_up->first.seconds() - t.seconds());
 
             // Linearly interpolate joint positions
             joint_pos = (p1 * dt2 + p2 * dt1) / (dt1 + dt2);
@@ -250,6 +249,7 @@ RobotPlugin::~RobotPlugin() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
+// NOLINTNEXTLINE(misc-no-recursion) -- walks the KDL segment tree
 void RobotPlugin::constructRobot(const ed::UUID& parent_id,
                                  const KDL::SegmentMap::const_iterator& it_segment,
                                  ed::UpdateRequest& req)
@@ -345,7 +345,10 @@ void RobotPlugin::configure(tue::Configuration config)
             RCLCPP_DEBUG_STREAM(node_->get_logger(), "[RobotPlugin] Topic: " << topic);
 
             joint_subscribers_[topic] = node_->create_subscription<sensor_msgs::msg::JointState>(
-                topic, 10, std::bind(&RobotPlugin::jointCallback, this, std::placeholders::_1), sub_options);
+                topic,
+                10,
+                [this](const sensor_msgs::msg::JointState::ConstSharedPtr& msg) { jointCallback(msg); },
+                sub_options);
         }
 
         config.endArray();

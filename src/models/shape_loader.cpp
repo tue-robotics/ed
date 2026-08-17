@@ -20,7 +20,6 @@
 #include "polypartition/polypartition.h"
 #include <list>
 #include <map>
-#include <math.h>
 #include <memory>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/core/mat.hpp>
@@ -40,6 +39,9 @@
 
 namespace ed::models
 {
+
+// M_PI is a POSIX macro from <math.h>, which C++ does not guarantee via <cmath>.
+constexpr double PI = 3.14159265358979323846;
 
 /**
  * @brief split Implementation by using delimiter as a character. Multiple delimeters are removed.
@@ -124,7 +126,7 @@ std::string getUriPath(const std::string& type)
         file_paths.erase(unique(file_paths.begin(), file_paths.end()), file_paths.end());
     }
 
-    ModelOrFile uri_type;
+    ModelOrFile uri_type{};
     std::string const parsed_uri = parseURI(type, uri_type);
     if (parsed_uri.empty())
         return "";
@@ -137,7 +139,7 @@ std::string getUriPath(const std::string& type)
 
     for (const auto& type_path : *type_paths)
     {
-        std::filesystem::path const file_path(type_path + "/" + parsed_uri);
+        std::filesystem::path const file_path = std::filesystem::path(type_path) / parsed_uri;
         if (std::filesystem::exists(file_path))
             return file_path.string();
     }
@@ -189,6 +191,7 @@ void findContours(const cv::Mat& image,
             case 1: points.push_back(p - geo::Vec2i(0, 1)); break;
             case 2: points.push_back(p); break;
             case 3: points.push_back(p - geo::Vec2i(1, 0)); break;
+            default: break; // d is always in [0, 3]
             }
 
             d = (d + 3) % 4;
@@ -208,6 +211,7 @@ void findContours(const cv::Mat& image,
             case 1: points.push_back(p); break;
             case 2: points.push_back(p - geo::Vec2i(1, 0)); break;
             case 3: points.push_back(p - geo::Vec2i(1, 1)); break;
+            default: break; // d is always in [0, 3]
             }
 
             d = (d + 1) % 4;
@@ -681,6 +685,7 @@ bool readPose(tue::config::Reader& cfg,
 
 // ----------------------------------------------------------------------------------------------------
 
+// NOLINTNEXTLINE(misc-no-recursion) -- shapes may compose other shapes
 geo::ShapePtr loadShape(const std::string& model_path,
                         tue::config::Reader cfg,
                         std::map<std::string, geo::ShapePtr>& shape_cache,
@@ -963,7 +968,7 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
     // Calculate vertices
     for (int i = 0; i < num_corners; ++i)
     {
-        double const a = 2 * M_PI * i / num_corners;
+        double const a = 2 * PI * i / num_corners;
         double const x = sin(a) * radius;
         double const y = cos(a) * radius;
 

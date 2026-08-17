@@ -13,7 +13,7 @@ class TransformCache : public ed::Relation
 public:
     TransformCache();
 
-    ~TransformCache();
+    ~TransformCache() override;
 
     bool calculateTransform(const Time& t, geo::Pose3D& tf) const override;
 

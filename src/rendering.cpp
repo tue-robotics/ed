@@ -6,6 +6,7 @@
 #include <geolib/Mesh.h>
 #include <geolib/sensors/DepthCamera.h>
 #include <map>
+#include <opencv2/core/hal/interface.h>
 #include <opencv2/core/matx.hpp>
 #include <stdexcept>
 #include <string>

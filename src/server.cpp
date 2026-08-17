@@ -29,10 +29,9 @@
 
 #include <std_msgs/msg/string.hpp>
 
-// IWYU pragma: keep -- tf2_ros::Buffer must be complete for make_shared
-#include <tf2_ros/buffer.h>
-// IWYU pragma: keep -- tf2_ros::TransformListener must be complete for make_shared
-#include <tf2_ros/transform_listener.h>
+// tf2_ros::Buffer and TransformListener must be complete for make_shared.
+#include <tf2_ros/buffer.h> // IWYU pragma: keep
+#include <tf2_ros/transform_listener.h> // IWYU pragma: keep
 
 #include <vector>
 
@@ -289,7 +288,7 @@ void Server::stepPlugins()
         ul.unlock();
 
         // Clear the requests of all plugins that had requests (which flags them to continue processing)
-        for (auto c : plugins_with_requests)
+        for (const auto& c : plugins_with_requests)
         {
             c->clearUpdateRequest();
         }
@@ -473,9 +472,9 @@ void Server::publishStatistics()
     std::stringstream s;
 
     s << "[plugins]" << '\n';
-    for (auto it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
+    for (auto& plugin_container : plugin_containers_)
     {
-        const PluginContainerPtr& p = it->second;
+        const PluginContainerPtr& p = plugin_container.second;
 
         // Calculate CPU usage percentage
         double const cpu_perc = p->getLoopUsageStatus().getTimer().getLoopUsagePercentage() * 100;
