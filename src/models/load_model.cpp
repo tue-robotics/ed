@@ -18,7 +18,7 @@
 namespace ed::models
 {
 
-bool loadModel(const enum LoadType load_type, const std::string& source, ed::UpdateRequest& req)
+bool loadModel(enum LoadType load_type, const std::string& source, ed::UpdateRequest& req)
 {
     ed::models::ModelLoader model_loader;
     std::stringstream error;

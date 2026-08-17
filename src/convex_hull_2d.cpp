@@ -7,6 +7,8 @@
 namespace ed
 {
 
+// pcl::PointXYZ exposes x/y/z through an anonymous union; the accesses below are PCL's API.
+// NOLINTBEGIN(cppcoreguidelines-pro-type-union-access)
 double ConvexHull2D::area() const
 {
     double a = 0.0;
@@ -30,6 +32,7 @@ double ConvexHull2D::area() const
     }
     return a;
 }
+// NOLINTEND(cppcoreguidelines-pro-type-union-access)
 
 double ConvexHull2D::height() const
 {

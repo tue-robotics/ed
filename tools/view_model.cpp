@@ -213,7 +213,7 @@ int main(int argc, char** argv)
 
     std::cout << info_msg.str();
 
-    ed::ShowVolumes show_volumes = ed::ModelVolumes;
+    ed::ShowVolumes show_volumes = ed::ShowVolumes::MODEL_VOLUMES;
 
     state.cam_dist = dist;
     state.cam_lookat = (p_min + p_max) / 2;
@@ -272,7 +272,7 @@ int main(int argc, char** argv)
         }
         else if (key == 'v')
         {
-            show_volumes = ed::ShowVolumes((show_volumes + 1) % 3);
+            show_volumes = static_cast<ed::ShowVolumes>((static_cast<int>(show_volumes) + 1) % 3);
             state.render_required = true;
         }
         else if (key == 'q')

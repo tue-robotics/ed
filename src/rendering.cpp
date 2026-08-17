@@ -69,8 +69,11 @@ public:
     }
 
 protected:
+    // The render result writes into buffers owned by the caller.
+    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
     cv::Mat& z_buffer_;
     cv::Mat& image_;
+    // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
     const geo::Mesh* mesh_{};
     cv::Vec3b color_;
     std::vector<double> vals_;
@@ -134,7 +137,7 @@ void renderMesh(const geo::DepthCamera& cam,
 
 // Might it be nicer to separate rendering of the colored image and the depth image?
 bool renderWorldModel(const ed::WorldModel& world_model,
-                      const enum ShowVolumes show_volumes,
+                      ShowVolumes show_volumes,
                       const geo::DepthCamera& cam,
                       const geo::Pose3D& cam_pose_inv,
                       cv::Mat& depth_image,
@@ -167,11 +170,11 @@ bool renderWorldModel(const ed::WorldModel& world_model,
     {
         const std::string& id = e->id().str();
 
-        if (e->visual() && e->has_pose() && !e->hasFlag("self") &&
+        if (e->visual() && e->hasPose() && !e->hasFlag("self") &&
             (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
         {
 
-            if (show_volumes == RoomVolumes && (id.size() < 4 || id.substr(0, 4) != "wall"))
+            if (show_volumes == ShowVolumes::ROOM_VOLUMES && (id.size() < 4 || id.substr(0, 4) != "wall"))
                 continue;
 
             cv::Vec3b color;
@@ -199,7 +202,7 @@ bool renderWorldModel(const ed::WorldModel& world_model,
             renderMesh(cam, pose, e->visual()->getMesh(), color, res, flatten);
 
             // Render volumes
-            if (show_volumes == ModelVolumes && !e->volumes().empty())
+            if (show_volumes == ShowVolumes::MODEL_VOLUMES && !e->volumes().empty())
             {
                 for (const auto& it : e->volumes())
                 {
@@ -207,7 +210,7 @@ bool renderWorldModel(const ed::WorldModel& world_model,
                 }
             }
         }
-        else if (show_volumes == RoomVolumes && e->types().find("room") != e->types().end())
+        else if (show_volumes == ShowVolumes::ROOM_VOLUMES && e->types().find("room") != e->types().end())
         {
             geo::Pose3D const pose = cam_pose_inv * e->pose();
             for (const auto& it : e->volumes())

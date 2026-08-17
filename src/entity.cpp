@@ -97,17 +97,17 @@ void Entity::updateConvexHullFromVisual()
     std::vector<geo::Vec2f> points(vertices.size());
     for (unsigned int i = 0; i < vertices.size(); ++i)
     {
-        //        geo::Vector3 p_MAP = pose_ * vertices[i];
+        //        geo::Vector3 p_map = pose_ * vertices[i];
         // old implementation, this is correct, but gives the wrong result with the rest of the code
         // Because it is too much work for now to change that. So therefore ignoring rotation.
-        geo::Vector3 const p_MAP = pose_.t + vertices[i];
+        geo::Vector3 const p_map = pose_.t + vertices[i];
         // new implementation, not correct either. Because this creates the wrong output in case of other rotation,
         // than arround z-axis. But solves the main issue, rotation of convex hull is in the wrong frame.
         // ToDo: Make sure everything in stamped correctly. Then conversion are much easier.
-        z_min = std::min<float>(z_min, static_cast<float>(p_MAP.z - pose_.t.z));
-        z_max = std::max<float>(z_max, static_cast<float>(p_MAP.z - pose_.t.z));
+        z_min = std::min<float>(z_min, static_cast<float>(p_map.z - pose_.t.z));
+        z_max = std::max<float>(z_max, static_cast<float>(p_map.z - pose_.t.z));
 
-        points[i] = geo::Vec2f(static_cast<float>(p_MAP.x - pose_.t.x), static_cast<float>(p_MAP.y - pose_.t.y));
+        points[i] = geo::Vec2f(static_cast<float>(p_map.x - pose_.t.x), static_cast<float>(p_map.y - pose_.t.y));
     }
 
     convex_hull::createAbsolute(points, z_min, z_max, convex_hull_new_);

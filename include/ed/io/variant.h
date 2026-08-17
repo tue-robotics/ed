@@ -16,10 +16,13 @@ class Variant
 public:
     Variant() : type_('?') {}
 
+    // A variant exists to be constructed from any of its alternatives; implicit is the point.
+    // NOLINTBEGIN(google-explicit-constructor)
     Variant(const double& d) : type_('d'), d_(d) {}
     Variant(int i) : type_('i'), i_(i) {}
     Variant(std::string s) : type_('s'), s_(std::move(s)) {}
     Variant(const char* s) : type_('s'), s_(s) {}
+    // NOLINTEND(google-explicit-constructor)
 
     bool getValue(int& v) const { return checkAndGet(i_, 'i', v); }
     bool getValue(double& v) const { return checkAndGet(d_, 'd', v) || checkAndGet(static_cast<double>(i_), 'i', v); }
@@ -53,11 +56,8 @@ public:
 private:
     char type_;
 
-    union
-    {
-        int i_{};
-        double d_;
-    };
+    int i_{};
+    double d_{};
 
     std::string s_;
 

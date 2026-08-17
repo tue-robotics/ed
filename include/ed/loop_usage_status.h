@@ -34,15 +34,13 @@ namespace ed
 class LoopUsageStatus : public diagnostic_updater::DiagnosticTask
 {
 private:
-    const diagnostic_updater::FrequencyStatusParam params_;
+    diagnostic_updater::FrequencyStatusParam params_;
 
     tue::LoopTimer timer_;
     std::vector<long double> starts_; // Micro-seconds
     std::vector<long double> durations_; // Seconds
     std::vector<int> seq_nums_;
     int hist_indx_{};
-    long double start_{};
-    long double duration_{};
 
     boost::mutex lock_;
 
@@ -62,7 +60,7 @@ public:
      *        Uses a default diagnostic task name of "Loop Usage Status".
      */
 
-    LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam& params) :
+    explicit LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam& params) :
         DiagnosticTask("Loop Usage Status"), params_(params), starts_(params_.window_size_),
         durations_(params_.window_size_), seq_nums_(params_.window_size_)
     {

@@ -11,7 +11,7 @@ class EventClock
 public:
     EventClock() : cycle_duration_(0), t_last_trigger_(0) {}
 
-    EventClock(double freq) : cycle_duration_(1.0 / freq), t_last_trigger_(0) {}
+    explicit EventClock(double freq) : cycle_duration_(1.0 / freq), t_last_trigger_(0) {}
 
     bool triggers()
     {

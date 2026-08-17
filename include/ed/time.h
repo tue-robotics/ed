@@ -12,6 +12,8 @@ class Time
 public:
     Time() : secs_(0) {}
 
+    // ed::Time is a transparent seconds wrapper; implicit construction from a double is intended.
+    // NOLINTNEXTLINE(google-explicit-constructor)
     Time(double secs) : secs_(secs) {}
 
     bool operator<(const Time& rhs) const { return secs_ < rhs.secs_; }

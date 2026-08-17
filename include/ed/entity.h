@@ -5,6 +5,7 @@
 #include "ed/convex_hull_2d.h"
 #include "ed/types.h"
 #include "ed/uuid.h"
+#include <cstdint>
 
 #include <tue/config/data.h>
 
@@ -31,7 +32,7 @@ class Entity
 {
 
 public:
-    Entity(UUID id = generateID(), TYPE type = "", const unsigned int& measurement_buffer_size = 5);
+    explicit Entity(UUID id = generateID(), TYPE type = "", const unsigned int& measurement_buffer_size = 5);
     ~Entity();
 
     static UUID generateID();
@@ -85,13 +86,13 @@ public:
     }
 
     [[deprecated("Use visualRevision(), collisionRevision() or volumesRevision() instead.")]]
-    unsigned long shapeRevision() const
+    std::uint64_t shapeRevision() const
     {
         return visualRevision();
     }
-    unsigned long visualRevision() const { return visual_ ? visual_revision_ : 0; }
-    unsigned long collisionRevision() const { return collision_ ? collision_revision_ : 0; }
-    unsigned long volumesRevision() const { return !volumes_.empty() ? volumes_revision_ : 0; }
+    std::uint64_t visualRevision() const { return visual_ ? visual_revision_ : 0; }
+    std::uint64_t collisionRevision() const { return collision_ ? collision_revision_ : 0; }
+    std::uint64_t volumesRevision() const { return !volumes_.empty() ? volumes_revision_ : 0; }
 
     const ConvexHull& convexHull() const { return convex_hull_new_; }
 
@@ -136,7 +137,7 @@ public:
 
     void removePose() { has_pose_ = false; }
 
-    bool has_pose() const { return has_pose_; }
+    bool hasPose() const { return has_pose_; }
 
     const tue::config::DataConstPointer& data() const { return config_; }
     void setData(const tue::config::DataConstPointer& data) { config_ = data; }
@@ -229,9 +230,9 @@ public:
 
     const std::map<Idx, Property>& properties() const { return properties_; }
 
-    unsigned long revision() const { return revision_; }
+    std::uint64_t revision() const { return revision_; }
 
-    void setRevision(unsigned long revision) { revision_ = revision; }
+    void setRevision(std::uint64_t revision) { revision_ = revision; }
 
     void setExistenceProbability(double prob) { existence_prob_ = prob; }
 
@@ -252,7 +253,7 @@ public:
 private:
     UUID id_;
 
-    unsigned long revision_{0};
+    std::uint64_t revision_{0};
 
     TYPE type_;
 
@@ -269,9 +270,9 @@ private:
     geo::ShapeConstPtr visual_;
     geo::ShapeConstPtr collision_;
     std::map<std::string, geo::ShapeConstPtr> volumes_;
-    unsigned long visual_revision_{0};
-    unsigned long collision_revision_{0};
-    unsigned long volumes_revision_{0};
+    std::uint64_t visual_revision_{0};
+    std::uint64_t collision_revision_{0};
+    std::uint64_t volumes_revision_{0};
 
     std::map<std::string, MeasurementConvexHull> convex_hull_map_;
     ConvexHull convex_hull_new_;

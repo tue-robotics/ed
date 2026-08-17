@@ -2,6 +2,7 @@
 #define ED_MODEL_LOADER_H_
 
 #include "ed/uuid.h"
+#include <cstdint>
 
 #include <geolib/datatypes.h>
 #include <tue/config/data_pointer.h>
@@ -152,7 +153,7 @@ private:
  * @brief The LoadType enum indicates whether to load directly from a file
  * or from a model that is part of the ED_MODEL_PATH
  */
-enum class LoadType
+enum class LoadType : std::uint8_t
 {
     FILE,
     MODEL,

@@ -49,6 +49,8 @@ public:
     const EntityConstPtr& entity() const;
 
 private:
+    // The crawler is a cursor over a world model it does not own.
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const WorldModel& wm_;
 
     Time time_;

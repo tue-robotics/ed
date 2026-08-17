@@ -1,6 +1,7 @@
 #ifndef RENDERING_H
 #define RENDERING_H
 
+#include <cstdint>
 #include <geolib/datatypes.h>
 
 // Forward declarations
@@ -14,11 +15,11 @@ namespace ed
 /**
  * @brief The ShowVolumes enum indicates which volumes to render
  */
-enum ShowVolumes
+enum class ShowVolumes : std::uint8_t
 {
-    NoVolumes,
-    ModelVolumes,
-    RoomVolumes
+    NO_VOLUMES,
+    MODEL_VOLUMES,
+    ROOM_VOLUMES
 };
 
 /**
@@ -34,7 +35,7 @@ enum ShowVolumes
  * @return
  */
 bool renderWorldModel(const ed::WorldModel& world_model,
-                      enum ShowVolumes show_volumes,
+                      ShowVolumes show_volumes,
                       const geo::DepthCamera& cam,
                       const geo::Pose3D& cam_pose_inv,
                       cv::Mat& depth_image,

@@ -57,7 +57,7 @@ void Probe::process(const WorldModel& world, UpdateRequest& req)
 // ----------------------------------------------------------------------------------------------------
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param) - rclcpp service callback requires shared_ptr by value
-void Probe::srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request> ros_req,
+void Probe::srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request>& ros_req,
                         const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response>& ros_res)
 {
     std::stringstream ss_req;

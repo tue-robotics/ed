@@ -13,8 +13,11 @@ class UUID
 
 public:
     UUID() : idx(INVALID_IDX) {}
+    // A UUID is a transparent string wrapper; ed::UUID id = "foo" is the intended spelling.
+    // NOLINTBEGIN(google-explicit-constructor)
     UUID(const char* s) : id_(s), idx(INVALID_IDX) {}
     UUID(std::string s) : id_(std::move(s)), idx(INVALID_IDX) {}
+    // NOLINTEND(google-explicit-constructor)
 
     bool operator<(const UUID& rhs) const { return id_ < rhs.id_; }
 
@@ -22,6 +25,8 @@ public:
 
     bool operator!=(const UUID& rhs) const { return id_ != rhs.id_; }
 
+    // Mirrors std::string::c_str().
+    // NOLINTNEXTLINE(readability-identifier-naming)
     const char* c_str() const { return id_.c_str(); }
 
     const std::string& str() const { return id_; }

@@ -24,8 +24,11 @@ struct PluginInput
     {
     }
 
+    // Short-lived aggregate handed to a plugin for one cycle; it never outlives the call.
+    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
     const WorldModel& world;
     const std::vector<UpdateRequestConstPtr>& deltas;
+    // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 };
 
 class Plugin
@@ -37,6 +40,8 @@ public:
     virtual ~Plugin() = default;
 
     // Old
+    // Passed by value on purpose: each override navigates its own cursor into the config.
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     virtual void configure(tue::Configuration /*config*/) {}
     virtual void initialize() {}
     virtual void process(const WorldModel& /*world*/, UpdateRequest& /*req*/) {}

@@ -1,5 +1,6 @@
 #include "ed/models/shape_loader.h"
 #include "shape_loader_private.h"
+#include <cstdint>
 
 #include "xml_shape_parser.h"
 
@@ -53,13 +54,13 @@ std::vector<std::string> split(const std::string& strToSplit, char delimeter)
 {
     std::stringstream ss(strToSplit);
     std::string item;
-    std::vector<std::string> splittedStrings;
+    std::vector<std::string> splitted_strings;
     while (std::getline(ss, item, delimeter))
     {
         if (!item.empty() && item[0] != delimeter)
-            splittedStrings.push_back(item);
+            splitted_strings.push_back(item);
     }
-    return splittedStrings;
+    return splitted_strings;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -234,7 +235,7 @@ void findContours(const cv::Mat& image,
  * @return final mesh; or empty mesh in case of error
  */
 geo::ShapePtr getHeightMapShape(
-    cv::Mat& image_orig, const geo::Vec3& pos, const geo::Vec3& size, const bool inverted, std::stringstream& error)
+    cv::Mat& image_orig, const geo::Vec3& pos, const geo::Vec3& size, bool inverted, std::stringstream& error)
 {
     double const resolution_x = size.x / image_orig.cols;
     double const resolution_y = size.y / image_orig.rows;
@@ -328,7 +329,7 @@ geo::ShapePtr getHeightMapShape(
                             if (hole_points.size() > 2)
                             {
                                 TPPLPoly poly_hole;
-                                poly_hole.Init(static_cast<long>(hole_points.size()));
+                                poly_hole.Init(static_cast<std::int64_t>(hole_points.size()));
                                 poly_hole.SetHole(true);
 
                                 for (unsigned int j = 0; j < hole_points.size(); ++j)
@@ -413,7 +414,7 @@ geo::ShapePtr getHeightMapShape(
 geo::ShapePtr getHeightMapShape(const std::string& image_filename,
                                 const geo::Vec3& pos,
                                 const geo::Vec3& size,
-                                const bool inverted,
+                                bool inverted,
                                 std::stringstream& error)
 {
     cv::Mat image_orig = cv::imread(image_filename, cv::IMREAD_GRAYSCALE); // Read the file
@@ -434,10 +435,10 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename,
 
 geo::ShapePtr getHeightMapShape(const std::string& image_filename,
                                 const geo::Vec3& pos,
-                                const double blockheight,
-                                const double resolution_x,
-                                const double resolution_y,
-                                const bool inverted,
+                                double blockheight,
+                                double resolution_x,
+                                double resolution_y,
+                                bool inverted,
                                 std::stringstream& error)
 {
     cv::Mat image_orig = cv::imread(image_filename, cv::IMREAD_GRAYSCALE); // Read the file
@@ -1001,13 +1002,14 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
 
 // ----------------------------------------------------------------------------------------------------
 
-uint getMiddlePoint(geo::Mesh& mesh, uint i1, uint i2, std::map<unsigned long, uint> cache, double radius)
+std::uint32_t getMiddlePoint(
+    geo::Mesh& mesh, std::uint32_t i1, std::uint32_t i2, std::map<std::uint64_t, std::uint32_t> cache, double radius)
 {
     // first check if we have it already
-    bool const firstIsSmaller = i1 < i2;
-    unsigned long const smallerIndex = firstIsSmaller ? i1 : i2;
-    unsigned long const greaterIndex = firstIsSmaller ? i2 : i1;
-    unsigned long const key = (smallerIndex << 32) + greaterIndex;
+    bool const first_is_smaller = i1 < i2;
+    std::uint64_t const smaller_index = first_is_smaller ? i1 : i2;
+    std::uint64_t const greater_index = first_is_smaller ? i2 : i1;
+    std::uint64_t const key = (smaller_index << 32) + greater_index;
 
     auto const it = cache.find(key);
     if (it != cache.end())
@@ -1024,13 +1026,13 @@ uint getMiddlePoint(geo::Mesh& mesh, uint i1, uint i2, std::map<unsigned long, u
     uint const i3 = mesh.addPoint(p3);
 
     // store it, return index
-    cache.insert(std::pair<unsigned long, uint>(key, i3));
+    cache.insert(std::pair<std::uint64_t, std::uint32_t>(key, i3));
     return i3;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void createSphere(geo::Shape& shape, double radius, uint recursion_level)
+void createSphere(geo::Shape& shape, double radius, std::uint32_t recursion_level)
 {
     geo::Mesh mesh;
 
@@ -1084,23 +1086,23 @@ void createSphere(geo::Shape& shape, double radius, uint recursion_level)
     for (uint i = 0; i < recursion_level; i++)
     {
         geo::Mesh mesh2;
-        std::map<unsigned long, uint> const cache;
+        std::map<std::uint64_t, std::uint32_t> const cache;
 
         const std::vector<geo::Vec3>& points = mesh.getPoints();
         for (const auto& point : points)
             mesh2.addPoint(point);
 
-        const std::vector<geo::TriangleI>& triangleIs = mesh.getTriangleIs();
-        for (auto triangleI : triangleIs)
+        const std::vector<geo::TriangleI>& triangle_is = mesh.getTriangleIs();
+        for (auto triangle_i : triangle_is)
         {
             // replace triangle by 4 triangles
-            uint const a = getMiddlePoint(mesh2, triangleI.i1_, triangleI.i2_, cache, radius);
-            uint const b = getMiddlePoint(mesh2, triangleI.i2_, triangleI.i3_, cache, radius);
-            uint const c = getMiddlePoint(mesh2, triangleI.i3_, triangleI.i1_, cache, radius);
+            uint const a = getMiddlePoint(mesh2, triangle_i.i1_, triangle_i.i2_, cache, radius);
+            uint const b = getMiddlePoint(mesh2, triangle_i.i2_, triangle_i.i3_, cache, radius);
+            uint const c = getMiddlePoint(mesh2, triangle_i.i3_, triangle_i.i1_, cache, radius);
 
-            mesh2.addTriangle(triangleI.i1_, a, c);
-            mesh2.addTriangle(triangleI.i2_, b, a);
-            mesh2.addTriangle(triangleI.i3_, c, b);
+            mesh2.addTriangle(triangle_i.i1_, a, c);
+            mesh2.addTriangle(triangle_i.i2_, b, a);
+            mesh2.addTriangle(triangle_i.i3_, c, b);
             mesh2.addTriangle(a, b, c);
         }
         mesh = mesh2;

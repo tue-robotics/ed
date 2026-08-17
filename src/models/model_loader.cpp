@@ -167,7 +167,7 @@ ModelLoader::ModelData ModelLoader::readModelCache(const std::string& type) cons
 tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type,
                                                          std::vector<std::string>& types,
                                                          std::stringstream& error,
-                                                         const bool allow_sdf)
+                                                         bool allow_sdf)
 {
     if (allow_sdf)
     {
@@ -298,7 +298,7 @@ bool ModelLoader::exists(const std::string& type) const
 // ----------------------------------------------------------------------------------------------------
 
 bool ModelLoader::create(
-    const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error, const bool allow_sdf)
+    const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error, bool allow_sdf)
 {
     tue::config::DataConstPointer data;
     std::vector<std::string> types;
@@ -564,11 +564,11 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data,
             std::string child_id;
             geo::Pose3D child_pose;
             std::string uri;
-            ed::shared_ptr<const geo::Pose3D> child_posePtr;
+            ed::shared_ptr<const geo::Pose3D> child_pose_ptr;
 
             r.value("name", child_id);
             if (readPose(r, child_pose))
-                child_posePtr = ed::make_shared<const geo::Pose3D>(child_pose);
+                child_pose_ptr = ed::make_shared<const geo::Pose3D>(child_pose);
             if (!r.value("uri", uri))
             {
                 error << "No uri found for include in model: '" << id << "'." << '\n' << r.data() << '\n';
@@ -577,7 +577,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data,
 
             std::vector<std::string> const types;
             tue::config::DataConstPointer const child_data = loadSDFData(uri, error);
-            if (!createSDF(child_data, id, pose, child_id, child_posePtr, req, error))
+            if (!createSDF(child_data, id, pose, child_id, child_pose_ptr, req, error))
                 return false;
         }
         r.endArray(); // end array include

@@ -175,7 +175,7 @@ void Server::reset(bool keep_all_shapes)
 
     // Prepare deletion request
     UpdateRequestPtr const req_delete(new UpdateRequest);
-    WorldModelConstPtr const wm = world_model();
+    WorldModelConstPtr const wm = worldModel();
     for (const auto& it : *wm)
     {
         // Only remove entities that are NOT in the initial world model
@@ -449,7 +449,7 @@ void Server::initializeWorld()
 
 void Server::storeEntityMeasurements(const std::string& path) const
 {
-    WorldModelConstPtr const wm = world_model();
+    WorldModelConstPtr const wm = worldModel();
     for (const auto& e : *wm)
     {
         MeasurementConstPtr const msr = e->lastMeasurement();

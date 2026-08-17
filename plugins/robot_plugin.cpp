@@ -433,7 +433,7 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
     executor_.spin_some();
 
     ed::EntityConstPtr const e_robot = world.getEntity(robot_name_);
-    if (e_robot && e_robot->has_pose())
+    if (e_robot && e_robot->hasPose())
     {
         // Calculate absolute poses
         for (ed::world_model::TransformCrawler tc(world, robot_name_, node_->now().seconds()); tc.hasNext(); tc.next())

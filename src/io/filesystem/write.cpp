@@ -88,7 +88,7 @@ bool write(const std::string& filename, const Entity& e)
     }
 
     // Pose
-    if (e.has_pose())
+    if (e.hasPose())
     {
         w.writeGroup("pose");
         ed::serialize(e.pose(), w);

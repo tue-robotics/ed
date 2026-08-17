@@ -13,7 +13,7 @@ class JSONWriter : public Writer
 {
 
 public:
-    JSONWriter(std::ostream& out) : Writer(out) { out << "{"; }
+    explicit JSONWriter(std::ostream& out) : Writer(out) { out << "{"; }
 
     ~JSONWriter() override = default;
 

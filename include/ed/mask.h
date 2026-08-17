@@ -107,6 +107,8 @@ public:
      * left to right, from top to bottom (assuming base position of a sub-image
      * is its top-left corner).
      */
+    // Mirrors the standard container spelling; renaming would break range-for and iterator traits.
+    // NOLINTNEXTLINE(readability-identifier-naming)
     class const_iterator
     {
     public:
@@ -169,6 +171,8 @@ public:
         bool operator!=(const const_iterator& rhs) const { return index_ != rhs.index_; }
 
     private:
+        // An iterator refers to its container; it never outlives it.
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
         const std::vector<cv::Point2i>& points_; ///< Base points of the sub-images.
         size_t index_; ///< Current sub-image being scanned.
         int dx_{0}, dy_{0}; ///< Variables tracking the x/y position in the current sub-image.

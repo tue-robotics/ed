@@ -84,8 +84,8 @@ inline void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
     }
 
     msg.has_shape = (e.visual() != nullptr);
-    msg.has_pose = e.has_pose();
-    if (e.has_pose())
+    msg.has_pose = e.hasPose();
+    if (e.hasPose())
     {
         geo::convert(e.pose(), msg.pose);
     }

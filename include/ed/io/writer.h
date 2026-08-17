@@ -15,7 +15,7 @@ class Writer
 {
 
 public:
-    Writer(std::ostream& out) : out_(out) {}
+    explicit Writer(std::ostream& out) : out_(out) {}
 
     virtual ~Writer() = default;
 
@@ -52,6 +52,8 @@ public:
     virtual void finish() {}
 
 protected:
+    // The writer is bound to a stream owned by the caller.
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     std::ostream& out_;
 };
 

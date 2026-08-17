@@ -495,9 +495,9 @@ bool deserializeTimestamp(ed::io::Reader& r, double& time)
 
 void serialize(const ImageMask& mask, tue::serialization::OutputArchive& m)
 {
-    const static int MASK_SERIALIZATION_VERSION = 0;
+    const static int mask_serialization_version = 0;
 
-    m << MASK_SERIALIZATION_VERSION;
+    m << mask_serialization_version;
 
     m << mask.width();
     m << mask.height();
@@ -566,7 +566,7 @@ bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
 //        w.setValue("id", e->id().str());
 //        w.setValue("type", e->type());
 
-//        if (e->has_pose())
+//        if (e->hasPose())
 //        {
 //            w.writeGroup("pose");
 //            w.setValue("x", e->pose().t.x);

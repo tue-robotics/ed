@@ -3,6 +3,7 @@
 
 #include "ed/time.h"
 #include "ed/types.h"
+#include <cstdint>
 
 #include <geolib/datatypes.h>
 
@@ -35,7 +36,7 @@ public:
         using pointer = const EntityConstPtr*;
         using reference = const EntityConstPtr&;
 
-        EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end())
+        explicit EntityIterator(const std::vector<EntityConstPtr>& v) : it_(v.begin()), it_end_(v.end())
         {
             // Skip possible zero-entities (deleted entities) at the beginning
             while (it_ != it_end_ && !(*it_))
@@ -44,7 +45,7 @@ public:
 
         EntityIterator(const EntityIterator& it) : it_(it.it_) {}
 
-        EntityIterator(const std::vector<EntityConstPtr>::const_iterator& it) : it_(it) {}
+        explicit EntityIterator(const std::vector<EntityConstPtr>::const_iterator& it) : it_(it) {}
 
         EntityIterator& operator++()
         {
@@ -75,18 +76,18 @@ public:
 
     using const_iterator = EntityIterator;
 
-    WorldModel(const PropertyKeyDB* prop_key_db = nullptr);
+    explicit WorldModel(const PropertyKeyDB* prop_key_db = nullptr);
 
     [[nodiscard]]
     const_iterator begin() const
     {
-        return {entities_};
+        return const_iterator{entities_};
     }
 
     [[nodiscard]]
     const_iterator end() const
     {
-        return {entities_.end()};
+        return const_iterator{entities_.end()};
     }
 
     void setEntity(const UUID& id, const EntityConstPtr& e);
@@ -131,38 +132,38 @@ public:
     }
 
     [[nodiscard]]
-    unsigned long revision() const
+    std::uint64_t revision() const
     {
         return revision_;
     }
 
     [[nodiscard]]
-    const std::vector<unsigned long>& entity_revisions() const
+    const std::vector<std::uint64_t>& entityRevisions() const
     {
         return entity_revisions_;
     }
 
     [[nodiscard]] [[deprecated(
-        "Use entity_visual_revisions(), entity_collision_revisions() or entity_volumes_revisions() instead.")]]
-    const std::vector<unsigned long>& entity_shape_revisions() const
+        "Use entityVisualRevisions(), entityCollisionRevisions() or entityVolumesRevisions() instead.")]]
+    const std::vector<std::uint64_t>& entityShapeRevisions() const
     {
-        return entity_visual_revisions();
+        return entityVisualRevisions();
     }
 
     [[nodiscard]]
-    const std::vector<unsigned long>& entity_visual_revisions() const
+    const std::vector<std::uint64_t>& entityVisualRevisions() const
     {
         return entity_visual_revisions_;
     }
 
     [[nodiscard]]
-    const std::vector<unsigned long>& entity_collision_revisions() const
+    const std::vector<std::uint64_t>& entityCollisionRevisions() const
     {
         return entity_collision_revisions_;
     }
 
     [[nodiscard]]
-    const std::vector<unsigned long>& entity_volumes_revisions() const
+    const std::vector<std::uint64_t>& entityVolumesRevisions() const
     {
         return entity_volumes_revisions_;
     }
@@ -171,19 +172,19 @@ public:
     const PropertyKeyDBEntry* getPropertyInfo(const std::string& name) const;
 
 private:
-    unsigned long revision_{0};
+    std::uint64_t revision_{0};
 
     std::map<UUID, Idx> entity_map_;
 
     std::vector<EntityConstPtr> entities_;
 
-    std::vector<unsigned long> entity_revisions_;
+    std::vector<std::uint64_t> entity_revisions_;
 
-    std::vector<unsigned long> entity_visual_revisions_;
+    std::vector<std::uint64_t> entity_visual_revisions_;
 
-    std::vector<unsigned long> entity_collision_revisions_;
+    std::vector<std::uint64_t> entity_collision_revisions_;
 
-    std::vector<unsigned long> entity_volumes_revisions_;
+    std::vector<std::uint64_t> entity_volumes_revisions_;
 
     std::queue<Idx> entity_empty_spots_;
 

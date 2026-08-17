@@ -54,7 +54,7 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
 {
     for (const auto& e : world)
     {
-        if (!e->has_pose())
+        if (!e->hasPose())
             continue;
 
         std::string id = e->id().str();

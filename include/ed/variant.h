@@ -47,6 +47,7 @@ class Variant
 public:
     Variant() = default;
 
+    // NOLINTNEXTLINE(google-explicit-constructor) -- a variant is built from its alternatives
     template <class T> Variant(const T& inValue) : mImpl(new VariantImpl<typename TypeWrapper<T>::TYPE>(inValue)) {}
 
     template <class T> typename TypeWrapper<T>::REFTYPE getValue()
@@ -74,6 +75,7 @@ private:
 
     template <class T> struct VariantImpl : public AbstractVariantImpl
     {
+        // NOLINTNEXTLINE(google-explicit-constructor) -- a variant is built from its alternatives
         VariantImpl(const T& inValue) : mValue(inValue) {}
 
         ~VariantImpl() override = default;

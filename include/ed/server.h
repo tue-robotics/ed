@@ -51,7 +51,7 @@ public:
 
     void storeEntityMeasurements(const std::string& path) const;
 
-    WorldModelConstPtr world_model() const
+    WorldModelConstPtr worldModel() const
     {
         boost::lock_guard<boost::mutex> const lg(mutex_world_);
         return ed::make_shared<const WorldModel>(*world_model_);

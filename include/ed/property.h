@@ -3,6 +3,7 @@
 
 #include "ed/types.h"
 #include "ed/variant.h"
+#include <cstdint>
 
 namespace ed
 {
@@ -15,7 +16,7 @@ struct Property
 
     Variant value;
     const PropertyKeyDBEntry* entry = nullptr;
-    unsigned long revision = -1;
+    std::uint64_t revision = -1;
 };
 
 } // namespace ed

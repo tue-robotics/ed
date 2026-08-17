@@ -15,7 +15,7 @@ class ErrorContext
 {
 
 public:
-    ErrorContext(const char* msg, const char* value = nullptr);
+    explicit ErrorContext(const char* msg, const char* value = nullptr);
 
     ~ErrorContext();
 

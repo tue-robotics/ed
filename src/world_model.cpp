@@ -262,16 +262,16 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
     if (!findEntityIdx(source, s) || !findEntityIdx(target, t))
         return false;
 
-    std::queue<Idx> Q;
+    std::queue<Idx> q;
     std::map<Idx, SearchNode> visited;
 
-    Q.push(s);
+    q.push(s);
     visited[s] = SearchNode(INVALID_IDX, INVALID_IDX, true);
 
-    while (!Q.empty())
+    while (!q.empty())
     {
-        Idx const n = Q.front();
-        Q.pop();
+        Idx const n = q.front();
+        q.pop();
 
         if (n == t)
         {
@@ -315,7 +315,7 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
             if (visited.find(n2) == visited.end())
             {
                 visited[n2] = SearchNode(n, it.second, false);
-                Q.push(n2);
+                q.push(n2);
             }
         }
 
@@ -327,7 +327,7 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
             if (visited.find(n2) == visited.end())
             {
                 visited[n2] = SearchNode(n, it.second, true);
-                Q.push(n2);
+                q.push(n2);
             }
         }
     }

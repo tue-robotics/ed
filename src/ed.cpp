@@ -258,8 +258,8 @@ void srvQuery(ed::Server& server,
     }
 
     // Make a copy of the WM, to keep it thead safe
-    ed::WorldModel const wm = *server.world_model();
-    const auto& entity_revs = wm.entity_revisions();
+    ed::WorldModel const wm = *server.worldModel();
+    const auto& entity_revs = wm.entityRevisions();
     const std::vector<ed::EntityConstPtr>& entities = wm.entities();
 
     std::vector<std::string> removed_entities;
@@ -299,7 +299,7 @@ void srvQuery(ed::Server& server,
             }
 
             // Write convex hull
-            if (!e->convexHull().points.empty() && wm.entity_visual_revisions()[i] > req->since_revision)
+            if (!e->convexHull().points.empty() && wm.entityVisualRevisions()[i] > req->since_revision)
             {
                 w.writeGroup("convex_hull");
                 ed::serialize(e->convexHull(), w);
@@ -307,7 +307,7 @@ void srvQuery(ed::Server& server,
             }
 
             // Pose
-            if (e->has_pose())
+            if (e->hasPose())
             {
                 w.writeGroup("pose");
                 ed::serialize(e->pose(), w);
@@ -315,7 +315,7 @@ void srvQuery(ed::Server& server,
             }
 
             // Mesh
-            if (e->visual() && wm.entity_visual_revisions()[i] > req->since_revision)
+            if (e->visual() && wm.entityVisualRevisions()[i] > req->since_revision)
             {
                 w.writeGroup("mesh");
                 ed::serialize(*e->visual(), w);
@@ -406,13 +406,13 @@ void srvSimpleQuery(ed::Server& server,
     geo::convert(req->center_point, center_point);
 
     // Make a copy of the WM, to keep it thead safe
-    ed::WorldModel const wm = *server.world_model();
+    ed::WorldModel const wm = *server.worldModel();
     for (const auto& e : wm)
     {
         if (!req->id.empty() && e->id() != ed::UUID(req->id))
             continue;
 
-        if (!e->has_pose())
+        if (!e->hasPose())
             continue;
 
         if (!req->type.empty())

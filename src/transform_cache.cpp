@@ -28,8 +28,8 @@ geo::Quaternion slerp(const geo::Quaternion& v0, const geo::Quaternion& v1, floa
 {
     auto dot = static_cast<float>(v0.dot(v1));
 
-    const float DOT_THRESHOLD = 0.9995f;
-    if (dot > DOT_THRESHOLD)
+    const float dot_threshold = 0.9995f;
+    if (dot > dot_threshold)
     {
         geo::Quaternion q;
         q.x = ((1 - alpha) * v0.getX()) + (alpha * v1.getX());

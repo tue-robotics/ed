@@ -14,7 +14,7 @@ class JSONReader : public ed::io::Reader
 {
 
 public:
-    JSONReader(const char* s);
+    explicit JSONReader(const char* s);
 
     ~JSONReader() override;
 

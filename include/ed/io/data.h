@@ -2,6 +2,7 @@
 #define ERA_TUE_CONFIGURATION_DATA_H_
 
 #include "ed/io/variant.h"
+#include <cstdint>
 
 #include <map>
 #include <string>
@@ -12,7 +13,7 @@ namespace ed::io
 
 // ----------------------------------------------------------------------------------------------------
 
-enum NodeType
+enum class NodeType : std::uint8_t
 {
     ARRAY,
     MAP,

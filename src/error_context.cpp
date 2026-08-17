@@ -36,29 +36,29 @@ KeyHolder key;
 
 ErrorContext::ErrorContext(const char* msg, const char* value)
 {
-    ErrorContextData* _data = data();
-    if (!_data)
+    ErrorContextData* edata = data();
+    if (!edata)
     {
-        _data = new ErrorContextData;
-        pthread_setspecific(key.key, _data);
+        edata = new ErrorContextData;
+        pthread_setspecific(key.key, edata);
     }
 
-    _data->stack.emplace_back(msg, value);
+    edata->stack.emplace_back(msg, value);
 }
 
 ErrorContext::~ErrorContext()
 {
-    ErrorContextData* _data = data();
-    if (!_data)
+    ErrorContextData* edata = data();
+    if (!edata)
         return;
 
-    _data->stack.pop_back();
+    edata->stack.pop_back();
 }
 
 void ErrorContext::change(const char* msg, const char* value)
 {
-    ErrorContextData* _data = data();
-    _data->stack.back() = std::pair<const char*, const char*>(msg, value);
+    ErrorContextData* edata = data();
+    edata->stack.back() = std::pair<const char*, const char*>(msg, value);
 }
 
 ErrorContextData* ErrorContext::data()
