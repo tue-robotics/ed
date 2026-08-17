@@ -212,7 +212,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
 
 // ----------------------------------------------------------------------------------------------------
 
-RobotPlugin::RobotPlugin() {}
+RobotPlugin::RobotPlugin() = default;
 
 // ----------------------------------------------------------------------------------------------------
 

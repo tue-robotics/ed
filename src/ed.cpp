@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <boost/thread.hpp>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -59,27 +58,31 @@
 #include <cstdlib>
 #include <execinfo.h>
 #include <set>
+#include <thread>
 #include <unistd.h>
 
 #include <vector>
 
-static boost::thread::id main_thread_id;
+namespace
+{
 
-static ed::Server* ed_wm;
-static std::string update_request_;
+// Initialized during static initialization, which runs on the main thread.
+const std::thread::id MAIN_THREAD_ID = std::this_thread::get_id();
 
 // ----------------------------------------------------------------------------------------------------
 
-static void srvReset(const std::shared_ptr<ed_interfaces::srv::Reset::Request>& req,
-                     const std::shared_ptr<ed_interfaces::srv::Reset::Response>& /*res*/)
+void srvReset(ed::Server& server,
+              const std::shared_ptr<ed_interfaces::srv::Reset::Request>& req,
+              const std::shared_ptr<ed_interfaces::srv::Reset::Response>& /*res*/)
 {
-    ed_wm->reset(req->keep_all_shapes);
+    server.reset(req->keep_all_shapes);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-static void srvUpdate(const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Request>& req,
-                      const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Response>& res)
+void srvUpdate(ed::Server& server,
+               const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Request>& req,
+               const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Response>& res)
 {
     ed::io::JSONReader r(req->request.c_str());
 
@@ -128,11 +131,11 @@ static void srvUpdate(const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Reque
                     geo::Pose3D pose = geo::Pose3D::identity();
                     pose.t = geo::Vector3(x, y, z);
 
-                    double X = NAN;
-                    double Y = NAN;
-                    double Z = NAN;
-                    if (r.readValue("X", X) && r.readValue("Y", Y) && r.readValue("Z", Z))
-                        pose.setRPY(X, Y, Z);
+                    double roll = NAN;
+                    double pitch = NAN;
+                    double yaw = NAN;
+                    if (r.readValue("X", roll) && r.readValue("Y", pitch) && r.readValue("Z", yaw))
+                        pose.setRPY(roll, pitch, yaw);
 
                     update_req.setPose(id, pose);
                 }
@@ -183,16 +186,24 @@ static void srvUpdate(const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Reque
                         continue;
 
                     // ToDo: is this thread safe?
-                    const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(prop_name);
+                    const ed::PropertyKeyDBEntry* entry = server.getPropertyKeyDBEntry(prop_name);
                     if (!entry)
                     {
-                        res->response += "For entity '" + id + "': unknown property '" + prop_name + "'.\n";
+                        res->response.append("For entity '")
+                            .append(id)
+                            .append("': unknown property '")
+                            .append(prop_name)
+                            .append("'.\n");
                         continue;
                     }
 
                     if (!entry->info->serializable())
                     {
-                        res->response += "For entity '" + id + "': property '" + prop_name + "' is not serializable.\n";
+                        res->response.append("For entity '")
+                            .append(id)
+                            .append("': property '")
+                            .append(prop_name)
+                            .append("' is not serializable.\n");
                         continue;
                     }
 
@@ -200,8 +211,11 @@ static void srvUpdate(const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Reque
                     if (entry->info->deserialize(r, value))
                         update_req.setProperty(id, entry, value);
                     else
-                        res->response +=
-                            "For entity '" + id + "': deserialization of property '" + prop_name + "' failed.\n";
+                        res->response.append("For entity '")
+                            .append(id)
+                            .append("': deserialization of property '")
+                            .append(prop_name)
+                            .append("' failed.\n");
                 }
 
                 r.endArray();
@@ -215,7 +229,7 @@ static void srvUpdate(const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Reque
     {
         if (!update_req.empty())
         {
-            ed_wm->update(update_req);
+            server.update(update_req);
         }
     }
     else
@@ -226,8 +240,9 @@ static void srvUpdate(const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Reque
 
 // ----------------------------------------------------------------------------------------------------
 
-static void srvQuery(const std::shared_ptr<ed_interfaces::srv::Query::Request>& req,
-                     const std::shared_ptr<ed_interfaces::srv::Query::Response>& res)
+void srvQuery(ed::Server& server,
+              const std::shared_ptr<ed_interfaces::srv::Query::Request>& req,
+              const std::shared_ptr<ed_interfaces::srv::Query::Response>& res)
 {
     // Set of queried ids
     std::set<std::string> ids(req->ids.begin(), req->ids.end());
@@ -237,14 +252,14 @@ static void srvQuery(const std::shared_ptr<ed_interfaces::srv::Query::Request>& 
     for (const auto& propertie : req->properties)
     {
         // ToDo: is this thread safe?
-        const ed::PropertyKeyDBEntry* entry = ed_wm->getPropertyKeyDBEntry(propertie);
+        const ed::PropertyKeyDBEntry* entry = server.getPropertyKeyDBEntry(propertie);
         if (entry)
             property_idxs.push_back(entry->idx);
     }
 
     // Make a copy of the WM, to keep it thead safe
-    ed::WorldModel const wm = *ed_wm->world_model();
-    const std::vector<unsigned long>& entity_revs = wm.entity_revisions();
+    ed::WorldModel const wm = *server.world_model();
+    const auto& entity_revs = wm.entity_revisions();
     const std::vector<ed::EntityConstPtr>& entities = wm.entities();
 
     std::vector<std::string> removed_entities;
@@ -310,9 +325,8 @@ static void srvQuery(const std::shared_ptr<ed_interfaces::srv::Query::Request>& 
             // Data
             if (!e->data().empty())
             {
-                tue::config::YAMLEmitter emitter;
                 std::stringstream out;
-                emitter.emit(e->data(), out);
+                tue::config::YAMLEmitter::emit(e->data(), out);
 
                 std::string data_str = out.str();
 
@@ -342,7 +356,7 @@ static void srvQuery(const std::shared_ptr<ed_interfaces::srv::Query::Request>& 
             }
             else
             {
-                for (unsigned long const property_idx : property_idxs)
+                for (ed::Idx const property_idx : property_idxs)
                 {
                     auto const it_prop = properties.find(property_idx);
                     if (it_prop != properties.end())
@@ -383,15 +397,16 @@ static void srvQuery(const std::shared_ptr<ed_interfaces::srv::Query::Request>& 
 
 // ----------------------------------------------------------------------------------------------------
 
-static void srvSimpleQuery(const std::shared_ptr<ed_interfaces::srv::SimpleQuery::Request>& req,
-                           const std::shared_ptr<ed_interfaces::srv::SimpleQuery::Response>& res)
+void srvSimpleQuery(ed::Server& server,
+                    const std::shared_ptr<ed_interfaces::srv::SimpleQuery::Request>& req,
+                    const std::shared_ptr<ed_interfaces::srv::SimpleQuery::Response>& res)
 {
     double const radius = req->radius;
     geo::Vector3 center_point;
     geo::convert(req->center_point, center_point);
 
     // Make a copy of the WM, to keep it thead safe
-    ed::WorldModel const wm = *ed_wm->world_model();
+    ed::WorldModel const wm = *server.world_model();
     for (const auto& e : wm)
     {
         if (!req->id.empty() && e->id() != ed::UUID(req->id))
@@ -447,8 +462,9 @@ static void srvSimpleQuery(const std::shared_ptr<ed_interfaces::srv::SimpleQuery
 
 // ----------------------------------------------------------------------------------------------------
 
-static void srvConfigure(const std::shared_ptr<ed_interfaces::srv::Configure::Request>& req,
-                         const std::shared_ptr<ed_interfaces::srv::Configure::Response>& res)
+void srvConfigure(ed::Server& server,
+                  const std::shared_ptr<ed_interfaces::srv::Configure::Request>& req,
+                  const std::shared_ptr<ed_interfaces::srv::Configure::Response>& res)
 {
     tue::Configuration config;
     if (!tue::config::loadFromYAMLString(req->request, config))
@@ -458,7 +474,7 @@ static void srvConfigure(const std::shared_ptr<ed_interfaces::srv::Configure::Re
     }
 
     // Configure ED
-    ed_wm->configure(config);
+    server.configure(config);
 
     if (config.hasError())
     {
@@ -469,7 +485,7 @@ static void srvConfigure(const std::shared_ptr<ed_interfaces::srv::Configure::Re
 
 // ----------------------------------------------------------------------------------------------------
 
-static void signalHandler(int sig)
+void signalHandler(int sig)
 {
     // Make sure to remove all signal handlers
     signal(SIGSEGV, SIG_DFL);
@@ -501,16 +517,16 @@ static void signalHandler(int sig)
     {
         if (std::string(name) == "ed_main")
         {
-            if (boost::this_thread::get_id() == main_thread_id)
+            if (std::this_thread::get_id() == MAIN_THREAD_ID)
                 std::cerr << "main";
             else
-                std::cerr << "name unknown (id = " << boost::this_thread::get_id() << ")";
+                std::cerr << "name unknown (id = " << std::this_thread::get_id() << ")";
         }
         else
             std::cerr << name;
     }
     else
-        std::cerr << "name unknown (id = " << boost::this_thread::get_id() << ")";
+        std::cerr << "name unknown (id = " << std::this_thread::get_id() << ")";
 
     std::cerr << '\n' << '\n';
 
@@ -550,16 +566,17 @@ static void signalHandler(int sig)
     std::cerr << "Backtrace: " << '\n' << '\n';
 
     void* array[20];
-    size_t size = 0;
 
     // get void*'s for all entries on the stack
-    size = backtrace(array, 20);
+    int const size = backtrace(array, 20);
 
     // print out all the frames to stderr
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     std::cerr << "\033[0m" << '\n';
     exit(1);
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -571,9 +588,6 @@ int main(int argc, char** argv)
     // Set the name of the main thread
     pthread_setname_np(pthread_self(), "ed_main");
 
-    // Remember the main thread id
-    main_thread_id = boost::this_thread::get_id();
-
     // register signal SIGINT and signal handler
     signal(SIGSEGV, signalHandler);
     signal(SIGABRT, signalHandler);
@@ -582,7 +596,6 @@ int main(int argc, char** argv)
 
     // Create the ED server
     ed::Server server(node);
-    ed_wm = &server;
 
     // - - - - - - - - - - - - - - - configure - - - - - - - - - - - - - - -
 
@@ -597,7 +610,7 @@ int main(int argc, char** argv)
         config.loadFromYAMLFile(yaml_filename);
 
         // Configure ED
-        ed_wm->configure(config);
+        server.configure(config);
 
         if (config.hasError())
         {
@@ -617,15 +630,37 @@ int main(int argc, char** argv)
         node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
     auto srv_simple_query = node->create_service<ed_interfaces::srv::SimpleQuery>(
-        "~/simple_query", &srvSimpleQuery, rclcpp::ServicesQoS(), cb_group);
-    auto srv_reset =
-        node->create_service<ed_interfaces::srv::Reset>("~/reset", &srvReset, rclcpp::ServicesQoS(), cb_group);
-    auto srv_query =
-        node->create_service<ed_interfaces::srv::Query>("~/query", &srvQuery, rclcpp::ServicesQoS(), cb_group);
-    auto srv_update =
-        node->create_service<ed_interfaces::srv::UpdateSrv>("~/update", &srvUpdate, rclcpp::ServicesQoS(), cb_group);
+        "~/simple_query",
+        [&server](const std::shared_ptr<ed_interfaces::srv::SimpleQuery::Request>& req,
+                  const std::shared_ptr<ed_interfaces::srv::SimpleQuery::Response>& res)
+        { srvSimpleQuery(server, req, res); },
+        rclcpp::ServicesQoS(),
+        cb_group);
+    auto srv_reset = node->create_service<ed_interfaces::srv::Reset>(
+        "~/reset",
+        [&server](const std::shared_ptr<ed_interfaces::srv::Reset::Request>& req,
+                  const std::shared_ptr<ed_interfaces::srv::Reset::Response>& res) { srvReset(server, req, res); },
+        rclcpp::ServicesQoS(),
+        cb_group);
+    auto srv_query = node->create_service<ed_interfaces::srv::Query>(
+        "~/query",
+        [&server](const std::shared_ptr<ed_interfaces::srv::Query::Request>& req,
+                  const std::shared_ptr<ed_interfaces::srv::Query::Response>& res) { srvQuery(server, req, res); },
+        rclcpp::ServicesQoS(),
+        cb_group);
+    auto srv_update = node->create_service<ed_interfaces::srv::UpdateSrv>(
+        "~/update",
+        [&server](const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Request>& req,
+                  const std::shared_ptr<ed_interfaces::srv::UpdateSrv::Response>& res) { srvUpdate(server, req, res); },
+        rclcpp::ServicesQoS(),
+        cb_group);
     auto srv_configure = node->create_service<ed_interfaces::srv::Configure>(
-        "~/configure", &srvConfigure, rclcpp::ServicesQoS(), cb_group);
+        "~/configure",
+        [&server](const std::shared_ptr<ed_interfaces::srv::Configure::Request>& req,
+                  const std::shared_ptr<ed_interfaces::srv::Configure::Response>& res)
+        { srvConfigure(server, req, res); },
+        rclcpp::ServicesQoS(),
+        cb_group);
 
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_callback_group(cb_group, node->get_node_base_interface());
@@ -635,7 +670,7 @@ int main(int argc, char** argv)
     ed::ErrorContext::change("Start ED server", "init");
 
     // Init ED
-    ed_wm->initialize();
+    server.initialize();
 
     ed::EventClock trigger_config(10);
     ed::EventClock trigger_ed(10);
@@ -656,16 +691,16 @@ int main(int argc, char** argv)
 
         // Check if configuration has changed. If so, call reconfigure
         if (trigger_config.triggers() && config.sync())
-            ed_wm->configure(config, true);
+            server.configure(config, true);
 
         if (trigger_ed.triggers())
-            ed_wm->update();
+            server.update();
 
         if (trigger_plugins.triggers())
-            ed_wm->stepPlugins();
+            server.stepPlugins();
 
         if (trigger_stats.triggers())
-            ed_wm->publishStatistics();
+            server.publishStatistics();
 
         r.sleep();
     }
