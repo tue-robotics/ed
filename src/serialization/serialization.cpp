@@ -139,7 +139,8 @@ bool deserialize(io::Reader& r, UpdateRequest& req)
             //                    if (entry->info->deserialize(r, value))
             //                    {
             //                        req.setProperty(id, entry, value);
-            //                        ROS_INFO_STREAM("Sync plugin: setProperty " << id);
+            //                        RCLCPP_INFO_STREAM(rclcpp::get_logger("SyncPlugin"), "Sync plugin: setProperty "
+            //                        << id);
             //                    } else
             //                        error += "For entity '" + id + "': deserialization of property '" + prop_name +"'
             //                        failed.\n";

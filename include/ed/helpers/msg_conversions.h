@@ -47,9 +47,9 @@ void convert(const geo::ShapeConstPtr shape, ed_interfaces::msg::SubVolume& sub_
 }
 
 /**
- * @brief converting ed::Entity to ed_msgs::EntityInfo message
+ * @brief converting ed::Entity to ed_interfaces::msg::EntityInfo message
  * @param e ed::Entity as input
- * @param msg filled ed_msgs::EntityInfo message as output
+ * @param msg filled ed_interfaces::msg::EntityInfo message as output
  */
 void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
 {

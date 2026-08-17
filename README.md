@@ -28,12 +28,12 @@ All ED tutorials can be found in the ed_tutorials package: https://github.com/tu
 ## Installation
 
 Requirements:
-* Ubuntu (18.04 or newer)
-* ROS (Melodic or newer)
+* Ubuntu (22.04 or newer)
+* ROS 2 (Humble or newer)
 
-We assume you have successfully installed ROS and set-up a Catkin workspace. Check out the following packages in your workspace:
+We assume you have successfully installed ROS 2 and set-up a colcon workspace. Check out the following packages in your workspace:
 
-    cd <your_catkin_workspace>/src
+    cd <your_colcon_workspace>/src
 
     git clone https://github.com/tue-robotics/ed.git
     git -C ed submodule update --init --recursive
@@ -42,19 +42,24 @@ We assume you have successfully installed ROS and set-up a Catkin workspace. Che
     git clone https://github.com/tue-robotics/code_profiler.git
     git clone https://github.com/tue-robotics/geolib2.git
     git clone https://github.com/tue-robotics/rgbd.git
+    git clone https://github.com/tue-robotics/rosconsole_bridge.git
     git clone https://github.com/tue-robotics/tue_config.git
-    git clone https://github.com/tue-robotics/tue_filesystem.git
     git clone https://github.com/tue-robotics/tue_serialization.git
 
-ED is able to read (a subset of) [SDF](http://sdformat.org/), therefore the [SDF library](https://bitbucket.org/osrf/sdformat) is used. The minimal required version is 4.4. On ubuntu 16.04, you need to add the OSRF apt sources ([link](http://gazebosim.org/tutorials?tut=install_ubuntu)), as the released version on the main channel is just 4.0.
-To install the library (version 4.X): `libsdformat4-dev`
+The interface (message/service) packages live in those same repositories: `ed_msgs` provides `ed_interfaces`, `rgbd` provides `rgbd_interfaces` and `tue_serialization` provides `tue_serialization_interfaces`.
 
-Install the other dependencies by rsolving them via `rosdep`.
+ED is able to read (a subset of) [SDF](http://sdformat.org/), therefore the [SDF library](https://github.com/gazebosim/sdformat) is used. On ROS 2 it comes from the `sdformat_vendor` package, so no external apt source is needed.
+
+Install the other dependencies by resolving them via `rosdep`.
 
 This should be sufficient to successfully compile ED:
 
-    cd <your_catkin_workspace>
-    catkin_make/catkin build
+    cd <your_colcon_workspace>
+    colcon build --packages-up-to ed
+
+Running the tests additionally needs the tue-robotics [`ament_lint`](https://github.com/tue-robotics/ament_lint) fork and [`tue_lint_config`](https://github.com/tue-robotics/tue_lint_config) in the workspace, since the linters are invoked with options that are not in upstream `ament_cmake_clang_format`/`ament_cmake_clang_tidy`:
+
+    colcon test --packages-select ed && colcon test-result --verbose
 
 ## ED Extensions
 
