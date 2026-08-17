@@ -15,6 +15,7 @@
 #include <tue/profiling/timer.h>
 
 #include <boost/thread/mutex.hpp>
+#include <utility>
 
 #include <math.h>
 
@@ -50,8 +51,8 @@ public:
      * @brief Constructs a LoopUsageStatus class with the given parameters.
      */
     LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam& params, std::string name) :
-        DiagnosticTask(name), params_(params), starts_(params_.window_size_), durations_(params_.window_size_),
-        seq_nums_(params_.window_size_)
+        DiagnosticTask(std::move(name)), params_(params), starts_(params_.window_size_),
+        durations_(params_.window_size_), seq_nums_(params_.window_size_)
     {
         clear();
     }

@@ -25,7 +25,7 @@ class PluginContainer
 {
 
 public:
-    PluginContainer(const rclcpp::Node::SharedPtr& node, const ed::TFBufferConstPtr& tf_buffer);
+    PluginContainer(rclcpp::Node::SharedPtr node, ed::TFBufferConstPtr tf_buffer);
 
     virtual ~PluginContainer();
 

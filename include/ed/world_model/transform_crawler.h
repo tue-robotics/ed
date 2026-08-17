@@ -29,7 +29,7 @@ class TransformCrawler
     };
 
 public:
-    TransformCrawler(const WorldModel& wm, const UUID& start_id, const Time& time);
+    TransformCrawler(const WorldModel& wm, const UUID& root_id, const Time& time);
 
     bool next();
 

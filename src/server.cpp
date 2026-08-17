@@ -77,7 +77,7 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
             PluginContainerPtr plugin_container;
 
-            std::map<std::string, PluginContainerPtr>::iterator const it_plugin = plugin_containers_.find(name);
+            auto const it_plugin = plugin_containers_.find(name);
             if (it_plugin == plugin_containers_.end())
             {
                 // Plugin does not yet exist
@@ -177,10 +177,10 @@ void Server::reset(bool keep_all_shapes)
     // Prepare deletion request
     UpdateRequestPtr const req_delete(new UpdateRequest);
     WorldModelConstPtr const wm = world_model();
-    for (WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
+    for (const auto& it : *wm)
     {
         // Only remove entities that are NOT in the initial world model
-        const ed::EntityConstPtr& e = *it;
+        const ed::EntityConstPtr& e = it;
 
         if (e->id().str().substr(0, 6) == "sergio" || e->id().str().substr(0, 5) == "amigo" ||
             e->id().str().substr(0, 4) == "hero") // TODO: robocup hack
@@ -190,7 +190,7 @@ void Server::reset(bool keep_all_shapes)
             continue;
 
         if (req_init_world->updated_entities.find(e->id()) == req_init_world->updated_entities.end())
-            req_delete->removeEntity((*it)->id());
+            req_delete->removeEntity(it->id());
     }
 
     // Create world model copy
@@ -206,11 +206,9 @@ void Server::reset(bool keep_all_shapes)
     ul.unlock();
 
     // Notify plugins
-    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
-         it != plugin_containers_.end();
-         ++it)
+    for (auto& plugin_container : plugin_containers_)
     {
-        const PluginContainerPtr& c = it->second;
+        const PluginContainerPtr& c = plugin_container.second;
         c->addDelta(req_init_world);
         c->addDelta(req_delete);
         c->setWorld(new_world_model);
@@ -260,11 +258,9 @@ void Server::stepPlugins()
 
     // collect and apply all update requests
     std::vector<PluginContainerPtr> plugins_with_requests;
-    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
-         it != plugin_containers_.end();
-         ++it)
+    for (auto& plugin_container : plugin_containers_)
     {
-        PluginContainerPtr const c = it->second;
+        PluginContainerPtr const c = plugin_container.second;
 
         if (c->updateRequest())
         {
@@ -283,11 +279,9 @@ void Server::stepPlugins()
     if (new_world_model)
     {
         // Set the new (updated) world
-        for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
-             it != plugin_containers_.end();
-             ++it)
+        for (auto& plugin_container : plugin_containers_)
         {
-            const PluginContainerPtr& c = it->second;
+            const PluginContainerPtr& c = plugin_container.second;
             c->setWorld(new_world_model);
         }
         boost::unique_lock<boost::mutex> ul(mutex_world_);
@@ -295,11 +289,8 @@ void Server::stepPlugins()
         ul.unlock();
 
         // Clear the requests of all plugins that had requests (which flags them to continue processing)
-        for (std::vector<PluginContainerPtr>::iterator it = plugins_with_requests.begin();
-             it != plugins_with_requests.end();
-             ++it)
+        for (auto c : plugins_with_requests)
         {
-            PluginContainerPtr const c = *it;
             c->clearUpdateRequest();
         }
     }
@@ -317,11 +308,9 @@ void Server::update()
     ul.unlock();
 
     // Notify all plugins of the updated world model
-    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
-         it != plugin_containers_.end();
-         ++it)
+    for (auto& plugin_container : plugin_containers_)
     {
-        PluginContainerPtr const c = it->second;
+        PluginContainerPtr const c = plugin_container.second;
         c->setWorld(new_world_model);
     }
 
@@ -344,11 +333,9 @@ void Server::update(const ed::UpdateRequest& req)
     new_world_model->update(req);
 
     // Notify all plugins of the updated world model
-    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
-         it != plugin_containers_.end();
-         ++it)
+    for (auto& plugin_container : plugin_containers_)
     {
-        PluginContainerPtr const c = it->second;
+        PluginContainerPtr const c = plugin_container.second;
         c->setWorld(new_world_model);
     }
 
@@ -427,11 +414,9 @@ void Server::update(const std::string& update_str, std::string& error)
     new_world_model->update(req);
 
     // Notify all plugins of the updated world model
-    for (std::map<std::string, PluginContainerPtr>::iterator it = plugin_containers_.begin();
-         it != plugin_containers_.end();
-         ++it)
+    for (auto& plugin_container : plugin_containers_)
     {
-        PluginContainerPtr const c = it->second;
+        PluginContainerPtr const c = plugin_container.second;
         c->setWorld(new_world_model);
     }
 
@@ -466,9 +451,8 @@ void Server::initializeWorld()
 void Server::storeEntityMeasurements(const std::string& path) const
 {
     WorldModelConstPtr const wm = world_model();
-    for (WorldModel::const_iterator it = wm->begin(); it != wm->end(); ++it)
+    for (const auto& e : *wm)
     {
-        const EntityConstPtr& e = *it;
         MeasurementConstPtr const msr = e->lastMeasurement();
         if (!msr)
             continue;
@@ -476,7 +460,7 @@ void Server::storeEntityMeasurements(const std::string& path) const
         std::string const filename = path + "/" + e->id().str();
         if (!write(filename, *msr))
         {
-            std::cout << "Saving measurement failed." << std::endl;
+            std::cout << "Saving measurement failed." << '\n';
         }
     }
 }
@@ -488,10 +472,8 @@ void Server::publishStatistics()
     ErrorContext const errc("Server", "publishStatistics");
     std::stringstream s;
 
-    s << "[plugins]" << std::endl;
-    for (std::map<std::string, PluginContainerPtr>::const_iterator it = plugin_containers_.begin();
-         it != plugin_containers_.end();
-         ++it)
+    s << "[plugins]" << '\n';
+    for (auto it = plugin_containers_.begin(); it != plugin_containers_.end(); ++it)
     {
         const PluginContainerPtr& p = it->second;
 
@@ -499,7 +481,7 @@ void Server::publishStatistics()
         double const cpu_perc = p->getLoopUsageStatus().getTimer().getLoopUsagePercentage() * 100;
 
         s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency()
-          << " hz)" << std::endl;
+          << " hz)" << '\n';
     }
 
     std_msgs::msg::String msg;

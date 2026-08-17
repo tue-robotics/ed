@@ -20,6 +20,7 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <geolib/Box.h>
 #include <geolib/io/import.h>
+#include <memory>
 #include <rclcpp/logger.hpp>
 #include <urdf_model/link.h>
 #include <urdf_model/pose.h>
@@ -116,7 +117,7 @@ geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
         if (mesh->filename.substr(0, pkg_prefix.size()) == pkg_prefix)
         {
             std::string const str = mesh->filename.substr(pkg_prefix.size());
-            size_t const i_slash = str.find("/");
+            size_t const i_slash = str.find('/');
 
             std::string const pkg = str.substr(0, i_slash);
             std::string const rel_filename = str.substr(i_slash + 1);
@@ -143,7 +144,7 @@ geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
         double const hy = box->dim.y / 2;
         double const hz = box->dim.z / 2;
 
-        shape.reset(new geo::Box(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz)));
+        shape = std::make_shared<geo::Box>(geo::Vector3(-hx, -hy, -hz), geo::Vector3(hx, hy, hz));
     }
     else if (geom->type == urdf::Geometry::CYLINDER)
     {
@@ -155,7 +156,7 @@ geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
             return shape;
         }
 
-        shape.reset(new geo::Shape());
+        shape = std::make_shared<geo::Shape>();
         ed::models::createCylinder(*shape, cyl->radius, cyl->length, 20);
     }
     else if (geom->type == urdf::Geometry::SPHERE)
@@ -168,7 +169,7 @@ geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
             return shape;
         }
 
-        shape.reset(new geo::Shape());
+        shape = std::make_shared<geo::Shape>();
         ed::models::createSphere(*shape, sphere->radius);
     }
 
@@ -204,7 +205,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> linkToShapes(const urdf::LinkSharedPtr&
             continue;
 
         if (!visual)
-            visual.reset(new geo::CompositeShape());
+            visual = std::make_shared<geo::CompositeShape>();
         visual->addShape(*subshape, offset);
     }
 
@@ -230,7 +231,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> linkToShapes(const urdf::LinkSharedPtr&
             continue;
 
         if (!collision)
-            collision.reset(new geo::CompositeShape());
+            collision = std::make_shared<geo::CompositeShape>();
         collision->addShape(*subshape, offset);
     }
 
@@ -279,8 +280,8 @@ void RobotPlugin::constructRobot(const ed::UUID& parent_id,
 
     // Recursively add all children
     const std::vector<KDL::SegmentMap::const_iterator>& children = it_segment->second.children;
-    for (unsigned int i = 0; i < children.size(); i++)
-        constructRobot(child_id, children[i], req);
+    for (auto i : children)
+        constructRobot(child_id, i, req);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -299,7 +300,7 @@ void RobotPlugin::jointCallback(const sensor_msgs::msg::JointState::ConstSharedP
         const std::string& name = msg->name[i];
         const double pos = msg->position[i];
 
-        std::map<std::string, RelationInfo>::iterator const it_r = joint_name_to_rel_info_.find(name);
+        auto const it_r = joint_name_to_rel_info_.find(name);
         if (it_r != joint_name_to_rel_info_.end())
         {
             RelationInfo& info = it_r->second;
@@ -399,10 +400,8 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
         std::vector<urdf::LinkSharedPtr> links;
         robot_model_.getLinks(links);
 
-        for (std::vector<urdf::LinkSharedPtr>::const_iterator it = links.begin(); it != links.end(); ++it)
+        for (const auto& link : links)
         {
-            const urdf::LinkSharedPtr& link = *it;
-
             geo::ShapePtr visual;
             geo::ShapePtr collision;
             std::tie(visual, collision) = linkToShapes(link);

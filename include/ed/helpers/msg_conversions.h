@@ -28,7 +28,7 @@ namespace ed
  * @param shape geo::ShapeConstPtr as input
  * @param msg filled ed_interfaces::msg::SubVolume message as output
  */
-void convert(const geo::ShapeConstPtr shape, ed_interfaces::msg::SubVolume& sub_Volume)
+void convert(const geo::ShapeConstPtr& shape, ed_interfaces::msg::SubVolume& sub_Volume)
 {
     geo::Vector3 const min = shape->getBoundingBox().getMin();
     geo::Vector3 const max = shape->getBoundingBox().getMax();
@@ -38,12 +38,11 @@ void convert(const geo::ShapeConstPtr shape, ed_interfaces::msg::SubVolume& sub_
 
     geo::convert(pos, sub_Volume.center_point.point);
 
-    shape_msgs::msg::SolidPrimitive const solid;
-    sub_Volume.geometry.type = sub_Volume.geometry.BOX;
+    sub_Volume.geometry.type = shape_msgs::msg::SolidPrimitive::BOX;
     sub_Volume.geometry.dimensions.resize(3, 0);
-    sub_Volume.geometry.dimensions[solid.BOX_X] = size.x;
-    sub_Volume.geometry.dimensions[solid.BOX_Y] = size.y;
-    sub_Volume.geometry.dimensions[solid.BOX_Z] = size.z;
+    sub_Volume.geometry.dimensions[shape_msgs::msg::SolidPrimitive::BOX_X] = size.x;
+    sub_Volume.geometry.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Y] = size.y;
+    sub_Volume.geometry.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = size.z;
 }
 
 /**
@@ -57,8 +56,8 @@ void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
     msg.type = e.type();
 
     msg.types.resize(0);
-    for (std::set<std::string>::const_iterator it = e.types().begin(); it != e.types().end(); ++it)
-        msg.types.push_back(*it);
+    for (const auto& it : e.types())
+        msg.types.push_back(it);
 
     msg.existence_probability = e.existenceProbability();
 
@@ -96,8 +95,7 @@ void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
     if (!e.data().empty())
     {
         std::stringstream ss;
-        tue::config::YAMLEmitter emitter;
-        emitter.emit(e.data(), ss);
+        tue::config::YAMLEmitter::emit(e.data(), ss);
 
         msg.data = ss.str();
     }
@@ -108,9 +106,7 @@ void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
 
     if (!e.volumes().empty())
     {
-        for (std::map<std::string, geo::ShapeConstPtr>::const_iterator it = e.volumes().begin();
-             it != e.volumes().end();
-             ++it)
+        for (auto it = e.volumes().begin(); it != e.volumes().end(); ++it)
         {
             ed_interfaces::msg::Volume volume;
             volume.name = it->first;
@@ -120,13 +116,11 @@ void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
             if (composite)
             {
                 const std::vector<std::pair<geo::ShapePtr, geo::Transform>>& shapes = composite->getShapes();
-                for (std::vector<std::pair<geo::ShapePtr, geo::Transform>>::const_iterator it2 = shapes.begin();
-                     it2 != shapes.end();
-                     ++it2)
+                for (const auto& shape : shapes)
                 {
                     geo::ShapePtr const shape_tr(new geo::Shape());
-                    geo::Transform inv = it2->second.inverse();
-                    shape_tr->setMesh(it2->first->getMesh().getTransformed(inv));
+                    geo::Transform inv = shape.second.inverse();
+                    shape_tr->setMesh(shape.first->getMesh().getTransformed(inv));
 
                     ed_interfaces::msg::SubVolume sub_volume;
                     convert(shape_tr, sub_volume);
@@ -150,8 +144,8 @@ void convert(const ed::Entity& e, ed_interfaces::msg::EntityInfo& msg)
 
     // Flags
     msg.flags.resize(0);
-    for (std::set<std::string>::const_iterator it = e.flags().begin(); it != e.flags().end(); ++it)
-        msg.flags.push_back(*it);
+    for (const auto& it : e.flags())
+        msg.flags.push_back(it);
 }
 
 // ------------------------------ FROM ROS ------------------------------

@@ -34,7 +34,7 @@ enum ShowVolumes
  * @return
  */
 bool renderWorldModel(const ed::WorldModel& world_model,
-                      const enum ShowVolumes show_volumes,
+                      enum ShowVolumes show_volumes,
                       const geo::DepthCamera& cam,
                       const geo::Pose3D& cam_pose_inv,
                       cv::Mat& depth_image,

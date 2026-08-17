@@ -30,11 +30,8 @@ public:
      * @param allow_sdf Allow SDF models, or only ED yaml models
      * @return bool, which indicates succes
      */
-    bool create(const UUID& id,
-                const std::string& type,
-                UpdateRequest& req,
-                std::stringstream& error,
-                const bool allow_sdf = false);
+    bool create(
+        const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error, bool allow_sdf = false);
 
     /**
      * @brief create add entity to update_request from config data. "_root" will be used as id.
@@ -116,7 +113,7 @@ private:
     tue::config::DataConstPointer loadModelData(const std::string& type,
                                                 std::vector<std::string>& types,
                                                 std::stringstream& error,
-                                                const bool allow_sdf = false);
+                                                bool allow_sdf = false);
 
     /**
      * @brief loadSDFData load data of SDF model of uri 'uri'
@@ -169,7 +166,7 @@ enum class LoadType
  * @param req update request that will be filled with the data from the model
  * @return success
  */
-bool loadModel(const LoadType load_type, const std::string& source, ed::UpdateRequest& req);
+bool loadModel(LoadType load_type, const std::string& source, ed::UpdateRequest& req);
 
 } // namespace ed::models
 

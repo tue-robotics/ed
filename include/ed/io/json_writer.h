@@ -31,7 +31,7 @@ public:
     {
         out_ << "}";
         if (type_stack_.empty() || type_stack_.back() != 'g')
-            std::cout << "JSONWriter::endArray(): no group to close." << std::endl;
+            std::cout << "JSONWriter::endArray(): no group to close." << '\n';
         else
             type_stack_.pop_back();
         add_comma_ = true;
@@ -144,7 +144,7 @@ public:
     {
         out_ << "}";
         if (type_stack_.empty() || type_stack_.back() != 'i')
-            std::cout << "JSONWriter::endArray(): no array item to close." << std::endl;
+            std::cout << "JSONWriter::endArray(): no array item to close." << '\n';
         else
             type_stack_.pop_back();
         add_comma_ = true;
@@ -154,7 +154,7 @@ public:
     {
         out_ << "]";
         if (type_stack_.empty() || type_stack_.back() != 'a')
-            std::cout << "JSONWriter::endArray(): no array to close." << std::endl;
+            std::cout << "JSONWriter::endArray(): no array to close." << '\n';
         else
             type_stack_.pop_back();
         add_comma_ = true;

@@ -52,7 +52,7 @@ private:
     rclcpp::Service<tue_serialization_interfaces::srv::BinaryService>::SharedPtr srv_;
 
     // NOLINTNEXTLINE(performance-unnecessary-value-param) - rclcpp service callback requires shared_ptr by value
-    void srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request> ros_req,
+    void srvCallback(std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request> ros_req,
                      const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response>& ros_res);
 };
 

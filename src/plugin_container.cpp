@@ -21,6 +21,7 @@
 #include <rclcpp/rate.hpp>
 #include <string>
 #include <tue/config/types.h>
+#include <utility>
 #include <vector>
 
 namespace ed
@@ -28,8 +29,8 @@ namespace ed
 
 // --------------------------------------------------------------------------------
 
-PluginContainer::PluginContainer(const rclcpp::Node::SharedPtr& node, const TFBufferConstPtr& tf_buffer) :
-    tf_buffer_(tf_buffer), node_(node), loop_usage_status_(nullptr)
+PluginContainer::PluginContainer(rclcpp::Node::SharedPtr node, TFBufferConstPtr tf_buffer) :
+    tf_buffer_(std::move(tf_buffer)), node_(std::move(node)), loop_usage_status_(nullptr)
 {
 }
 

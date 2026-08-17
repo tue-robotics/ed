@@ -18,10 +18,10 @@ public:
 
     ~JSONReader() override;
 
-    bool readGroup(const std::string& name) override;
+    bool readGroup(const std::string& key) override;
     bool endGroup() override;
 
-    bool readArray(const std::string& name) override;
+    bool readArray(const std::string& key) override;
     bool endArray() override;
 
     bool nextArrayItem() override;
