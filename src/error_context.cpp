@@ -26,6 +26,8 @@ struct KeyHolder
     pthread_key_t key{};
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+// The pthread key is process-wide by construction and is created/destroyed by this holder.
 KeyHolder key;
 
 } // namespace

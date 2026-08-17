@@ -10,7 +10,9 @@ namespace ed
 
 // --------------------------------------------------------------------------------------------------------------
 
-static inline float clamp(float x, float a, float b)
+namespace
+{
+inline float clamp(float x, float a, float b)
 {
     return x < a ? a : (x > b ? b : x);
 }
@@ -18,7 +20,7 @@ static inline float clamp(float x, float a, float b)
 // --------------------------------------------------------------------------------------------------------------
 
 // Taken from: http://www.arcsynthesis.org/gltut/Positioning/Tut08%20Interpolation.html
-static geo::Quaternion slerp(const geo::Quaternion& v0, const geo::Quaternion& v1, float alpha)
+geo::Quaternion slerp(const geo::Quaternion& v0, const geo::Quaternion& v1, float alpha)
 {
     float dot = static_cast<float>(v0.dot(v1));
 
@@ -47,11 +49,13 @@ static geo::Quaternion slerp(const geo::Quaternion& v0, const geo::Quaternion& v
 
 // --------------------------------------------------------------------------------------------------------------
 
-static void interpolate(const geo::Transform& t1, const geo::Transform& t2, float alpha, geo::Pose3D& result)
+void interpolate(const geo::Transform& t1, const geo::Transform& t2, float alpha, geo::Pose3D& result)
 {
     result.t = (1.0f - alpha) * t1.getOrigin() + alpha * t2.getOrigin();
     result.R.setRotation(slerp(t1.getQuaternion(), t2.getQuaternion(), alpha));
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 

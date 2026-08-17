@@ -87,12 +87,14 @@ std::string parseURI(const std::string& uri, ModelOrFile& uri_type)
 
 // ----------------------------------------------------------------------------------------------------
 
+namespace
+{
 /**
  * @brief getUriPath searches GAZEBO_MODEL_PATH and GAZEBO_RESOURCH_PATH for file
  * @param type subpath+filename incl. extension
  * @return full path or empty string in case not found
  */
-static std::string getUriPath(const std::string& type)
+std::string getUriPath(const std::string& type)
 {
     static const char* mpath = ::getenv("GAZEBO_MODEL_PATH");
     static const char* rpath = ::getenv("GAZEBO_RESOURCE_PATH");
@@ -154,12 +156,12 @@ static std::string getUriPath(const std::string& type)
  * @param line_starts
  * @param contour_map
  */
-static void findContours(const cv::Mat& image,
-                         const geo::Vec2i& p_start,
-                         int d_start,
-                         std::vector<geo::Vec2i>& points,
-                         std::vector<geo::Vec2i>& line_starts,
-                         cv::Mat& contour_map)
+void findContours(const cv::Mat& image,
+                  const geo::Vec2i& p_start,
+                  int d_start,
+                  std::vector<geo::Vec2i>& points,
+                  std::vector<geo::Vec2i>& line_starts,
+                  cv::Mat& contour_map)
 {
     static int const dx[4] = {1, 0, -1, 0};
     static int const dy[4] = {0, 1, 0, -1};
@@ -227,7 +229,7 @@ static void findContours(const cv::Mat& image,
  * @param error errorstream
  * @return final mesh; or empty mesh in case of error
  */
-static geo::ShapePtr getHeightMapShape(
+geo::ShapePtr getHeightMapShape(
     cv::Mat& image_orig, const geo::Vec3& pos, const geo::Vec3& size, const bool inverted, std::stringstream& error)
 {
     double const resolution_x = size.x / image_orig.cols;
@@ -404,11 +406,11 @@ static geo::ShapePtr getHeightMapShape(
  * @param errorerrorstream
  * @return final mesh; or empty mesh in case of error
  */
-static geo::ShapePtr getHeightMapShape(const std::string& image_filename,
-                                       const geo::Vec3& pos,
-                                       const geo::Vec3& size,
-                                       const bool inverted,
-                                       std::stringstream& error)
+geo::ShapePtr getHeightMapShape(const std::string& image_filename,
+                                const geo::Vec3& pos,
+                                const geo::Vec3& size,
+                                const bool inverted,
+                                std::stringstream& error)
 {
     cv::Mat image_orig = cv::imread(image_filename, cv::IMREAD_GRAYSCALE); // Read the file
 
@@ -421,6 +423,8 @@ static geo::ShapePtr getHeightMapShape(const std::string& image_filename,
 
     return getHeightMapShape(image_orig, pos, size, inverted, error);
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -450,6 +454,8 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename,
 
 // ----------------------------------------------------------------------------------------------------
 
+namespace
+{
 /**
  * @brief getHeightMapShape convert grayscale image in a heigtmap mesh
  * @param image_filename image_filename full path of grayscale image
@@ -457,7 +463,7 @@ geo::ShapePtr getHeightMapShape(const std::string& image_filename,
  * @param error errorstream
  * @return final mesh; or empty mesh in case of error
  */
-static geo::ShapePtr
+geo::ShapePtr
 getHeightMapShape(const std::string& image_filename, const tue::config::Reader& cfg, std::stringstream& error)
 {
     double resolution = NAN;
@@ -476,14 +482,18 @@ getHeightMapShape(const std::string& image_filename, const tue::config::Reader& 
     int inverted = 0;
     cfg.value("inverted", inverted);
 
-    return getHeightMapShape(image_filename,
-                             geo::Vec3(origin_x, origin_y, origin_z),
-                             blockheight,
-                             resolution,
-                             resolution,
-                             static_cast<bool>(inverted),
-                             error);
+    // Qualified: the overloads inside this anonymous namespace would otherwise hide the one at
+    // ed::models scope.
+    return ed::models::getHeightMapShape(image_filename,
+                                         geo::Vec3(origin_x, origin_y, origin_z),
+                                         blockheight,
+                                         resolution,
+                                         resolution,
+                                         static_cast<bool>(inverted),
+                                         error);
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -553,14 +563,15 @@ void createPolygon(geo::Shape& shape,
 
 // ----------------------------------------------------------------------------------------------------
 
+namespace
+{
 /**
  * @brief readVec3 read x, y and z into a vector
  * @param cfg reader
  * @param v filled Vec3 vector
  * @param pos_req RequiredOrOptional
  */
-static void
-readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOptional pos_req = tue::config::REQUIRED)
+void readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOptional pos_req = tue::config::REQUIRED)
 {
     cfg.value("x", v.x, pos_req);
     cfg.value("y", v.y, pos_req);
@@ -577,10 +588,10 @@ readVec3(tue::config::Reader& cfg, geo::Vec3& v, tue::config::RequiredOrOptional
  * @param pos_req RequiredOrOptional
  * @return indicates succes
  */
-static bool readVec3Group(tue::config::Reader& cfg,
-                          geo::Vec3& v,
-                          const std::string& vector_name,
-                          tue::config::RequiredOrOptional /*pos_req*/ = tue::config::REQUIRED)
+bool readVec3Group(tue::config::Reader& cfg,
+                   geo::Vec3& v,
+                   const std::string& vector_name,
+                   tue::config::RequiredOrOptional /*pos_req*/ = tue::config::REQUIRED)
 {
     std::string vector_string;
     if (cfg.readGroup(vector_name))
@@ -600,6 +611,8 @@ static bool readVec3Group(tue::config::Reader& cfg,
 
     return true;
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 

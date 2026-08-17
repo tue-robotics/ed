@@ -21,12 +21,14 @@
 namespace ed
 {
 
-static float COLORS[27][3] = {{0.6, 0.6, 0.6}, {0.6, 0.6, 0.4}, {0.6, 0.6, 0.2}, {0.6, 0.4, 0.6}, {0.6, 0.4, 0.4},
-                              {0.6, 0.4, 0.2}, {0.6, 0.2, 0.6}, {0.6, 0.2, 0.4}, {0.6, 0.2, 0.2}, {0.4, 0.6, 0.6},
-                              {0.4, 0.6, 0.4}, {0.4, 0.6, 0.2}, {0.4, 0.4, 0.6}, {0.4, 0.4, 0.4}, {0.4, 0.4, 0.2},
-                              {0.4, 0.2, 0.6}, {0.4, 0.2, 0.4}, {0.4, 0.2, 0.2}, {0.2, 0.6, 0.6}, {0.2, 0.6, 0.4},
-                              {0.2, 0.6, 0.2}, {0.2, 0.4, 0.6}, {0.2, 0.4, 0.4}, {0.2, 0.4, 0.2}, {0.2, 0.2, 0.6},
-                              {0.2, 0.2, 0.4}, {0.2, 0.2, 0.2}};
+namespace
+{
+const float COLORS[27][3] = {{0.6, 0.6, 0.6}, {0.6, 0.6, 0.4}, {0.6, 0.6, 0.2}, {0.6, 0.4, 0.6}, {0.6, 0.4, 0.4},
+                             {0.6, 0.4, 0.2}, {0.6, 0.2, 0.6}, {0.6, 0.2, 0.4}, {0.6, 0.2, 0.2}, {0.4, 0.6, 0.6},
+                             {0.4, 0.6, 0.4}, {0.4, 0.6, 0.2}, {0.4, 0.4, 0.6}, {0.4, 0.4, 0.4}, {0.4, 0.4, 0.2},
+                             {0.4, 0.2, 0.6}, {0.4, 0.2, 0.4}, {0.4, 0.2, 0.2}, {0.2, 0.6, 0.6}, {0.2, 0.6, 0.4},
+                             {0.2, 0.6, 0.2}, {0.2, 0.4, 0.6}, {0.2, 0.4, 0.4}, {0.2, 0.4, 0.2}, {0.2, 0.2, 0.6},
+                             {0.2, 0.2, 0.4}, {0.2, 0.2, 0.2}};
 
 class SampleRenderResult : public geo::RenderResult
 {
@@ -73,7 +75,7 @@ protected:
     std::vector<double> vals_;
 };
 
-static unsigned int djb2(const std::string& str)
+unsigned int djb2(const std::string& str)
 {
     int hash = 5381;
     for (char const i : str)
@@ -94,12 +96,12 @@ static unsigned int djb2(const std::string& str)
  * @param res Renderresult, which stores the renderer image
  * @param flatten Flatten all the meshes to the groundplane (default: false)
  */
-static void renderMesh(const geo::DepthCamera& cam,
-                       const geo::Pose3D& pose,
-                       const geo::Mesh& mesh,
-                       const cv::Vec3b& color,
-                       SampleRenderResult& res,
-                       bool flatten = false)
+void renderMesh(const geo::DepthCamera& cam,
+                const geo::Pose3D& pose,
+                const geo::Mesh& mesh,
+                const cv::Vec3b& color,
+                SampleRenderResult& res,
+                bool flatten = false)
 {
     geo::RenderOptions opt;
     res.setColor(color);
@@ -126,6 +128,8 @@ static void renderMesh(const geo::DepthCamera& cam,
 
     cam.render(opt, res);
 }
+
+} // namespace
 
 // Might it be nicer to separate rendering of the colored image and the depth image?
 bool renderWorldModel(const ed::WorldModel& world_model,

@@ -31,10 +31,12 @@
 namespace ed::models
 {
 
-static bool readSDFGeometry(tue::config::Reader r,
-                            geo::CompositeShapePtr& composite,
-                            std::stringstream& error,
-                            const geo::Pose3D& pose_offset = geo::Pose3D::identity())
+namespace
+{
+bool readSDFGeometry(tue::config::Reader r,
+                     geo::CompositeShapePtr& composite,
+                     std::stringstream& error,
+                     const geo::Pose3D& pose_offset = geo::Pose3D::identity())
 {
     geo::Pose3D pose = geo::Pose3D::identity();
     readPose(r, pose);
@@ -53,6 +55,8 @@ static bool readSDFGeometry(tue::config::Reader r,
     r.endGroup();
     return true;
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 

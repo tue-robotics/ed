@@ -14,7 +14,9 @@
 
 // ----------------------------------------------------------------------------------------------------
 
-static std::vector<double> parseArray(const tinyxml2::XMLElement* xml_elem)
+namespace
+{
+std::vector<double> parseArray(const tinyxml2::XMLElement* xml_elem)
 {
     std::string const txt = xml_elem->GetText();
 
@@ -32,6 +34,8 @@ static std::vector<double> parseArray(const tinyxml2::XMLElement* xml_elem)
 
     return v;
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 

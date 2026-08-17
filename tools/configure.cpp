@@ -22,10 +22,14 @@ using namespace std::chrono_literals;
 
 // ----------------------------------------------------------------------------------------------------
 
-static void usage()
+namespace
+{
+void usage()
 {
     std::cout << "Usage: configure CONFIG_FILE.yaml/json" << '\n';
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
