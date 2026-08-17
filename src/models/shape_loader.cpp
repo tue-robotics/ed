@@ -701,8 +701,8 @@ geo::ShapePtr loadShape(const std::string& model_path,
             }
             else if (xt == ".geo")
             {
-                geo::Serialization::registerDeserializer<geo::Shape>();
-                shape = geo::Serialization::fromFile(shape_path.string());
+                geo::serialization::registerDeserializer<geo::Shape>();
+                shape = geo::serialization::fromFile(shape_path.string());
             }
             else if (xt == ".3ds" || xt == ".stl" || xt == ".dae")
             {
