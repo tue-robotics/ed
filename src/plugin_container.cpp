@@ -1,13 +1,27 @@
 #include "ed/plugin_container.h"
 
 #include "ed/init_data.h"
+#include "ed/loop_usage_status.h"
 #include "ed/plugin.h"
+#include "ed/types.h"
+#include "ed/update_request.h"
+#include <boost/bind/bind.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/thread/lock_guard.hpp>
+#include <boost/thread/pthread/mutex.hpp>
 #include <cmath>
+#include <diagnostic_updater/update_functions.hpp>
 #include <ed/error_context.h>
 
+#include <memory>
 #include <pluginlib/class_loader.hpp>
 
-#include <rclcpp/rclcpp.hpp>
+#include <pthread.h>
+#include <rclcpp/node.hpp>
+#include <rclcpp/rate.hpp>
+#include <string>
+#include <tue/config/types.h>
+#include <vector>
 
 namespace ed
 {

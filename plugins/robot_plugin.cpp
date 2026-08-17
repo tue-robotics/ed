@@ -2,23 +2,47 @@
 
 #include <kdl_parser/kdl_parser.hpp>
 
-#include <ed/entity.h>
+#include <ed/entity.h> // IWYU pragma: keep -- ed::Entity must be complete for e->visual()/e->pose()
 #include <ed/models/shape_loader.h>
+#include <ed/plugin.h>
+#include <ed/time.h>
+#include <ed/time_cache.h>
+#include <ed/types.h>
 #include <ed/update_request.h>
+#include <ed/uuid.h>
 #include <ed/world_model.h>
 
 #include <geolib/CompositeShape.h>
+#include <geolib/datatypes.h>
+#include <geolib/Shape.h>
 
 // URDF shape loading
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <geolib/Box.h>
 #include <geolib/io/import.h>
+#include <rclcpp/logger.hpp>
+#include <urdf_model/link.h>
+#include <urdf_model/pose.h>
+
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <kdl/frames.hpp>
+#include <kdl/tree.hpp>
+#include <rclcpp/callback_group.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/subscription_options.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <tue/config/configuration.h>
 
 #include <cmath>
+#include <cstddef>
 #include <ed/world_model/transform_crawler.h>
 
 #include <functional>
+#include <map>
+#include <string>
 #include <tuple>
+#include <urdf_model/types.h>
+#include <vector>
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -61,7 +85,7 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
     }
 
     // Calculate joint pose for this joint position
-    KDL::Frame pose_kdl = segment_.pose(joint_pos);
+    const KDL::Frame pose_kdl = segment_.pose(joint_pos);
 
     // Convert to geolib transform
     tf.R = geo::Matrix3(pose_kdl.M.data);
@@ -72,13 +96,16 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 
 // ----------------------------------------------------------------------------------------------------
 
-geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
+namespace
+{
+
+geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
 {
     geo::ShapePtr shape;
 
     if (geom->type == urdf::Geometry::MESH)
     {
-        urdf::Mesh const* mesh = static_cast<urdf::Mesh*>(geom.get());
+        urdf::Mesh const* mesh = dynamic_cast<urdf::Mesh*>(geom.get());
         if (!mesh)
         {
             RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No mesh geometry defined");
@@ -105,7 +132,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
     }
     else if (geom->type == urdf::Geometry::BOX)
     {
-        urdf::Box const* box = static_cast<urdf::Box*>(geom.get());
+        urdf::Box const* box = dynamic_cast<urdf::Box*>(geom.get());
         if (!box)
         {
             RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"), "[RobotPlugin] Robot model error: No box geometry defined");
@@ -120,7 +147,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
     }
     else if (geom->type == urdf::Geometry::CYLINDER)
     {
-        urdf::Cylinder const* cyl = static_cast<urdf::Cylinder*>(geom.get());
+        urdf::Cylinder const* cyl = dynamic_cast<urdf::Cylinder*>(geom.get());
         if (!cyl)
         {
             RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"),
@@ -133,7 +160,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
     }
     else if (geom->type == urdf::Geometry::SPHERE)
     {
-        urdf::Sphere const* sphere = static_cast<urdf::Sphere*>(geom.get());
+        urdf::Sphere const* sphere = dynamic_cast<urdf::Sphere*>(geom.get());
         if (!sphere)
         {
             RCLCPP_WARN(rclcpp::get_logger("RobotPlugin"),
@@ -150,7 +177,7 @@ geo::ShapePtr URDFGeometryToShape(const urdf::GeometrySharedPtr& geom)
 
 // ----------------------------------------------------------------------------------------------------
 
-std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr& link)
+std::tuple<geo::ShapePtr, geo::ShapePtr> linkToShapes(const urdf::LinkSharedPtr& link)
 {
     geo::CompositeShapePtr visual;
     geo::CompositeShapePtr collision;
@@ -172,7 +199,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
         offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
         offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
 
-        geo::ShapePtr const subshape = URDFGeometryToShape(geom);
+        geo::ShapePtr const subshape = urdfGeometryToShape(geom);
         if (!subshape)
             continue;
 
@@ -198,7 +225,7 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
         offset.t = geo::Vector3(o.position.x, o.position.y, o.position.z);
         offset.R.setRotation(geo::Quaternion(o.rotation.x, o.rotation.y, o.rotation.z, o.rotation.w));
 
-        geo::ShapePtr const subshape = URDFGeometryToShape(geom);
+        geo::ShapePtr const subshape = urdfGeometryToShape(geom);
         if (!subshape)
             continue;
 
@@ -209,6 +236,8 @@ std::tuple<geo::ShapePtr, geo::ShapePtr> LinkToShapes(const urdf::LinkSharedPtr&
 
     return {visual, collision};
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -268,7 +297,7 @@ void RobotPlugin::jointCallback(const sensor_msgs::msg::JointState::ConstSharedP
     for (unsigned int i = 0; i < msg->name.size(); ++i)
     {
         const std::string& name = msg->name[i];
-        double const pos = msg->position[i];
+        const double pos = msg->position[i];
 
         std::map<std::string, RelationInfo>::iterator const it_r = joint_name_to_rel_info_.find(name);
         if (it_r != joint_name_to_rel_info_.end())
@@ -376,7 +405,7 @@ void RobotPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 
             geo::ShapePtr visual;
             geo::ShapePtr collision;
-            std::tie(visual, collision) = LinkToShapes(link);
+            std::tie(visual, collision) = linkToShapes(link);
             if (visual || collision)
             {
                 std::string id = link->name;

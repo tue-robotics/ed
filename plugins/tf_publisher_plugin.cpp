@@ -11,7 +11,9 @@
 #include <tf2/convert.hpp>
 #include <tf2/LinearMath/Transform.hpp>
 #include <tf2/transform_datatypes.hpp>
+// IWYU pragma: keep -- provides the toMsg/fromMsg overloads found by ADL below
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+// IWYU pragma: keep -- tf2_ros::TransformBroadcaster must be complete for the unique_ptr member
 #include <tf2_ros/transform_broadcaster.h>
 #include <tue/config/configuration.h>
 #include <tue/config/types.h>

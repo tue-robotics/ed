@@ -6,7 +6,7 @@
 #include <boost/circular_buffer/base.hpp>
 #include <cstdlib>
 #include <geolib/Mesh.h>
-#include <geolib/Shape.h>
+#include <geolib/Shape.h> // IWYU pragma: keep -- geo::Shape must be complete for visual_->getMesh()
 
 #include <geolib/datatypes.h>
 #include <geolib/math_types.h>

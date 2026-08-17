@@ -50,6 +50,9 @@
   <test_depend>ament_cmake_xmllint</test_depend>
   <test_depend>clang-format-21</test_depend>
   <test_depend>clang-tidy-21</test_depend>
+  <!-- PCL propagates -fopenmp, so clang-tidy's clang frontend needs its own omp.h;
+       without it every affected translation unit aborts and the lint results are bogus. -->
+  <test_depend>libomp-21-dev</test_depend>
   <test_depend>tue_lint_config</test_depend>
 
   <doc_depend>doxygen</doc_depend>

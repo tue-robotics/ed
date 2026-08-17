@@ -20,6 +20,7 @@
 #include "polypartition/polypartition.h"
 #include <list>
 #include <map>
+#include <math.h>
 #include <memory>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/core/mat.hpp>

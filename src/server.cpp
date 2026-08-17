@@ -2,8 +2,7 @@
 
 #include "ed/entity.h"
 #include "ed/error_context.h"
-#include "ed/measurement.h"
-#include "ed/plugin.h"
+#include "ed/init_data.h"
 #include "ed/plugin_container.h"
 #include "ed/types.h"
 #include "ed/world_model.h"
@@ -13,13 +12,29 @@
 
 #include "ed/serialization/serialization.h"
 
+#include <boost/smart_ptr/make_shared_object.hpp>
+#include <boost/thread/lock_types.hpp>
+#include <boost/thread/pthread/mutex.hpp>
+#include <geolib/datatypes.h>
+#include <ios>
+#include <iostream>
+#include <map>
+#include <ostream>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <sstream>
+#include <tue/config/configuration.h>
 #include <tue/config/loaders/yaml.h>
-#include <tue/config/writer.h>
+#include <tue/config/types.h>
 
 #include <std_msgs/msg/string.hpp>
 
+// IWYU pragma: keep -- tf2_ros::Buffer must be complete for make_shared
 #include <tf2_ros/buffer.h>
+// IWYU pragma: keep -- tf2_ros::TransformListener must be complete for make_shared
 #include <tf2_ros/transform_listener.h>
+
+#include <vector>
 
 namespace ed
 {
