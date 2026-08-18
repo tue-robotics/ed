@@ -129,11 +129,12 @@ target_link_libraries(${PROJECT_NAME}_core PUBLIC
 )
 # Only src/models/model_loader.cpp includes <sdf/*.hh>; keep it out of the export.
 target_link_libraries(${PROJECT_NAME}_core PRIVATE sdformat::sdformat)
-ament_target_dependencies(${PROJECT_NAME}_core PUBLIC
-  diagnostic_updater
-  pluginlib
-  rclcpp
-  tf2_ros
+# ament_target_dependencies() does not exist on Rolling; link the namespaced targets.
+target_link_libraries(${PROJECT_NAME}_core PUBLIC
+  diagnostic_updater::diagnostic_updater
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  tf2_ros::tf2_ros
 )
 
 add_library(${PROJECT_NAME}_io SHARED
@@ -163,8 +164,8 @@ target_link_libraries(${PROJECT_NAME}_server PUBLIC
   ${PROJECT_NAME}_core
   ${PROJECT_NAME}_io
   ${ed_interfaces_TARGETS}
+  std_msgs::std_msgs
 )
-ament_target_dependencies(${PROJECT_NAME}_server PUBLIC std_msgs)
 
 # ------------------------------------------------------------------------------------------------
 #                                               SERVER
@@ -183,12 +184,20 @@ target_link_libraries(${PROJECT_NAME}
 # ------------------------------------------------------------------------------------------------
 
 add_library(${PROJECT_NAME}_tf_publisher_plugin SHARED plugins/tf_publisher_plugin.cpp)
-target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin PUBLIC ${PROJECT_NAME}_core)
-ament_target_dependencies(${PROJECT_NAME}_tf_publisher_plugin PUBLIC tf2 tf2_geometry_msgs tf2_ros)
+target_link_libraries(${PROJECT_NAME}_tf_publisher_plugin PUBLIC
+  ${PROJECT_NAME}_core
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::tf2_ros
+)
 
 add_library(${PROJECT_NAME}_robot_plugin SHARED plugins/robot_plugin.cpp)
-target_link_libraries(${PROJECT_NAME}_robot_plugin PUBLIC ${PROJECT_NAME}_core)
-ament_target_dependencies(${PROJECT_NAME}_robot_plugin PUBLIC kdl_parser sensor_msgs urdf)
+target_link_libraries(${PROJECT_NAME}_robot_plugin PUBLIC
+  ${PROJECT_NAME}_core
+  kdl_parser::kdl_parser
+  sensor_msgs::sensor_msgs
+  urdf::urdf
+)
 
 add_library(${PROJECT_NAME}_sync_plugin SHARED plugins/sync_plugin.cpp)
 target_link_libraries(${PROJECT_NAME}_sync_plugin ${PROJECT_NAME}_core ${ed_interfaces_TARGETS})
