@@ -43,9 +43,10 @@ public:
                 ++it_;
         }
 
-        EntityIterator(const EntityIterator& it) : it_(it.it_) {}
-
-        explicit EntityIterator(const std::vector<EntityConstPtr>::const_iterator& it) : it_(it) {}
+        // No hand-written copy constructor: the implicit one copies it_end_ too, which
+        // operator++() needs. Only end() uses the single-iterator constructor, and an end
+        // iterator is its own end.
+        explicit EntityIterator(const std::vector<EntityConstPtr>::const_iterator& it) : it_(it), it_end_(it) {}
 
         EntityIterator& operator++()
         {
