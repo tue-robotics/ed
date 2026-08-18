@@ -40,8 +40,19 @@ find_package(OpenCV REQUIRED)
 find_package(orocos_kdl REQUIRED)
 # Find before adding cmake_modules, to not use their deprecated FindEigen
 find_package(PCL REQUIRED COMPONENTS common)
+# SDFormat's own config package is major-versioned and the major differs per ROS
+# distro (sdformat14 on Jazzy, sdformat16 on Rolling), so it cannot be found by
+# name. Requesting a version does not help either: its config-version file is
+# SameMajorVersion, so both `find_package(sdformat 14)` and a version range are
+# rejected by every distro shipping another major. What is portable is the
+# unversioned `sdformat` config; enforce our own minimum against sdformat_VERSION.
+# find_package(sdformat_vendor) must come first - on Jazzy it is what puts the
+# unversioned config (an alias shim over sdformat14) on CMAKE_PREFIX_PATH.
 find_package(sdformat_vendor REQUIRED)
-find_package(sdformat14 REQUIRED)
+find_package(sdformat REQUIRED)
+if(sdformat_VERSION VERSION_LESS 14)
+  message(FATAL_ERROR "ed requires SDFormat 14 or newer, found ${sdformat_VERSION}")
+endif()
 find_package(TinyXML2 REQUIRED)
 
 # ------------------------------------------------------------------------------------------------
@@ -110,9 +121,10 @@ target_link_libraries(${PROJECT_NAME}_core PUBLIC
   tinyxml2::tinyxml2
   tue_config::tue_config
   tue_serialization::tue_serialization
-  sdformat14::sdformat14
   ${PCL_LIBRARIES}
 )
+# Only src/models/model_loader.cpp includes <sdf/*.hh>; keep it out of the export.
+target_link_libraries(${PROJECT_NAME}_core PRIVATE sdformat::sdformat)
 ament_target_dependencies(${PROJECT_NAME}_core PUBLIC
   diagnostic_updater
   pluginlib
