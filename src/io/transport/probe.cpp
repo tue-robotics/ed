@@ -8,6 +8,8 @@
 #include <rclcpp/callback_group.hpp>
 #include <sstream>
 #include <tue/serialization/conversions.h>
+#include <utility>
+#include <vector>
 
 #include <functional>
 #include <tue/serialization/input_archive.h>
@@ -60,8 +62,13 @@ void Probe::process(const WorldModel& world, UpdateRequest& req)
 void Probe::srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request>& ros_req,
                         const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response>& ros_res)
 {
+    // tue::serialization::convert only speaks std::vector<unsigned char>. On Rolling a
+    // uint8[] message field is rosidl::Buffer<uint8_t>, not std::vector, so copy across
+    // the boundary. Both types are contiguous and vector-constructible from iterators.
+    std::vector<unsigned char> const req_bin(ros_req->bin.data.begin(), ros_req->bin.data.end());
+
     std::stringstream ss_req;
-    tue::serialization::convert(ros_req->bin.data, ss_req);
+    tue::serialization::convert(req_bin, ss_req);
     tue::serialization::InputArchive req(ss_req);
 
     std::stringstream ss_res;
@@ -69,7 +76,9 @@ void Probe::srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv:
 
     this->process(*world_, *update_req_, req, res);
 
-    tue::serialization::convert(ss_res, ros_res->bin.data);
+    std::vector<unsigned char> res_bin;
+    tue::serialization::convert(ss_res, res_bin);
+    ros_res->bin.data = std::move(res_bin);
 }
 
 } // namespace ed

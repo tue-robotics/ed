@@ -13,6 +13,8 @@
 #include <tue/config/configuration.h>
 #include <tue/serialization/archive.h>
 #include <tue_serialization_interfaces/srv/binary_service.hpp>
+#include <utility>
+#include <vector>
 
 #include <tue/serialization/conversions.h>
 
@@ -99,12 +101,19 @@ bool ProbeClient::process(tue::serialization::Archive& req, tue::serialization::
     }
 
     auto request = std::make_shared<tue_serialization_interfaces::srv::BinaryService::Request>();
-    tue::serialization::convert(req, request->bin.data);
+    // tue::serialization::convert only speaks std::vector<unsigned char>. On Rolling a
+    // uint8[] message field is rosidl::Buffer<uint8_t>, not std::vector, so copy across
+    // the boundary. Both types are contiguous and vector-constructible from iterators.
+    std::vector<unsigned char> req_bin;
+    tue::serialization::convert(req, req_bin);
+    request->bin.data = std::move(req_bin);
 
     auto future = srv_probe_->async_send_request(request);
     if (rclcpp::spin_until_future_complete(node_, future) == rclcpp::FutureReturnCode::SUCCESS)
     {
-        tue::serialization::convert(future.get()->bin.data, res);
+        const auto& response_bin = future.get()->bin.data;
+        std::vector<unsigned char> res_bin(response_bin.begin(), response_bin.end());
+        tue::serialization::convert(res_bin, res);
         return true;
     }
 

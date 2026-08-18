@@ -3,6 +3,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tue_serialization_interfaces/msg/binary.hpp>
 
+#include <vector>
+
 rclcpp::Node::SharedPtr g_node;
 rclcpp::Client<ed_interfaces::srv::RaiseEvent>::SharedPtr client;
 
@@ -10,7 +12,10 @@ std::string click_type;
 
 void imageCallback(const tue_serialization_interfaces::msg::Binary::ConstSharedPtr msg)
 {
-    cv::Mat const image = cv::imdecode(msg->data, cv::IMREAD_UNCHANGED);
+    // Copy into a vector first: on Rolling a uint8[] field is rosidl::Buffer<uint8_t>,
+    // which cv::InputArray cannot be constructed from. std::vector works on every distro.
+    std::vector<unsigned char> const buf(msg->data.begin(), msg->data.end());
+    cv::Mat const image = cv::imdecode(buf, cv::IMREAD_UNCHANGED);
     cv::imshow("map", image);
     cv::waitKey(3);
 }
