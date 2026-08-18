@@ -121,7 +121,11 @@ target_link_libraries(${PROJECT_NAME}_core PUBLIC
   tinyxml2::tinyxml2
   tue_config::tue_config
   tue_serialization::tue_serialization
-  ${PCL_LIBRARIES}
+  # NOT ${PCL_LIBRARIES}: that is every PCL component plus VTK, OpenNI, FLANN and
+  # QHULL, regardless of the COMPONENTS asked for above, and all of it would end
+  # up on ed's exported link interface. ed only uses PCL's point types, and the
+  # VTK targets PCL drags along cannot even be resolved by consumers.
+  ${PCL_COMMON_LIBRARIES}
 )
 # Only src/models/model_loader.cpp includes <sdf/*.hh>; keep it out of the export.
 target_link_libraries(${PROJECT_NAME}_core PRIVATE sdformat::sdformat)
