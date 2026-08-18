@@ -59,10 +59,16 @@ int main(int argc, char** argv)
 
     cv::setMouseCallback("map", mouseCallback);
 
+    // Not rclcpp::spin_some(node): that free function is deprecated on Rolling
+    // ("use SingleThreadedExecutor::spin_some instead") because it rebuilds an
+    // executor on every call, which is exactly what this loop would do 30x a second.
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(g_node);
+
     rclcpp::WallRate r(30);
     while (rclcpp::ok())
     {
-        rclcpp::spin_some(g_node);
+        executor.spin_some();
         r.sleep();
     }
 
