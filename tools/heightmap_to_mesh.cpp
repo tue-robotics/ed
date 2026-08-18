@@ -13,7 +13,8 @@ int main(int argc, char** argv)
 {
 
     // Parse command-line arguments
-    if (argc < 3 || argc > 7)
+    // RESOLUTION is required, so argv[3] must be present: that is argc == 4.
+    if (argc < 4 || argc > 7)
     {
         std::cout << "Usage: ed_heightmap_to_mesh INPUT_IMAGE OUTPUT_FILE RESOLUTION [BLOCK_HEIGHT] [ORIGIN_X ORIGIN_Y]"
                   << '\n';
@@ -23,14 +24,10 @@ int main(int argc, char** argv)
     std::string const input_file = argv[1];
     std::string const output_file = argv[2];
 
-    double resolution = 0.2;
-    if (argc > 2)
-    {
-        resolution = atof(argv[3]);
-    }
+    double const resolution = atof(argv[3]);
 
     double block_height = 1;
-    if (argc > 3)
+    if (argc > 4)
     {
         block_height = atof(argv[4]);
     }
