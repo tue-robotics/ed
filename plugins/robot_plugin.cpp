@@ -17,7 +17,7 @@
 #include <geolib/Shape.h>
 
 // URDF shape loading
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 #include <geolib/Box.h>
 #include <geolib/io/import.h>
 #include <memory>
@@ -120,7 +120,7 @@ geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
 
             std::string const pkg = str.substr(0, i_slash);
             std::string const rel_filename = str.substr(i_slash + 1);
-            std::string const pkg_path = ament_index_cpp::get_package_share_directory(pkg);
+            std::string const pkg_path = ament_index_cpp::get_package_share_path(pkg).string();
             std::string const abs_filename = pkg_path + "/" + rel_filename;
 
             shape = geo::io::readMeshFile(abs_filename, mesh->scale.x);
