@@ -174,7 +174,7 @@ bool renderWorldModel(const ed::WorldModel& world_model,
             (id.size() < 5 || id.substr(id.size() - 5) != "floor")) // Filter ground plane
         {
 
-            if (show_volumes == ShowVolumes::ROOM_VOLUMES && (id.size() < 4 || id.substr(0, 4) != "wall"))
+            if (show_volumes == ShowVolumes::ROOM_VOLUMES && !id.starts_with("wall"))
                 continue;
 
             cv::Vec3b color;
@@ -210,7 +210,7 @@ bool renderWorldModel(const ed::WorldModel& world_model,
                 }
             }
         }
-        else if (show_volumes == ShowVolumes::ROOM_VOLUMES && e->types().find("room") != e->types().end())
+        else if (show_volumes == ShowVolumes::ROOM_VOLUMES && e->types().contains("room"))
         {
             geo::Pose3D const pose = cam_pose_inv * e->pose();
             for (const auto& it : e->volumes())

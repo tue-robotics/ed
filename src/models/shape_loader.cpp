@@ -22,6 +22,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <numbers>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
@@ -40,9 +41,6 @@
 
 namespace ed::models
 {
-
-// M_PI is a POSIX macro from <math.h>, which C++ does not guarantee via <cmath>.
-constexpr double PI = 3.14159265358979323846;
 
 /**
  * @brief split Implementation by using delimiter as a character. Multiple delimeters are removed.
@@ -115,16 +113,19 @@ std::string getUriPath(const std::string& type)
             model_paths.push_back(item);
 
         // romove duplicate elements
-        std::sort(model_paths.begin(), model_paths.end());
-        model_paths.erase(unique(model_paths.begin(), model_paths.end()), model_paths.end());
+        std::ranges::sort(model_paths);
+        // std::ranges::unique returns a subrange, not an iterator, so erase needs both its ends.
+        auto const model_duplicates = std::ranges::unique(model_paths);
+        model_paths.erase(model_duplicates.begin(), model_duplicates.end());
 
         std::stringstream ssr(rpath);
         while (std::getline(ssr, item, ':'))
             file_paths.push_back(item);
 
         // remove duplicate elements
-        std::sort(file_paths.begin(), file_paths.end());
-        file_paths.erase(unique(file_paths.begin(), file_paths.end()), file_paths.end());
+        std::ranges::sort(file_paths);
+        auto const file_duplicates = std::ranges::unique(file_paths);
+        file_paths.erase(file_duplicates.begin(), file_duplicates.end());
     }
 
     ModelOrFile uri_type{};
@@ -969,7 +970,7 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
     // Calculate vertices
     for (int i = 0; i < num_corners; ++i)
     {
-        double const a = 2 * PI * i / num_corners;
+        double const a = 2 * std::numbers::pi * i / num_corners;
         double const x = sin(a) * radius;
         double const y = cos(a) * radius;
 
@@ -1037,7 +1038,7 @@ void createSphere(geo::Shape& shape, double radius, std::uint32_t recursion_leve
     geo::Mesh mesh;
 
     // create 12 vertices of a icosahedron
-    double const t = (1.0 + sqrt(5.0)) / 2.0;
+    double const t = std::numbers::phi;
 
     mesh.addPoint(geo::Vec3(-1, t, 0).normalized() * radius);
     mesh.addPoint(geo::Vec3(1, t, 0).normalized() * radius);

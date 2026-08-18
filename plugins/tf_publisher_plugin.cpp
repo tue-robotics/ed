@@ -62,7 +62,7 @@ void TFPublisherPlugin::process(const ed::WorldModel& world, ed::UpdateRequest& 
             id = id.substr(1);
 
         // If exclude is set, do not add entities whose id starts with exclude
-        if (!exclude_.empty() && id.size() >= exclude_.size() && id.substr(0, exclude_.size()) == exclude_)
+        if (!exclude_.empty() && id.starts_with(exclude_))
             continue;
 
         tf2::Stamped<tf2::Transform> t;

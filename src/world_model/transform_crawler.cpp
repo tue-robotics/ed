@@ -59,7 +59,7 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
     for (auto it : transforms_to)
     {
         Idx const n2 = it.first;
-        if (visited_.find(n2) == visited_.end())
+        if (!visited_.contains(n2))
         {
             geo::Pose3D rel_transform;
             RelationConstPtr const r = wm_.relations()[it.second];
@@ -75,7 +75,7 @@ void TransformCrawler::pushChildren(const Entity& e, const geo::Pose3D& transfor
     for (auto it : transforms_from)
     {
         Idx const n2 = it.first;
-        if (visited_.find(n2) == visited_.end())
+        if (!visited_.contains(n2))
         {
             geo::Pose3D rel_transform;
             RelationConstPtr const r = wm_.relations()[it.second];

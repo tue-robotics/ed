@@ -245,7 +245,7 @@ void srvQuery(ed::Server& server,
               const std::shared_ptr<ed_interfaces::srv::Query::Response>& res)
 {
     // Set of queried ids
-    std::set<std::string> ids(req->ids.begin(), req->ids.end());
+    std::set<std::string> const ids(req->ids.begin(), req->ids.end());
 
     // convert property names to indexes
     std::vector<ed::Idx> property_idxs;
@@ -278,7 +278,7 @@ void srvQuery(ed::Server& server,
         if (!e)
             continue;
 
-        if (!ids.empty() && ids.find(e->id().str()) == ids.end())
+        if (!ids.empty() && !ids.contains(e->id().str()))
             continue;
 
         if (e)
@@ -330,8 +330,8 @@ void srvQuery(ed::Server& server,
 
                 std::string data_str = out.str();
 
-                std::replace(data_str.begin(), data_str.end(), '"', '|');
-                std::replace(data_str.begin(), data_str.end(), '\n', '^');
+                std::ranges::replace(data_str, '"', '|');
+                std::ranges::replace(data_str, '\n', '^');
 
                 w.writeValue("data", data_str);
             }

@@ -1,6 +1,8 @@
 #ifndef ED_LOOP_USAGE_STATUS_H_
 #define ED_LOOP_USAGE_STATUS_H_
 
+#include <algorithm>
+
 #if __has_include(<diagnostic_updater/diagnostic_updater.hpp>)
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <diagnostic_updater/update_functions.hpp>
@@ -87,9 +89,9 @@ public:
         timer_.reset();
         long double const curtime = tue::Timer::nowMicroSec();
 
-        std::fill(starts_.begin(), starts_.end(), curtime);
-        std::fill(durations_.begin(), durations_.end(), 0);
-        std::fill(seq_nums_.begin(), seq_nums_.end(), timer_.getIterationCount());
+        std::ranges::fill(starts_, curtime);
+        std::ranges::fill(durations_, 0);
+        std::ranges::fill(seq_nums_, timer_.getIterationCount());
 
         hist_indx_ = 0;
     }

@@ -113,7 +113,7 @@ geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
         }
 
         std::string const pkg_prefix = "package://";
-        if (mesh->filename.substr(0, pkg_prefix.size()) == pkg_prefix)
+        if (mesh->filename.starts_with(pkg_prefix))
         {
             std::string const str = mesh->filename.substr(pkg_prefix.size());
             size_t const i_slash = str.find('/');

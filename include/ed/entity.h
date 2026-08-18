@@ -48,7 +48,7 @@ public:
     const std::set<TYPE>& types() const { return types_; }
     void addType(const TYPE& type) { types_.insert(type); }
     void removeType(const TYPE& type) { types_.erase(type); }
-    bool hasType(const TYPE& type) const { return types_.find(type) != types_.end(); }
+    bool hasType(const TYPE& type) const { return types_.contains(type); }
 
     void measurements(std::vector<MeasurementConstPtr>& measurements, double min_timestamp = 0) const;
     void measurements(std::vector<MeasurementConstPtr>& measurements, unsigned int num) const;
@@ -246,7 +246,7 @@ public:
 
     void removeFlag(const std::string& flag) { flags_.erase(flag); }
 
-    bool hasFlag(const std::string& flag) const { return flags_.find(flag) != flags_.end(); }
+    bool hasFlag(const std::string& flag) const { return flags_.contains(flag); }
 
     const std::set<std::string>& flags() const { return flags_; }
 

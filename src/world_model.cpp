@@ -312,7 +312,7 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
         for (auto it : transforms_to)
         {
             Idx const n2 = it.first;
-            if (visited.find(n2) == visited.end())
+            if (!visited.contains(n2))
             {
                 visited[n2] = SearchNode(n, it.second, false);
                 q.push(n2);
@@ -324,7 +324,7 @@ bool WorldModel::calculateTransform(const UUID& source, const UUID& target, cons
         for (auto it : transforms_from)
         {
             Idx const n2 = it.first;
-            if (visited.find(n2) == visited.end())
+            if (!visited.contains(n2))
             {
                 visited[n2] = SearchNode(n, it.second, true);
                 q.push(n2);
