@@ -321,4 +321,4 @@ if(BUILD_TESTING)
   ament_xmllint(MAX_LINE_LENGTH 120)
 endif()
 
-ament_package()
+ament_package(CONFIG_EXTRAS cmake/ed-extras.cmake)
