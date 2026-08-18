@@ -1,112 +1,120 @@
-#include <ed/models/model_loader.h>
-#include <ed/world_model.h>
-#include <ed/update_request.h>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <ed/entity.h>
+#include <ed/models/model_loader.h>
 #include <ed/rendering.h>
+#include <ed/update_request.h>
+#include <ed/world_model.h>
 
-#include <fstream>
-
+#include <geolib/datatypes.h>
 #include <geolib/sensors/DepthCamera.h>
-#include <geolib/Shape.h>
-#include <geolib/Box.h>
+#include <geolib/Shape.h> // IWYU pragma: keep -- geo::Shape must be complete for visual()->getMesh()
 
+#include <iostream>
+#include <opencv2/core/hal/interface.h>
+#include <opencv2/core/types.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include <tue/config/reader.h>
-#include <tue/config/reader_writer.h>
-#include "tue/config/loaders/sdf.h"
-#include "tue/config/loaders/xml.h"
-#include "tue/config/loaders/yaml.h"
+#include "ed/types.h"
+#include <ostream>
+#include <sstream>
+#include <string>
 
-#include <tue/filesystem/path.h>
+#include <vector>
 
-#include <math.h>
+namespace
+{
 
 constexpr double CANVAS_WIDTH = 800;
 constexpr double CANVAS_HEIGHT = 600;
 
-geo::DepthCamera cam;
+// M_PI_2 is a POSIX macro from <math.h>, which C++ does not guarantee via <cmath>.
+constexpr double HALF_PI = 1.5707963267948966;
 
-geo::Vector3 cam_lookat;
-double cam_dist, cam_yaw, cam_pitch;
-cv::Point LAST_MOUSE_POS;
-bool do_rotate = true;
-geo::Pose3D cam_pose;
+/// Mutable state of the viewer, shared between main() and the mouse callback.
+struct ViewerState
+{
+    geo::DepthCamera cam;
 
-bool do_flyto = false;
-geo::Vector3 cam_lookat_flyto;
+    geo::Vector3 cam_lookat;
+    double cam_dist{0};
+    double cam_yaw{0};
+    double cam_pitch{0};
+    cv::Point last_mouse_pos;
+    bool do_rotate{true};
+    geo::Pose3D cam_pose;
 
-bool render_required = true;
+    bool do_flyto{false};
+    geo::Vector3 cam_lookat_flyto;
 
-cv::Mat depth_image;
-cv::Mat image;
+    bool render_required{true};
+
+    cv::Mat depth_image;
+    cv::Mat image;
+};
 
 // ----------------------------------------------------------------------------------------------------
 
 void usage()
 {
-    std::cout << "Usage: ed_view_model [ --file | --model ] FILE-OR-MODEL-NAME" << std::endl;
+    std::cout << "Usage: ed_view_model [ --file | --model ] FILE-OR-MODEL-NAME" << '\n';
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void CallBackFunc(int event, int x, int y, int flags, void* /*userdata*/)
+void mouseCallback(int event, int x, int y, int flags, void* userdata)
 {
+    ViewerState& state = *static_cast<ViewerState*>(userdata);
+
     if (event == cv::EVENT_LBUTTONDBLCLK)
     {
-        float d = depth_image.at<float>(y, x);
+        float const d = state.depth_image.at<float>(y, x);
         if (d > 0)
         {
-            cam_lookat_flyto = cam_pose * (cam.project2Dto3D(x, y) * d);
-            do_flyto = true;
+            state.cam_lookat_flyto = state.cam_pose * (state.cam.project2Dto3D(x, y) * d);
+            state.do_flyto = true;
         }
     }
-    else if (event == cv::EVENT_LBUTTONDOWN)
+    else if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_RBUTTONDOWN || event == cv::EVENT_MBUTTONDOWN)
     {
-        LAST_MOUSE_POS = cv::Point(x, y);
-        do_rotate = false;
-    }
-    else if (event == cv::EVENT_RBUTTONDOWN)
-    {
-        LAST_MOUSE_POS = cv::Point(x, y);
-        do_rotate = false;
-    }
-    else if (event == cv::EVENT_MBUTTONDOWN)
-    {
-        LAST_MOUSE_POS = cv::Point(x, y);
-        do_rotate = false;
+        state.last_mouse_pos = cv::Point(x, y);
+        state.do_rotate = false;
     }
     else if (event == cv::EVENT_MOUSEMOVE)
     {
-        double dx = x - LAST_MOUSE_POS.x;
-        double dy = y - LAST_MOUSE_POS.y;
+        double const dx = x - state.last_mouse_pos.x;
+        double const dy = y - state.last_mouse_pos.y;
 
         if (flags & cv::EVENT_FLAG_LBUTTON)
         {
-            cam_yaw -= dx * 0.003;
-            cam_pitch += dy * 0.003;
+            state.cam_yaw -= dx * 0.003;
+            state.cam_pitch += dy * 0.003;
 
-            if (cam_pitch > 1.57)
-                cam_pitch = 1.57;
-            else if (cam_pitch < -1.57)
-                cam_pitch = -1.57;
+            if (state.cam_pitch > 1.57)
+                state.cam_pitch = 1.57;
+            else if (state.cam_pitch < -1.57)
+                state.cam_pitch = -1.57;
         }
         else if (flags & cv::EVENT_FLAG_MBUTTON)
         {
-            cam_dist += cam_dist * dy * 0.003;
+            state.cam_dist += state.cam_dist * dy * 0.003;
         }
         else if (flags & cv::EVENT_FLAG_RBUTTON)
         {
-            cam_lookat += cam_pose.R * (geo::Vector3(-dx, dy, 0) * 0.001 * cam_dist);
+            state.cam_lookat += state.cam_pose.R * (geo::Vector3(-dx, dy, 0) * 0.001 * state.cam_dist);
         }
 
-        LAST_MOUSE_POS = cv::Point(x, y);
+        state.last_mouse_pos = cv::Point(x, y);
     }
 }
 
+} // namespace
+
 // ----------------------------------------------------------------------------------------------------
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     if (argc != 3)
     {
@@ -114,19 +122,16 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    std::string load_type_str = argv[1];
-    ed::models::LoadType load_type;
-    if (load_type_str == "--model")
-        load_type = ed::models::LoadType::MODEL;
-    else if (load_type_str == "--file")
-        load_type = ed::models::LoadType::FILE;
-    else
+    std::string const load_type_str = argv[1];
+    if (load_type_str != "--model" && load_type_str != "--file")
     {
-        std::cerr << "Load type should either be --model or --file" << std::endl;
+        std::cerr << "Load type should either be --model or --file" << '\n';
         usage();
         return 1;
     }
-    std::string source = argv[2];
+    ed::models::LoadType const load_type =
+        (load_type_str == "--model") ? ed::models::LoadType::MODEL : ed::models::LoadType::FILE;
+    std::string const source = argv[2];
 
     ed::UpdateRequest req;
     if (!ed::models::loadModel(load_type, source, req))
@@ -136,32 +141,36 @@ int main(int argc, char **argv)
     ed::WorldModel world_model;
     world_model.update(req);
 
+    ViewerState state;
+
     // Set camera specs
-    cam = geo::DepthCamera(CANVAS_WIDTH, CANVAS_HEIGHT,
-                           0.87 * CANVAS_WIDTH, 0.87 * CANVAS_WIDTH,
-                           CANVAS_WIDTH / 2 + 0.5, CANVAS_HEIGHT / 2 + 0.5,
-                           0, 0);
+    state.cam = geo::DepthCamera(CANVAS_WIDTH,
+                                 CANVAS_HEIGHT,
+                                 0.87 * CANVAS_WIDTH,
+                                 0.87 * CANVAS_WIDTH,
+                                 (CANVAS_WIDTH / 2) + 0.5,
+                                 (CANVAS_HEIGHT / 2) + 0.5,
+                                 0,
+                                 0);
 
     // Determine min and max coordinates of model
     geo::Vector3 p_min(1e9, 1e9, 1e9);
     geo::Vector3 p_max(-1e9, -1e9, -1e9);
 
-    int n_vertices = 0;
-    int n_triangles = 0;
+    std::size_t n_vertices = 0;
+    std::size_t n_triangles = 0;
 
-    for(ed::WorldModel::const_iterator it = world_model.begin(); it != world_model.end(); ++it)
+    for (const auto& e : world_model)
     {
-        const ed::EntityConstPtr& e = *it;
-
         if (e->visual())
         {
             const std::string& id = e->id().str();
             if (id.size() < 5 || id.substr(id.size() - 5) != "floor") // Filter ground plane
             {
                 const std::vector<geo::Vector3>& vertices = e->visual()->getMesh().getPoints();
-                for(unsigned int i = 0; i < vertices.size(); ++i)
+                for (const auto& vertice : vertices)
                 {
-                    const geo::Vector3& p = e->pose() * vertices[i];
+                    const geo::Vector3& p = e->pose() * vertice;
                     p_min.x = std::min(p.x, p_min.x);
                     p_min.y = std::min(p.y, p_min.y);
                     p_min.z = std::min(p.z, p_min.z);
@@ -177,74 +186,79 @@ int main(int argc, char **argv)
         }
     }
 
-    double dist = 2 * std::max(p_max.z - p_min.z, std::max(p_max.x - p_min.x, p_max.y - p_min.y));
+    double const dist = 2 * std::max({p_max.z - p_min.z, p_max.x - p_min.x, p_max.y - p_min.y});
 
     std::stringstream info_msg;
-    info_msg << "Model loaded successfully:" << std::endl;
-    info_msg << "    " << n_vertices << " vertices" << std::endl;
-    info_msg << "    " << n_triangles << " triangles" << std::endl;
-    info_msg << "    " << "x: [" << p_min.x << " - " << p_max.x << "]" << std::endl;
-    info_msg << "    " << "y: [" << p_min.y << " - " << p_max.y << "]" << std::endl;
-    info_msg << "    " << "z: [" << p_min.z << " - " << p_max.z << "]" << std::endl;
+    info_msg << "Model loaded successfully:" << '\n';
+    info_msg << "    " << n_vertices << " vertices" << '\n';
+    info_msg << "    " << n_triangles << " triangles" << '\n';
+    info_msg << "    " << "x: [" << p_min.x << " - " << p_max.x << "]" << '\n';
+    info_msg << "    " << "y: [" << p_min.y << " - " << p_max.y << "]" << '\n';
+    info_msg << "    " << "z: [" << p_min.z << " - " << p_max.z << "]" << '\n';
 
-    info_msg << std::endl;
-    info_msg << "Mouse:" << std::endl;
-    info_msg << "    left         - orbit" << std::endl;
-    info_msg << "    middle       - zoom" << std::endl;
-    info_msg << "    right        - pan" << std::endl;
-    info_msg << "    double click - fly to" << std::endl;
+    info_msg << '\n';
+    info_msg << "Mouse:" << '\n';
+    info_msg << "    left         - orbit" << '\n';
+    info_msg << "    middle       - zoom" << '\n';
+    info_msg << "    right        - pan" << '\n';
+    info_msg << "    double click - fly to" << '\n';
 
-    info_msg << std::endl;
-    info_msg << "Keys:" << std::endl;
-    info_msg << "    r - reload model" << std::endl;
-    info_msg << "    v - hide all volumes, show model volumes, show room volumes" << std::endl;
-    info_msg << "    c - circle rotate" << std::endl;
-    info_msg << "    p - snap pitch" << std::endl;
-    info_msg << "    q - quit" << std::endl;
+    info_msg << '\n';
+    info_msg << "Keys:" << '\n';
+    info_msg << "    r - reload model" << '\n';
+    info_msg << "    v - hide all volumes, show model volumes, show room volumes" << '\n';
+    info_msg << "    c - circle rotate" << '\n';
+    info_msg << "    p - snap pitch" << '\n';
+    info_msg << "    q - quit" << '\n';
 
     std::cout << info_msg.str();
 
-    ed::ShowVolumes show_volumes = ed::ModelVolumes;
+    ed::ShowVolumes show_volumes = ed::ShowVolumes::MODEL_VOLUMES;
 
-    cam_dist = dist;
-    cam_lookat = (p_min + p_max) / 2;
-    cam_yaw = 0;
-    cam_pitch = 0.7;
+    state.cam_dist = dist;
+    state.cam_lookat = (p_min + p_max) / 2;
+    state.cam_yaw = 0;
+    state.cam_pitch = 0.7;
 
-    //Create a window
+    // Create a window
     cv::namedWindow("visualization", 1);
 
-    //set the callback function for any mouse event
-    cv::setMouseCallback("visualization", CallBackFunc, NULL);
+    // set the callback function for any mouse event
+    cv::setMouseCallback("visualization", mouseCallback, &state);
 
     while (true)
     {
-        const geo::Pose3D old_cam_pose = cam_pose;
-        cam_pose.t = geo::Vector3(cos(cam_yaw), sin(cam_yaw), 0) * cos(cam_pitch) * cam_dist;
-        cam_pose.t.z = sin(cam_pitch) * cam_dist;
-        cam_pose.t += cam_lookat;
+        const geo::Pose3D old_cam_pose = state.cam_pose;
+        state.cam_pose.t =
+            geo::Vector3(cos(state.cam_yaw), sin(state.cam_yaw), 0) * cos(state.cam_pitch) * state.cam_dist;
+        state.cam_pose.t.z = sin(state.cam_pitch) * state.cam_dist;
+        state.cam_pose.t += state.cam_lookat;
 
-        geo::Vector3 rz = -(cam_lookat - cam_pose.t).normalized();
-        geo::Vector3 rx = geo::Vector3(0, 0, 1).cross(rz).normalized();
-        geo::Vector3 ry = rz.cross(rx).normalized();
+        geo::Vector3 const rz = -(state.cam_lookat - state.cam_pose.t).normalized();
+        geo::Vector3 const rx = geo::Vector3(0, 0, 1).cross(rz).normalized();
+        geo::Vector3 const ry = rz.cross(rx).normalized();
 
-        cam_pose.R = geo::Matrix3(rx, ry, rz);
+        state.cam_pose.R = geo::Matrix3(rx, ry, rz);
 
-        if (!render_required && old_cam_pose != cam_pose)
+        if (!state.render_required && old_cam_pose != state.cam_pose)
         {
-            render_required = true;
+            state.render_required = true;
         }
 
-        if (render_required)
+        if (state.render_required)
         {
-            depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
-            image = cv::Mat(depth_image.rows, depth_image.cols, CV_8UC3, cv::Scalar(20, 20, 20)); // Not completely black
-            ed::renderWorldModel(world_model, show_volumes, cam, cam_pose.inverse(), depth_image, image);
-            render_required = false;
+            state.depth_image = cv::Mat(CANVAS_HEIGHT, CANVAS_WIDTH, CV_32FC1, 0.0);
+            state.image = cv::Mat(state.depth_image.rows,
+                                  state.depth_image.cols,
+                                  CV_8UC3,
+                                  cv::Scalar(20, 20, 20)); // Not completely black
+            ed::renderWorldModel(
+                world_model, show_volumes, state.cam, state.cam_pose.inverse(), state.depth_image, state.image);
+            state.render_required = false;
         }
 
-        cv::imshow("visualization", image);
-        char key = cv::waitKey(10);
+        cv::imshow("visualization", state.image);
+        int const key = cv::waitKey(10);
 
         if (key == 'r')
         {
@@ -254,12 +268,12 @@ int main(int argc, char **argv)
                 world_model = ed::WorldModel();
                 world_model.update(req);
             }
-            render_required = true;
+            state.render_required = true;
         }
         else if (key == 'v')
         {
-            show_volumes = ed::ShowVolumes((show_volumes + 1) % 3);
-            render_required = true;
+            show_volumes = static_cast<ed::ShowVolumes>((static_cast<int>(show_volumes) + 1) % 3);
+            state.render_required = true;
         }
         else if (key == 'q')
         {
@@ -267,39 +281,39 @@ int main(int argc, char **argv)
         }
         else if (key == 'c')
         {
-            do_rotate = !do_rotate;
+            state.do_rotate = !state.do_rotate;
         }
         else if (key == 'p')
         {
             // Snap pitch to 90 degrees
-            if (cam_pitch < M_PI_2)
-                cam_pitch = std::round(cam_pitch / M_PI_2 + 0.51) * M_PI_2;
+            if (state.cam_pitch < HALF_PI)
+                state.cam_pitch = std::round((state.cam_pitch / HALF_PI) + 0.51) * HALF_PI;
             else
-                cam_pitch = std::round(cam_pitch / M_PI_2 - 0.51) * M_PI_2;
+                state.cam_pitch = std::round((state.cam_pitch / HALF_PI) - 0.51) * HALF_PI;
 
-            render_required = true;
+            state.render_required = true;
         }
 
-        if (do_rotate)
+        if (state.do_rotate)
         {
-            cam_yaw += 0.03;
-            render_required = true;
+            state.cam_yaw += 0.03;
+            state.render_required = true;
         }
 
-        if (do_flyto)
+        if (state.do_flyto)
         {
-            geo::Vector3 diff = cam_lookat_flyto - cam_lookat;
-            double dist = diff.length();
+            geo::Vector3 const diff = state.cam_lookat_flyto - state.cam_lookat;
+            double const dist = diff.length();
 
-            double max_dist = std::max(0.001 * cam_dist, dist * 0.1);
+            double const max_dist = std::max(0.001 * state.cam_dist, dist * 0.1);
             if (dist < max_dist)
             {
-                cam_lookat = cam_lookat_flyto;
-                do_flyto = false;
+                state.cam_lookat = state.cam_lookat_flyto;
+                state.do_flyto = false;
             }
             else
             {
-                cam_lookat += (diff / dist) * max_dist;
+                state.cam_lookat += (diff / dist) * max_dist;
             }
         }
     }

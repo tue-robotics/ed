@@ -8,22 +8,20 @@ namespace ed
 
 struct ErrorContextData
 {
-    std::vector<std::pair<const char*, const char*> > stack;
+    std::vector<std::pair<const char*, const char*>> stack;
 };
 
 class ErrorContext
 {
 
 public:
-
-    ErrorContext(const char* msg, const char* value = 0);
+    explicit ErrorContext(const char* msg, const char* value = nullptr);
 
     ~ErrorContext();
 
-    void change(const char* msg, const char* value = 0);
+    static void change(const char* msg, const char* value = nullptr);
 
     static ErrorContextData* data();
-
 };
 
 } // end namespace ed

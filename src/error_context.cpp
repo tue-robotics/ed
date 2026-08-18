@@ -1,7 +1,8 @@
 #include "ed/error_context.h"
 
+#include <bits/pthreadtypes.h>
 #include <pthread.h>
-#include <iostream>
+#include <utility>
 
 namespace ed
 {
@@ -13,53 +14,51 @@ namespace
 
 void dataDestructor(void* data)
 {
-    ErrorContextData* edata = static_cast<ErrorContextData*>(data);
+    auto const* edata = static_cast<ErrorContextData*>(data);
     delete edata;
 }
 
 struct KeyHolder
 {
 
-    KeyHolder() {
-        pthread_key_create(&key, &dataDestructor);
-    }
+    KeyHolder() { pthread_key_create(&key, &dataDestructor); }
 
-    pthread_key_t key;
-
+    pthread_key_t key{};
 };
 
-    static KeyHolder key;
+// The pthread key is process-wide by construction and is created/destroyed by this holder.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+KeyHolder key;
 
-}
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
 ErrorContext::ErrorContext(const char* msg, const char* value)
 {
-    ErrorContextData* _data = data();
-    if (!_data)
+    ErrorContextData* edata = data();
+    if (!edata)
     {
-        _data = new ErrorContextData;
-        pthread_setspecific(key.key, _data);
+        edata = new ErrorContextData;
+        pthread_setspecific(key.key, edata);
     }
 
-    _data->stack.push_back(std::pair<const char*, const char*>(msg, value));
-
+    edata->stack.emplace_back(msg, value);
 }
 
 ErrorContext::~ErrorContext()
 {
-    ErrorContextData* _data = data();
-    if (!_data)
+    ErrorContextData* edata = data();
+    if (!edata)
         return;
 
-    _data->stack.pop_back();
+    edata->stack.pop_back();
 }
 
 void ErrorContext::change(const char* msg, const char* value)
 {
-    ErrorContextData* _data = data();
-    _data->stack.back() = std::pair<const char*, const char*>(msg, value);
+    ErrorContextData* edata = data();
+    edata->stack.back() = std::pair<const char*, const char*>(msg, value);
 }
 
 ErrorContextData* ErrorContext::data()
@@ -67,4 +66,4 @@ ErrorContextData* ErrorContext::data()
     return static_cast<ErrorContextData*>(pthread_getspecific(key.key));
 }
 
-}
+} // namespace ed

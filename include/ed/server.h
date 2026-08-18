@@ -6,12 +6,18 @@
 #include "ed/property_key_db.h"
 #include <ed/models/model_loader.h>
 
-
+#if __has_include(<diagnostic_updater/diagnostic_updater.hpp>)
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#else
 #include <diagnostic_updater/diagnostic_updater.h>
+#endif
 
-#include <ros/publisher.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
 
 #include <tf2_ros/buffer.h>
+
+#include <boost/thread.hpp>
 
 #include "tue/config/configuration.h"
 
@@ -19,12 +25,7 @@
 #include <queue>
 #include <vector>
 
-namespace tf2_ros
-{
-
-class TransformListener;
-
-}
+namespace tf2_ros { class TransformListener; }
 
 namespace ed
 {
@@ -33,7 +34,7 @@ class Server
 {
 
 public:
-    Server();
+    explicit Server(const rclcpp::Node::SharedPtr& node);
     virtual ~Server();
 
     void configure(tue::Configuration& config, bool reconfigure = false);
@@ -50,9 +51,9 @@ public:
 
     void storeEntityMeasurements(const std::string& path) const;
 
-    WorldModelConstPtr world_model() const
+    WorldModelConstPtr worldModel() const
     {
-        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        boost::lock_guard<boost::mutex> const lg(mutex_world_);
         return ed::make_shared<const WorldModel>(*world_model_);
     }
 
@@ -68,6 +69,8 @@ public:
     }
 
 private:
+    //! Shared node handle
+    rclcpp::Node::SharedPtr node_;
 
     mutable boost::mutex mutex_world_;
     // World model datastructure
@@ -95,13 +98,13 @@ private:
 
     //! Profiling
     diagnostic_updater::Updater updater_;
-    ros::Publisher pub_stats_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_stats_;
 
     TFBufferPtr tf_buffer_;
     TFBufferConstPtr tf_buffer_const_;
     ed::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
-}
+} // namespace ed
 
 #endif

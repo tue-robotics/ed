@@ -2,12 +2,20 @@ name: CI
 
 on: [push, pull_request, workflow_dispatch]
 
+permissions:
+  contents: read
+
 jobs:
   tue-ci:
-    name: TUe CI - ${{ github.event_name }}
+    name: TUe CI - ${{ github.event_name }} (${{ matrix.ros_distro }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distro: [jazzy, rolling-u24]
     steps:
       - name: TUe CI
         uses: tue-robotics/tue-env/ci/main@master
         with:
+          image: ghcr.io/tue-robotics/tue-env-ros-${{ matrix.ros_distro }}
           package: ${{ github.event.repository.name }}

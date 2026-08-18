@@ -2,6 +2,7 @@
 #define ED_MODEL_LOADER_H_
 
 #include "ed/uuid.h"
+#include <cstdint>
 
 #include <geolib/datatypes.h>
 #include <tue/config/data_pointer.h>
@@ -9,17 +10,13 @@
 #include <map>
 #include <vector>
 
-namespace ed
-{
-
-namespace models
+namespace ed::models
 {
 
 class ModelLoader
 {
 
 public:
-
     ModelLoader();
 
     ~ModelLoader();
@@ -34,7 +31,8 @@ public:
      * @param allow_sdf Allow SDF models, or only ED yaml models
      * @return bool, which indicates succes
      */
-    bool create(const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error, const bool allow_sdf=false);
+    bool create(
+        const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error, bool allow_sdf = false);
 
     /**
      * @brief create add entity to update_request from config data. "_root" will be used as id.
@@ -56,8 +54,12 @@ public:
      * @param pose_offset pose offset, if no pose in data, this pose will be the final pose.
      * @return bool, which indicates succes
      */
-    bool create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id,
-                UpdateRequest& req, std::stringstream& error, const std::string& model_path = "",
+    bool create(const tue::config::DataConstPointer& data,
+                const UUID& id_opt,
+                const UUID& parent_id,
+                UpdateRequest& req,
+                std::stringstream& error,
+                const std::string& model_path = "",
                 const geo::Pose3D& pose_offset = geo::Pose3D::identity());
 
     /**
@@ -71,20 +73,24 @@ public:
      * @param error error stream
      * @return bool, which indicates succes
      */
-    bool createSDF(const tue::config::DataConstPointer& data, const UUID& parent_id, const geo::Pose3D& parent_pose,
-                   const UUID& id_override, const boost::shared_ptr<const geo::Pose3D> pose_override,
-                   UpdateRequest& req, std::stringstream& error);
+    bool createSDF(const tue::config::DataConstPointer& data,
+                   const UUID& parent_id,
+                   const geo::Pose3D& parent_pose,
+                   const UUID& id_override,
+                   const boost::shared_ptr<const geo::Pose3D>& pose_override,
+                   UpdateRequest& req,
+                   std::stringstream& error);
 
     /**
      * @brief exists Check of a model of type 'type' exist
      * @param type model type
      * @return bool, which indicates of type exist
      */
+    [[nodiscard]]
     bool exists(const std::string& type) const;
 
 private:
-
-    typedef std::pair<tue::config::DataConstPointer, std::vector<std::string> > ModelData;
+    using ModelData = std::pair<tue::config::DataConstPointer, std::vector<std::string>>;
 
     // Model name to model data
     std::map<std::string, ModelData> model_cache_;
@@ -105,8 +111,10 @@ private:
      * @param allow_sdf Allow SDF models, or only ED yaml models
      * @return DataConstPointer with the data, empty in case of error
      */
-    tue::config::DataConstPointer loadModelData(std::string type, std::vector<std::string>& types,
-                                                std::stringstream& error, const bool allow_sdf=false);
+    tue::config::DataConstPointer loadModelData(const std::string& type,
+                                                std::vector<std::string>& types,
+                                                std::stringstream& error,
+                                                bool allow_sdf = false);
 
     /**
      * @brief loadSDFData load data of SDF model of uri 'uri'
@@ -114,14 +122,14 @@ private:
      * @param error error stream
      * @return DataConstPointer with the data, empty in case of error
      */
-    tue::config::DataConstPointer loadSDFData(std::string uri, std::stringstream& error);
-
+    tue::config::DataConstPointer loadSDFData(const std::string& uri, std::stringstream& error);
 
     /**
      * @brief getModelPath get file path of model of type 'type'
      * @param type type of the model
      * @return path of the model, empty if model not found
      */
+    [[nodiscard]]
     std::string getModelPath(const std::string& type) const;
 
     /**
@@ -129,6 +137,7 @@ private:
      * @param uri uri of the model
      * @return path of the model, empty if model not found
      */
+    [[nodiscard]]
     std::string getSDFPath(const std::string& uri) const;
 
     /**
@@ -136,21 +145,19 @@ private:
      * @param type type of the model to look for
      * @return ModelData, DataPointer is empty in case type not in cache
      */
-    ModelData readModelCache(std::string type) const;
-
+    [[nodiscard]]
+    ModelData readModelCache(const std::string& type) const;
 };
-
 
 /**
  * @brief The LoadType enum indicates whether to load directly from a file
  * or from a model that is part of the ED_MODEL_PATH
  */
-enum class LoadType
+enum class LoadType : std::uint8_t
 {
-   FILE,
-   MODEL,
+    FILE,
+    MODEL,
 };
-
 
 /**
  * @brief loadModel loads an ED model from file
@@ -160,10 +167,10 @@ enum class LoadType
  * @param req update request that will be filled with the data from the model
  * @return success
  */
-bool loadModel(const LoadType load_type, const std::string& source, ed::UpdateRequest& req);
+bool loadModel(LoadType load_type, const std::string& source, ed::UpdateRequest& req);
 
-} // end namespace models
+} // namespace ed::models
 
-} // end namespace ed
+// end namespace ed
 
 #endif

@@ -9,17 +9,15 @@ class CustomProperties : public ed::Plugin
 {
 
 public:
-
     CustomProperties();
 
-    virtual ~CustomProperties();
+    ~CustomProperties() override;
 
-    void initialize(ed::InitData& init);
+    void initialize(ed::InitData& init) override;
 
-    void process(const ed::WorldModel& world, ed::UpdateRequest& req);
+    void process(const ed::WorldModel& world, ed::UpdateRequest& req) override;
 
 private:
-
     // Create a key for each entity property you want to acces. This key
     // will be used to access that property. Note that you should specify
     // the type of the property using templates
@@ -29,7 +27,6 @@ private:
 
     // 'Counter' property key
     ed::PropertyKey<int> k_counter_;
-
 };
 
 #endif

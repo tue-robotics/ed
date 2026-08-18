@@ -50,8 +50,6 @@ plugins:
   lib: libed_gui_server_plugin.so
   parameters:
       robot_name: sergio
-#- name: builder
-#  lib: libed_builder_plugin.so
 - name: obstacle_grid_publisher
   lib: libed_occupancy_grid_publisher_plugin.so
   parameters:

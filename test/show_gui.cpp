@@ -1,15 +1,21 @@
-#include <ros/ros.h>
+#include <ed_interfaces/srv/raise_event.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <tue_serialization/Binary.h>
-#include <ed_msgs/RaiseEvent.h>
+#include <rclcpp/rclcpp.hpp>
+#include <tue_serialization_interfaces/msg/binary.hpp>
 
-ros::ServiceClient client;
+#include <vector>
+
+rclcpp::Node::SharedPtr g_node;
+rclcpp::Client<ed_interfaces::srv::RaiseEvent>::SharedPtr client;
 
 std::string click_type;
 
-void imageCallback(const tue_serialization::Binary::ConstPtr& msg)
+void imageCallback(const tue_serialization_interfaces::msg::Binary::ConstSharedPtr msg)
 {
-    cv::Mat image = cv::imdecode(msg->data, cv::IMREAD_UNCHANGED);
+    // Copy into a vector first: on Rolling a uint8[] field is rosidl::Buffer<uint8_t>,
+    // which cv::InputArray cannot be constructed from. std::vector works on every distro.
+    std::vector<unsigned char> const buf(msg->data.begin(), msg->data.end());
+    cv::Mat const image = cv::imdecode(buf, cv::IMREAD_UNCHANGED);
     cv::imshow("map", image);
     cv::waitKey(3);
 }
@@ -18,40 +24,30 @@ void mouseCallback(int event, int x, int y, int /*flags*/, void* /*ptr*/)
 {
     if (event == cv::EVENT_LBUTTONDOWN)
     {
-        ed_msgs::RaiseEvent srv_ev;
-        srv_ev.request.name = "click";
-        srv_ev.request.param_names.push_back("x");
-        srv_ev.request.param_names.push_back("y");
+        auto srv_ev = std::make_shared<ed_interfaces::srv::RaiseEvent::Request>();
+        srv_ev->name = "click";
+        srv_ev->param_names.push_back("x");
+        srv_ev->param_names.push_back("y");
 
-        std::stringstream x_str;
-        x_str << x;
-        std::stringstream y_str;
-        y_str << y;
+        srv_ev->param_values.push_back(std::to_string(x));
+        srv_ev->param_values.push_back(std::to_string(y));
 
-        srv_ev.request.param_values.push_back(x_str.str());
-        srv_ev.request.param_values.push_back(y_str.str());
+        srv_ev->param_names.push_back("type");
+        srv_ev->param_values.push_back(click_type);
 
-        srv_ev.request.param_names.push_back("type");
-        srv_ev.request.param_values.push_back(click_type);
-
-        if (client.call(srv_ev))
-        {
-            std::cout << "Response from server: " << srv_ev.response.msg << std::endl;
-        }
-        else
-        {
-            std::cout << "Calling raise event failed" << std::endl;
-        }
+        // Fire-and-forget: this callback runs inside the executor spin, so we cannot block on the result here.
+        client->async_send_request(srv_ev);
     }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "ed_gui");
+    rclcpp::init(argc, argv);
 
-    ros::NodeHandle nh;
-    ros::Subscriber sub_image = nh.subscribe("/ed/gui/map_image", 1, imageCallback);
-    client = nh.serviceClient<ed_msgs::RaiseEvent>("/ed/gui/raise_event");
+    g_node = rclcpp::Node::make_shared("ed_gui");
+    auto sub_image =
+        g_node->create_subscription<tue_serialization_interfaces::msg::Binary>("/ed/gui/map_image", 1, imageCallback);
+    client = g_node->create_client<ed_interfaces::srv::RaiseEvent>("/ed/gui/raise_event");
 
     click_type = "navigate";
     if (argc >= 2)
@@ -59,18 +55,24 @@ int main(int argc, char **argv)
         click_type = argv[1];
     }
 
-
     cv::namedWindow("map", 1);
 
     cv::setMouseCallback("map", mouseCallback);
 
+    // Not rclcpp::spin_some(node): that free function is deprecated on Rolling
+    // ("use SingleThreadedExecutor::spin_some instead") because it rebuilds an
+    // executor on every call, which is exactly what this loop would do 30x a second.
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(g_node);
 
-    ros::Rate r(30);
-    while(ros::ok())
+    rclcpp::WallRate r(30);
+    while (rclcpp::ok())
     {
-        ros::spinOnce();
+        executor.spin_some();
         r.sleep();
     }
+
+    rclcpp::shutdown();
 
     return 0;
 }

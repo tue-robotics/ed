@@ -7,8 +7,7 @@ class PoseInfo : public ed::PropertyInfo
 {
 
 public:
-
-    void serialize(const ed::Variant& v, ed::io::Writer& w) const
+    void serialize(const ed::Variant& v, ed::io::Writer& w) const override
     {
         const geo::Pose3D& p = v.getValue<geo::Pose3D>();
 
@@ -31,7 +30,7 @@ public:
         w.endGroup();
     }
 
-    bool deserialize(ed::io::Reader& r, ed::Variant& v) const
+    bool deserialize(ed::io::Reader& r, ed::Variant& v) const override
     {
         geo::Pose3D p = geo::Pose3D::identity();
 
@@ -61,8 +60,11 @@ public:
         return true;
     }
 
-    bool serializable() const { return true; }
-
+    [[nodiscard]]
+    bool serializable() const override
+    {
+        return true;
+    }
 };
 
 #endif

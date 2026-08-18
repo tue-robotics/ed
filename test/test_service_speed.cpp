@@ -1,120 +1,45 @@
-#include <ed_msgs/SetLabel.h>
-#include <ed_msgs/SimpleQuery.h>
-#include <ed_msgs/SetClick.h>
-#include <ed_msgs/GetGUICommand.h>
-#include <ed_msgs/GetMeasurements.h>
-#include <ed_msgs/RaiseEvent.h>
+#include <rclcpp/rclcpp.hpp>
 
-#include <ros/ros.h>
+#include <ed_interfaces/srv/get_gui_command.hpp>
+#include <ed_interfaces/srv/get_measurements.hpp>
+#include <ed_interfaces/srv/raise_event.hpp>
+#include <ed_interfaces/srv/set_label.hpp>
+#include <ed_interfaces/srv/simple_query.hpp>
 
 #include <tue/profiling/timer.h>
 
-int main(int argc, char **argv) {
-    ros::init(argc, argv, "ed_test_service_speed");
+template <typename SrvT> void timeService(const rclcpp::Node::SharedPtr& node, const std::string& name, int N)
+{
+    auto client = node->create_client<SrvT>(name);
+    client->wait_for_service();
 
-    ros::NodeHandle nh;
+    tue::Timer t;
+    t.start();
 
-    int N = 1;
-
+    for (int i = 0; i < N; ++i)
     {
-        ros::ServiceClient client = nh.serviceClient<ed_msgs::SimpleQuery>("/ed/simple_query");
-        client.waitForExistence();
-        ed_msgs::SimpleQuery srv;
-
-        tue::Timer t;
-        t.start();
-
-        for(int i = 0; i < N; ++i)
-        {
-
-            if (!client.call(srv))
-            {
-                std::cout << client.getService() << " : could not be called" << std::endl;
-            }
-        }
-
-        std::cout << client.getService() << ": " << t.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
+        auto request = std::make_shared<typename SrvT::Request>();
+        auto future = client->async_send_request(request);
+        if (rclcpp::spin_until_future_complete(node, future) != rclcpp::FutureReturnCode::SUCCESS)
+            std::cout << name << " : could not be called" << std::endl;
     }
 
-    {
-        ros::ServiceClient client = nh.serviceClient<ed_msgs::SetLabel>("/ed/gui/set_label");
-        client.waitForExistence();
-        ed_msgs::SetLabel srv;
+    std::cout << name << ": " << t.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
+}
 
-        tue::Timer t;
-        t.start();
+int main(int argc, char** argv)
+{
+    rclcpp::init(argc, argv);
+    rclcpp::Node::SharedPtr const node = rclcpp::Node::make_shared("ed_test_service_speed");
 
-        for(int i = 0; i < N; ++i)
-        {
+    int const N = 1;
 
-            if (!client.call(srv))
-            {
-                std::cout << client.getService() << " : could not be called" << std::endl;
-            }
-        }
+    timeService<ed_interfaces::srv::SimpleQuery>(node, "/ed/simple_query", N);
+    timeService<ed_interfaces::srv::SetLabel>(node, "/ed/gui/set_label", N);
+    timeService<ed_interfaces::srv::GetMeasurements>(node, "/ed/gui/get_measurements", N);
+    timeService<ed_interfaces::srv::GetGUICommand>(node, "/ed/gui/get_gui_command", N);
+    timeService<ed_interfaces::srv::RaiseEvent>(node, "/ed/gui/raise_event", N);
 
-        std::cout << client.getService() << ": " << t.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
-    }
-
-    {
-        ros::ServiceClient client = nh.serviceClient<ed_msgs::GetMeasurements>("/ed/gui/get_measurements");
-        client.waitForExistence();
-        ed_msgs::GetMeasurements srv;
-
-        tue::Timer t;
-        t.start();
-
-        for(int i = 0; i < N; ++i)
-        {
-
-            if (!client.call(srv))
-            {
-                std::cout << client.getService() << " : could not be called" << std::endl;
-            }
-        }
-
-        std::cout << client.getService() << ": " << t.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
-    }
-
-    {
-        ros::ServiceClient client = nh.serviceClient<ed_msgs::GetGUICommand>("/ed/gui/get_gui_command");
-        client.waitForExistence();
-        ed_msgs::GetGUICommand srv;
-
-        tue::Timer t;
-        t.start();
-
-        for(int i = 0; i < N; ++i)
-        {
-
-            if (!client.call(srv))
-            {
-                std::cout << client.getService() << " : could not be called" << std::endl;
-            }
-        }
-
-        std::cout << client.getService() << ": " << t.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
-    }
-
-    {
-        ros::ServiceClient client = nh.serviceClient<ed_msgs::RaiseEvent>("/ed/gui/raise_event");
-        client.waitForExistence();
-        ed_msgs::RaiseEvent srv;
-
-        tue::Timer t;
-        t.start();
-
-        for(int i = 0; i < N; ++i)
-        {
-
-            if (!client.call(srv))
-            {
-                std::cout << client.getService() << " : could not be called" << std::endl;
-            }
-        }
-
-        std::cout << client.getService() << ": " << t.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
-    }
-
+    rclcpp::shutdown();
     return 0;
 }

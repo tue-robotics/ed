@@ -7,10 +7,9 @@
 #include <tue/serialization/input_archive.h>
 #include <tue/serialization/output_archive.h>
 
-#include <tue_serialization/BinaryService.h>
+#include <tue_serialization_interfaces/srv/binary_service.hpp>
 
-#include <ros/callback_queue.h>
-#include <ros/service_server.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace ed
 {
@@ -19,44 +18,44 @@ class Probe : public Plugin
 {
 
 public:
-
     Probe();
 
-    virtual ~Probe();
-
+    ~Probe() override;
 
     // Plugin interface
 
-    void initialize();
+    void initialize() override;
 
-    void process(const WorldModel& world, UpdateRequest& req);
-
+    void process(const WorldModel& world, UpdateRequest& req) override;
 
     // Probe interface
 
-    virtual void configure(tue::Configuration /*config*/) {}
+    void configure(tue::Configuration /*config*/) override {}
 
     using Plugin::process;
 
     virtual void process(const WorldModel& /*world*/,
                          UpdateRequest& /*update*/,
                          tue::serialization::InputArchive& /*req*/,
-                         tue::serialization::OutputArchive& /*res*/) {}
+                         tue::serialization::OutputArchive& /*res*/)
+    {
+    }
 
 private:
+    const ed::WorldModel* world_{};
+    ed::UpdateRequest* update_req_{};
 
-    const ed::WorldModel* world_;
-    ed::UpdateRequest* update_req_;
+    rclcpp::CallbackGroup::SharedPtr cb_group_;
 
-    ros::CallbackQueue cb_queue_;
+    rclcpp::executors::SingleThreadedExecutor executor_;
 
-    ros::ServiceServer srv_;
+    rclcpp::Service<tue_serialization_interfaces::srv::BinaryService>::SharedPtr srv_;
 
-    bool srvCallback(const tue_serialization::BinaryService::Request& ros_req,
-                     tue_serialization::BinaryService::Response& ros_res);
-
+    // NOLINTNEXTLINE(performance-unnecessary-value-param) - rclcpp service callback requires shared_ptr by value
+    void srvCallback(const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Request>& ros_req,
+                     const std::shared_ptr<tue_serialization_interfaces::srv::BinaryService::Response>& ros_res);
 };
 
-}
+} // namespace ed
 
 #endif

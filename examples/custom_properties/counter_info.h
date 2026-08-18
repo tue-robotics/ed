@@ -7,24 +7,26 @@ class CounterInfo : public ed::PropertyInfo
 {
 
 public:
-
-    void serialize(const ed::Variant& v, ed::io::Writer& w) const
+    void serialize(const ed::Variant& v, ed::io::Writer& w) const override
     {
-        int counter = v.getValue<int>();
+        int const counter = v.getValue<int>();
         w.writeValue("value", counter);
     }
 
-    bool deserialize(ed::io::Reader& r, ed::Variant& v) const
+    bool deserialize(ed::io::Reader& r, ed::Variant& v) const override
     {
-        int counter;
+        int counter = 0;
         r.readValue("value", counter);
         v.setValue<int>(counter);
 
         return true;
     }
 
-    bool serializable() const { return true; }
-
+    [[nodiscard]]
+    bool serializable() const override
+    {
+        return true;
+    }
 };
 
 #endif

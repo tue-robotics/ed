@@ -1,44 +1,56 @@
-#include <ros/console.h>
-#include <ros/init.h>
-#include <ros/node_handle.h>
-#include <ros/service_client.h>
+#include <iostream>
+#include <memory>
+#include <ostream>
+#include <rclcpp/client.hpp>
+#include <rclcpp/executors.hpp>
+#include <rclcpp/future_return_code.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
 
-#include <ed_msgs/Configure.h>
+#include <ed_interfaces/srv/configure.hpp>
 
+#include <rclcpp/utilities.hpp>
+#include <string>
 #include <tue/config/configuration.h>
 #include <tue/config/loaders/yaml.h>
 #include <tue/config/resolve_config.h>
 
-#include <tue/filesystem/path.h>
+#include <filesystem>
+#include <vector>
+
+using namespace std::chrono_literals;
 
 // ----------------------------------------------------------------------------------------------------
 
+namespace
+{
 void usage()
 {
-    std::cout << "Usage: configure CONFIG_FILE.yaml/json" << std::endl;
+    std::cout << "Usage: configure CONFIG_FILE.yaml/json" << '\n';
 }
+
+} // namespace
 
 // ----------------------------------------------------------------------------------------------------
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    std::vector<std::string> myargv;
-    ros::removeROSArgs(argc, argv, myargv);
+    std::vector<std::string> myargv = rclcpp::init_and_remove_ros_arguments(argc, argv);
     if (myargv.size() != 2)
     {
         usage();
         return 1;
     }
 
-    ros::init(argc, argv, "ed_configure");
+    rclcpp::Node::SharedPtr const node = rclcpp::Node::make_shared("ed_configure");
+    rclcpp::Client<ed_interfaces::srv::Configure>::SharedPtr const client =
+        node->create_client<ed_interfaces::srv::Configure>("ed/configure");
 
-    ros::NodeHandle nh;
-    ros::ServiceClient client = nh.serviceClient<ed_msgs::Configure>("ed/configure");
-
-    tue::filesystem::Path config_file(myargv[1]);
-    if (!config_file.exists())
+    std::filesystem::path const config_file(myargv[1]);
+    if (!std::filesystem::exists(config_file))
     {
-        ROS_ERROR_STREAM("Could not configure ED: config file '" << config_file.string() << "' does not exist");
+        RCLCPP_ERROR_STREAM(node->get_logger(),
+                            "Could not configure ED: config file '" << config_file.string() << "' does not exist");
         return 1;
     }
 
@@ -49,26 +61,32 @@ int main(int argc, char **argv)
     tue::Configuration config;
     if (!tue::config::loadFromYAMLFile(config_file.string(), config, resolve_config))
     {
-        ROS_ERROR_STREAM("Could not configure ED: Error during parsing of the config file '" << config_file.string() << "' "<< std::endl << std::endl << config.error());
+        RCLCPP_ERROR_STREAM(node->get_logger(),
+                            "Could not configure ED: Error during parsing of the config file '" << config_file.string()
+                                                                                                << "' " << '\n'
+                                                                                                << '\n'
+                                                                                                << config.error());
         return 1;
     }
 
-    ed_msgs::Configure srv;
-    srv.request.request = config.toYAMLString();
+    auto request = std::make_shared<ed_interfaces::srv::Configure::Request>();
+    request->request = config.toYAMLString();
 
     // We do this as late as possible, so as much time as possible has passed doing other stuff
     // and we wait as less as possible.
-    client.waitForExistence();
+    client->wait_for_service();
 
-    if (!client.call(srv))
+    auto future = client->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(node, future) != rclcpp::FutureReturnCode::SUCCESS)
     {
-        ROS_ERROR_STREAM("Could not configure ED: Service call failed");
+        RCLCPP_ERROR_STREAM(node->get_logger(), "Could not configure ED: Service call failed");
         return 1;
     }
 
-    if (!srv.response.error_msg.empty())
+    auto response = future.get();
+    if (!response->error_msg.empty())
     {
-        ROS_ERROR_STREAM("Could not configure ED:\n\n" + srv.response.error_msg);
+        RCLCPP_ERROR_STREAM(node->get_logger(), "Could not configure ED:\n\n" + response->error_msg);
         return 1;
     }
 

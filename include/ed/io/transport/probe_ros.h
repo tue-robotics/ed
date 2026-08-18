@@ -8,13 +8,11 @@ class ProbeROS
 {
 
 public:
-
     ProbeROS();
 
     virtual ~ProbeROS();
-
 };
 
-}
+} // namespace ed
 
 #endif

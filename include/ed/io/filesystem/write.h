@@ -11,8 +11,8 @@ class Entity;
 
 bool write(const std::string& filename, const Measurement& msr);
 
-bool write(const std::string &filename, const Entity& e);
+bool write(const std::string& filename, const Entity& e);
 
-}
+} // namespace ed
 
 #endif

@@ -5,34 +5,29 @@
 
 #include <memory>
 
-namespace tf2_ros {
-    class TransformBroadcaster;
-}
+namespace tf2_ros { class TransformBroadcaster; }
 
 class TFPublisherPlugin : public ed::Plugin
 {
 
 public:
-
     TFPublisherPlugin();
 
-    virtual ~TFPublisherPlugin();
+    ~TFPublisherPlugin() override;
 
-    void configure(tue::Configuration config);
+    void configure(tue::Configuration config) override;
 
-    void initialize();
+    void initialize() override;
 
-    void process(const ed::WorldModel& world, ed::UpdateRequest& req);
+    void process(const ed::WorldModel& world, ed::UpdateRequest& req) override;
 
 private:
-
     std::string root_frame_id_;
 
     // Exclude all ids starting with this value
     std::string exclude_;
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-
 };
 
 #endif

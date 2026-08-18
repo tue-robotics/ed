@@ -1,49 +1,58 @@
 #include "ed/serialization/serialization.h"
 #include "ed/mask.h"
 
-#include "ed/world_model.h"
-#include "ed/update_request.h"
-#include "ed/entity.h"
 #include "ed/convex_hull_calc.h"
+#include "ed/update_request.h"
 
+#include <algorithm>
+#include <cmath>
+#include <geolib/datatypes.h>
+#include <geolib/math_types.h>
+#include <geolib/Mesh.h>
+#include <iostream>
+#include <opencv2/core/types.hpp>
+#include <ostream>
 #include <tue/config/reader.h>
-#include <tue/config/writer.h>
+#include <tue/config/types.h>
 
-#include <geolib/Shape.h>
 #include <geolib/Box.h>
+#include <geolib/Shape.h>
 
 #include <tue/config/configuration.h>
 #include <tue/config/loaders/yaml.h>
+#include <tue/serialization/input_archive.h>
+#include <tue/serialization/output_archive.h>
+#include <vector>
 
 namespace ed
 {
 
 // ----------------------------------------------------------------------------------------------------
 
-//void serialize(const WorldModel& wm, ed::io::Writer& w, unsigned long since_revision)
+// void serialize(const WorldModel& wm, ed::io::Writer& w, unsigned long since_revision)
 //{
 
 //}
 
 //// ----------------------------------------------------------------------------------------------------
 
-//void serialize(const Entity& wm, ed::io::Writer& w, unsigned long since_revision)
+// void serialize(const Entity& wm, ed::io::Writer& w, unsigned long since_revision)
 //{
 
 //}
 
 // ----------------------------------------------------------------------------------------------------
 
-bool deserialize(io::Reader &r, UpdateRequest& req)
+bool deserialize(io::Reader& r, UpdateRequest& req)
 {
     if (r.readArray("entities"))
     {
-        while(r.nextArrayItem())
+        while (r.nextArrayItem())
         {
             std::string id;
             if (!r.readValue("id", id))
             {
-                std::cout << "Deserialze: Entities should have field 'id'" << std::endl;
+                std::cout << "Deserialze: Entities should have field 'id'" << '\n';
                 return false;
             }
 
@@ -53,7 +62,7 @@ bool deserialize(io::Reader &r, UpdateRequest& req)
                 req.setType(id, type);
             }
 
-            double existence_prob;
+            double existence_prob = NAN;
             if (r.readValue("existence_prob", existence_prob))
             {
                 req.setExistenceProbability(id, existence_prob);
@@ -87,7 +96,7 @@ bool deserialize(io::Reader &r, UpdateRequest& req)
 
             if (r.readGroup("mesh"))
             {
-                geo::ShapePtr shape(new geo::Shape);
+                geo::ShapePtr const shape(new geo::Shape);
                 ed::deserialize(r, *shape);
                 req.setVisual(id, shape);
                 req.setCollision(id, shape);
@@ -97,46 +106,48 @@ bool deserialize(io::Reader &r, UpdateRequest& req)
             std::string data_str;
             if (r.readValue("data", data_str))
             {
-                std::replace(data_str.begin(), data_str.end(), '|', '"');
-                std::replace(data_str.begin(), data_str.end(), '^', '\n');
+                std::ranges::replace(data_str, '|', '"');
+                std::ranges::replace(data_str, '^', '\n');
 
                 tue::Configuration cfg;
                 if (tue::config::loadFromYAMLString(data_str, cfg))
                     req.addData(id, cfg.data());
             }
 
-//            if (r.readArray("properties"))
-//            {
-//                while(r.nextArrayItem())
-//                {
-//                    std::string prop_name;
-//                    if (!r.readValue("name", prop_name))
-//                        continue;
+            //            if (r.readArray("properties"))
+            //            {
+            //                while(r.nextArrayItem())
+            //                {
+            //                    std::string prop_name;
+            //                    if (!r.readValue("name", prop_name))
+            //                        continue;
 
-//                    const ed::PropertyKeyDBEntry* entry = data.world.getPropertyInfo(prop_name);
-//                    if (!entry)
-//                    {
-//                        error += "For entity '" + id + "': unknown property '" + prop_name +"'.\n";
-//                        continue;
-//                    }
+            //                    const ed::PropertyKeyDBEntry* entry = data.world.getPropertyInfo(prop_name);
+            //                    if (!entry)
+            //                    {
+            //                        error += "For entity '" + id + "': unknown property '" + prop_name +"'.\n";
+            //                        continue;
+            //                    }
 
-//                    if (!entry->info->serializable())
-//                    {
-//                        error += "For entity '" + id + "': property '" + prop_name +"' is not serializable.\n";
-//                        continue;
-//                    }
+            //                    if (!entry->info->serializable())
+            //                    {
+            //                        error += "For entity '" + id + "': property '" + prop_name +"' is not
+            //                        serializable.\n"; continue;
+            //                    }
 
-//                    ed::Variant value;
-//                    if (entry->info->deserialize(r, value))
-//                    {
-//                        req.setProperty(id, entry, value);
-//                        ROS_INFO_STREAM("Sync plugin: setProperty " << id);
-//                    } else
-//                        error += "For entity '" + id + "': deserialization of property '" + prop_name +"' failed.\n";
-//                }
+            //                    ed::Variant value;
+            //                    if (entry->info->deserialize(r, value))
+            //                    {
+            //                        req.setProperty(id, entry, value);
+            //                        RCLCPP_INFO_STREAM(rclcpp::get_logger("SyncPlugin"), "Sync plugin: setProperty "
+            //                        << id);
+            //                    } else
+            //                        error += "For entity '" + id + "': deserialization of property '" + prop_name +"'
+            //                        failed.\n";
+            //                }
 
-//                r.endArray();
-//            }
+            //                r.endArray();
+            //            }
         }
 
         r.endArray();
@@ -153,7 +164,7 @@ void serialize(const geo::Pose3D& pose, ed::io::Writer& w)
     w.writeValue("y", pose.t.y);
     w.writeValue("z", pose.t.z);
 
-    geo::Quaternion q = pose.getQuaternion();
+    geo::Quaternion const q = pose.getQuaternion();
     w.writeValue("qx", q.x);
     w.writeValue("qy", q.y);
     w.writeValue("qz", q.z);
@@ -221,22 +232,22 @@ bool deserialize(tue::config::Reader& r, const std::string& group, geo::Pose3D& 
     r.value("y", pose.t.y, tue::config::OPTIONAL);
     r.value("z", pose.t.z, tue::config::OPTIONAL);
 
-    double roll = 0, pitch = 0, yaw = 0;
-    r.value("X", roll,  tue::config::OPTIONAL);
+    double roll = 0;
+    double pitch = 0;
+    double yaw = 0;
+    r.value("X", roll, tue::config::OPTIONAL);
     r.value("Y", pitch, tue::config::OPTIONAL);
-    r.value("Z", yaw,   tue::config::OPTIONAL);
-    r.value("roll",  roll,  tue::config::OPTIONAL);
+    r.value("Z", yaw, tue::config::OPTIONAL);
+    r.value("roll", roll, tue::config::OPTIONAL);
     r.value("pitch", pitch, tue::config::OPTIONAL);
-    r.value("yaw",   yaw,   tue::config::OPTIONAL);
+    r.value("yaw", yaw, tue::config::OPTIONAL);
 
     // Set rotation
     pose.R.setRPY(roll, pitch, yaw);
 
     geo::Quaternion q;
-    if (r.value("qx", q.x, tue::config::OPTIONAL)
-            && r.value("qy", q.y, tue::config::OPTIONAL)
-            && r.value("qz", q.z, tue::config::OPTIONAL)
-            && r.value("qw", q.w, tue::config::OPTIONAL))
+    if (r.value("qx", q.x, tue::config::OPTIONAL) && r.value("qy", q.y, tue::config::OPTIONAL) &&
+        r.value("qz", q.z, tue::config::OPTIONAL) && r.value("qw", q.w, tue::config::OPTIONAL))
     {
         pose.R.setRotation(q);
     }
@@ -265,10 +276,11 @@ bool deserialize(tue::config::Reader& r, const std::string& group, geo::Vec3& p)
 void serialize(const ConvexHull& ch, ed::io::Writer& w)
 {
     w.writeArray("points");
-    for (std::vector<geo::Vec2f>::const_iterator it = ch.points.begin(); it != ch.points.end(); ++it)
+    for (const auto& point : ch.points)
     {
         w.addArrayItem();
-        w.writeValue("x", it->x); w.writeValue("y", it->y);
+        w.writeValue("x", point.x);
+        w.writeValue("y", point.y);
         w.endArrayItem();
     }
     w.endArray();
@@ -282,7 +294,7 @@ bool deserialize(ed::io::Reader& r, ConvexHull& ch)
 {
     if (r.readArray("points"))
     {
-        while(r.nextArrayItem())
+        while (r.nextArrayItem())
         {
             geo::Vec2f p;
             r.readValue("x", p.x);
@@ -307,24 +319,25 @@ void serialize(const geo::Shape& s, ed::io::Writer& w)
 {
     w.writeArray("vertices");
     const std::vector<geo::Vector3>& vertices = s.getMesh().getPoints();
-    for(std::vector<geo::Vector3>::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
+    for (const auto& vertice : vertices)
     {
         w.addArrayItem();
-        w.writeValue("x", it->x); w.writeValue("y", it->y); w.writeValue("z", it->z);
+        w.writeValue("x", vertice.x);
+        w.writeValue("y", vertice.y);
+        w.writeValue("z", vertice.z);
         w.endArrayItem();
     }
     w.endArray();
 
     w.writeArray("triangles");
     const std::vector<geo::TriangleI>& triangles = s.getMesh().getTriangleIs();
-    for(unsigned int i = 0; i < triangles.size(); ++i)
+    for (auto triangle : triangles)
     {
         w.addArrayItem();
-        w.writeValue("i1", static_cast<int>(triangles[i].i1_));
-        w.writeValue("i2", static_cast<int>(triangles[i].i2_));
-        w.writeValue("i3", static_cast<int>(triangles[i].i3_));
+        w.writeValue("i1", static_cast<int>(triangle.i1_));
+        w.writeValue("i2", static_cast<int>(triangle.i2_));
+        w.writeValue("i3", static_cast<int>(triangle.i3_));
         w.endArrayItem();
-
     }
     w.endArray();
 }
@@ -338,7 +351,7 @@ bool deserialize(ed::io::Reader& r, geo::Shape& s)
     // Vertices
     if (r.readArray("vertices"))
     {
-        while(r.nextArrayItem())
+        while (r.nextArrayItem())
         {
             geo::Vector3 p;
             r.readValue("x", p.x);
@@ -355,9 +368,11 @@ bool deserialize(ed::io::Reader& r, geo::Shape& s)
     // Triangles
     if (r.readArray("triangles"))
     {
-        while(r.nextArrayItem())
+        while (r.nextArrayItem())
         {
-            int i1, i2, i3;
+            int i1 = 0;
+            int i2 = 0;
+            int i3 = 0;
             r.readValue("i1", i1);
             r.readValue("i2", i2);
             r.readValue("i3", i3);
@@ -383,11 +398,13 @@ bool deserialize(tue::config::Reader& r_orig, const std::string& group, geo::Sha
 
     if (r.readArray(group))
     {
-        while(r.nextArrayItem())
+        while (r.nextArrayItem())
         {
             if (r.readGroup("box"))
             {
-                geo::Vec3 min, max, size;
+                geo::Vec3 min;
+                geo::Vec3 max;
+                geo::Vec3 size;
                 if (deserialize(r, "min", min))
                 {
                     if (!deserialize(r, "max", max))
@@ -396,7 +413,7 @@ bool deserialize(tue::config::Reader& r_orig, const std::string& group, geo::Sha
                 else if (deserialize(r, "size", size))
                 {
                     min = -0.5 * size;
-                    max =  0.5 * size;
+                    max = 0.5 * size;
                 }
                 else
                 {
@@ -413,11 +430,13 @@ bool deserialize(tue::config::Reader& r_orig, const std::string& group, geo::Sha
         }
         r.endArray();
     }
-    else if(r.readGroup(group))
+    else if (r.readGroup(group))
     {
         if (r.readGroup("box"))
         {
-            geo::Vec3 min, max, size;
+            geo::Vec3 min;
+            geo::Vec3 max;
+            geo::Vec3 size;
             if (deserialize(r, "min", min))
             {
                 if (!deserialize(r, "max", max))
@@ -426,7 +445,7 @@ bool deserialize(tue::config::Reader& r_orig, const std::string& group, geo::Sha
             else if (deserialize(r, "size", size))
             {
                 min = -0.5 * size;
-                max =  0.5 * size;
+                max = 0.5 * size;
             }
             else
             {
@@ -456,18 +475,19 @@ bool deserialize(tue::config::Reader& r_orig, const std::string& group, geo::Sha
 
 void serializeTimestamp(double time, ed::io::Writer& w)
 {
-    w.writeValue("sec", (int)time);
-    w.writeValue("nsec", (int)((time - (int)time) * 1e9));
+    w.writeValue("sec", static_cast<int>(time));
+    w.writeValue("nsec", static_cast<int>((time - static_cast<int>(time)) * 1e9));
 }
 
 // ----------------------------------------------------------------------------------------------------
 
 bool deserializeTimestamp(ed::io::Reader& r, double& time)
 {
-    int sec, nsec;
+    int sec = 0;
+    int nsec = 0;
     r.readValue("sec", sec);
     r.readValue("nsec", nsec);
-    time = sec + (double)nsec / 1e9;
+    time = sec + (static_cast<double>(nsec) / 1e9);
     return true;
 }
 
@@ -475,24 +495,24 @@ bool deserializeTimestamp(ed::io::Reader& r, double& time)
 
 void serialize(const ImageMask& mask, tue::serialization::OutputArchive& m)
 {
-    const static int MASK_SERIALIZATION_VERSION = 0;
+    const static int mask_serialization_version = 0;
 
-    m << MASK_SERIALIZATION_VERSION;
+    m << mask_serialization_version;
 
     m << mask.width();
     m << mask.height();
 
     // Determine size
     int size = 0;
-    for(ImageMask::const_iterator it = mask.begin(); it != mask.end(); ++it)
+    for (ImageMask::const_iterator it = mask.begin(); it != mask.end(); ++it)
         ++size;
 
     m << size;
 
-    for(ImageMask::const_iterator it = mask.begin(); it != mask.end(); ++it)
+    for (ImageMask::const_iterator it = mask.begin(); it != mask.end(); ++it)
     {
-        cv::Point2i pt = it();
-        m << pt.y * mask.width() + pt.x;
+        cv::Point2i const pt = it();
+        m << (pt.y * mask.width()) + pt.x;
     }
 }
 
@@ -500,20 +520,21 @@ void serialize(const ImageMask& mask, tue::serialization::OutputArchive& m)
 
 bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
 {
-    int version;
+    int version = 0;
     m >> version;
 
-    int width, height;
+    int width = 0;
+    int height = 0;
     m >> width;
     m >> height;
     mask = ImageMask(width, height);
 
-    int size;
+    int size = 0;
     m >> size;
 
-    for(int i = 0; i < size; ++i)
+    for (int i = 0; i < size; ++i)
     {
-        int idx;
+        int idx = 0;
         m >> idx;
 
         mask.addPoint(idx % width, idx / width);
@@ -521,8 +542,6 @@ bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
 
     return true;
 }
-
-
 
 // ----------------------------------------------------------------------------------------------------
 //
@@ -532,9 +551,9 @@ bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
 
 // ----------------------------------------------------------------------------------------------------
 
-//void serialize(const WorldModel& wm, tue::config::Writer& w)
+// void serialize(const WorldModel& wm, tue::config::Writer& w)
 //{
-//    w.writeArray("entities");
+//     w.writeArray("entities");
 
 //    for(WorldModel::const_iterator it = wm.begin(); it != wm.end(); ++it)
 //    {
@@ -547,7 +566,7 @@ bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
 //        w.setValue("id", e->id().str());
 //        w.setValue("type", e->type());
 
-//        if (e->has_pose())
+//        if (e->hasPose())
 //        {
 //            w.writeGroup("pose");
 //            w.setValue("x", e->pose().t.x);
@@ -574,19 +593,17 @@ bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
 //
 // ----------------------------------------------------------------------------------------------------
 
-
-
 // ----------------------------------------------------------------------------------------------------
 
-//void deserialize(tue::config::Reader& r, UpdateRequest& req)
+// void deserialize(tue::config::Reader& r, UpdateRequest& req)
 //{
-//    if (r.readArray("entities"))
-//    {
-//        while(r.nextArrayItem())
-//        {
-//            std::string id;
-//            if (!r.value("id", id))
-//                continue;
+//     if (r.readArray("entities"))
+//     {
+//         while(r.nextArrayItem())
+//         {
+//             std::string id;
+//             if (!r.value("id", id))
+//                 continue;
 
 //            if (r.readGroup("pose"))
 //            {
@@ -612,4 +629,4 @@ bool deserialize(tue::serialization::InputArchive& m, ImageMask& mask)
 //    }
 //}
 
-}
+} // namespace ed

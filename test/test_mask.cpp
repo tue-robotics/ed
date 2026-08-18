@@ -8,19 +8,19 @@ int main()
 
     ed::ImageMask m(rgb_image.cols, rgb_image.rows);
 
-    for(int y = 0; y < 480; ++y)
+    for (int y = 0; y < 480; ++y)
     {
-        for(int x = 0; x < 640; ++x)
+        for (int x = 0; x < 640; ++x)
         {
             m.addPoint(x, y);
         }
     }
 
-//    cv::Point2i p_min, p_max;
-//    m.boundingRect(p_min, p_max);
-//    std::cout << p_min << " - " << p_max << std::endl;
+    //    cv::Point2i p_min, p_max;
+    //    m.boundingRect(p_min, p_max);
+    //    std::cout << p_min << " - " << p_max << std::endl;
 
-    int N = 1;
+    int const N = 1;
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -29,11 +29,11 @@ int main()
         timer.start();
 
         int i = 0;
-        for(int n = 0; n < N; ++n)
+        for (int n = 0; n < N; ++n)
         {
-            for(int y = 0; y < rgb_image.rows; ++y)
+            for (int y = 0; y < rgb_image.rows; ++y)
             {
-                for(int x = 0; x < rgb_image.cols; ++x)
+                for (int x = 0; x < rgb_image.cols; ++x)
                 {
                     i += rgb_image.at<cv::Vec3b>(y, x)[0];
                 }
@@ -53,11 +53,11 @@ int main()
         timer.start();
 
         int i = 0;
-        for(int n = 0; n < N; ++n)
+        for (int n = 0; n < N; ++n)
         {
-            for(ed::ImageMask::const_iterator it = m.begin(); it != m.end(); ++it)
+            for (ed::ImageMask::const_iterator it = m.begin(); it != m.end(); ++it)
             {
-//                std::cout << *it << std::endl;
+                //                std::cout << *it << std::endl;
                 i += rgb_image.at<cv::Vec3b>(it())[0];
             }
         }
@@ -66,7 +66,6 @@ int main()
 
         std::cout << "Check value: " << i << std::endl;
         std::cout << timer.getElapsedTimeInMilliSec() / N << " ms" << std::endl;
-
     }
 
     return 0;

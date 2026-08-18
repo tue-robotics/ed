@@ -1,39 +1,39 @@
-#include <iostream>
+#include <filesystem>
 
-// ROS
-#include <ros/console.h>
+// ED
+#include "ed/logging.h"
 
 // TU/e Robotics
-#include <tue/filesystem/path.h>
-#include <tue/config/configuration.h>
+#include <sstream>
+#include <string>
 #include <tue/config/loaders/sdf.h>
 #include <tue/config/loaders/xml.h>
 #include <tue/config/loaders/yaml.h>
+#include <tue/config/reader_writer.h>
 
 // ED
-#include "ed/update_request.h"
 #include "ed/models/model_loader.h"
+#include "ed/update_request.h"
 
-namespace ed {
+namespace ed::models
+{
 
-namespace models {
-
-bool loadModel(const enum LoadType load_type, const std::string& source, ed::UpdateRequest& req)
+bool loadModel(enum LoadType load_type, const std::string& source, ed::UpdateRequest& req)
 {
     ed::models::ModelLoader model_loader;
     std::stringstream error;
     if (load_type == LoadType::FILE)
     {
-        tue::filesystem::Path path(source);
-        if (!path.exists())
+        std::filesystem::path const path(source);
+        if (!std::filesystem::exists(path))
         {
-            ROS_ERROR_STREAM("Couldn't open: '" << path << "', because it doesn't exist");
+            ed::log::error() << "Couldn't open: '" << source << "', because it doesn't exist" << '\n';
             return false;
         }
 
         tue::config::ReaderWriter config;
-        std::string extension = tue::filesystem::Path(source).extension();
-        if ( extension == ".sdf" || extension == ".world")
+        std::string const extension = std::filesystem::path(source).extension().string();
+        if (extension == ".sdf" || extension == ".world")
             tue::config::loadFromSDFFile(source, config);
         else if (extension == ".xml")
             tue::config::loadFromXMLFile(source, config);
@@ -41,14 +41,13 @@ bool loadModel(const enum LoadType load_type, const std::string& source, ed::Upd
             tue::config::loadFromYAMLFile(source, config);
         else
         {
-            ROS_ERROR_STREAM("[model_viewer] extension: '" << extension << "'  is not supported.");
+            ed::log::error() << "[model_viewer] extension: '" << extension << "'  is not supported." << '\n';
             return false;
         }
 
         if (!model_loader.create(config.data(), req, error))
         {
-            ROS_ERROR_STREAM("File '" << source << "' could not be loaded:" <<
-                             "\nError:\n" << error.str());
+            ed::log::error() << "File '" << source << "' could not be loaded:" << "\nError:\n" << error.str() << '\n';
             return false;
         }
     }
@@ -56,21 +55,17 @@ bool loadModel(const enum LoadType load_type, const std::string& source, ed::Upd
     {
         if (!model_loader.create("_root", source, req, error, true))
         {
-            ROS_ERROR_STREAM("Model '" << source << "' could not be loaded:" <<
-                             "\nError:\n" << error.str());
+            ed::log::error() << "Model '" << source << "' could not be loaded:" << "\nError:\n" << error.str() << '\n';
             return false;
         }
     }
     else
     {
-        ROS_ERROR_STREAM("Unknown load type");
+        ed::log::error() << "Unknown load type" << '\n';
         return false;
     }
 
     return true;
-
 }
 
-}  // End of namespace 'models'
-
-}  // End of namespace 'ed'
+} // namespace ed::models

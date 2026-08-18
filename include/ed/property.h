@@ -3,21 +3,22 @@
 
 #include "ed/types.h"
 #include "ed/variant.h"
+#include <cstdint>
 
 namespace ed
 {
 
-class PropertyKeyDBEntry;
+struct PropertyKeyDBEntry;
 
 struct Property
 {
-    Property() : entry(0), revision(-1) {}
+    Property() = default;
 
     Variant value;
-    const PropertyKeyDBEntry* entry;
-    unsigned long revision;
+    const PropertyKeyDBEntry* entry = nullptr;
+    std::uint64_t revision = -1;
 };
 
-} // end namespace
+} // namespace ed
 
 #endif

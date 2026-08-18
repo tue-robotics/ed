@@ -4,10 +4,7 @@
 #include <ostream>
 #include <string>
 
-namespace ed
-{
-
-namespace log
+namespace ed::log
 {
 
 std::ostream& info();
@@ -28,8 +25,6 @@ void error(const char* str);
 
 void error(const std::string& str);
 
-}
-
-}
+} // namespace ed::log
 
 #endif

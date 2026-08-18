@@ -3,28 +3,22 @@
 
 #include "ed/io/writer.h"
 
+#include <iostream>
 #include <sstream>
 #include <vector>
 
-namespace ed
-{
-
-namespace io
+namespace ed::io
 {
 
 class JSONWriter : public Writer
 {
 
 public:
+    explicit JSONWriter(std::ostream& out) : Writer(out) { out << "{"; }
 
-    JSONWriter(std::ostream& out) : Writer(out), add_comma_(false)
-    {
-        out << "{";
-    }
+    ~JSONWriter() override = default;
 
-    ~JSONWriter() {}
-
-    void writeGroup(const std::string& name)
+    void writeGroup(const std::string& name) override
     {
         if (add_comma_)
             out_ << ",";
@@ -34,17 +28,17 @@ public:
         add_comma_ = false;
     }
 
-    void endGroup()
+    void endGroup() override
     {
         out_ << "}";
         if (type_stack_.empty() || type_stack_.back() != 'g')
-            std::cout << "JSONWriter::endArray(): no group to close." << std::endl;
+            std::cout << "JSONWriter::endArray(): no group to close." << '\n';
         else
             type_stack_.pop_back();
         add_comma_ = true;
     }
 
-    void writeValue(const std::string& key, float f)
+    void writeValue(const std::string& key, float f) override
     {
         if (add_comma_)
             out_ << ",";
@@ -53,7 +47,7 @@ public:
         add_comma_ = true;
     }
 
-    void writeValue(const std::string& key, int i)
+    void writeValue(const std::string& key, int i) override
     {
         if (add_comma_)
             out_ << ",";
@@ -62,7 +56,7 @@ public:
         add_comma_ = true;
     }
 
-    void writeValue(const std::string& key, const std::string& s)
+    void writeValue(const std::string& key, const std::string& s) override
     {
         if (add_comma_)
             out_ << ",";
@@ -71,7 +65,7 @@ public:
         add_comma_ = true;
     }
 
-    void writeValue(const std::string& key, double d)
+    void writeValue(const std::string& key, double d) override
     {
         if (add_comma_)
             out_ << ",";
@@ -80,7 +74,7 @@ public:
         add_comma_ = true;
     }
 
-    void writeValue(const std::string& key, const float* fs, std::size_t size)
+    void writeValue(const std::string& key, const float* fs, std::size_t size) override
     {
         if (add_comma_)
             out_ << ",";
@@ -90,13 +84,14 @@ public:
         if (size > 0)
         {
             out_ << fs[0];
-            for(unsigned int i = 1; i < size; ++i)
+            for (unsigned int i = 1; i < size; ++i)
                 out_ << "," << fs[i];
         }
         out_ << "]";
+        add_comma_ = true;
     }
 
-    void writeValue(const std::string& key, const int* is, std::size_t size)
+    void writeValue(const std::string& key, const int* is, std::size_t size) override
     {
         if (add_comma_)
             out_ << ",";
@@ -106,13 +101,14 @@ public:
         if (size > 0)
         {
             out_ << is[0];
-            for(unsigned int i = 1; i < size; ++i)
+            for (unsigned int i = 1; i < size; ++i)
                 out_ << "," << is[i];
         }
         out_ << "]";
+        add_comma_ = true;
     }
 
-    void writeValue(const std::string& key, const std::string* ss, std::size_t size)
+    void writeValue(const std::string& key, const std::string* ss, std::size_t size) override
     {
         if (add_comma_)
             out_ << ",";
@@ -122,13 +118,14 @@ public:
         if (size > 0)
         {
             out_ << "\"" << ss[0] << "\"";
-            for(unsigned int i = 1; i < size; ++i)
-                out_ << "\"" << ss[i] << "\"";
+            for (unsigned int i = 1; i < size; ++i)
+                out_ << ",\"" << ss[i] << "\"";
         }
         out_ << "]";
+        add_comma_ = true;
     }
 
-    void writeArray(const std::string& key)
+    void writeArray(const std::string& key) override
     {
         if (add_comma_)
             out_ << ",";
@@ -138,7 +135,7 @@ public:
         add_comma_ = false;
     }
 
-    void addArrayItem()
+    void addArrayItem() override
     {
         if (add_comma_)
             out_ << ",";
@@ -147,32 +144,35 @@ public:
         type_stack_.push_back('i');
         add_comma_ = false;
     }
-    void endArrayItem()
+    void endArrayItem() override
     {
         out_ << "}";
         if (type_stack_.empty() || type_stack_.back() != 'i')
-            std::cout << "JSONWriter::endArray(): no array item to close." << std::endl;
+            std::cout << "JSONWriter::endArray(): no array item to close." << '\n';
         else
             type_stack_.pop_back();
         add_comma_ = true;
     }
 
-    void endArray()
+    void endArray() override
     {
         out_ << "]";
         if (type_stack_.empty() || type_stack_.back() != 'a')
-            std::cout << "JSONWriter::endArray(): no array to close." << std::endl;
+            std::cout << "JSONWriter::endArray(): no array to close." << '\n';
         else
             type_stack_.pop_back();
         add_comma_ = true;
     }
 
-    void finish()
+    void finish() override
     {
-        while(!type_stack_.empty())
+        // Do not pop here: endGroup()/endArrayItem()/endArray() each pop the frame they
+        // close. Popping first made them either warn about a frame that was already gone,
+        // or - when the next frame happened to be the same type - pop it too, losing one
+        // closing token and emitting invalid JSON.
+        while (!type_stack_.empty())
         {
-            char t = type_stack_.back();
-            type_stack_.pop_back();
+            char const t = type_stack_.back();
 
             if (t == 'g')
                 endGroup();
@@ -180,19 +180,17 @@ public:
                 endArrayItem();
             else if (t == 'a')
                 endArray();
+            else
+                type_stack_.pop_back(); // unreachable; guards against an endless loop
         }
         out_ << "}";
     }
 
 private:
-
-    bool add_comma_;
+    bool add_comma_{false};
     std::vector<char> type_stack_;
-
 };
 
-}
-
-} // end namespace era
+} // namespace ed::io
 
 #endif

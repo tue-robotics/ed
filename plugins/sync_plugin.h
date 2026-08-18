@@ -3,27 +3,29 @@
 
 #include <ed/plugin.h>
 
-#include <ros/service_client.h>
+#include <ed_interfaces/srv/query.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 class SyncPlugin : public ed::Plugin
 {
 
 public:
-
     SyncPlugin();
 
-    virtual ~SyncPlugin();
+    ~SyncPlugin() override;
 
-    void initialize(ed::InitData& init);
+    void initialize(ed::InitData& init) override;
 
-    void process(const ed::PluginInput& data, ed::UpdateRequest& req);
+    void process(const ed::PluginInput& data, ed::UpdateRequest& req) override;
 
 private:
+    uint64_t rev_number_{0};
 
-    uint64_t rev_number_;
+    rclcpp::CallbackGroup::SharedPtr cb_group_;
 
-    ros::ServiceClient sync_client_;
+    rclcpp::executors::SingleThreadedExecutor executor_;
 
+    rclcpp::Client<ed_interfaces::srv::Query>::SharedPtr sync_client_;
 };
 
-#endif //ED_SYNC_PLUGIN_H_
+#endif // ED_SYNC_PLUGIN_H_

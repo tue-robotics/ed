@@ -1,24 +1,26 @@
 #include "custom_properties_plugin.h"
 
-#include <ed/world_model.h>
-#include <ed/update_request.h>
 #include <ed/entity.h>
+#include <ed/update_request.h>
+#include <ed/world_model.h>
+#include <geolib/datatypes.h>
+#include <iostream>
+#include <ostream>
 
 // Property info
-#include "pose_info.h"
 #include "counter_info.h"
+#include "ed/init_data.h"
+#include "ed/plugin.h"
+#include "ed/types.h"
+#include "pose_info.h"
 
 // ----------------------------------------------------------------------------------------------------
 
-CustomProperties::CustomProperties()
-{
-}
+CustomProperties::CustomProperties() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
-CustomProperties::~CustomProperties()
-{
-}
+CustomProperties::~CustomProperties() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -37,7 +39,7 @@ void CustomProperties::initialize(ed::InitData& init)
 void CustomProperties::process(const ed::WorldModel& world, ed::UpdateRequest& req)
 {
     // Find the entity with id 'test-entity'
-    ed::EntityConstPtr e = world.getEntity("test-entity");
+    ed::EntityConstPtr const e = world.getEntity("test-entity");
 
     if (!e)
     {
@@ -58,7 +60,7 @@ void CustomProperties::process(const ed::WorldModel& world, ed::UpdateRequest& r
         // property was not found OR the type did not match. Therefore, always check if the pointer is not null!
         if (pose)
         {
-            std::cout << "Entity " << e->id() << " has pose " << *pose << std::endl;
+            std::cout << "Entity " << e->id() << " has pose " << *pose << '\n';
 
             // Add a little offset to the current pose ...
             geo::Pose3D new_pose = *pose;
@@ -73,17 +75,17 @@ void CustomProperties::process(const ed::WorldModel& world, ed::UpdateRequest& r
         if (!counter)
         {
             // The first time the plugin tries to access the counter property, the property is not yet there.
-            std::cout << "Counter property does not yet exist. Will be created and initialized to 0" << std::endl;
+            std::cout << "Counter property does not yet exist. Will be created and initialized to 0" << '\n';
             req.setProperty(e->id(), k_counter_, 0);
         }
         else
         {
             // The second time the counter property will be set, so we can access it and update
-            std::cout << "Entity " << e->id() << " has counter " << *counter << std::endl;
+            std::cout << "Entity " << e->id() << " has counter " << *counter << '\n';
             req.setProperty(e->id(), k_counter_, *counter + 1);
         }
 
-        std::cout << std::endl;
+        std::cout << '\n';
     }
 }
 

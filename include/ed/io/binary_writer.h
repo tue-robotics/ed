@@ -17,20 +17,13 @@ class BinaryWriter : Writer
 {
 
 public:
-
     BinaryWriter(Data& data) : Writer(data) {}
 
     ~BinaryWriter() {}
 
-    void writeGroup(const std::string& name)
-    {
-        writeLabel("g" + name);
-    }
+    void writeGroup(const std::string& name) { writeLabel("g" + name); }
 
-    void endGroup()
-    {
-        write('e');
-    }
+    void endGroup() { write('e'); }
 
     void writeValue(const std::string& key, float f)
     {
@@ -66,23 +59,17 @@ public:
         // ...
     }
 
-    void writeArray(const std::string& key)
-    {
-        writeLabel("a" + key);
-    }
+    void writeArray(const std::string& key) { writeLabel("a" + key); }
 
     void addArrayItem() {}
     void endArrayItem() {}
 
-    void endArray()
-    {
-        write('e');
-    }
+    void endArray() { write('e'); }
 
     void finish()
     {
         // Add all labels
-        for(std::vector<std::string>::const_iterator it = labels_.begin(); it != labels_.end(); ++it)
+        for (std::vector<std::string>::const_iterator it = labels_.begin(); it != labels_.end(); ++it)
         {
             const std::string& s = *it;
             data_.insert(data_.end(), &s[0], &s[s.size() + 1]);
@@ -92,7 +79,6 @@ public:
     }
 
 private:
-
     std::vector<std::string> labels_;
     std::map<std::string, std::size_t> label_to_index_;
 
@@ -121,17 +107,15 @@ private:
         }
     }
 
-    template<typename T>
-    inline void write(const T& d)
+    template <typename T> inline void write(const T& d)
     {
         temp_data_.insert(temp_data_.end(), (char*)&d, (char*)&d + sizeof(T));
     }
 
     std::vector<unsigned char> temp_data_;
-
 };
 
-}
+} // namespace io
 
 } // end namespace era
 

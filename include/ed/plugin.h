@@ -1,28 +1,34 @@
 #ifndef ED_PLUGIN_H_
 #define ED_PLUGIN_H_
 
-#include <pluginlib/class_list_macros.h>
-#define ED_REGISTER_PLUGIN(Derived)  PLUGINLIB_EXPORT_CLASS(Derived, ed::Plugin)
+#include <pluginlib/class_list_macros.hpp>
+#define ED_REGISTER_PLUGIN(Derived) PLUGINLIB_EXPORT_CLASS(Derived, ed::Plugin)
 
 #include <tue/config/configuration.h>
 
-#include "ed/types.h"
 #include "ed/init_data.h"
+#include "ed/types.h"
 
+#include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/buffer.h>
 
 #include <vector>
 
-
-namespace ed {
+namespace ed
+{
 
 struct PluginInput
 {
-    PluginInput(const WorldModel& world_, const std::vector<UpdateRequestConstPtr>& deltas_)
-        : world(world_), deltas(deltas_) {}
+    PluginInput(const WorldModel& world_, const std::vector<UpdateRequestConstPtr>& deltas_) :
+        world(world_), deltas(deltas_)
+    {
+    }
 
+    // Short-lived aggregate handed to a plugin for one cycle; it never outlives the call.
+    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
     const WorldModel& world;
     const std::vector<UpdateRequestConstPtr>& deltas;
+    // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 };
 
 class Plugin
@@ -31,10 +37,11 @@ class Plugin
     friend class PluginContainer;
 
 public:
-
-    virtual ~Plugin() {}
+    virtual ~Plugin() = default;
 
     // Old
+    // Passed by value on purpose: each override navigates its own cursor into the config.
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     virtual void configure(tue::Configuration /*config*/) {}
     virtual void initialize() {}
     virtual void process(const WorldModel& /*world*/, UpdateRequest& /*req*/) {}
@@ -43,18 +50,22 @@ public:
     virtual void initialize(InitData& /*init*/) {}
     virtual void process(const PluginInput& /*data*/, UpdateRequest& /*req*/) {}
 
-    const std::string& name() const { return name_; }
+    [[nodiscard]]
+    const std::string& name() const
+    {
+        return name_;
+    }
 
 protected:
-
     TFBufferConstPtr tf_buffer_;
 
+    //! Shared node handle, set by the PluginContainer before configure()/initialize()
+    rclcpp::Node::SharedPtr node_;
+
 private:
-
     std::string name_;
-
 };
 
-}
+} // namespace ed
 
 #endif

@@ -4,24 +4,20 @@
 #include <string>
 #include <vector>
 
-//#include "ed/io/data.h"
+// #include "ed/io/data.h"
 
 #include <ostream>
 
-namespace ed
-{
-
-namespace io
+namespace ed::io
 {
 
 class Writer
 {
 
 public:
+    explicit Writer(std::ostream& out) : out_(out) {}
 
-    Writer(std::ostream& out) : out_(out) {}
-
-    virtual ~Writer() {}
+    virtual ~Writer() = default;
 
     virtual void writeGroup(const std::string& name) = 0;
     virtual void endGroup() = 0;
@@ -35,9 +31,18 @@ public:
     virtual void writeValue(const std::string& key, const int* is, std::size_t size) = 0;
     virtual void writeValue(const std::string& key, const std::string* ss, std::size_t size) = 0;
 
-    virtual void writeValue(const std::string& key, const std::vector<float>& fs) { writeValue(key, &fs[0], fs.size()); }
-    virtual void writeValue(const std::string& key, const std::vector<int>& is) { writeValue(key, &is[0], is.size()); }
-    virtual void writeValue(const std::string& key, const std::vector<std::string>& ss) { writeValue(key, &ss[0], ss.size()); }
+    virtual void writeValue(const std::string& key, const std::vector<float>& fs)
+    {
+        writeValue(key, fs.data(), fs.size());
+    }
+    virtual void writeValue(const std::string& key, const std::vector<int>& is)
+    {
+        writeValue(key, is.data(), is.size());
+    }
+    virtual void writeValue(const std::string& key, const std::vector<std::string>& ss)
+    {
+        writeValue(key, ss.data(), ss.size());
+    }
 
     virtual void writeArray(const std::string& key) = 0;
     virtual void addArrayItem() = 0;
@@ -47,14 +52,11 @@ public:
     virtual void finish() {}
 
 protected:
-
+    // The writer is bound to a stream owned by the caller.
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     std::ostream& out_;
-
 };
 
-}
-
-} // end namespace era
+} // namespace ed::io
 
 #endif
-

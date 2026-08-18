@@ -7,15 +7,14 @@
 
 #include <tue/config/configuration.h>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <boost/thread.hpp>
 
 #include <queue>
 #include <vector>
 
-namespace pluginlib {
-  template<class T>
-  class ClassLoader;
-}
+namespace pluginlib { template <class T> class ClassLoader; }
 
 namespace ed
 {
@@ -26,8 +25,7 @@ class PluginContainer
 {
 
 public:
-
-    PluginContainer(const ed::TFBufferConstPtr& tf_buffer_);
+    PluginContainer(rclcpp::Node::SharedPtr node, ed::TFBufferConstPtr tf_buffer);
 
     virtual ~PluginContainer();
 
@@ -45,29 +43,34 @@ public:
 
     UpdateRequestConstPtr updateRequest() const
     {
-        boost::lock_guard<boost::mutex> lg(mutex_update_request_);
+        boost::lock_guard<boost::mutex> const lg(mutex_update_request_);
         return update_request_;
     }
 
     void clearUpdateRequest()
     {
-        boost::lock_guard<boost::mutex> lg(mutex_update_request_);
+        boost::lock_guard<boost::mutex> const lg(mutex_update_request_);
         update_request_.reset();
     }
 
     void setWorld(const WorldModelConstPtr& world)
     {
-        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        boost::lock_guard<boost::mutex> const lg(mutex_world_);
         world_new_ = world;
     }
 
-    void setLoopFrequency(double freq) { loop_frequency_ = freq; loop_frequency_max_ = 1.05*freq; loop_frequency_min_= 0.9*freq; } // Magic numbers; Higher bound is stricter as it shouldn't be possible to exceed the desired frequency.
+    void setLoopFrequency(double freq)
+    {
+        loop_frequency_ = freq;
+        loop_frequency_max_ = 1.05 * freq;
+        loop_frequency_min_ = 0.9 * freq;
+    } // Magic numbers; Higher bound is stricter as it shouldn't be possible to exceed the desired frequency.
 
     double loopFrequency() const { return loop_frequency_; }
 
     void addDelta(const UpdateRequestConstPtr& delta)
     {
-        boost::lock_guard<boost::mutex> lg(mutex_world_);
+        boost::lock_guard<boost::mutex> const lg(mutex_world_);
         world_deltas_.push_back(delta);
     }
 
@@ -76,24 +79,23 @@ public:
     ed::LoopUsageStatus& getLoopUsageStatus() { return *loop_usage_status_; }
 
 protected:
-
-    pluginlib::ClassLoader<ed::Plugin>*  class_loader_;
+    pluginlib::ClassLoader<ed::Plugin>* class_loader_{nullptr};
 
     PluginPtr plugin_;
 
     std::string name_;
 
-    bool request_stop_;
+    bool request_stop_{false};
 
-    bool is_running_;
+    bool is_running_{false};
 
     // 1.0 / cycle frequency
-    double cycle_duration_;
+    double cycle_duration_{0.1};
 
-    double loop_frequency_;
+    double loop_frequency_{10};
 
-    double loop_frequency_max_;
-    double loop_frequency_min_;
+    double loop_frequency_max_{11};
+    double loop_frequency_min_{9};
 
     mutable boost::mutex mutex_update_request_;
 
@@ -101,9 +103,9 @@ protected:
 
     ed::shared_ptr<boost::thread> thread_;
 
-    bool step_finished_;
+    bool step_finished_{true};
 
-    double t_last_update_;
+    double t_last_update_{0};
 
     mutable boost::mutex mutex_world_;
 
@@ -113,18 +115,18 @@ protected:
 
     TFBufferConstPtr tf_buffer_;
 
+    rclcpp::Node::SharedPtr node_;
+
     std::unique_ptr<ed::LoopUsageStatus> loop_usage_status_;
 
     bool step();
 
     void run();
 
-
     // buffer of delta's since last process call
     std::vector<UpdateRequestConstPtr> world_deltas_;
-
 };
 
-}
+} // namespace ed
 
 #endif

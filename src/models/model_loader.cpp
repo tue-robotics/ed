@@ -2,31 +2,41 @@
 
 #include "ed/types.h"
 
-#include "ed/update_request.h"
 #include "ed/entity.h"
-#include "ed/relations/transform_cache.h"
+#include "ed/update_request.h"
 
-#include <tue/filesystem/path.h>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <cstdlib>
+#include <filesystem>
 
 #include "shape_loader_private.h"
 
-#include <tue/config/reader.h>
-#include <tue/config/writer.h>
+#include <geolib/datatypes.h>
+#include <map>
+#include <ostream>
 #include <tue/config/configuration.h>
+#include <tue/config/data_pointer.h>
+#include <tue/config/reader.h>
+#include <tue/config/reader_writer.h>
+#include <tue/config/types.h>
 
 #include <geolib/CompositeShape.h>
 
+#include <memory>
 #include <sdf/parser.hh>
 
 #include <sstream>
+#include <vector>
 
-namespace ed
+namespace ed::models
 {
 
-namespace models
+namespace
 {
-
-bool readSDFGeometry(tue::config::Reader r, geo::CompositeShapePtr& composite, std::stringstream& error, geo::Pose3D pose_offset=geo::Pose3D::identity())
+bool readSDFGeometry(tue::config::Reader r,
+                     geo::CompositeShapePtr& composite,
+                     std::stringstream& error,
+                     const geo::Pose3D& pose_offset = geo::Pose3D::identity())
 {
     geo::Pose3D pose = geo::Pose3D::identity();
     readPose(r, pose);
@@ -35,49 +45,49 @@ bool readSDFGeometry(tue::config::Reader r, geo::CompositeShapePtr& composite, s
         return false;
 
     std::map<std::string, geo::ShapePtr> dummy_shape_cache;
-    geo::ShapePtr sub_shape = loadShape("", r, dummy_shape_cache, error);
+    geo::ShapePtr const sub_shape = loadShape("", r, dummy_shape_cache, error);
     if (sub_shape)
     {
         if (!composite) // if pointer is empty, create new instance.
-            composite.reset(new geo::CompositeShape);
+            composite = std::make_shared<geo::CompositeShape>();
         composite->addShape(*sub_shape, pose);
     }
     r.endGroup();
     return true;
 }
 
+} // namespace
+
 // ----------------------------------------------------------------------------------------------------
 
 ModelLoader::ModelLoader()
 {
-    const char * edmpath = ::getenv("ED_MODEL_PATH");
+    const char* edmpath = ::getenv("ED_MODEL_PATH");
     if (edmpath)
     {
-        std::vector<std::string> paths_vector = ed::models::split(edmpath, ':');
-        for (std::vector<std::string>::const_iterator it = paths_vector.begin(); it != paths_vector.end(); ++it)
-            ed_model_paths_.push_back(*it);
+        std::vector<std::string> const paths_vector = ed::models::split(edmpath, ':');
+        for (const auto& it : paths_vector)
+            ed_model_paths_.push_back(it);
     }
-    const char * mpath = ::getenv("GAZEBO_MODEL_PATH");
+    const char* mpath = ::getenv("GAZEBO_MODEL_PATH");
     if (mpath)
     {
-        std::vector<std::string> paths_vector = ed::models::split(mpath, ':');
-        for (std::vector<std::string>::const_iterator it = paths_vector.begin(); it != paths_vector.end(); ++it)
-            model_paths_.push_back(*it);
+        std::vector<std::string> const paths_vector = ed::models::split(mpath, ':');
+        for (const auto& it : paths_vector)
+            model_paths_.push_back(it);
     }
-    const char * fpath = ::getenv("GAZEBO_RESOURCE_PATH");
+    const char* fpath = ::getenv("GAZEBO_RESOURCE_PATH");
     if (fpath)
     {
-        std::vector<std::string> paths_vector = ed::models::split(fpath, ':');
-        for (std::vector<std::string>::const_iterator it = paths_vector.begin(); it != paths_vector.end(); ++it)
-            file_paths_.push_back(*it);
+        std::vector<std::string> const paths_vector = ed::models::split(fpath, ':');
+        for (const auto& it : paths_vector)
+            file_paths_.push_back(it);
     }
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-ModelLoader::~ModelLoader()
-{
-}
+ModelLoader::~ModelLoader() = default;
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -89,10 +99,10 @@ ModelLoader::~ModelLoader()
 
 std::string ModelLoader::getModelPath(const std::string& type) const
 {
-    for(std::vector<std::string>::const_iterator it = ed_model_paths_.cbegin(); it != ed_model_paths_.cend(); ++it)
+    for (const auto& ed_model_path : ed_model_paths_)
     {
-        tue::filesystem::Path model_path(*it + "/" + type);
-        if (model_path.exists())
+        std::filesystem::path const model_path = std::filesystem::path(ed_model_path) / type;
+        if (std::filesystem::exists(model_path))
             return model_path.string();
     }
 
@@ -103,23 +113,23 @@ std::string ModelLoader::getModelPath(const std::string& type) const
 
 std::string ModelLoader::getSDFPath(const std::string& uri) const
 {
-    ModelOrFile uri_type;
-    std::string parsed_uri = parseURI(uri, uri_type);
+    ModelOrFile uri_type{};
+    std::string const parsed_uri = parseURI(uri, uri_type);
     if (parsed_uri.empty())
         return "";
 
     if (uri_type == MODEL)
     {
-        for(std::vector<std::string>::const_iterator it = model_paths_.cbegin(); it != model_paths_.cend(); ++it)
+        for (const auto& it : model_paths_)
         {
-            tue::filesystem::Path model_dir(*it + "/" + parsed_uri);
-            if (model_dir.exists())
+            std::filesystem::path const model_dir = std::filesystem::path(it) / parsed_uri;
+            if (std::filesystem::exists(model_dir))
             {
-                tue::filesystem::Path config_path(model_dir.string() + "/model.config");
-                if (config_path.exists())
+                std::filesystem::path const config_path = model_dir / "model.config";
+                if (std::filesystem::exists(config_path))
                 {
-                    tue::filesystem::Path model_path = sdf::getModelFilePath(model_dir.string());
-                    if (model_path.exists())
+                    std::filesystem::path const model_path = sdf::getModelFilePath(model_dir.string());
+                    if (std::filesystem::exists(model_path))
                         return model_path.string();
                 }
             }
@@ -127,10 +137,10 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
     }
     if (uri_type == FILE)
     {
-        for(std::vector<std::string>::const_iterator it = file_paths_.cbegin(); it != file_paths_.cend(); ++it)
+        for (const auto& it : file_paths_)
         {
-            tue::filesystem::Path file_path(*it + "/" + parsed_uri);
-            if (file_path.exists())
+            std::filesystem::path const file_path = std::filesystem::path(it) / parsed_uri;
+            if (std::filesystem::exists(file_path))
                 return file_path.string();
         }
     }
@@ -140,21 +150,24 @@ std::string ModelLoader::getSDFPath(const std::string& uri) const
 
 // ----------------------------------------------------------------------------------------------------
 
-ModelLoader::ModelData ModelLoader::readModelCache(std::string type) const
+ModelLoader::ModelData ModelLoader::readModelCache(const std::string& type) const
 {
-    std::map<std::string, ModelData>::const_iterator it = model_cache_.find(type);
+    auto const it = model_cache_.find(type);
     if (it != model_cache_.end())
         return it->second;
 
-    tue::config::DataConstPointer data;
-    std::vector<std::string> types;
-    return  ModelData(data, types);
+    tue::config::DataConstPointer const data;
+    std::vector<std::string> const types;
+    return {data, types};
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-tue::config::DataConstPointer ModelLoader::loadModelData(std::string type, std::vector<std::string>& types,
-                                                         std::stringstream& error, const bool allow_sdf)
+// NOLINTNEXTLINE(misc-no-recursion) -- a model may inherit from a super model
+tue::config::DataConstPointer ModelLoader::loadModelData(const std::string& type,
+                                                         std::vector<std::string>& types,
+                                                         std::stringstream& error,
+                                                         bool allow_sdf)
 {
     if (allow_sdf)
     {
@@ -163,7 +176,7 @@ tue::config::DataConstPointer ModelLoader::loadModelData(std::string type, std::
         if (!data_sdf.empty())
             return data_sdf;
     }
-    ModelData cache_data = readModelCache(type);
+    ModelData const cache_data = readModelCache(type);
     if (!cache_data.first.empty())
     {
         types = cache_data.second;
@@ -172,31 +185,33 @@ tue::config::DataConstPointer ModelLoader::loadModelData(std::string type, std::
 
     tue::config::DataPointer data;
 
-    std::string model_path = getModelPath(type);
+    std::string const model_path = getModelPath(type);
     if (model_path.empty())
     {
-        error << "[ed::models::loadModelData] Model '" << type << "' could not be found." << std::endl;
+        error << "[ed::models::loadModelData] Model '" << type << "' could not be found." << '\n';
         return data;
     }
 
-    tue::filesystem::Path model_cfg_path(model_path + "/model.yaml");
-    if (!model_cfg_path.exists())
+    std::filesystem::path const model_cfg_path(model_path + "/model.yaml");
+    if (!std::filesystem::exists(model_cfg_path))
     {
-        error << "[ed::models::loadModelData] ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' file does not exist." << std::endl;
+        error << "[ed::models::loadModelData] ERROR loading configuration for model '" << type << "'; '"
+              << model_cfg_path.string() << "' file does not exist." << '\n';
         return data;
     }
 
     tue::Configuration model_cfg;
     if (!model_cfg.loadFromYAMLFile(model_cfg_path.string()))
     {
-        error << "[ed::models::loadModelData] ERROR loading configuration for model '" << type << "'; '" << model_cfg_path.string() << "' failed to parse yaml file." << std::endl;
+        error << "[ed::models::loadModelData] ERROR loading configuration for model '" << type << "'; '"
+              << model_cfg_path.string() << "' failed to parse yaml file." << '\n';
         return data;
     }
 
     std::string super_type;
     if (model_cfg.value("type", super_type, tue::config::OPTIONAL))
     {
-        tue::config::DataConstPointer super_data = loadModelData(super_type, types, error);
+        tue::config::DataConstPointer const super_data = loadModelData(super_type, types, error);
         tue::config::DataPointer combined_data;
         combined_data.add(super_data);
         combined_data.add(model_cfg.data());
@@ -222,39 +237,40 @@ tue::config::DataConstPointer ModelLoader::loadModelData(std::string type, std::
 
 // ----------------------------------------------------------------------------------------------------
 
-tue::config::DataConstPointer ModelLoader::loadSDFData(std::string uri, std::stringstream& error)
+tue::config::DataConstPointer ModelLoader::loadSDFData(const std::string& uri, std::stringstream& error)
 {
     tue::config::DataPointer data;
-    ModelOrFile uri_type;
-    std::string parsed_uri = parseURI(uri, uri_type);
+    ModelOrFile uri_type{};
+    std::string const parsed_uri = parseURI(uri, uri_type);
     if (parsed_uri.empty())
     {
-        error << "[ed::models::loadSDFData] Incorrect URI: '" << uri << "'." << std::endl;
+        error << "[ed::models::loadSDFData] Incorrect URI: '" << uri << "'." << '\n';
         return data;
     }
-    ModelData cache_data = readModelCache(parsed_uri + "_sdf");
+    ModelData const cache_data = readModelCache(parsed_uri + "_sdf");
     if (!cache_data.first.empty())
     {
         return cache_data.first;
     }
 
-    tue::filesystem::Path model_cfg_path = getSDFPath(uri);
-    if (!model_cfg_path.exists())
+    std::filesystem::path const model_cfg_path = getSDFPath(uri);
+    if (!std::filesystem::exists(model_cfg_path))
     {
-        error << "[ed::models::loadSDFData] Model '" << uri << "' could not be found." << std::endl;
+        error << "[ed::models::loadSDFData] Model '" << uri << "' could not be found." << '\n';
         return data;
     }
 
     tue::Configuration model_cfg(data);
     if (!model_cfg.loadFromSDFFile(model_cfg_path.string()))
     {
-        error << "[ed::models::loadSDFData] ERROR loading configuration for model '" << uri << "'; '" << model_cfg_path << "' failed to parse SDF file." << std::endl;
-        error << model_cfg.error() << std::endl;
+        error << "[ed::models::loadSDFData] ERROR loading configuration for model '" << uri << "'; '" << model_cfg_path
+              << "' failed to parse SDF file." << '\n';
+        error << model_cfg.error() << '\n';
         return data;
     }
 
     // Store data in cache
-    model_cache_[parsed_uri+"_sdf"] = ModelData(data, std::vector<std::string>());
+    model_cache_[parsed_uri + "_sdf"] = ModelData(data, std::vector<std::string>());
 
     return data;
 }
@@ -264,33 +280,32 @@ tue::config::DataConstPointer ModelLoader::loadSDFData(std::string uri, std::str
 bool ModelLoader::exists(const std::string& type) const
 {
     ModelData cache_data = readModelCache(type + "_sdf");
-    if(!cache_data.first.empty())
+    if (!cache_data.first.empty())
         return true;
 
     cache_data = readModelCache(type);
-    if(!cache_data.first.empty())
+    if (!cache_data.first.empty())
         return true;
 
-
-    std::string sdf_path = getSDFPath(type);
+    std::string const sdf_path = getSDFPath(type);
     if (!sdf_path.empty())
         return true;
 
-    std::string model_path = getModelPath(type);
+    std::string const model_path = getModelPath(type);
     return !model_path.empty();
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error,
-                         const bool allow_sdf)
+bool ModelLoader::create(
+    const UUID& id, const std::string& type, UpdateRequest& req, std::stringstream& error, bool allow_sdf)
 {
     tue::config::DataConstPointer data;
     std::vector<std::string> types;
     bool sdf = true;
     if (allow_sdf)
         data = loadSDFData("model://" + type, error);
-    if(data.empty())
+    if (data.empty())
     {
         sdf = false;
         data = loadModelData(type, types, error);
@@ -311,8 +326,8 @@ bool ModelLoader::create(const UUID& id, const std::string& type, UpdateRequest&
     }
 
     types.push_back(type);
-    for(std::vector<std::string>::const_iterator it = types.begin(); it != types.end(); ++it)
-        req.addType(id, *it);
+    for (const auto& type : types)
+        req.addType(id, type);
 
     return true;
 }
@@ -326,15 +341,19 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, UpdateReques
 
 // ----------------------------------------------------------------------------------------------------
 
-bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& id_opt, const UUID& parent_id,
-                         UpdateRequest& req, std::stringstream& error, const std::string& model_path,
+// NOLINTNEXTLINE(misc-no-recursion) -- composite models contain sub-models
+bool ModelLoader::create(const tue::config::DataConstPointer& data,
+                         const UUID& id_opt,
+                         const UUID& parent_id,
+                         UpdateRequest& req,
+                         std::stringstream& error,
+                         const std::string& model_path,
                          const geo::Pose3D& pose_offset)
 {
     tue::config::Reader r(data);
 
     if (r.hasGroup("sdf"))
         return createSDF(r.data(), parent_id, pose_offset, id_opt, boost::shared_ptr<const geo::Pose3D>(), req, error);
-
 
     // Get Id
     UUID id;
@@ -360,7 +379,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     if (r.value("type", type, tue::config::OPTIONAL))
     {
         std::vector<std::string> types;
-        tue::config::DataConstPointer super_data = loadModelData(type, types, error);
+        tue::config::DataConstPointer const super_data = loadModelData(type, types, error);
 
         if (super_data.empty())
             return false;
@@ -372,8 +391,8 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r = tue::config::Reader(data_combined);
 
         types.push_back(type);
-        for(std::vector<std::string>::const_iterator it = types.begin(); it != types.end(); ++it)
-            req.addType(id, *it);
+        for (const auto& type : types)
+            req.addType(id, type);
     }
 
     // Set type
@@ -382,7 +401,7 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     // Get pose
     geo::Pose3D pose = geo::Pose3D::identity();
     if (!ed::models::readPose(r, pose))
-        error << "[ed::models::create] No pose, while reading model: '" << id << "'" << std::endl;
+        error << "[ed::models::create] No pose, while reading model: '" << id << "'" << '\n';
 
     pose = pose_offset * pose;
 
@@ -400,13 +419,12 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
         r.endArray();
     }
 
-
     std::string shape_model_path = model_path;
     r.value("__model_path__", shape_model_path);
     // Set shape
     if (r.readGroup("shape"))
     {
-        geo::ShapePtr shape = loadShape(shape_model_path, r, shape_cache_, error);
+        geo::ShapePtr const shape = loadShape(shape_model_path, r, shape_cache_, error);
         if (shape)
         {
             req.setVisual(id, shape);
@@ -430,11 +448,11 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
             geo::CompositeShapePtr shape;
             while (r.nextArrayItem())
             {
-                geo::ShapePtr sub_shape = loadShape(shape_model_path, r, shape_cache_, error);
+                geo::ShapePtr const sub_shape = loadShape(shape_model_path, r, shape_cache_, error);
                 if (sub_shape)
                 {
-                    if(!shape)
-                        shape.reset(new geo::CompositeShape);
+                    if (!shape)
+                        shape = std::make_shared<geo::CompositeShape>();
                     shape->addShape(*sub_shape, geo::Pose3D::identity());
                 }
             }
@@ -463,14 +481,20 @@ bool ModelLoader::create(const tue::config::DataConstPointer& data, const UUID& 
     return true;
 }
 
-bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUID& parent_id, const geo::Pose3D& parent_pose, const UUID& id_override,
-                            const boost::shared_ptr<const geo::Pose3D> pose_override, UpdateRequest& req, std::stringstream& error)
+// NOLINTNEXTLINE(misc-no-recursion) -- SDF includes may nest
+bool ModelLoader::createSDF(const tue::config::DataConstPointer& data,
+                            const UUID& parent_id,
+                            const geo::Pose3D& parent_pose,
+                            const UUID& id_override,
+                            const boost::shared_ptr<const geo::Pose3D>& pose_override,
+                            UpdateRequest& req,
+                            std::stringstream& error)
 {
     tue::config::Reader r(data);
 
     r.readGroup("sdf"); // Just read the sdf element
 
-    bool sdf_world = r.readGroup("world");
+    bool const sdf_world = r.readGroup("world");
     bool sdf_model = false;
     if (!sdf_world)
     {
@@ -480,17 +504,18 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
 
     if (!sdf_world && !sdf_model)
     {
-        error << "[ed::models::createSDF] Not a valid SDF model, because no 'world' or 'model' available: " << std::endl << data  << std::endl;
+        error << "[ed::models::createSDF] Not a valid SDF model, because no 'world' or 'model' available: " << '\n'
+              << data << '\n';
         return false;
     }
 
     if (r.nextArrayItem())
     {
-        error << "[ed::models::createSDF] A model sdf file should only contain one model." << std::endl;
+        error << "[ed::models::createSDF] A model sdf file should only contain one model." << '\n';
         return false;
     }
 
-    //ID
+    // ID
     UUID id;
     std::string id_str;
     if (!id_override.str().empty())
@@ -539,29 +564,29 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
             std::string child_id;
             geo::Pose3D child_pose;
             std::string uri;
-            ed::shared_ptr<const geo::Pose3D> child_posePtr;
+            ed::shared_ptr<const geo::Pose3D> child_pose_ptr;
 
             r.value("name", child_id);
             if (readPose(r, child_pose))
-                child_posePtr = ed::make_shared<const geo::Pose3D>(child_pose);
+                child_pose_ptr = ed::make_shared<const geo::Pose3D>(child_pose);
             if (!r.value("uri", uri))
             {
-                error << "No uri found for include in model: '" << id << "'." << std::endl << r.data() << std::endl;
+                error << "No uri found for include in model: '" << id << "'." << '\n' << r.data() << '\n';
                 return false;
             }
 
-            std::vector<std::string> types;
-            tue::config::DataConstPointer child_data = loadSDFData(uri, error);
-            if (!createSDF(child_data, id, pose, child_id, child_posePtr, req, error))
+            std::vector<std::string> const types;
+            tue::config::DataConstPointer const child_data = loadSDFData(uri, error);
+            if (!createSDF(child_data, id, pose, child_id, child_pose_ptr, req, error))
                 return false;
         }
         r.endArray(); // end array include
     }
 
-
     // visual, collision & volumes
-    geo::CompositeShapePtr visual_composite, collision_composite;
-    std::map<std::string, geo::ShapePtr> dummy_shape_cache;
+    geo::CompositeShapePtr visual_composite;
+    geo::CompositeShapePtr collision_composite;
+    std::map<std::string, geo::ShapePtr> const dummy_shape_cache;
     if (r.readArray("link"))
     {
         while (r.nextArrayItem())
@@ -570,7 +595,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
             readPose(r, link_pose);
             if (r.readArray("visual"))
             {
-                while(r.nextArrayItem())
+                while (r.nextArrayItem())
                 {
                     readSDFGeometry(r, visual_composite, error, link_pose);
                 }
@@ -578,7 +603,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
             }
             if (r.readArray("collision"))
             {
-                while(r.nextArrayItem())
+                while (r.nextArrayItem())
                 {
                     readSDFGeometry(r, collision_composite, error, link_pose);
                 }
@@ -590,7 +615,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
             {
                 if (r.readArray("virtual_volume"))
                 {
-                    while(r.nextArrayItem())
+                    while (r.nextArrayItem())
                     {
                         readSDFGeometry(r, volume_composite, error, link_pose);
                     }
@@ -598,7 +623,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
                 }
                 if (volume_composite)
                     req.addVolume(id, volume_name, volume_composite);
-             }
+            }
         }
         r.endArray(); // end array link
     }
@@ -607,7 +632,7 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
     if (collision_composite)
         req.setCollision(id, collision_composite);
 
-    if(sdf_world)
+    if (sdf_world)
         r.endGroup(); // end group world
     else // sdf_model
         r.endArray(); // end array model
@@ -615,7 +640,6 @@ bool ModelLoader::createSDF(const tue::config::DataConstPointer& data, const UUI
     return true;
 }
 
-} // end namespace models
+} // namespace ed::models
 
-} // end namespace ed
-
+// end namespace ed

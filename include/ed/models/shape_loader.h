@@ -1,6 +1,7 @@
 #ifndef ED_MODELS_SHAPE_LOADER_H_
 #define ED_MODELS_SHAPE_LOADER_H_
 
+#include <cstdint>
 #include <geolib/datatypes.h>
 #include <geolib/Mesh.h>
 #include <geolib/Shape.h>
@@ -8,12 +9,8 @@
 #include <cmath>
 #include <map>
 
-namespace ed
+namespace ed::models
 {
-
-namespace models
-{
-
 
 /**
  * @brief createCylinder create a mesh from radius and height
@@ -25,8 +22,8 @@ namespace models
 void createCylinder(geo::Shape& shape, double radius, double height, int num_corners = 12);
 
 /**
- * @brief getMiddlePoint Gets the middle point of two points in a mesh of a sphere. Uses a cache to not create double points.
- * The new point is placed on the radius of the sphere.
+ * @brief getMiddlePoint Gets the middle point of two points in a mesh of a sphere. Uses a cache to not create double
+ * points. The new point is placed on the radius of the sphere.
  * @param mesh Mesh of the sphere
  * @param i1 index of first point
  * @param i2 index of second point
@@ -34,7 +31,8 @@ void createCylinder(geo::Shape& shape, double radius, double height, int num_cor
  * @param radius radius of teh sphere
  * @return index of the inserted point
  */
-uint getMiddlePoint(geo::Mesh& mesh, uint i1, uint i2, std::map<unsigned long, uint> cache, double radius);
+std::uint32_t getMiddlePoint(
+    geo::Mesh& mesh, std::uint32_t i1, std::uint32_t i2, std::map<std::uint64_t, std::uint32_t> cache, double radius);
 
 /**
  * @brief createSphere Create a shape of sphere
@@ -42,10 +40,10 @@ uint getMiddlePoint(geo::Mesh& mesh, uint i1, uint i2, std::map<unsigned long, u
  * @param radius radius of the sphere
  * @param recursion_level number of recursions to smooth the mesh, but rapidly increases the mesh.
  */
-void createSphere(geo::Shape& shape, double radius, uint recursion_level = 2);
+void createSphere(geo::Shape& shape, double radius, std::uint32_t recursion_level = 2);
 
-} // end namespace models
+} // namespace ed::models
 
-} // end namespace ed
+// end namespace ed
 
 #endif
