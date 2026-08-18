@@ -199,7 +199,8 @@ bool JSONReader::endArray()
     if (array_index_stack_.empty())
         return false;
 
-    unsigned int const& i_next_array_item = array_index_stack_.back();
+    // By value: pop_back() below ends the lifetime of the element back() refers to.
+    unsigned int const i_next_array_item = array_index_stack_.back();
     array_index_stack_.pop_back();
 
     if (n_current_.type != NodeType::ARRAY && i_next_array_item > 0)
