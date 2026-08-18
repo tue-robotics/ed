@@ -3,6 +3,7 @@
 
 #include "ed/io/writer.h"
 
+#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -87,6 +88,7 @@ public:
                 out_ << "," << fs[i];
         }
         out_ << "]";
+        add_comma_ = true;
     }
 
     void writeValue(const std::string& key, const int* is, std::size_t size) override
@@ -103,6 +105,7 @@ public:
                 out_ << "," << is[i];
         }
         out_ << "]";
+        add_comma_ = true;
     }
 
     void writeValue(const std::string& key, const std::string* ss, std::size_t size) override
@@ -116,9 +119,10 @@ public:
         {
             out_ << "\"" << ss[0] << "\"";
             for (unsigned int i = 1; i < size; ++i)
-                out_ << "\"" << ss[i] << "\"";
+                out_ << ",\"" << ss[i] << "\"";
         }
         out_ << "]";
+        add_comma_ = true;
     }
 
     void writeArray(const std::string& key) override
@@ -162,10 +166,13 @@ public:
 
     void finish() override
     {
+        // Do not pop here: endGroup()/endArrayItem()/endArray() each pop the frame they
+        // close. Popping first made them either warn about a frame that was already gone,
+        // or - when the next frame happened to be the same type - pop it too, losing one
+        // closing token and emitting invalid JSON.
         while (!type_stack_.empty())
         {
             char const t = type_stack_.back();
-            type_stack_.pop_back();
 
             if (t == 'g')
                 endGroup();
@@ -173,6 +180,8 @@ public:
                 endArrayItem();
             else if (t == 'a')
                 endArray();
+            else
+                type_stack_.pop_back(); // unreachable; guards against an endless loop
         }
         out_ << "}";
     }
