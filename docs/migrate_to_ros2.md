@@ -372,8 +372,17 @@ Changes:
 - Include path: `#include <pluginlib/class_list_macros.h>` →
   `#include <pluginlib/class_list_macros.hpp>`. `PLUGINLIB_EXPORT_CLASS`
   (wrapped by `ED_REGISTER_PLUGIN`) is unchanged.
-- `plugins.xml` content is unchanged (same `<library path="lib/libed_*">`
-  scheme). Export it the ROS 2 way instead of via the `<export><ed .../>` tag:
+- `plugins.xml` `<library path=...>` must become the **bare library name**:
+  `<library path="ed_hello_world_plugin">`, not the ROS 1
+  `<library path="lib/libed_hello_world_plugin">`. ROS 2 pluginlib resolves the
+  path itself: it searches the exporting package's prefix (`lib/`, `lib64/`,
+  `bin/` and their `<package>/` subdirectories) and adds the platform `lib`
+  prefix and `.so` suffix. A ROS 1 style `lib/libed_*` path is therefore never
+  found and the plugin fails to load with "Could not find library"; a plain
+  `libed_*` (prefix, no directory) does still resolve, but logs a
+  "should be ... for better portability" warning. The rest of the file
+  (`<class name=... type=... base_class_type=...>`) is unchanged.
+- Export `plugins.xml` the ROS 2 way instead of via the `<export><ed .../>` tag:
   add to `CMakeLists.txt`
   `pluginlib_export_plugin_description_file(ed plugins.xml)` and keep the
   `install(FILES plugins.xml DESTINATION share/${PROJECT_NAME})`.
