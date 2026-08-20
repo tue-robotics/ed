@@ -68,6 +68,12 @@ target_include_directories(polypartition PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/polypartition/include>
   $<INSTALL_INTERFACE:include>
 )
+# polypartition is a static library which is linked into the shared ed_core. Without this, it is
+# compiled as -fPIE (the distribution default), which is not valid inside a shared object: the
+# resulting code miscompiles and corrupts the arguments of TPPLPartition::UpdateVertex, making the
+# ear-clipping loop in Triangulate_EC run past its vertex array until it segfaults. Any model with
+# a <polyline> geometry hits this.
+set_target_properties(polypartition PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ------------------------------------------------------------------------------------------------
 #                                          ED CORE
