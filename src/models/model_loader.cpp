@@ -6,7 +6,6 @@
 #include "ed/update_request.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
-#include <cstdlib>
 #include <filesystem>
 
 #include "shape_loader_private.h"
@@ -62,27 +61,15 @@ bool readSDFGeometry(tue::config::Reader r,
 
 ModelLoader::ModelLoader()
 {
-    const char* edmpath = ::getenv("ED_MODEL_PATH");
-    if (edmpath)
-    {
-        std::vector<std::string> const paths_vector = ed::models::split(edmpath, ':');
-        for (const auto& it : paths_vector)
-            ed_model_paths_.push_back(it);
-    }
-    const char* mpath = ::getenv("GAZEBO_MODEL_PATH");
-    if (mpath)
-    {
-        std::vector<std::string> const paths_vector = ed::models::split(mpath, ':');
-        for (const auto& it : paths_vector)
-            model_paths_.push_back(it);
-    }
-    const char* fpath = ::getenv("GAZEBO_RESOURCE_PATH");
-    if (fpath)
-    {
-        std::vector<std::string> const paths_vector = ed::models::split(fpath, ':');
-        for (const auto& it : paths_vector)
-            file_paths_.push_back(it);
-    }
+    appendPathsFromEnv("ED_MODEL_PATH", ed_model_paths_);
+
+    // GZ_SIM_RESOURCE_PATH is the (new) Gazebo variable, which replaces both Gazebo Classic variables. It covers
+    // models as well as other resources, hence it feeds both vectors. The Gazebo Classic variables are still read,
+    // so a Gazebo Classic model database keeps working.
+    appendPathsFromEnv("GZ_SIM_RESOURCE_PATH", model_paths_);
+    appendPathsFromEnv("GAZEBO_MODEL_PATH", model_paths_);
+    appendPathsFromEnv("GZ_SIM_RESOURCE_PATH", file_paths_);
+    appendPathsFromEnv("GAZEBO_RESOURCE_PATH", file_paths_);
 }
 
 // ----------------------------------------------------------------------------------------------------

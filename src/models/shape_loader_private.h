@@ -33,6 +33,15 @@ enum ModelOrFile
  */
 std::vector<std::string> split(const std::string& strToSplit, char delimeter);
 
+/**
+ * @brief appendPathsFromEnv append the colon separated paths of an environment variable to a vector of paths.
+ * Paths already present in the vector are skipped, so the same variable can safely feed multiple vectors and
+ * variables pointing at the same directory don't cause the directory to be searched twice.
+ * @param env_var name of the environment variable; an unset variable is a no-op
+ * @param paths vector of paths to append to
+ */
+void appendPathsFromEnv(const char* env_var, std::vector<std::string>& paths);
+
 std::string parseURI(const std::string& uri, ModelOrFile& uri_type);
 
 /**
