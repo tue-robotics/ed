@@ -100,8 +100,8 @@ private:
 
     // Vectors which contain the paths, where models can be found
     std::vector<std::string> ed_model_paths_; // ED_MODEL_PATH
-    std::vector<std::string> model_paths_; // GAZEBO_MODEL_PATH
-    std::vector<std::string> file_paths_; // GAZEBO_RESOURCE_PATH
+    std::vector<std::string> model_paths_; // GZ_SIM_RESOURCE_PATH + GAZEBO_MODEL_PATH
+    std::vector<std::string> file_paths_; // GZ_SIM_RESOURCE_PATH + GAZEBO_RESOURCE_PATH
 
     /**
      * @brief loadModelData load data of model of type 'type'

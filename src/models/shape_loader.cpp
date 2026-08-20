@@ -63,6 +63,21 @@ std::vector<std::string> split(const std::string& strToSplit, char delimeter)
 
 // ----------------------------------------------------------------------------------------------------
 
+void appendPathsFromEnv(const char* env_var, std::vector<std::string>& paths)
+{
+    const char* env_value = ::getenv(env_var);
+    if (!env_value)
+        return;
+
+    for (const auto& path : split(env_value, ':'))
+    {
+        if (std::ranges::find(paths, path) == paths.end())
+            paths.push_back(path);
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 std::string parseURI(const std::string& uri, ModelOrFile& uri_type)
 {
     static const std::string model_prefix = "model://";
@@ -91,55 +106,55 @@ std::string parseURI(const std::string& uri, ModelOrFile& uri_type)
 namespace
 {
 /**
- * @brief getUriPath searches GAZEBO_MODEL_PATH and GAZEBO_RESOURCH_PATH for file
+ * @brief gazeboModelPaths paths in which SDF models ('model://' URIs) are searched.
+ * GZ_SIM_RESOURCE_PATH is the (new) Gazebo variable, which replaces both Gazebo Classic variables. The Gazebo
+ * Classic variables are still read, so a Gazebo Classic model database keeps working.
+ * @return the paths, read from the environment once
+ */
+const std::vector<std::string>& gazeboModelPaths()
+{
+    static const std::vector<std::string> paths = []
+    {
+        std::vector<std::string> result;
+        appendPathsFromEnv("GZ_SIM_RESOURCE_PATH", result);
+        appendPathsFromEnv("GAZEBO_MODEL_PATH", result);
+        return result;
+    }();
+    return paths;
+}
+
+/**
+ * @brief gazeboFilePaths paths in which resource files ('file://' URIs) are searched.
+ * GZ_SIM_RESOURCE_PATH covers models as well as other resources, hence it is searched here too.
+ * @return the paths, read from the environment once
+ */
+const std::vector<std::string>& gazeboFilePaths()
+{
+    static const std::vector<std::string> paths = []
+    {
+        std::vector<std::string> result;
+        appendPathsFromEnv("GZ_SIM_RESOURCE_PATH", result);
+        appendPathsFromEnv("GAZEBO_RESOURCE_PATH", result);
+        return result;
+    }();
+    return paths;
+}
+
+/**
+ * @brief getUriPath searches the Gazebo model and resource paths for a file
  * @param type subpath+filename incl. extension
  * @return full path or empty string in case not found
  */
 std::string getUriPath(const std::string& type)
 {
-    static const char* mpath = ::getenv("GAZEBO_MODEL_PATH");
-    static const char* rpath = ::getenv("GAZEBO_RESOURCE_PATH");
-    if (!mpath && !rpath)
-        return "";
-
-    static std::vector<std::string> model_paths;
-    static std::vector<std::string> file_paths;
-
-    if (model_paths.empty() && file_paths.empty())
-    {
-        std::string item;
-        std::stringstream ssm(mpath);
-        while (std::getline(ssm, item, ':'))
-            model_paths.push_back(item);
-
-        // romove duplicate elements
-        std::ranges::sort(model_paths);
-        // std::ranges::unique returns a subrange, not an iterator, so erase needs both its ends.
-        auto const model_duplicates = std::ranges::unique(model_paths);
-        model_paths.erase(model_duplicates.begin(), model_duplicates.end());
-
-        std::stringstream ssr(rpath);
-        while (std::getline(ssr, item, ':'))
-            file_paths.push_back(item);
-
-        // remove duplicate elements
-        std::ranges::sort(file_paths);
-        auto const file_duplicates = std::ranges::unique(file_paths);
-        file_paths.erase(file_duplicates.begin(), file_duplicates.end());
-    }
-
     ModelOrFile uri_type{};
     std::string const parsed_uri = parseURI(type, uri_type);
     if (parsed_uri.empty())
         return "";
 
-    std::vector<std::string> const* type_paths = nullptr;
-    if (uri_type == MODEL)
-        type_paths = &model_paths;
-    else
-        type_paths = &file_paths;
+    const std::vector<std::string>& type_paths = (uri_type == MODEL) ? gazeboModelPaths() : gazeboFilePaths();
 
-    for (const auto& type_path : *type_paths)
+    for (const auto& type_path : type_paths)
     {
         std::filesystem::path const file_path = std::filesystem::path(type_path) / parsed_uri;
         if (std::filesystem::exists(file_path))
