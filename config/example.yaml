@@ -1,0 +1,49 @@
+# Example ED configuration.
+#
+# Start the server with it:
+#
+#     ros2 run ed ed <path-to>/example.yaml
+#
+# or hand it to a running server:
+#
+#     ros2 run ed configure <path-to>/example.yaml
+
+# Static world, looked up in ed_object_models (ED_MODEL_PATH, GZ_SIM_RESOURCE_PATH)
+world_name: robotics_testlabs
+
+plugins:
+# Adds the robot's links to the world model as entities flagged 'self', and keeps their joint
+# positions up to date from the joint state topics.
+- name: robot
+  type: ed/robot
+  frequency: 100
+  parameters:
+      robot_name: amigo
+      # Latched (transient local) topic carrying the URDF, as published by robot_state_publisher.
+      # Optional; this is the default.
+      urdf_topic: robot_description
+      joint_topics:
+          - topic: torso/measurements
+          - topic: left_arm/measurements
+          - topic: right_arm/measurements
+          - topic: neck/measurements
+
+# Publishes the pose of every entity that has one as a tf frame.
+- name: tf_publisher
+  type: ed/tf_publisher
+  parameters:
+      root_frame_id: map
+
+# The plugins below live in the extension packages listed in the README. Uncomment an entry once
+# its package is in the workspace; ED fails to configure on a type it cannot find.
+#
+# ed_gui_server: exposes the world model to RViz and other visualisation clients.
+#- name: gui_server
+#  type: ed_gui_server/gui_server
+#  parameters:
+#      robot_name: amigo
+#
+# ed_localization: localizes the robot with a particle filter. It needs a parameter block of its
+# own; see that package.
+#- name: localization
+#  type: ed_localization/localization

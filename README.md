@@ -61,6 +61,21 @@ Running the tests additionally needs the tue-robotics [`ament_lint`](https://git
 
     colcon test --packages-select ed && colcon test-result --verbose
 
+## Running
+
+The server takes a configuration file naming the static world and the plugins to load.
+[`config/example.yaml`](config/example.yaml) is a documented starting point:
+
+    ros2 run ed ed <path-to-ed>/config/example.yaml
+
+A running server can be reconfigured with the same kind of file:
+
+    ros2 run ed configure <path-to-ed>/config/example.yaml
+
+Each plugin entry names a pluginlib class (`type`), not a library file. `ros2 run ed list_plugins`
+prints every `ed::Plugin` available in the workspace, so the entry to write for an extension package
+can be looked up there.
+
 ## Migrating a dependent package
 
 The ROS 2 port changed parts of ED's public C++ API — accessors renamed to

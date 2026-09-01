@@ -30,10 +30,15 @@
 #include <kdl/tree.hpp>
 #include <rclcpp/callback_group.hpp>
 #include <rclcpp/logging.hpp>
+#include <rclcpp/qos.hpp>
 #include <rclcpp/subscription_options.hpp>
+#include <rclcpp/wait_for_message.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <tue/config/configuration.h>
+#include <tue/config/types.h>
 
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <ed/world_model/transform_crawler.h>
@@ -98,6 +103,10 @@ bool JointRelation::calculateTransform(const ed::Time& t, geo::Pose3D& tf) const
 
 namespace
 {
+
+// A latched robot description is delivered as soon as discovery matches its publisher, so this
+// only has to cover discovery, not the start-up of whoever publishes it.
+constexpr std::chrono::seconds ROBOT_DESCRIPTION_TIMEOUT{5};
 
 geo::ShapePtr urdfGeometryToShape(const urdf::GeometrySharedPtr& geom)
 {
@@ -327,8 +336,8 @@ void RobotPlugin::jointCallback(const sensor_msgs::msg::JointState::ConstSharedP
 
 void RobotPlugin::configure(tue::Configuration config)
 {
-    std::string urdf_rosparam;
-    config.value("urdf_rosparam", urdf_rosparam);
+    std::string urdf_topic = "robot_description";
+    config.value("urdf_topic", urdf_topic, tue::config::OPTIONAL);
 
     config.value("robot_name", robot_name_);
 
@@ -359,26 +368,24 @@ void RobotPlugin::configure(tue::Configuration config)
     if (config.hasError())
         return;
 
-    // ToDo(ROS2): in ROS 1 the URDF was fetched from the global parameter server. ROS 2 has no
-    // global parameter server; this reads it from a parameter on the ED node. Consider subscribing
-    // to the /robot_description topic (transient_local) instead.
-    std::string urdf_xml;
-    if (!node_->has_parameter(urdf_rosparam))
-        node_->declare_parameter<std::string>(urdf_rosparam, "");
-    urdf_xml = node_->get_parameter(urdf_rosparam).as_string();
-    if (urdf_xml.empty())
+    // In ROS 1 the URDF was read from the global parameter server. ROS 2 has none: the robot
+    // description is published latched (transient local), by robot_state_publisher. Subscribing
+    // with matching durability is what makes a description published before ED started arrive.
+    std_msgs::msg::String urdf_msg;
+    if (!rclcpp::wait_for_message(
+            urdf_msg, node_, urdf_topic, ROBOT_DESCRIPTION_TIMEOUT, rclcpp::QoS(1).transient_local().reliable()))
     {
-        config.addError("No such ROS parameter: '" + urdf_rosparam + "'.");
+        config.addError("No robot description published on '" + urdf_topic + "'.");
         return;
     }
 
-    if (!kdl_parser::treeFromString(urdf_xml, tree_))
+    if (!kdl_parser::treeFromString(urdf_msg.data, tree_))
     {
         config.addError("Could not initialize KDL tree object.");
         return;
     }
 
-    if (!robot_model_.initString(urdf_xml))
+    if (!robot_model_.initString(urdf_msg.data))
     {
         config.addError("Could not load robot model.");
         return;
