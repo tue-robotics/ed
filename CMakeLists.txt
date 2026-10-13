@@ -203,6 +203,7 @@ target_link_libraries(${PROJECT_NAME}_robot_plugin PUBLIC
   ${PROJECT_NAME}_core
   kdl_parser::kdl_parser
   sensor_msgs::sensor_msgs
+  std_msgs::std_msgs
   urdf::urdf
 )
 
