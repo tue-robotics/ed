@@ -47,6 +47,21 @@ class LoopUsageStatus : public diagnostic_updater::DiagnosticTask
 public:
     using Clock = tue::Timer::Clock;
 
+    /**
+     * @brief Loop statistics over a window
+     */
+    struct LoopStats
+    {
+        /**
+         * @brief Fraction of the window used by the loop, in range [0, 1]
+         */
+        double usage{};
+        /**
+         * @brief Number of iterations started in the window per second
+         */
+        double frequency{};
+    };
+
 private:
     /**
      * @brief State of the loop timer at one time point
@@ -66,8 +81,21 @@ private:
      */
     std::vector<Sample> history_;
     std::size_t hist_indx_{};
+    /**
+     * @brief Sample of the previous call to getLoopStatsSinceLastCall(), the start of its window
+     */
+    Sample stats_sample_;
 
     mutable boost::mutex lock_;
+
+    /**
+     * @brief Sample the loop timer. Requires lock_ to be held, so the time point is not before the last start or stop.
+     */
+    [[nodiscard]]
+    Sample sample(Clock::time_point now) const
+    {
+        return {.time = now, .loop_time = timer_.getTotalLoopDuration(now), .events = timer_.getIterationCount()};
+    }
 
     static double toSec(Clock::duration duration) { return std::chrono::duration<double>(duration).count(); }
 
@@ -116,13 +144,35 @@ public:
     }
 
     /**
+     * @brief Loop statistics over the window since the previous call, or since the last clear for the first call.
+     * The running iteration is included until now. Independent of the diagnostics window, so meant for a single
+     * caller that reports at its own rate.
+     * @return Usage and frequency during the window, both 0 for an empty window
+     */
+    LoopStats getLoopStatsSinceLastCall()
+    {
+        boost::mutex::scoped_lock const lock(lock_);
+        Sample const current = sample(Clock::now());
+        Clock::duration const window = current.time - stats_sample_.time;
+
+        LoopStats stats;
+        stats.usage = ratio(current.loop_time - stats_sample_.loop_time, window);
+        if (window > Clock::duration::zero())
+            stats.frequency = static_cast<double>(current.events - stats_sample_.events) / toSec(window);
+
+        stats_sample_ = current;
+        return stats;
+    }
+
+    /**
      * @brief Resets the statistics.
      */
     void clear()
     {
         boost::mutex::scoped_lock const lock(lock_);
         timer_.reset();
-        std::ranges::fill(history_, Sample{.time = Clock::now()});
+        stats_sample_ = Sample{.time = Clock::now()};
+        std::ranges::fill(history_, stats_sample_);
         hist_indx_ = 0;
     }
 
@@ -150,10 +200,7 @@ public:
     void run(diagnostic_updater::DiagnosticStatusWrapper& stat) override
     {
         boost::mutex::scoped_lock const lock(lock_);
-        // Under the lock, so the time point is not before the last start or stop
-        auto const now = Clock::now();
-        Sample const current{
-            .time = now, .loop_time = timer_.getTotalLoopDuration(now), .events = timer_.getIterationCount()};
+        Sample const current = sample(Clock::now());
         Sample& oldest = history_[hist_indx_];
 
         // An iteration counts as an event in the window in which it started

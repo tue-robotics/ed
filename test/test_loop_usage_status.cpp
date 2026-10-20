@@ -164,6 +164,54 @@ TEST_F(LoopUsageStatusTest, LoopUsageSinceFirstStart)
     status.stop();
 }
 
+TEST_F(LoopUsageStatusTest, StatsSinceLastCall)
+{
+    ed::LoopUsageStatus status(params());
+    status.getLoopStatsSinceLastCall(); // Start a new window
+
+    status.start();
+    std::this_thread::sleep_for(milliseconds(20));
+    auto const busy = status.getLoopStatsSinceLastCall();
+    // Busy during the whole window, apart from the time to call start()
+    EXPECT_GT(busy.usage, 0.9);
+    EXPECT_LE(busy.usage, 1);
+    // One event in a window of at least 20 ms
+    EXPECT_GT(busy.frequency, 1 / (0.020 + SLACK));
+    EXPECT_LE(busy.frequency, 1 / 0.020);
+
+    std::this_thread::sleep_for(milliseconds(20));
+    status.stop();
+    std::this_thread::sleep_for(milliseconds(20));
+    auto const half = status.getLoopStatsSinceLastCall();
+    EXPECT_GT(half.usage, 0.25);
+    EXPECT_LT(half.usage, 0.75);
+    // The iteration started in the previous window
+    EXPECT_EQ(half.frequency, 0);
+}
+
+TEST_F(LoopUsageStatusTest, StatsSinceLastCallWithoutEvents)
+{
+    ed::LoopUsageStatus status(params());
+    std::this_thread::sleep_for(milliseconds(1));
+    auto const stats = status.getLoopStatsSinceLastCall();
+    EXPECT_EQ(stats.usage, 0);
+    EXPECT_EQ(stats.frequency, 0);
+}
+
+TEST_F(LoopUsageStatusTest, StatsSinceLastCallIndependentOfDiagnostics)
+{
+    ed::LoopUsageStatus status(params());
+    status.getLoopStatsSinceLastCall(); // Start a new window
+
+    status.start();
+    std::this_thread::sleep_for(milliseconds(20));
+    run(status);
+    std::this_thread::sleep_for(milliseconds(20));
+    status.stop();
+    // The diagnostics run in between doesn't start a new window
+    EXPECT_GT(status.getLoopStatsSinceLastCall().usage, 0.9);
+}
+
 TEST_F(LoopUsageStatusTest, ConcurrentAccess)
 {
     ed::LoopUsageStatus status(params());
@@ -185,6 +233,9 @@ TEST_F(LoopUsageStatusTest, ConcurrentAccess)
         double const usage = status.getLoopUsage();
         EXPECT_GE(usage, 0);
         EXPECT_LE(usage, 1);
+        auto const stats = status.getLoopStatsSinceLastCall();
+        EXPECT_GE(stats.usage, 0);
+        EXPECT_LE(stats.usage, 1);
         auto const values = run(status);
         EXPECT_LE(value(values, USAGE), 100 + PRINT_EPS);
         std::this_thread::sleep_for(microseconds(200));

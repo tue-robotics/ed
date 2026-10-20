@@ -3,6 +3,7 @@
 #include "ed/entity.h"
 #include "ed/error_context.h"
 #include "ed/init_data.h"
+#include "ed/loop_usage_status.h"
 #include "ed/plugin_container.h"
 #include "ed/types.h"
 #include "ed/world_model.h"
@@ -476,11 +477,11 @@ void Server::publishStatistics()
     {
         const PluginContainerPtr& p = plugin_container.second;
 
-        // Calculate CPU usage percentage
-        double const cpu_perc = p->getLoopUsageStatus().getLoopUsage() * 100;
+        // Since the previous publish, so recent changes show up instead of being averaged out since startup
+        LoopUsageStatus::LoopStats const stats = p->getLoopUsageStatus().getLoopStatsSinceLastCall();
 
-        s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency()
-          << " hz)" << '\n';
+        s << "    " << p->name() << ": " << std::fixed << stats.usage * 100 << " % (" << stats.frequency
+          << " hz, target " << std::defaultfloat << p->loopFrequency() << " hz)" << '\n';
     }
 
     std_msgs::msg::String msg;
