@@ -3,6 +3,7 @@
 #include "ed/entity.h"
 #include "ed/error_context.h"
 #include "ed/init_data.h"
+#include "ed/loop_usage_status.h"
 #include "ed/plugin_container.h"
 #include "ed/types.h"
 #include "ed/world_model.h"
@@ -23,6 +24,7 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <sstream>
+#include <string>
 #include <tue/config/configuration.h>
 #include <tue/config/loaders/yaml.h>
 #include <tue/config/types.h>
@@ -123,6 +125,15 @@ void Server::configure(tue::Configuration& config, bool /*reconfigure*/)
 
     if (config.value("world_name", world_name_, tue::config::OPTIONAL))
         initializeWorld();
+
+    double stats_window = 0;
+    if (config.value("stats_window", stats_window, tue::config::OPTIONAL))
+    {
+        if (auto const window = LoopUsageStatus::windowFromSeconds(stats_window))
+            stats_window_ = *window;
+        else
+            config.addError("'stats_window' must be a positive number of seconds, got " + std::to_string(stats_window));
+    }
 
     if (config.readArray("world"))
     {
@@ -476,11 +487,10 @@ void Server::publishStatistics()
     {
         const PluginContainerPtr& p = plugin_container.second;
 
-        // Calculate CPU usage percentage
-        double const cpu_perc = p->getLoopUsageStatus().getLoopUsage() * 100;
+        LoopUsageStatus::LoopStats const stats = p->getLoopUsageStatus().getRecentLoopStats(stats_window_);
 
-        s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency()
-          << " hz)" << '\n';
+        s << "    " << p->name() << ": " << std::fixed << stats.usage * 100 << " % (" << stats.frequency
+          << " hz, target " << std::defaultfloat << p->loopFrequency() << " hz)" << '\n';
     }
 
     std_msgs::msg::String msg;

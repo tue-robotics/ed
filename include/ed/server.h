@@ -20,7 +20,9 @@
 #include <boost/thread.hpp>
 
 #include "tue/config/configuration.h"
+#include <tue/profiling/timer.h>
 
+#include <chrono>
 #include <map>
 #include <queue>
 #include <vector>
@@ -99,6 +101,8 @@ private:
     //! Profiling
     diagnostic_updater::Updater updater_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_stats_;
+    //! Minimum window of the loop statistics on ed/stats, configured by 'stats_window' (seconds)
+    tue::Timer::Clock::duration stats_window_{std::chrono::seconds(5)};
 
     TFBufferPtr tf_buffer_;
     TFBufferConstPtr tf_buffer_const_;

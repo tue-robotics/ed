@@ -6,9 +6,11 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <string>
 #include <thread>
@@ -164,6 +166,117 @@ TEST_F(LoopUsageStatusTest, LoopUsageSinceFirstStart)
     status.stop();
 }
 
+TEST_F(LoopUsageStatusTest, RecentStatsUsageAndFrequency)
+{
+    ed::LoopUsageStatus status(params());
+
+    status.start();
+    std::this_thread::sleep_for(milliseconds(20));
+    status.stop();
+    std::this_thread::sleep_for(milliseconds(20));
+    // Never full, so the window starts at the clear
+    auto const stats = status.getRecentLoopStats(std::chrono::hours(1));
+    EXPECT_GE(stats.window, milliseconds(40));
+    EXPECT_GT(stats.usage, 0.25);
+    EXPECT_LT(stats.usage, 0.75);
+    EXPECT_DOUBLE_EQ(stats.frequency, 1 / std::chrono::duration<double>(stats.window).count());
+}
+
+TEST_F(LoopUsageStatusTest, RecentStatsWithoutEvents)
+{
+    ed::LoopUsageStatus status(params());
+    std::this_thread::sleep_for(milliseconds(1));
+    auto const stats = status.getRecentLoopStats(std::chrono::hours(1));
+    EXPECT_EQ(stats.usage, 0);
+    EXPECT_EQ(stats.frequency, 0);
+}
+
+TEST_F(LoopUsageStatusTest, RecentStatsWindowSlides)
+{
+    using Clock = ed::LoopUsageStatus::Clock;
+    constexpr milliseconds window(30);
+
+    auto const before_clear = Clock::now();
+    ed::LoopUsageStatus status(params());
+    auto const after_clear = Clock::now();
+
+    // The window starts at the latest sample at least window ago, so it exceeds window by less than the time between
+    // two samples
+    auto prev_before = before_clear;
+    Clock::duration max_interval{};
+    for (int i = 0; i < 12; ++i)
+    {
+        std::this_thread::sleep_for(milliseconds(10));
+        auto const before = Clock::now();
+        auto const stats = status.getRecentLoopStats(window);
+        auto const after = Clock::now();
+        max_interval = std::max(max_interval, after - prev_before);
+        prev_before = before;
+
+        if (before - after_clear >= window)
+            EXPECT_GE(stats.window, window) << "call " << i;
+        else
+            EXPECT_LE(stats.window, after - before_clear) << "call " << i; // Starts at the clear
+        EXPECT_LT(stats.window, window + max_interval) << "call " << i;
+    }
+}
+
+TEST_F(LoopUsageStatusTest, RecentStatsOfLongIterationIsExactlyFull)
+{
+    ed::LoopUsageStatus status(params());
+    constexpr milliseconds window(20);
+
+    status.start();
+    ed::LoopUsageStatus::LoopStats stats;
+    for (int i = 0; i < 6; ++i)
+    {
+        std::this_thread::sleep_for(milliseconds(10));
+        stats = status.getRecentLoopStats(window);
+    }
+    // The window starts after the start of the iteration, so it is busy during the whole window: exactly, as the loop
+    // time and the window are the same integer tick count
+    EXPECT_EQ(stats.usage, 1.0);
+    EXPECT_EQ(stats.frequency, 0);
+    status.stop();
+}
+
+TEST_F(LoopUsageStatusTest, RecentStatsIndependentOfDiagnostics)
+{
+    ed::LoopUsageStatus status(params());
+
+    status.start();
+    std::this_thread::sleep_for(milliseconds(20));
+    run(status);
+    std::this_thread::sleep_for(milliseconds(20));
+    status.stop();
+    // The diagnostics run in between doesn't start a new window
+    EXPECT_GT(status.getRecentLoopStats(std::chrono::hours(1)).usage, 0.9);
+}
+
+TEST(LoopUsageStatus, WindowFromSeconds)
+{
+    using Clock = ed::LoopUsageStatus::Clock;
+    using ed::LoopUsageStatus;
+
+    EXPECT_EQ(LoopUsageStatus::windowFromSeconds(5.0), std::chrono::seconds(5));
+    EXPECT_EQ(LoopUsageStatus::windowFromSeconds(0.25), milliseconds(250));
+    // Truncated to whole ticks
+    EXPECT_EQ(LoopUsageStatus::windowFromSeconds(1e-12), Clock::duration::zero());
+
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(0.0));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(-1.0));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(std::nan("")));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(std::numeric_limits<double>::infinity()));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(1e300));
+
+    // Around the largest representable duration: the tick count as double is 2^63, which doesn't fit in int64
+    double const max_seconds = std::chrono::duration<double>(Clock::duration::max()).count();
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(max_seconds));
+    double const below = std::nextafter(max_seconds, 0.0);
+    EXPECT_GT(LoopUsageStatus::windowFromSeconds(below).value_or(Clock::duration::zero()),
+              Clock::duration::max() - std::chrono::microseconds(10));
+}
+
 TEST_F(LoopUsageStatusTest, ConcurrentAccess)
 {
     ed::LoopUsageStatus status(params());
@@ -185,6 +298,9 @@ TEST_F(LoopUsageStatusTest, ConcurrentAccess)
         double const usage = status.getLoopUsage();
         EXPECT_GE(usage, 0);
         EXPECT_LE(usage, 1);
+        auto const stats = status.getRecentLoopStats(milliseconds(5));
+        EXPECT_GE(stats.usage, 0);
+        EXPECT_LE(stats.usage, 1);
         auto const values = run(status);
         EXPECT_LE(value(values, USAGE), 100 + PRINT_EPS);
         std::this_thread::sleep_for(microseconds(200));

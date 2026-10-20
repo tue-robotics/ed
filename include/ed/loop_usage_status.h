@@ -22,6 +22,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -47,6 +49,25 @@ class LoopUsageStatus : public diagnostic_updater::DiagnosticTask
 public:
     using Clock = tue::Timer::Clock;
 
+    /**
+     * @brief Loop statistics over a window
+     */
+    struct LoopStats
+    {
+        /**
+         * @brief Length of the window
+         */
+        Clock::duration window{};
+        /**
+         * @brief Fraction of the window used by the loop, in range [0, 1]
+         */
+        double usage{};
+        /**
+         * @brief Number of iterations started in the window per second
+         */
+        double frequency{};
+    };
+
 private:
     /**
      * @brief State of the loop timer at one time point
@@ -66,8 +87,22 @@ private:
      */
     std::vector<Sample> history_;
     std::size_t hist_indx_{};
+    /**
+     * @brief Samples of the calls to getRecentLoopStats() that can still start a window, oldest first. The first one
+     * is the last clear when no call is old enough.
+     */
+    std::deque<Sample> stats_samples_;
 
     mutable boost::mutex lock_;
+
+    /**
+     * @brief Sample the loop timer. Requires lock_ to be held, so the time point is not before the last start or stop.
+     */
+    [[nodiscard]]
+    Sample sample(Clock::time_point now) const
+    {
+        return {.time = now, .loop_time = timer_.getTotalLoopDuration(now), .events = timer_.getIterationCount()};
+    }
 
     static double toSec(Clock::duration duration) { return std::chrono::duration<double>(duration).count(); }
 
@@ -104,6 +139,24 @@ public:
     }
 
     /**
+     * @brief Convert a window length in seconds to a duration of Clock, truncated to whole ticks
+     * @param seconds Window length
+     * @return Window length, nullopt when it is not positive or doesn't fit in a duration of Clock (including NaN)
+     */
+    [[nodiscard]]
+    static std::optional<Clock::duration> windowFromSeconds(double seconds)
+    {
+        // Compare in ticks: converting a value outside the range of the integer duration is undefined behaviour, and
+        // the cast below, with equal periods, only truncates. The maximum tick count 2^63 - 1 rounds to 2^63 as double,
+        // so any smaller double is at most 2^63 - 1024 and fits. NaN fails any comparison, so accept rather than
+        // reject by comparison. Huge values become inf.
+        std::chrono::duration<double, Clock::period> const ticks = std::chrono::duration<double>(seconds);
+        if (ticks.count() > 0 && ticks.count() < static_cast<double>(Clock::duration::max().count()))
+            return std::chrono::duration_cast<Clock::duration>(ticks);
+        return std::nullopt;
+    }
+
+    /**
      * @brief Fraction of the time used by the loop since the first start after the last clear. The running iteration
      * is included until now.
      * @return Fraction in range [0, 1], 0 when the loop has not been started
@@ -116,13 +169,44 @@ public:
     }
 
     /**
+     * @brief Loop statistics over about the last window, including the running iteration until now.
+     *
+     * The loop time is only known at sampled time points, so the calls of this function are the samples: the window
+     * starts at the latest call at least window ago. So it lasts from window to window plus the time between calls,
+     * and the statistics are exact for its actual length. Until then, it starts at the last clear.
+     * Independent of the diagnostics window, so meant for a single caller that reports at its own rate.
+     * @param window Minimum length of the window
+     * @return Statistics during the window, usage and frequency are 0 for an empty window
+     */
+    LoopStats getRecentLoopStats(Clock::duration window)
+    {
+        boost::mutex::scoped_lock const lock(lock_);
+        Sample const current = sample(Clock::now());
+        // Drop the start of the window while the next sample is old enough to start it
+        while (stats_samples_.size() > 1 && stats_samples_[1].time <= current.time - window)
+            stats_samples_.pop_front();
+        Sample const& start = stats_samples_.front();
+
+        LoopStats stats;
+        stats.window = current.time - start.time;
+        stats.usage = ratio(current.loop_time - start.loop_time, stats.window);
+        if (stats.window > Clock::duration::zero())
+            stats.frequency = static_cast<double>(current.events - start.events) / toSec(stats.window);
+
+        stats_samples_.push_back(current);
+        return stats;
+    }
+
+    /**
      * @brief Resets the statistics.
      */
     void clear()
     {
         boost::mutex::scoped_lock const lock(lock_);
         timer_.reset();
-        std::ranges::fill(history_, Sample{.time = Clock::now()});
+        Sample const empty{.time = Clock::now()};
+        stats_samples_.assign(1, empty);
+        std::ranges::fill(history_, empty);
         hist_indx_ = 0;
     }
 
@@ -150,10 +234,7 @@ public:
     void run(diagnostic_updater::DiagnosticStatusWrapper& stat) override
     {
         boost::mutex::scoped_lock const lock(lock_);
-        // Under the lock, so the time point is not before the last start or stop
-        auto const now = Clock::now();
-        Sample const current{
-            .time = now, .loop_time = timer_.getTotalLoopDuration(now), .events = timer_.getIterationCount()};
+        Sample const current = sample(Clock::now());
         Sample& oldest = history_[hist_indx_];
 
         // An iteration counts as an event in the window in which it started
