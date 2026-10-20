@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -135,6 +136,24 @@ public:
     explicit LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam& params) :
         LoopUsageStatus(params, "Loop Usage Status")
     {
+    }
+
+    /**
+     * @brief Convert a window length in seconds to a duration of Clock, truncated to whole ticks
+     * @param seconds Window length
+     * @return Window length, nullopt when it is not positive or doesn't fit in a duration of Clock (including NaN)
+     */
+    [[nodiscard]]
+    static std::optional<Clock::duration> windowFromSeconds(double seconds)
+    {
+        // Compare in ticks: converting a value outside the range of the integer duration is undefined behaviour, and
+        // the cast below, with equal periods, only truncates. The maximum tick count 2^63 - 1 rounds to 2^63 as double,
+        // so any smaller double is at most 2^63 - 1024 and fits. NaN fails any comparison, so accept rather than
+        // reject by comparison. Huge values become inf.
+        std::chrono::duration<double, Clock::period> const ticks = std::chrono::duration<double>(seconds);
+        if (ticks.count() > 0 && ticks.count() < static_cast<double>(Clock::duration::max().count()))
+            return std::chrono::duration_cast<Clock::duration>(ticks);
+        return std::nullopt;
     }
 
     /**

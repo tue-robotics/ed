@@ -10,6 +10,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <string>
 #include <thread>
@@ -250,6 +251,30 @@ TEST_F(LoopUsageStatusTest, RecentStatsIndependentOfDiagnostics)
     status.stop();
     // The diagnostics run in between doesn't start a new window
     EXPECT_GT(status.getRecentLoopStats(std::chrono::hours(1)).usage, 0.9);
+}
+
+TEST(LoopUsageStatus, WindowFromSeconds)
+{
+    using Clock = ed::LoopUsageStatus::Clock;
+    using ed::LoopUsageStatus;
+
+    EXPECT_EQ(LoopUsageStatus::windowFromSeconds(5.0), std::chrono::seconds(5));
+    EXPECT_EQ(LoopUsageStatus::windowFromSeconds(0.25), milliseconds(250));
+    // Truncated to whole ticks
+    EXPECT_EQ(LoopUsageStatus::windowFromSeconds(1e-12), Clock::duration::zero());
+
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(0.0));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(-1.0));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(std::nan("")));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(std::numeric_limits<double>::infinity()));
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(1e300));
+
+    // Around the largest representable duration: the tick count as double is 2^63, which doesn't fit in int64
+    double const max_seconds = std::chrono::duration<double>(Clock::duration::max()).count();
+    EXPECT_FALSE(LoopUsageStatus::windowFromSeconds(max_seconds));
+    double const below = std::nextafter(max_seconds, 0.0);
+    EXPECT_GT(LoopUsageStatus::windowFromSeconds(below).value_or(Clock::duration::zero()),
+              Clock::duration::max() - std::chrono::microseconds(10));
 }
 
 TEST_F(LoopUsageStatusTest, ConcurrentAccess)

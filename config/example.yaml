@@ -11,6 +11,10 @@
 # Static world, looked up in ed_object_models (ED_MODEL_PATH, GZ_SIM_RESOURCE_PATH)
 world_name: robotics_testlabs
 
+# Window of the loop usage and frequency of each plugin on the ed/stats topic, in seconds. It is at
+# least this long; longer by at most the publish period (0.5 s). Optional; this is the default.
+stats_window: 5.0
+
 plugins:
 # Adds the robot's links to the world model as entities flagged 'self', and keeps their joint
 # positions up to date from the joint state topics.
