@@ -328,6 +328,9 @@ if(BUILD_TESTING)
   target_link_libraries(${PROJECT_NAME}_test_heightmap_triangulation
     ${PROJECT_NAME}_core ${OpenCV_LIBRARIES} geolib2::geolib tue_config::tue_config)
 
+  ament_add_gtest(${PROJECT_NAME}_test_loop_usage_status test/test_loop_usage_status.cpp)
+  target_link_libraries(${PROJECT_NAME}_test_loop_usage_status ${PROJECT_NAME}_core)
+
   ament_clang_format(CONFIG_FILE ${tue_lint_config_DIR}/../config/.clang-format --clang-format-version=21)
   # ed has many translation units; run clang-tidy in parallel and allow extra time so the test
   # does not hit the default 300s timeout (which manifests as a "did not generate a result file" error).

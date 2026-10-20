@@ -477,7 +477,7 @@ void Server::publishStatistics()
         const PluginContainerPtr& p = plugin_container.second;
 
         // Calculate CPU usage percentage
-        double const cpu_perc = p->getLoopUsageStatus().getTimer().getLoopUsagePercentage() * 100;
+        double const cpu_perc = p->getLoopUsageStatus().getLoopUsage() * 100;
 
         s << "    " << p->name() << ": " << std::fixed << cpu_perc << " % (" << std::defaultfloat << p->loopFrequency()
           << " hz)" << '\n';
