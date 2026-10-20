@@ -17,9 +17,13 @@
 #include <tue/profiling/timer.h>
 
 #include <boost/thread/mutex.hpp>
-#include <utility>
 
-#include <math.h>
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 namespace ed
 {
@@ -31,28 +35,60 @@ namespace ed
  * It will report a warning if the frequency is outside acceptable bounds, and report an error
  * if there have been no events in the latest window.
  * Heavily inspired by diagnostic_updater::FrequencyStatus
+ *
+ * The loop time during a window [t0, t1] is B(t1) - B(t0), with B(t) the loop time until t including the running
+ * iteration (tue::LoopTimer::getTotalLoopDuration). It lies in [0, t1 - t0], so the usage stays within [0, 100] %,
+ * also when an iteration spans multiple windows. All bookkeeping is done in exact integer ticks of a monotonic clock,
+ * converted only for reporting.
  */
 
 class LoopUsageStatus : public diagnostic_updater::DiagnosticTask
 {
+public:
+    using Clock = tue::Timer::Clock;
+
 private:
+    /**
+     * @brief State of the loop timer at one time point
+     */
+    struct Sample
+    {
+        Clock::time_point time;
+        Clock::duration loop_time{};
+        std::uint64_t events{};
+    };
+
     diagnostic_updater::FrequencyStatusParam params_;
 
     tue::LoopTimer timer_;
-    std::vector<long double> starts_; // Micro-seconds
-    std::vector<long double> durations_; // Seconds
-    std::vector<int> seq_nums_;
-    int hist_indx_{};
+    /**
+     * @brief Ring buffer with the samples of the previous runs, the oldest one is the start of the window
+     */
+    std::vector<Sample> history_;
+    std::size_t hist_indx_{};
 
-    boost::mutex lock_;
+    mutable boost::mutex lock_;
+
+    static double toSec(Clock::duration duration) { return std::chrono::duration<double>(duration).count(); }
+
+    /**
+     * @brief Ratio of the exact integer tick counts, the unit conversion cancels out. As rounding is monotonic,
+     * part <= whole guarantees a result <= 1.
+     * @return part / whole, 0 when whole is not positive
+     */
+    static double ratio(Clock::duration part, Clock::duration whole)
+    {
+        if (whole <= Clock::duration::zero())
+            return 0;
+        return static_cast<double>(static_cast<long double>(part.count()) / static_cast<long double>(whole.count()));
+    }
 
 public:
     /**
      * @brief Constructs a LoopUsageStatus class with the given parameters.
      */
     LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam& params, std::string name) :
-        DiagnosticTask(std::move(name)), params_(params), starts_(params_.window_size_),
-        durations_(params_.window_size_), seq_nums_(params_.window_size_)
+        DiagnosticTask(std::move(name)), params_(params), history_(static_cast<std::size_t>(params_.window_size_))
     {
         clear();
     }
@@ -63,21 +99,20 @@ public:
      */
 
     explicit LoopUsageStatus(const diagnostic_updater::FrequencyStatusParam& params) :
-        DiagnosticTask("Loop Usage Status"), params_(params), starts_(params_.window_size_),
-        durations_(params_.window_size_), seq_nums_(params_.window_size_)
+        LoopUsageStatus(params, "Loop Usage Status")
     {
-        clear();
     }
 
     /**
-     * @brief Expose const reference to loop timer. No call to the const timer will be able to influence the behaviour
-     * of this class.
-     * @return const reference to the loop timer
+     * @brief Fraction of the time used by the loop since the first start after the last clear. The running iteration
+     * is included until now.
+     * @return Fraction in range [0, 1], 0 when the loop has not been started
      */
     [[nodiscard]]
-    const tue::LoopTimer& getTimer() const
+    double getLoopUsage() const
     {
-        return timer_;
+        boost::mutex::scoped_lock const lock(lock_);
+        return timer_.getLoopUsagePercentage(Clock::now());
     }
 
     /**
@@ -87,12 +122,7 @@ public:
     {
         boost::mutex::scoped_lock const lock(lock_);
         timer_.reset();
-        long double const curtime = tue::Timer::nowMicroSec();
-
-        std::ranges::fill(starts_, curtime);
-        std::ranges::fill(durations_, 0);
-        std::ranges::fill(seq_nums_, timer_.getIterationCount());
-
+        std::ranges::fill(history_, Sample{.time = Clock::now()});
         hist_indx_ = 0;
     }
 
@@ -120,47 +150,50 @@ public:
     void run(diagnostic_updater::DiagnosticStatusWrapper& stat) override
     {
         boost::mutex::scoped_lock const lock(lock_);
-        long double const curtime = tue::Timer::nowMicroSec(); // Micro-seconds
-        long double const total_loop_time = timer_.getTotalLoopTime(); // Seconds
-        int const curseq = static_cast<int>(timer_.getIterationCount());
-        int const events = curseq - seq_nums_[hist_indx_];
-        auto const window = static_cast<double>((curtime - starts_[hist_indx_]) * 0.000001); // us -> s
-        auto const loop_time_window = static_cast<double>(total_loop_time - durations_[hist_indx_]); // Seconds
+        // Under the lock, so the time point is not before the last start or stop
+        auto const now = Clock::now();
+        Sample const current{
+            .time = now, .loop_time = timer_.getTotalLoopDuration(now), .events = timer_.getIterationCount()};
+        Sample& oldest = history_[hist_indx_];
+
+        // An iteration counts as an event in the window in which it started
+        std::uint64_t const events = current.events - oldest.events;
+        double const window = toSec(current.time - oldest.time);
+        double const loop_time_window = toSec(current.loop_time - oldest.loop_time);
+        double const usage = ratio(current.loop_time - oldest.loop_time, current.time - oldest.time);
         double freq = 0;
 
-        if (window != 0)
+        if (window > 0)
         {
-            freq = events / window;
+            freq = static_cast<double>(events) / window;
         }
-        seq_nums_[hist_indx_] = curseq;
-        starts_[hist_indx_] = curtime; // Micro-seconds
-        durations_[hist_indx_] = total_loop_time; // Seconds
-        hist_indx_ = (hist_indx_ + 1) % params_.window_size_;
+        oldest = current;
+        hist_indx_ = (hist_indx_ + 1) % history_.size();
 
         if (events == 0)
         {
             stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "No events recorded.");
         }
-        else if (window != 0 && freq < *params_.min_freq_ * (1 - params_.tolerance_))
+        else if (window > 0 && freq < *params_.min_freq_ * (1 - params_.tolerance_))
         {
             stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Frequency too low.");
         }
-        else if (window != 0 && freq > *params_.max_freq_ * (1 + params_.tolerance_))
+        else if (window > 0 && freq > *params_.max_freq_ * (1 + params_.tolerance_))
         {
             stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Frequency too high.");
         }
-        else if (window != 0)
+        else if (window > 0)
         {
             stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Desired frequency met");
         }
 
-        stat.addf("Events in window", "%d", events);
-        stat.addf("Events since startup", "%d", curseq);
+        stat.add("Events in window", events);
+        stat.add("Events since startup", current.events);
         stat.addf("Duration of window (s)", "%f", window);
         stat.addf("Total loop time during window (s)", "%f", loop_time_window);
-        if (window != 0)
+        if (window > 0)
         {
-            stat.addf("Loop Usage (%)", "%f", 100 * loop_time_window / window);
+            stat.addf("Loop Usage (%)", "%f", 100 * usage);
             stat.addf("Actual frequency (Hz)", "%f", freq);
         }
         if (*params_.min_freq_ == *params_.max_freq_)
