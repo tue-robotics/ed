@@ -6,6 +6,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -164,44 +165,83 @@ TEST_F(LoopUsageStatusTest, LoopUsageSinceFirstStart)
     status.stop();
 }
 
-TEST_F(LoopUsageStatusTest, StatsSinceLastCall)
+TEST_F(LoopUsageStatusTest, RecentStatsUsageAndFrequency)
 {
     ed::LoopUsageStatus status(params());
-    status.getLoopStatsSinceLastCall(); // Start a new window
 
     status.start();
     std::this_thread::sleep_for(milliseconds(20));
-    auto const busy = status.getLoopStatsSinceLastCall();
-    // Busy during the whole window, apart from the time to call start()
-    EXPECT_GT(busy.usage, 0.9);
-    EXPECT_LE(busy.usage, 1);
-    // One event in a window of at least 20 ms
-    EXPECT_GT(busy.frequency, 1 / (0.020 + SLACK));
-    EXPECT_LE(busy.frequency, 1 / 0.020);
-
-    std::this_thread::sleep_for(milliseconds(20));
     status.stop();
     std::this_thread::sleep_for(milliseconds(20));
-    auto const half = status.getLoopStatsSinceLastCall();
-    EXPECT_GT(half.usage, 0.25);
-    EXPECT_LT(half.usage, 0.75);
-    // The iteration started in the previous window
-    EXPECT_EQ(half.frequency, 0);
+    // Never full, so the window starts at the clear
+    auto const stats = status.getRecentLoopStats(std::chrono::hours(1));
+    EXPECT_GE(stats.window, milliseconds(40));
+    EXPECT_GT(stats.usage, 0.25);
+    EXPECT_LT(stats.usage, 0.75);
+    EXPECT_DOUBLE_EQ(stats.frequency, 1 / std::chrono::duration<double>(stats.window).count());
 }
 
-TEST_F(LoopUsageStatusTest, StatsSinceLastCallWithoutEvents)
+TEST_F(LoopUsageStatusTest, RecentStatsWithoutEvents)
 {
     ed::LoopUsageStatus status(params());
     std::this_thread::sleep_for(milliseconds(1));
-    auto const stats = status.getLoopStatsSinceLastCall();
+    auto const stats = status.getRecentLoopStats(std::chrono::hours(1));
     EXPECT_EQ(stats.usage, 0);
     EXPECT_EQ(stats.frequency, 0);
 }
 
-TEST_F(LoopUsageStatusTest, StatsSinceLastCallIndependentOfDiagnostics)
+TEST_F(LoopUsageStatusTest, RecentStatsWindowSlides)
+{
+    using Clock = ed::LoopUsageStatus::Clock;
+    constexpr milliseconds window(30);
+
+    auto const before_clear = Clock::now();
+    ed::LoopUsageStatus status(params());
+    auto const after_clear = Clock::now();
+
+    // The window starts at the latest sample at least window ago, so it exceeds window by less than the time between
+    // two samples
+    auto prev_before = before_clear;
+    Clock::duration max_interval{};
+    for (int i = 0; i < 12; ++i)
+    {
+        std::this_thread::sleep_for(milliseconds(10));
+        auto const before = Clock::now();
+        auto const stats = status.getRecentLoopStats(window);
+        auto const after = Clock::now();
+        max_interval = std::max(max_interval, after - prev_before);
+        prev_before = before;
+
+        if (before - after_clear >= window)
+            EXPECT_GE(stats.window, window) << "call " << i;
+        else
+            EXPECT_LE(stats.window, after - before_clear) << "call " << i; // Starts at the clear
+        EXPECT_LT(stats.window, window + max_interval) << "call " << i;
+    }
+}
+
+TEST_F(LoopUsageStatusTest, RecentStatsOfLongIterationIsExactlyFull)
 {
     ed::LoopUsageStatus status(params());
-    status.getLoopStatsSinceLastCall(); // Start a new window
+    constexpr milliseconds window(20);
+
+    status.start();
+    ed::LoopUsageStatus::LoopStats stats;
+    for (int i = 0; i < 6; ++i)
+    {
+        std::this_thread::sleep_for(milliseconds(10));
+        stats = status.getRecentLoopStats(window);
+    }
+    // The window starts after the start of the iteration, so it is busy during the whole window: exactly, as the loop
+    // time and the window are the same integer tick count
+    EXPECT_EQ(stats.usage, 1.0);
+    EXPECT_EQ(stats.frequency, 0);
+    status.stop();
+}
+
+TEST_F(LoopUsageStatusTest, RecentStatsIndependentOfDiagnostics)
+{
+    ed::LoopUsageStatus status(params());
 
     status.start();
     std::this_thread::sleep_for(milliseconds(20));
@@ -209,7 +249,7 @@ TEST_F(LoopUsageStatusTest, StatsSinceLastCallIndependentOfDiagnostics)
     std::this_thread::sleep_for(milliseconds(20));
     status.stop();
     // The diagnostics run in between doesn't start a new window
-    EXPECT_GT(status.getLoopStatsSinceLastCall().usage, 0.9);
+    EXPECT_GT(status.getRecentLoopStats(std::chrono::hours(1)).usage, 0.9);
 }
 
 TEST_F(LoopUsageStatusTest, ConcurrentAccess)
@@ -233,7 +273,7 @@ TEST_F(LoopUsageStatusTest, ConcurrentAccess)
         double const usage = status.getLoopUsage();
         EXPECT_GE(usage, 0);
         EXPECT_LE(usage, 1);
-        auto const stats = status.getLoopStatsSinceLastCall();
+        auto const stats = status.getRecentLoopStats(milliseconds(5));
         EXPECT_GE(stats.usage, 0);
         EXPECT_LE(stats.usage, 1);
         auto const values = run(status);

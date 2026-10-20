@@ -22,6 +22,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <utility>
 #include <vector>
 
@@ -53,6 +54,10 @@ public:
     struct LoopStats
     {
         /**
+         * @brief Length of the window
+         */
+        Clock::duration window{};
+        /**
          * @brief Fraction of the window used by the loop, in range [0, 1]
          */
         double usage{};
@@ -82,9 +87,10 @@ private:
     std::vector<Sample> history_;
     std::size_t hist_indx_{};
     /**
-     * @brief Sample of the previous call to getLoopStatsSinceLastCall(), the start of its window
+     * @brief Samples of the calls to getRecentLoopStats() that can still start a window, oldest first. The first one
+     * is the last clear when no call is old enough.
      */
-    Sample stats_sample_;
+    std::deque<Sample> stats_samples_;
 
     mutable boost::mutex lock_;
 
@@ -144,23 +150,31 @@ public:
     }
 
     /**
-     * @brief Loop statistics over the window since the previous call, or since the last clear for the first call.
-     * The running iteration is included until now. Independent of the diagnostics window, so meant for a single
-     * caller that reports at its own rate.
-     * @return Usage and frequency during the window, both 0 for an empty window
+     * @brief Loop statistics over about the last window, including the running iteration until now.
+     *
+     * The loop time is only known at sampled time points, so the calls of this function are the samples: the window
+     * starts at the latest call at least window ago. So it lasts from window to window plus the time between calls,
+     * and the statistics are exact for its actual length. Until then, it starts at the last clear.
+     * Independent of the diagnostics window, so meant for a single caller that reports at its own rate.
+     * @param window Minimum length of the window
+     * @return Statistics during the window, usage and frequency are 0 for an empty window
      */
-    LoopStats getLoopStatsSinceLastCall()
+    LoopStats getRecentLoopStats(Clock::duration window)
     {
         boost::mutex::scoped_lock const lock(lock_);
         Sample const current = sample(Clock::now());
-        Clock::duration const window = current.time - stats_sample_.time;
+        // Drop the start of the window while the next sample is old enough to start it
+        while (stats_samples_.size() > 1 && stats_samples_[1].time <= current.time - window)
+            stats_samples_.pop_front();
+        Sample const& start = stats_samples_.front();
 
         LoopStats stats;
-        stats.usage = ratio(current.loop_time - stats_sample_.loop_time, window);
-        if (window > Clock::duration::zero())
-            stats.frequency = static_cast<double>(current.events - stats_sample_.events) / toSec(window);
+        stats.window = current.time - start.time;
+        stats.usage = ratio(current.loop_time - start.loop_time, stats.window);
+        if (stats.window > Clock::duration::zero())
+            stats.frequency = static_cast<double>(current.events - start.events) / toSec(stats.window);
 
-        stats_sample_ = current;
+        stats_samples_.push_back(current);
         return stats;
     }
 
@@ -171,8 +185,9 @@ public:
     {
         boost::mutex::scoped_lock const lock(lock_);
         timer_.reset();
-        stats_sample_ = Sample{.time = Clock::now()};
-        std::ranges::fill(history_, stats_sample_);
+        Sample const empty{.time = Clock::now()};
+        stats_samples_.assign(1, empty);
+        std::ranges::fill(history_, empty);
         hist_indx_ = 0;
     }
 

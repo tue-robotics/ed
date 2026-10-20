@@ -16,6 +16,7 @@
 #include <boost/smart_ptr/make_shared_object.hpp>
 #include <boost/thread/lock_types.hpp>
 #include <boost/thread/pthread/mutex.hpp>
+#include <chrono>
 #include <geolib/datatypes.h>
 #include <ios>
 #include <iostream>
@@ -472,13 +473,15 @@ void Server::publishStatistics()
     ErrorContext const errc("Server", "publishStatistics");
     std::stringstream s;
 
+    // Long enough to average out single slow iterations, short enough to show recent changes
+    constexpr std::chrono::seconds stats_window{5};
+
     s << "[plugins]" << '\n';
     for (auto& plugin_container : plugin_containers_)
     {
         const PluginContainerPtr& p = plugin_container.second;
 
-        // Since the previous publish, so recent changes show up instead of being averaged out since startup
-        LoopUsageStatus::LoopStats const stats = p->getLoopUsageStatus().getLoopStatsSinceLastCall();
+        LoopUsageStatus::LoopStats const stats = p->getLoopUsageStatus().getRecentLoopStats(stats_window);
 
         s << "    " << p->name() << ": " << std::fixed << stats.usage * 100 << " % (" << stats.frequency
           << " hz, target " << std::defaultfloat << p->loopFrequency() << " hz)" << '\n';
